@@ -2,7 +2,9 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.koreait.exam.tmrteamproject.vo.Rq;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,9 @@ public class KakaoOAuthService {
     private String kakaoClientId;
     @Value("${kakao.api.clientSecret}")
     private String kakaoClientSecret;
+
+    @Autowired
+    private Rq rq;
 
 
     // 토큰 요청 함수

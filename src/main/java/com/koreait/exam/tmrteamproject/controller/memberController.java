@@ -1,22 +1,16 @@
 package com.koreait.exam.tmrteamproject.controller;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.NaverOAuthService;
+import com.koreait.exam.tmrteamproject.vo.Rq;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -28,7 +22,7 @@ import java.security.SecureRandom;
 @RequestMapping("usr/member")
 @Slf4j
 @RequiredArgsConstructor
-public class memberController {
+public class MemberController {
 
     @Value("${kakao.api.clientId}")
     private String kakaoClientId;
@@ -40,6 +34,8 @@ public class memberController {
     private KakaoOAuthService kakaoOAuthService;
     @Autowired
     private NaverOAuthService naverOAuthService;
+    @Autowired
+    private Rq rq;
 
 
     @GetMapping("/login")
@@ -50,7 +46,6 @@ public class memberController {
 
     @GetMapping("/loginKakao")
     public String loginKakao() {
-        System.out.println("loginKakao 실행됨");
         String kakaoRedirectUri = "http://localhost:8080/usr/member/kakaoCallback";
 
         return "redirect:https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=" + kakaoClientId + "&redirect_uri=" + kakaoRedirectUri;
@@ -62,6 +57,8 @@ public class memberController {
         String accessToken = kakaoOAuthService.requestAccessToken(code);
 
         kakaoOAuthService.getUserInfo(accessToken);
+
+        rq.getSession().setAttribute("accessToken", accessToken);
 
         return "redirect:../home/main";
     }
@@ -87,15 +84,19 @@ public class memberController {
 
         naverOAuthService.getUserInfo(accessToken);
 
-
         return "redirect:../home/main";
     }
 
     @GetMapping("/doLogout")
     public String doLogout() {
 
+        rq.logout();
+        if (rq.getSession().getAttribute("accessToken") != null) {
+            rq.getSession().removeAttribute("accessToken");
+            return "redirect:kakaoLogout";
+        }
 
-        return "redirect:kakaoLogout";
+        return "redirect:../home/main";
     }
 
     @GetMapping("/kakaoLogout")
