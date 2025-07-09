@@ -15,10 +15,9 @@ public class UsrHomeController {
 
     @GetMapping("/main")
     public String homeMain() {
+
         return "home/main";
     }
-
-
 
 
 }
