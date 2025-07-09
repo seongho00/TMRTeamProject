@@ -16,6 +16,7 @@ public class UsrHomeController {
     @GetMapping("/main")
     public String showRoom() {
         System.out.println("실행");
+        System.out.println(123);
         return "home/main";
     }
 }
