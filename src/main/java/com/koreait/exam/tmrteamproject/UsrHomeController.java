@@ -8,13 +8,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping("/home")
+@RequestMapping("usr/home")
 @Slf4j
 @RequiredArgsConstructor
 public class UsrHomeController {
 
     @GetMapping("/main")
     public String showRoom() {
+        System.out.println("실행");
         return "home/main";
     }
 }
