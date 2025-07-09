@@ -24,4 +24,5 @@ kakao:
 # application.yml
 naver:
   api:
-    key: YOUR_KAKAO_REST_API_KEY
+    clientId: bEMZzWiWu06Pk2b7R6D3
+    clientSecret: 730aCbbDQO
