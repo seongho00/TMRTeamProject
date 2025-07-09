@@ -1,4 +1,4 @@
-package com.koreait.exam.tmrteamproject;
+package com.koreait.exam.tmrteamproject.controller;
 
 
 import lombok.RequiredArgsConstructor;
@@ -8,15 +8,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping("usr/home")
+@RequestMapping("usr/member")
 @Slf4j
 @RequiredArgsConstructor
-public class UsrHomeController {
+public class memberController {
 
-    @GetMapping("/main")
-    public String showRoom() {
-        System.out.println("실행");
-        System.out.println(123);
-        return "home/main";
+    @GetMapping("/login")
+    public String login() {
+
+        return "member/login";
     }
+
+    
+
 }
