@@ -21,6 +21,7 @@ import org.springframework.web.client.RestTemplate;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 
 @Controller
@@ -40,7 +41,6 @@ public class memberController {
     @Autowired
     private NaverOAuthService naverOAuthService;
 
-    
 
     @GetMapping("/login")
     public String login() {
@@ -91,6 +91,22 @@ public class memberController {
         return "redirect:../home/main";
     }
 
+    @GetMapping("/doLogout")
+    public String doLogout() {
+
+
+        return "redirect:kakaoLogout";
+    }
+
+    @GetMapping("/kakaoLogout")
+    public String kakaoLogout() {
+
+        String logoutRedirectUri = "http://localhost:8080/usr/home/main";
+        String url = "https://kauth.kakao.com/oauth/logout?client_id=" + kakaoClientId + "&logout_redirect_uri="
+                + URLEncoder.encode(logoutRedirectUri, StandardCharsets.UTF_8);
+        return "redirect:" + url;
+
+    }
 
 
 }
