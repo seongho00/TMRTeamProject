@@ -1,0 +1,36 @@
+server:
+  port: 8080
+spring:
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+  devtools:
+    livereload:
+      enabled: true
+    restart:
+      enabled: true
+#  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://127.0.0.1:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
+#    username: root
+#    password:
+#mybatis:
+#  type-aliases-package: com.koreait.exam.tmrteamproject.vo
+#  mapper-locations: classpath:/mappers/**/*.xml
+
+
+# application.yml
+kakao:
+  api:
+    clientId: 5617b43c5e1f8f47e45f4d510a88e8fc
+    clientSecret: 5yc5smUCscGZlKcfjqsfV46wFiVdsbzq
+
+
+# application.yml
+naver:
+  api:
+    clientId: bEMZzWiWu06Pk2b7R6D3
+    clientSecret: 730aCbbDQO
