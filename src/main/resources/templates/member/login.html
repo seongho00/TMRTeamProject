@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head::head"></head> <!-- ✅ 공백 제거 -->
+<script>
+    function createAccount() {
+
+    }
+
+</script>
+
+<div
+        class="flex flex-col justify-center items-center w-screen h-screen overflow-hidden gap-2.5 px-[75px] py-[50px] bg-white"
+>
+    <div
+            class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[1326px] h-[884px] relative overflow-hidden gap-2.5 p-2.5"
+            style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.25));"
+    >
+        <img src="/images/로그인 배경사진.png" class="flex-grow-0 flex-shrink-0 w-[1326px] h-[883px] object-cover"/>
+        <div
+                class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[607px] absolute left-[719px] top-2.5 overflow-hidden gap-[47px] py-[11px] rounded-tl-3xl rounded-bl-3xl bg-white"
+                style="box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.25);"
+        >
+            <div
+                    class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[34px] relative p-2.5"
+            >
+                <a href="../home/main" class="cursor-pointer"><img
+                        src="/images/로고.png"
+                        class="flex-grow-0 flex-shrink-0 w-[140px] h-[55px] object-cover"
+                /></a>
+                <div
+                        class="flex justify-start items-center flex-grow-0 flex-shrink-0 relative overflow-hidden py-6"
+                >
+
+                    <p class="flex-grow-0 flex-shrink-0 text-base text-left text-[#1a1717]/[0.53]">
+                        English (UK)
+                    </p>
+                    <svg
+                            width="17"
+                            height="18"
+                            viewBox="0 0 17 18"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="flex-grow-0 flex-shrink-0 w-4 h-4 relative"
+                            preserveAspectRatio="none"
+                    >
+                        <g clip-path="url(#clip0_34_35)">
+                            <path
+                                    fill-rule="evenodd"
+                                    clip-rule="evenodd"
+                                    d="M9.50432 15.4628C9.39968 15.6319 9.25228 15.7704 9.07701 15.8643C8.90174 15.9581 8.7048 16.0041 8.50608 15.9975C8.30736 15.9909 8.11389 15.932 7.94521 15.8268C7.77654 15.7215 7.63862 15.5736 7.54539 15.398L1.0783 3.51042C0.647305 2.71772 1.22874 1.74743 2.11625 1.77682L15.8237 2.23076C16.7122 2.26018 17.2272 3.26778 16.7447 4.02922L9.50432 15.4628Z"
+                                    fill="#1A1717"
+                                    fill-opacity="0.38"
+                            ></path>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_34_35">
+                                <rect
+                                        width="16"
+                                        height="16"
+                                        fill="white"
+                                        transform="translate(16.4705 17.2604) rotate(-178.103)"
+                                ></rect>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+            <div
+                    class="flex justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-2.5 pl-[25px] pr-2.5 py-2.5"
+            >
+                <p class="flex-grow w-[572px] text-2xl font-bold text-left text-[#181818]">
+                    Create Account
+                </p>
+            </div>
+            <div
+                    class="flex justify-center items-center self-stretch flex-grow-0 flex-shrink-0 h-[91px] relative overflow-hidden gap-[45px] px-[29px] py-[13px]"
+            >
+                <a href="../member/loginKakao">
+                    <img src="/images/카카오로그인.png"
+                         class="flex-grow-0 flex-shrink-0 w-[220px] h-[54px] object-cover cursor-pointer"
+                    />
+                </a>
+
+                <a href="../member/loginNaver">
+                    <img src="/images/네이버로그인.png"
+                         class="flex-grow-0 flex-shrink-0 w-[249px] h-[54px] object-cover cursor-pointer"
+                    />
+                </a>
+            </div>
+            <div
+                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[91px] relative gap-2.5 p-2.5 bg-white"
+            >
+                <p class="flex-grow w-[71px] text-2xl font-bold text-left text-[#1a1717]/[0.38]">-OR-</p>
+            </div>
+            <div
+                    class="flex flex-col justify-start items-end flex-grow-0 flex-shrink-0 w-[546px] overflow-hidden gap-[58px] px-[22px] py-[13px]"
+            >
+                <div
+                        class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-[11px]"
+                >
+                    <p
+                            class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-left text-[#1a1717]/[0.38]"
+                    >
+            <span
+                    class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-2xl text-left text-[#1a1717]/[0.38]"
+            >Full </span
+            ><span
+                            class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-[#1a1717]/[0.38]"
+                    >Name</span
+                    ><span
+                            class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-2xl text-left text-[#1a1717]/[0.38]"
+                    >
+            </span>
+                    </p>
+                    <svg
+                            width="503"
+                            height="2"
+                            viewBox="0 0 503 2"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="flex-grow-0 flex-shrink-0"
+                            preserveAspectRatio="none"
+                    >
+                        <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
+                    </svg>
+                </div>
+                <div
+                        class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-[11px]"
+                >
+                    <p
+                            class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-[#1a1717]/[0.38]"
+                    >
+                        Email Address
+                    </p>
+                    <svg
+                            width="503"
+                            height="2"
+                            viewBox="0 0 503 2"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="flex-grow-0 flex-shrink-0"
+                            preserveAspectRatio="none"
+                    >
+                        <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
+                    </svg>
+                </div>
+                <div
+                        class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-10 relative"
+                >
+                    <div class="flex justify-start items-end flex-grow-0 flex-shrink-0 w-[500px] relative">
+                        <p class="flex-grow w-[480px] text-xl text-left text-[#1a1717]/[0.38]">Password</p>
+                        <svg
+                                width="21"
+                                height="20"
+                                viewBox="0 0 21 20"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="flex-grow-0 flex-shrink-0 w-5 h-5 relative"
+                                preserveAspectRatio="none"
+                        >
+                            <g clip-path="url(#clip0_34_62)">
+                                <path
+                                        d="M13.9875 16.14L11.97 14.1213C11.1898 14.4002 10.3464 14.4519 9.53802 14.2702C8.72962 14.0886 7.98941 13.6811 7.40352 13.0952C6.81764 12.5093 6.41018 11.7691 6.22854 10.9607C6.0469 10.1523 6.09856 9.30895 6.3775 8.52875L3.8025 5.95375C1.6725 7.8475 0.5 10 0.5 10C0.5 10 4.25 16.875 10.5 16.875C11.7005 16.8708 12.8874 16.6207 13.9875 16.14ZM7.0125 3.86C8.11257 3.37928 9.29949 3.12913 10.5 3.125C16.75 3.125 20.5 10 20.5 10C20.5 10 19.3263 12.1512 17.1987 14.0475L14.6213 11.47C14.9002 10.6898 14.9519 9.84643 14.7702 9.03802C14.5886 8.22962 14.1811 7.48941 13.5952 6.90352C13.0093 6.31764 12.2691 5.91018 11.4607 5.72854C10.6523 5.5469 9.80895 5.59856 9.02875 5.8775L7.0125 3.86125V3.86Z"
+                                        fill="#1A1717"
+                                        fill-opacity="0.38"
+                                ></path>
+                                <path
+                                        d="M7.40637 9.5575C7.33761 10.0379 7.38167 10.5277 7.53507 10.9881C7.68847 11.4485 7.94698 11.8668 8.29013 12.21C8.63328 12.5531 9.05163 12.8116 9.51203 12.965C9.97243 13.1184 10.4622 13.1625 10.9426 13.0937L7.40512 9.5575H7.40637ZM13.5939 10.4425L10.0576 6.905C10.538 6.83624 11.0278 6.8803 11.4882 7.0337C11.9486 7.1871 12.367 7.44561 12.7101 7.78876C13.0533 8.13191 13.3118 8.55026 13.4652 9.01066C13.6186 9.47106 13.6626 9.96086 13.5939 10.4412V10.4425ZM17.5576 17.9425L2.55762 2.9425L3.44262 2.0575L18.4426 17.0575L17.5576 17.9425Z"
+                                        fill="black"
+                                ></path>
+                            </g>
+                            <defs>
+                                <clipPath id="clip0_34_62">
+                                    <rect width="20" height="20" fill="white" transform="translate(0.5)"></rect>
+                                </clipPath>
+                            </defs>
+                        </svg>
+                    </div>
+                    <svg
+                            width="503"
+                            height="2"
+                            viewBox="0 0 503 2"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="flex-grow-0 flex-shrink-0"
+                            preserveAspectRatio="none"
+                    >
+                        <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
+                    </svg>
+                </div>
+            </div>
+            <div
+                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[502px] h-12 relative gap-2.5 p-2.5 rounded-lg bg-[#279574]"
+            >
+                <p onClick="createAccount();"
+                   class="flex-grow w-[482px] text-xl font-semibold text-center text-white cursor-pointer">
+                    Create Account
+                </p>
+            </div>
+            <div
+                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[330px] h-11 relative gap-2.5 p-2.5"
+            >
+                <p class="flex-grow w-[310px] text-xl font-medium text-center">
+          <span class="flex-grow w-[310px] text-xl font-medium text-center text-black/30"
+          >Already have an account ?</span
+          ><span class="flex-grow w-[310px] text-xl font-medium text-center text-black/[0.12]">
+          </span
+          ><span class="flex-grow w-[310px] text-xl font-medium text-center text-[#54beb8]"
+                >Login</span
+                >
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
