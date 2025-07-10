@@ -6,6 +6,8 @@
 
     }
 
+
+    // 비밀번호 눈 누르면 보이게하기
     function showPassword(el) {
         const $pwInput = $("#loginPw");
         const currentType = $pwInput.attr("type");
@@ -18,6 +20,82 @@
             $(el).removeClass("fa-eye-slash").addClass("fa-eye");
         }
     }
+
+    $(document).ready(function () {
+
+        // 이름 input 유효성 검사
+        $("#name").on("blur", function () {
+            const $msg = $(".nameCheck-msg")
+            const val = $(this).val();
+
+            $msg.removeClass("hidden");
+            if (val.length === 0) {
+                $msg.html("이름을 입력해주세요.")
+            } else {
+                $msg.addClass("hidden");
+            }
+        });
+
+        // 비밀번호 input 유효성 검사
+        $("#email").on("blur", function () {
+            const $msg = $(".emailCheck-msg")
+            const val = $(this).val();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            $msg.removeClass("hidden");
+            if (val.length === 0) {
+                $msg.html("이메일을 입력해주세요.")
+            } else if (!emailRegex.test(val)) {
+                $msg.html("이메일 형식에 맞게 입력해주세요.")
+            } else {
+                $msg.addClass("hidden");
+            }
+        });
+
+        // 비밀번호 input 유효성 검사
+        $("#loginPw").on("blur", function () {
+            const $msg = $(".passwordCheck-msg")
+            const val = $(this).val();
+
+            $msg.removeClass("hidden");
+            if (val.length === 0) {
+                $msg.html("비밀번호를 입력해주세요.")
+            } else {
+                $msg.addClass("hidden");
+            }
+        });
+
+        // 번호 input 관련 코드
+        $("#phoneNum")
+            // "-" 추가해주기
+            .on("input", function () {
+                let num = $(this).val().replace(/[^0-9]/g, "");
+                if (num.length < 4) {
+                    $(this).val(num);
+                } else if (num.length < 8) {
+                    $(this).val(num.slice(0, 3) + "-" + num.slice(3));
+                } else {
+                    $(this).val(num.slice(0, 3) + "-" + num.slice(3, 7) + "-" + num.slice(7, 11));
+                }
+            })
+            // 아무것도 입력 안 했을 때 경고해주기
+            .on("blur", function () {
+                const $msg = $(".phoneNumCheck-msg")
+                const val = $(this).val();
+
+                $msg.removeClass("hidden");
+                if (val.length === 0) {
+                    $msg.html("전화번호를 입력해주세요.")
+                } else if (val.length < 13) {
+                    $msg.html("전화번호를 정확히 입력해주세요.")
+                } else {
+                    $msg.addClass("hidden");
+                }
+            });
+
+
+    });
+
 
 </script>
 
@@ -105,99 +183,114 @@
             >
                 <p class="flex-grow w-[71px] text-2xl font-bold text-left text-[#1a1717]/[0.38]">-OR-</p>
             </div>
-            <div
-                    class="flex flex-col justify-start items-end flex-grow-0 flex-shrink-0 w-[546px] overflow-hidden gap-[58px] px-[22px] py-[13px]"
-            >
-                <div class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-[11px]">
-                    <label>
-                        <input type="text" placeholder="Full Name" autocomplete="off"
-                               class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-left text-2xl outline-none focus:outline-none focus:border-none"/>
-
-                        <svg
-                                width="503"
-                                height="2"
-                                viewBox="0 0 503 2"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="flex-grow-0 flex-shrink-0"
-                                preserveAspectRatio="none"
-                        >
-
-                            <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
-                        </svg>
-                    </label>
-
-                </div>
+            <form action="">
                 <div
-                        class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-[11px]"
+                        class="flex flex-col justify-start items-end flex-grow-0 flex-shrink-0 w-[546px] overflow-hidden gap-[40px] px-[22px] py-[13px]"
                 >
-                    <label>
-                        <input type="text" placeholder="Email Address" autocomplete="off"
-                               class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
-                        />
+
+                    <div
+                            class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative"
+                    >
+                        <label>
+                            <input type="text" placeholder="Full Name" autocomplete="off" name="name" id="name"
+                                   class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-left text-2xl outline-none focus:outline-none focus:border-none"/>
+
+                            <svg
+                                    width="503"
+                                    height="2"
+                                    viewBox="0 0 503 2"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="flex-grow-0 flex-shrink-0"
+                                    preserveAspectRatio="none"
+                            >
+
+                                <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
+                            </svg>
+                        </label>
+
+                        <div class="nameCheck-msg text-red-500 mt-2 flex hidden w-[502px]"></div>
+
+                    </div>
+                    <div
+                            class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative"
+                    >
+                        <label>
+                            <input type="text" placeholder="Email Address" autocomplete="off" name="email" id="email"
+                                   class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
+                            />
 
 
-                        <svg
-                                width="503"
-                                height="2"
-                                viewBox="0 0 503 2"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="flex-grow-0 flex-shrink-0"
-                                preserveAspectRatio="none"
-                        >
-                            <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
-                        </svg>
-                    </label>
+                            <svg
+                                    width="503"
+                                    height="2"
+                                    viewBox="0 0 503 2"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="flex-grow-0 flex-shrink-0"
+                                    preserveAspectRatio="none"
+                            >
+                                <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
+                            </svg>
+
+                        </label>
+                        <div class="emailCheck-msg text-red-500 mt-2 flex hidden w-[502px]"></div>
+                    </div>
+                    <div
+                            class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative"
+                    >
+                        <label>
+                            <input type="password" placeholder="Password" name="loginPw" id="loginPw" autocomplete="off"
+                                   class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
+                            />
+
+                            <svg
+                                    width="503"
+                                    height="2"
+                                    viewBox="0 0 503 2"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="flex-grow-0 flex-shrink-0"
+                                    preserveAspectRatio="none"
+                            >
+                                <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
+                            </svg>
+
+                        </label>
+                        <div class="passwordCheck-msg text-red-500 mt-2 flex hidden w-[502px]"></div>
+                        <i onClick="showPassword(this);"
+                           class="fa-solid fa-eye absolute top-0 right-0 text-2xl cursor-pointer"></i>
+                    </div>
+
+                    <div
+                            class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative"
+                    >
+                        <label>
+                            <input type="text" placeholder="PhoneNumber" name="phoneNum" autocomplete="off"
+                                   maxlength="13"
+                                   id="phoneNum"
+                                   class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
+                            />
+
+                            <svg
+                                    width="503"
+                                    height="2"
+                                    viewBox="0 0 503 2"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="flex-grow-0 flex-shrink-0"
+                                    preserveAspectRatio="none"
+                            >
+                                <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
+                            </svg>
+
+                        </label>
+
+                        <div class="phoneNumCheck-msg text-red-500 mt-2 flex hidden w-[502px]"></div>
+                    </div>
+
                 </div>
-                <div
-                        class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-10 relative"
-                >
-                    <label>
-                        <input type="text" placeholder="Password" name="loginPw" id="loginPw" autocomplete="off"
-                               class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
-                        />
-
-                        <svg
-                                width="503"
-                                height="2"
-                                viewBox="0 0 503 2"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="flex-grow-0 flex-shrink-0"
-                                preserveAspectRatio="none"
-                        >
-                            <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
-                        </svg>
-
-                    </label>
-                    <i onClick="showPassword(this);"
-                       class="fa-solid fa-eye absolute top-0 right-0 text-2xl cursor-pointer"></i>
-                </div>
-                <div
-                        class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-10 relative"
-                >
-                    <label>
-                        <input type="text" placeholder="PhoneNumber" name="phoneNum" autocomplete="off"
-                               class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
-                        />
-
-                        <svg
-                                width="503"
-                                height="2"
-                                viewBox="0 0 503 2"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="flex-grow-0 flex-shrink-0"
-                                preserveAspectRatio="none"
-                        >
-                            <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
-                        </svg>
-
-                    </label>
-
-                </div>
-            </div>
+            </form>
             <div
                     class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[502px] h-12 relative gap-2.5 p-2.5 rounded-lg bg-[#279574]"
             >
