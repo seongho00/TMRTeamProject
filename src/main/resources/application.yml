@@ -34,3 +34,8 @@ naver:
   api:
     clientId: bEMZzWiWu06Pk2b7R6D3
     clientSecret: 730aCbbDQO
+
+solapi:
+  apiKey: NCS8X6JXYL5LGJ0B
+  apiSecret: OPMRNQJAWXRAEDUGNAOPOI8AZNRTTSCO
+  sender: 01030417745
