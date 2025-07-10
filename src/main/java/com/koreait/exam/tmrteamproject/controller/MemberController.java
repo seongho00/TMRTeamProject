@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.UnsupportedEncodingException;
@@ -34,14 +35,31 @@ public class MemberController {
     private KakaoOAuthService kakaoOAuthService;
     @Autowired
     private NaverOAuthService naverOAuthService;
+
     @Autowired
     private Rq rq;
 
 
+    @GetMapping("/join")
+    public String join() {
+
+        return "member/join";
+    }
+
     @GetMapping("/login")
     public String login() {
 
+
         return "member/login";
+    }
+
+    @PostMapping("/createAccount")
+    public String createAccount(String name, String loginPw, String email, String phoneNum) {
+
+//        memberService.createAccount(name, loginPw, email, phoneNum);
+
+
+        return "redirect:login";
     }
 
     @GetMapping("/loginKakao")
@@ -58,7 +76,7 @@ public class MemberController {
 
         kakaoOAuthService.getUserInfo(accessToken);
 
-        rq.getSession().setAttribute("accessToken", accessToken);
+//        rq.getSession().setAttribute("accessToken", accessToken);
 
         return "redirect:../home/main";
     }
@@ -91,10 +109,10 @@ public class MemberController {
     public String doLogout() {
 
         rq.logout();
-        if (rq.getSession().getAttribute("accessToken") != null) {
-            rq.getSession().removeAttribute("accessToken");
-            return "redirect:kakaoLogout";
-        }
+//        if (rq.getSession().getAttribute("accessToken") != null) {
+//            rq.getSession().removeAttribute("accessToken");
+//            return "redirect:kakaoLogout";
+//        }
 
         return "redirect:../home/main";
     }

@@ -3,7 +3,7 @@ server:
 spring:
   thymeleaf:
     cache: false
-    prefix: classpath:/templates/
+    prefix: classpath:templates//
     suffix: .html
     mode: HTML
     encoding: UTF-8
@@ -12,14 +12,14 @@ spring:
       enabled: true
     restart:
       enabled: true
-#  datasource:
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://127.0.0.1:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
-#    username: root
-#    password:
-#mybatis:
-#  type-aliases-package: com.koreait.exam.tmrteamproject.vo
-#  mapper-locations: classpath:/mappers/**/*.xml
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
+    username: root
+    password:
+mybatis:
+  type-aliases-package: com.koreait.exam.tmrteamproject.vo
+  mapper-locations: classpath:/mappers/**/*.xml
 
 
 # application.yml
