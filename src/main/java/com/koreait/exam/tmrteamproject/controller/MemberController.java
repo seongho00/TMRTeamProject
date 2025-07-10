@@ -3,15 +3,14 @@ package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.NaverOAuthService;
+import com.koreait.exam.tmrteamproject.service.SolapiSmsService;
 import com.koreait.exam.tmrteamproject.vo.Rq;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -35,6 +34,9 @@ public class MemberController {
     private KakaoOAuthService kakaoOAuthService;
     @Autowired
     private NaverOAuthService naverOAuthService;
+    @Autowired
+    private SolapiSmsService smsService ;
+
 
     @Autowired
     private Rq rq;
@@ -126,6 +128,8 @@ public class MemberController {
         return "redirect:" + url;
 
     }
+
+
 
 
 }
