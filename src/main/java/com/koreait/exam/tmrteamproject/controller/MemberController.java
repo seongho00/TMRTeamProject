@@ -35,6 +35,7 @@ public class MemberController {
     private KakaoOAuthService kakaoOAuthService;
     @Autowired
     private NaverOAuthService naverOAuthService;
+
     @Autowired
     private Rq rq;
 
@@ -46,19 +47,16 @@ public class MemberController {
     }
 
     @GetMapping("/login")
-    public String login(String name, String password, String email, String phoneNum) {
-
-        System.out.println(name);
-        System.out.println(password);
-        System.out.println(email);
-        System.out.println(phoneNum);
+    public String login() {
 
 
         return "member/login";
     }
 
     @PostMapping("/createAccount")
-    public String createAccount() {
+    public String createAccount(String name, String loginPw, String email, String phoneNum) {
+
+//        memberService.createAccount(name, loginPw, email, phoneNum);
 
 
         return "redirect:login";

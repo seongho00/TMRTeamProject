@@ -50,11 +50,12 @@
             $line.attr("stroke-opacity", "0.38");
             $input.removeClass("placeholder-red-500");
             $msg.addClass("hidden");
+            return true;
         }
     }
 
     // 이메일 input 유효성 검사
-    function checkEmail() {
+    function checkEmail(isSubmit = false) {
         const $input = $("#email");
         const $msg = $(".emailCheck-msg")
         const val = $input.val();
@@ -67,18 +68,23 @@
         $input.addClass("placeholder-red-500");
         if (val.length === 0) {
             $msg.html("이메일을 입력해주세요.")
+            if (isSubmit) alert("이메일을 입력해주세요.");
+            return false;
         } else if (!emailRegex.test(val)) {
             $msg.html("이메일 형식에 맞게 입력해주세요.")
+            if (isSubmit) alert("이메일 형식에 맞게 입력해주세요.");
+            return false;
         } else {
             $line.attr("stroke", "#1A1717");
             $line.attr("stroke-opacity", "0.38");
             $input.removeClass("placeholder-red-500");
             $msg.addClass("hidden");
+            return true;
         }
     }
 
     // 비밀번호 input 유효성 검사
-    function checkPassword() {
+    function checkPassword(isSubmit = false) {
         const $input = $("#loginPw")
         const $msg = $(".passwordCheck-msg")
         const val = $input.val();
@@ -91,18 +97,23 @@
         $input.addClass("placeholder-red-500");
         if (val.length === 0) {
             $msg.html("비밀번호를 입력해주세요.")
+            if (isSubmit) alert("비밀번호를 입력해주세요.");
+            return false;
         } else if (!pwRegex.test(val)) {
             $msg.html("비밀번호는 영문, 숫자, 특수문자를 포함해 8~20자로 입력해주세요.");
+            if (isSubmit) alert("비밀번호는 영문, 숫자, 특수문자를 포함해 8~20자로 입력해주세요.");
+            return false;
         } else {
             $line.attr("stroke", "#1A1717");
             $line.attr("stroke-opacity", "0.38");
             $input.removeClass("placeholder-red-500");
             $msg.addClass("hidden");
+            return true;
         }
     }
 
     // 전화번호 input 유효성 검사
-    function checkPhoneNum() {
+    function checkPhoneNum(isSubmit = false) {
         const $input = $("#phoneNum")
         const $msg = $(".phoneNumCheck-msg")
         const val = $input.val();
@@ -114,13 +125,18 @@
         $input.addClass("placeholder-red-500");
         if (val.length === 0) {
             $msg.html("전화번호를 입력해주세요.")
+            if (isSubmit) alert("전화번호를 입력해주세요.");
+            return false;
         } else if (val.length < 13) {
             $msg.html("전화번호를 정확히 입력해주세요.")
+            if (isSubmit) alert("전화번호를 정확히 입력해주세요.");
+            return false;
         } else {
             $line.attr("stroke", "#1A1717");
             $line.attr("stroke-opacity", "0.38");
             $input.removeClass("placeholder-red-500");
             $msg.addClass("hidden");
+            return true;
         }
     }
 
@@ -169,7 +185,11 @@
             checkEmail(true) &&
             checkPassword(true) &&
             checkPhoneNum(true);
-        if (!isValid) {
+
+        console.log(isValid);
+        console.log("실행됨1");
+        if (isValid) {
+            console.log("실행됨2");
             $("#createAccountForm").submit(); // ✅ 수동 제출
         }
     }
