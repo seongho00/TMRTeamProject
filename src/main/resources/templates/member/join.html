@@ -27,27 +27,51 @@
         $("#name").on("blur", function () {
             const $msg = $(".nameCheck-msg")
             const val = $(this).val();
+            const $line = $("#nameLine path");
+            const nameRegex = /^([가-힣]{2,20}|[a-zA-Z]{2,20}(?:\s[a-zA-Z]{2,20})*)$/;
+            const hasKoreanWithSpace = /[가-힣]+\s+[가-힣]+/;
 
             $msg.removeClass("hidden");
+            $line.attr("stroke", "red");
+            $line.attr("stroke-opacity", "1");
+            $(this).addClass("placeholder-red-500");
+
             if (val.length === 0) {
                 $msg.html("이름을 입력해주세요.")
+
+            } else if (hasKoreanWithSpace.test(val)) {
+                $msg.html("한글 이름에는 공백을 포함할 수 없습니다.");
+
+            } else if (!nameRegex.test(val)) {
+                $msg.html("이름 형식에 맞게 입력해주세요.");
+
             } else {
+                $line.attr("stroke", "#1A1717");
+                $line.attr("stroke-opacity", "0.38");
+                $(this).removeClass("placeholder-red-500");
                 $msg.addClass("hidden");
             }
         });
 
-        // 비밀번호 input 유효성 검사
+        // 이메일 input 유효성 검사
         $("#email").on("blur", function () {
             const $msg = $(".emailCheck-msg")
             const val = $(this).val();
+            const $line = $("#emailLine path");
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
             $msg.removeClass("hidden");
+            $line.attr("stroke", "red");
+            $line.attr("stroke-opacity", "1");
+            $(this).addClass("placeholder-red-500");
             if (val.length === 0) {
                 $msg.html("이메일을 입력해주세요.")
             } else if (!emailRegex.test(val)) {
                 $msg.html("이메일 형식에 맞게 입력해주세요.")
             } else {
+                $line.attr("stroke", "#1A1717");
+                $line.attr("stroke-opacity", "0.38");
+                $(this).removeClass("placeholder-red-500");
                 $msg.addClass("hidden");
             }
         });
@@ -56,11 +80,21 @@
         $("#loginPw").on("blur", function () {
             const $msg = $(".passwordCheck-msg")
             const val = $(this).val();
+            const $line = $("#passwordLine path");
+            const pwRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+=\-{}[\]:;"'<>,.?/~`])[A-Za-z\d!@#$%^&*()_+=\-{}[\]:;"'<>,.?/~`]{8,20}$/;
 
             $msg.removeClass("hidden");
+            $line.attr("stroke", "red");
+            $line.attr("stroke-opacity", "1");
+            $(this).addClass("placeholder-red-500");
             if (val.length === 0) {
                 $msg.html("비밀번호를 입력해주세요.")
+            } else if (!pwRegex.test(val)) {
+                $msg.html("비밀번호는 영문, 숫자, 특수문자를 포함해 8~20자로 입력해주세요.");
             } else {
+                $line.attr("stroke", "#1A1717");
+                $line.attr("stroke-opacity", "0.38");
+                $(this).removeClass("placeholder-red-500");
                 $msg.addClass("hidden");
             }
         });
@@ -82,13 +116,20 @@
             .on("blur", function () {
                 const $msg = $(".phoneNumCheck-msg")
                 const val = $(this).val();
+                const $line = $("#phoneNumLine path");
 
                 $msg.removeClass("hidden");
+                $line.attr("stroke", "red");
+                $line.attr("stroke-opacity", "1");
+                $(this).addClass("placeholder-red-500");
                 if (val.length === 0) {
                     $msg.html("전화번호를 입력해주세요.")
                 } else if (val.length < 13) {
                     $msg.html("전화번호를 정확히 입력해주세요.")
                 } else {
+                    $line.attr("stroke", "#1A1717");
+                    $line.attr("stroke-opacity", "0.38");
+                    $(this).removeClass("placeholder-red-500");
                     $msg.addClass("hidden");
                 }
             });
@@ -196,6 +237,7 @@
                                    class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-left text-2xl outline-none focus:outline-none focus:border-none"/>
 
                             <svg
+                                    id="nameLine"
                                     width="503"
                                     height="2"
                                     viewBox="0 0 503 2"
@@ -222,6 +264,7 @@
 
 
                             <svg
+                                    id="emailLine"
                                     width="503"
                                     height="2"
                                     viewBox="0 0 503 2"
@@ -245,6 +288,7 @@
                             />
 
                             <svg
+                                    id="passwordLine"
                                     width="503"
                                     height="2"
                                     viewBox="0 0 503 2"
@@ -273,6 +317,7 @@
                             />
 
                             <svg
+                                    id="phoneNumLine"
                                     width="503"
                                     height="2"
                                     viewBox="0 0 503 2"
