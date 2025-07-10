@@ -38,6 +38,12 @@ public class MemberController {
     private Rq rq;
 
 
+    @GetMapping("/join")
+    public String join() {
+
+        return "member/join";
+    }
+
     @GetMapping("/login")
     public String login() {
 
@@ -58,7 +64,7 @@ public class MemberController {
 
         kakaoOAuthService.getUserInfo(accessToken);
 
-        rq.getSession().setAttribute("accessToken", accessToken);
+//        rq.getSession().setAttribute("accessToken", accessToken);
 
         return "redirect:../home/main";
     }
@@ -91,10 +97,10 @@ public class MemberController {
     public String doLogout() {
 
         rq.logout();
-        if (rq.getSession().getAttribute("accessToken") != null) {
-            rq.getSession().removeAttribute("accessToken");
-            return "redirect:kakaoLogout";
-        }
+//        if (rq.getSession().getAttribute("accessToken") != null) {
+//            rq.getSession().removeAttribute("accessToken");
+//            return "redirect:kakaoLogout";
+//        }
 
         return "redirect:../home/main";
     }
