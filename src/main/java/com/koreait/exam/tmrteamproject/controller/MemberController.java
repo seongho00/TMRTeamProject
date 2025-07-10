@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.UnsupportedEncodingException;
@@ -45,9 +46,22 @@ public class MemberController {
     }
 
     @GetMapping("/login")
-    public String login() {
+    public String login(String name, String password, String email, String phoneNum) {
+
+        System.out.println(name);
+        System.out.println(password);
+        System.out.println(email);
+        System.out.println(phoneNum);
+
 
         return "member/login";
+    }
+
+    @PostMapping("/createAccount")
+    public String createAccount() {
+
+
+        return "redirect:login";
     }
 
     @GetMapping("/loginKakao")

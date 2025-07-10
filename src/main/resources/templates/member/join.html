@@ -2,9 +2,6 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="common/head::head"></head> <!-- ✅ 공백 제거 -->
 <script>
-    function createAccount() {
-
-    }
 
 
     // 비밀번호 눈 누르면 보이게하기
@@ -21,83 +18,126 @@
         }
     }
 
+    // 이름 input 유효성 검사
+    function checkName(isSubmit = false) {
+        const $input = $("#name");
+        const $msg = $(".nameCheck-msg")
+        const val = $input.val();
+        const $line = $("#nameLine path");
+        const nameRegex = /^([가-힣]{2,20}|[a-zA-Z]{2,20}(?:\s[a-zA-Z]{2,20})*)$/;
+        const hasKoreanWithSpace = /[가-힣]+\s+[가-힣]+/;
+
+        $msg.removeClass("hidden");
+        $line.attr("stroke", "red");
+        $line.attr("stroke-opacity", "1");
+        $input.addClass("placeholder-red-500");
+
+        if (val.length === 0) {
+            $msg.html("이름을 입력해주세요.")
+            if (isSubmit) alert("이름을 입력해주세요.");
+            return false;
+
+        } else if (hasKoreanWithSpace.test(val)) {
+            $msg.html("한글 이름에는 공백을 포함할 수 없습니다.");
+            if (isSubmit) alert("한글 이름에는 공백을 포함할 수 없습니다.");
+            return false;
+        } else if (!nameRegex.test(val)) {
+            $msg.html("이름 형식에 맞게 입력해주세요.");
+            if (isSubmit) alert("이름 형식에 맞게 입력해주세요.");
+            return false;
+        } else {
+            $line.attr("stroke", "#1A1717");
+            $line.attr("stroke-opacity", "0.38");
+            $input.removeClass("placeholder-red-500");
+            $msg.addClass("hidden");
+        }
+    }
+
+    // 이메일 input 유효성 검사
+    function checkEmail() {
+        const $input = $("#email");
+        const $msg = $(".emailCheck-msg")
+        const val = $input.val();
+        const $line = $("#emailLine path");
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        $msg.removeClass("hidden");
+        $line.attr("stroke", "red");
+        $line.attr("stroke-opacity", "1");
+        $input.addClass("placeholder-red-500");
+        if (val.length === 0) {
+            $msg.html("이메일을 입력해주세요.")
+        } else if (!emailRegex.test(val)) {
+            $msg.html("이메일 형식에 맞게 입력해주세요.")
+        } else {
+            $line.attr("stroke", "#1A1717");
+            $line.attr("stroke-opacity", "0.38");
+            $input.removeClass("placeholder-red-500");
+            $msg.addClass("hidden");
+        }
+    }
+
+    // 비밀번호 input 유효성 검사
+    function checkPassword() {
+        const $input = $("#loginPw")
+        const $msg = $(".passwordCheck-msg")
+        const val = $input.val();
+        const $line = $("#passwordLine path");
+        const pwRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+=\-{}[\]:;"'<>,.?/~`])[A-Za-z\d!@#$%^&*()_+=\-{}[\]:;"'<>,.?/~`]{8,20}$/;
+
+        $msg.removeClass("hidden");
+        $line.attr("stroke", "red");
+        $line.attr("stroke-opacity", "1");
+        $input.addClass("placeholder-red-500");
+        if (val.length === 0) {
+            $msg.html("비밀번호를 입력해주세요.")
+        } else if (!pwRegex.test(val)) {
+            $msg.html("비밀번호는 영문, 숫자, 특수문자를 포함해 8~20자로 입력해주세요.");
+        } else {
+            $line.attr("stroke", "#1A1717");
+            $line.attr("stroke-opacity", "0.38");
+            $input.removeClass("placeholder-red-500");
+            $msg.addClass("hidden");
+        }
+    }
+
+    // 전화번호 input 유효성 검사
+    function checkPhoneNum() {
+        const $input = $("#phoneNum")
+        const $msg = $(".phoneNumCheck-msg")
+        const val = $input.val();
+        const $line = $("#phoneNumLine path");
+
+        $msg.removeClass("hidden");
+        $line.attr("stroke", "red");
+        $line.attr("stroke-opacity", "1");
+        $input.addClass("placeholder-red-500");
+        if (val.length === 0) {
+            $msg.html("전화번호를 입력해주세요.")
+        } else if (val.length < 13) {
+            $msg.html("전화번호를 정확히 입력해주세요.")
+        } else {
+            $line.attr("stroke", "#1A1717");
+            $line.attr("stroke-opacity", "0.38");
+            $input.removeClass("placeholder-red-500");
+            $msg.addClass("hidden");
+        }
+    }
+
+
     $(document).ready(function () {
 
-        // 이름 input 유효성 검사
+        // input 칸에서 마우스 뗐을 때
         $("#name").on("blur", function () {
-            const $msg = $(".nameCheck-msg")
-            const val = $(this).val();
-            const $line = $("#nameLine path");
-            const nameRegex = /^([가-힣]{2,20}|[a-zA-Z]{2,20}(?:\s[a-zA-Z]{2,20})*)$/;
-            const hasKoreanWithSpace = /[가-힣]+\s+[가-힣]+/;
-
-            $msg.removeClass("hidden");
-            $line.attr("stroke", "red");
-            $line.attr("stroke-opacity", "1");
-            $(this).addClass("placeholder-red-500");
-
-            if (val.length === 0) {
-                $msg.html("이름을 입력해주세요.")
-
-            } else if (hasKoreanWithSpace.test(val)) {
-                $msg.html("한글 이름에는 공백을 포함할 수 없습니다.");
-
-            } else if (!nameRegex.test(val)) {
-                $msg.html("이름 형식에 맞게 입력해주세요.");
-
-            } else {
-                $line.attr("stroke", "#1A1717");
-                $line.attr("stroke-opacity", "0.38");
-                $(this).removeClass("placeholder-red-500");
-                $msg.addClass("hidden");
-            }
+            checkName(false);
         });
-
-        // 이메일 input 유효성 검사
         $("#email").on("blur", function () {
-            const $msg = $(".emailCheck-msg")
-            const val = $(this).val();
-            const $line = $("#emailLine path");
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-            $msg.removeClass("hidden");
-            $line.attr("stroke", "red");
-            $line.attr("stroke-opacity", "1");
-            $(this).addClass("placeholder-red-500");
-            if (val.length === 0) {
-                $msg.html("이메일을 입력해주세요.")
-            } else if (!emailRegex.test(val)) {
-                $msg.html("이메일 형식에 맞게 입력해주세요.")
-            } else {
-                $line.attr("stroke", "#1A1717");
-                $line.attr("stroke-opacity", "0.38");
-                $(this).removeClass("placeholder-red-500");
-                $msg.addClass("hidden");
-            }
+            checkEmail(false);
         });
-
-        // 비밀번호 input 유효성 검사
         $("#loginPw").on("blur", function () {
-            const $msg = $(".passwordCheck-msg")
-            const val = $(this).val();
-            const $line = $("#passwordLine path");
-            const pwRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+=\-{}[\]:;"'<>,.?/~`])[A-Za-z\d!@#$%^&*()_+=\-{}[\]:;"'<>,.?/~`]{8,20}$/;
-
-            $msg.removeClass("hidden");
-            $line.attr("stroke", "red");
-            $line.attr("stroke-opacity", "1");
-            $(this).addClass("placeholder-red-500");
-            if (val.length === 0) {
-                $msg.html("비밀번호를 입력해주세요.")
-            } else if (!pwRegex.test(val)) {
-                $msg.html("비밀번호는 영문, 숫자, 특수문자를 포함해 8~20자로 입력해주세요.");
-            } else {
-                $line.attr("stroke", "#1A1717");
-                $line.attr("stroke-opacity", "0.38");
-                $(this).removeClass("placeholder-red-500");
-                $msg.addClass("hidden");
-            }
+            checkPassword(false);
         });
+
 
         // 번호 input 관련 코드
         $("#phoneNum")
@@ -114,28 +154,25 @@
             })
             // 아무것도 입력 안 했을 때 경고해주기
             .on("blur", function () {
-                const $msg = $(".phoneNumCheck-msg")
-                const val = $(this).val();
-                const $line = $("#phoneNumLine path");
-
-                $msg.removeClass("hidden");
-                $line.attr("stroke", "red");
-                $line.attr("stroke-opacity", "1");
-                $(this).addClass("placeholder-red-500");
-                if (val.length === 0) {
-                    $msg.html("전화번호를 입력해주세요.")
-                } else if (val.length < 13) {
-                    $msg.html("전화번호를 정확히 입력해주세요.")
-                } else {
-                    $line.attr("stroke", "#1A1717");
-                    $line.attr("stroke-opacity", "0.38");
-                    $(this).removeClass("placeholder-red-500");
-                    $msg.addClass("hidden");
-                }
+                checkPhoneNum(false);
             });
 
 
     });
+
+    // submut 눌렀을 떄
+    function handleSubmit(e) {
+        e.preventDefault(); // 전송 막기
+
+        const isValid =
+            checkName(true) &&
+            checkEmail(true) &&
+            checkPassword(true) &&
+            checkPhoneNum(true);
+        if (!isValid) {
+            $("#createAccountForm").submit(); // ✅ 수동 제출
+        }
+    }
 
 
 </script>
@@ -224,7 +261,8 @@
             >
                 <p class="flex-grow w-[71px] text-2xl font-bold text-left text-[#1a1717]/[0.38]">-OR-</p>
             </div>
-            <form action="">
+
+            <form action="createAccount" method="post" id="createAccountForm">
                 <div
                         class="flex flex-col justify-start items-end flex-grow-0 flex-shrink-0 w-[546px] overflow-hidden gap-[40px] px-[22px] py-[13px]"
                 >
@@ -336,14 +374,16 @@
 
                 </div>
             </form>
-            <div
-                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[502px] h-12 relative gap-2.5 p-2.5 rounded-lg bg-[#279574]"
+            <button form="createAccountForm" onClick="handleSubmit(event);"
+                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[502px] h-12 relative gap-2.5 p-2.5 rounded-lg bg-[#279574] cursor-pointer"
             >
-                <p onClick="createAccount();"
-                   class="flex-grow w-[482px] text-xl font-semibold text-center text-white cursor-pointer">
+                <p
+                        class="flex-grow w-[482px] text-xl font-semibold text-center text-white ">
                     Create Account
                 </p>
-            </div>
+            </button>
+
+
             <a href="login"
                class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[330px] h-11 relative gap-2.5 p-2.5 cursor-pointer"
             >
