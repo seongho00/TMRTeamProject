@@ -63,79 +63,91 @@ category_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[1]")
 
 category_li = category_ul.find_elements(By.TAG_NAME, "li")
 
-for idx, li in enumerate(category_li[1:], start=2):
-    try:
+regions = wait_for_child_elements(region_wrapper, By.XPATH, ".//dd/ul[2]//li")
 
-        # ✅ 반복마다 카테고리 열기
-        category_wrapper = wait_for_element(driver, By.CLASS_NAME, "category")
-        category_wrapper.click()
+for jdx, region in enumerate(regions[1:], start=2):
+
+    if jdx != 2:
+        # class가 'region'인 버튼 찾기
+        region_wrapper = wait_for_element(driver, By.CLASS_NAME, "region")
+        region_wrapper.click()
         time.sleep(0.5)
-
-        # 카테고리 목록 다시 참조
         category_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[1]")
-        category_li = category_ul.find_elements(By.TAG_NAME, "li")
-        li = category_li[idx - 1]  # 현재 idx에 해당하는 li 재조회
+        region.click()
 
-        li_button = li.find_element(By.TAG_NAME, "button")
-        li_button.click()
-        print(f"{idx}번째 버튼 텍스트:", li_button.text.strip())
+    for idx, li in enumerate(category_li[1:], start=2):
+        try:
 
-        category_second_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[2]")
+            # ✅ 반복마다 카테고리 열기
+            category_wrapper = wait_for_element(driver, By.CLASS_NAME, "category")
+            category_wrapper.click()
+            time.sleep(0.5)
 
-        category_second_li_count = wait_for_child_elements(category_second_ul, By.TAG_NAME, "li")
-        print("li2 개수:", len(category_second_li_count))
+            # 카테고리 목록 다시 참조
+            category_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[1]")
+            category_li = category_ul.find_elements(By.TAG_NAME, "li")
+            li = category_li[idx - 1]  # 현재 idx에 해당하는 li 재조회
 
-        # ✅ 2차 li 순회
-        for li2_idx, li2 in enumerate(category_second_li_count[1:], start=2):
+            li_button = li.find_element(By.TAG_NAME, "button")
+            li_button.click()
+            print(f"{idx}번째 버튼 텍스트:", li_button.text.strip())
 
-            # 2번째부터
-            if li2_idx != 2 :
-                # ✅ 반복마다 카테고리 열기
-                category_wrapper = wait_for_element(driver, By.CLASS_NAME, "category")
-                category_wrapper.click()
-                time.sleep(0.5)
+            category_second_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[2]")
 
-                # 카테고리 목록 다시 참조
-                category_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[1]")
-                category_li = category_ul.find_elements(By.TAG_NAME, "li")
-                li = category_li[idx - 1]  # 현재 idx에 해당하는 li 재조회
+            category_second_li_count = wait_for_child_elements(category_second_ul, By.TAG_NAME, "li")
+            print("li2 개수:", len(category_second_li_count))
 
-                li_button = li.find_element(By.TAG_NAME, "button")
-                li_button.click()
+            # ✅ 2차 li 순회
+            for li2_idx, li2 in enumerate(category_second_li_count[1:], start=2):
 
-            try:
-                second_button = li2.find_element(By.TAG_NAME, "button")
-                second_button.click()
-                box_class = wait_for_element(driver, By.CLASS_NAME, "boxSearch")
-                result_button = box_class.find_element(By.XPATH, "./button")
-                result_button.click()
+                # 2번째부터
+                if li2_idx != 2 :
+                    # ✅ 반복마다 카테고리 열기
+                    category_wrapper = wait_for_element(driver, By.CLASS_NAME, "category")
+                    category_wrapper.click()
+                    time.sleep(0.5)
 
-                table_class = wait_for_element(driver, By.CLASS_NAME, "q-table")
-                tbody_class = table_class.find_element(By.TAG_NAME, "tbody")
-                tr_class = wait_for_child_elements(tbody_class, By.TAG_NAME, "tr")
+                    # 카테고리 목록 다시 참조
+                    category_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[1]")
+                    category_li = category_ul.find_elements(By.TAG_NAME, "li")
+                    li = category_li[idx - 1]  # 현재 idx에 해당하는 li 재조회
 
-                # 3차 순회
-                for tr in tr_class[2:]:
-                    try:
-                        td = tr.find_elements(By.TAG_NAME, "td")
+                    li_button = li.find_element(By.TAG_NAME, "button")
+                    li_button.click()
 
-                        # 4차 순회
-                        for data in td:
-                            try:
-                                value = data.text.strip()
-                                print(value)
+                try:
+                    second_button = li2.find_element(By.TAG_NAME, "button")
+                    second_button.click()
+                    box_class = wait_for_element(driver, By.CLASS_NAME, "boxSearch")
+                    result_button = box_class.find_element(By.XPATH, "./button")
+                    result_button.click()
 
-                            except Exception as e4:
-                                print(f"4번째 오류 발생: {e4}")
+                    table_class = wait_for_element(driver, By.CLASS_NAME, "q-table")
+                    tbody_class = table_class.find_element(By.TAG_NAME, "tbody")
+                    tr_class = wait_for_child_elements(tbody_class, By.TAG_NAME, "tr")
 
-                    except Exception as e3:
-                        print(f"3번째 오류 발생: {e3}")
+                    # 3차 순회
+                    for tr in tr_class[2:]:
+                        try:
+                            td = tr.find_elements(By.TAG_NAME, "td")
 
-            except Exception as e2:
-                print(f"2번째 오류 발생: {e2}")
+                            # 4차 순회
+                            for data in td:
+                                try:
+                                    value = data.text.strip()
+                                    print(value)
+
+                                except Exception as e4:
+                                    print(f"4번째 오류 발생: {e4}")
+
+                        except Exception as e3:
+                            print(f"3번째 오류 발생: {e3}")
+
+                except Exception as e2:
+                    print(f"2번째 오류 발생: {e2}")
 
 
-    except Exception as e:
-        print(f"{idx}번째 li에서 오류 발생:", e)
+        except Exception as e:
+            print(f"{idx}번째 li에서 오류 발생:", e)
 
 driver.quit()
