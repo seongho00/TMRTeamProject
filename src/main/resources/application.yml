@@ -13,6 +13,7 @@ spring:
     restart:
       enabled: true
   datasource:
+                                                                                      # 여기 프로젝트 이름 바꾸기
     url: jdbc:mariadb://database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com:3306/TMRTeamProject_LSH?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useUnicode=true
     driver-class-name: org.mariadb.jdbc.Driver
     username: admin
