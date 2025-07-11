@@ -39,53 +39,54 @@ driver = webdriver.Chrome(
 # 접속할 URL
 driver.get("https://bigdata.sbiz.or.kr/#/sbiz/sttus/dynpplSttus")
 
-# # class가 'region'인 버튼 찾기
-# region_wrapper = wait_for_element(driver, By.CLASS_NAME, "region")
-# region_wrapper.click()
-#
-# # region_wrapper 내부에서 '대전광역시' 버튼 찾기
-# daejeon_btn = wait_for_child_element(region_wrapper, By.XPATH, ".//button[text()='대전광역시']")
-# daejeon_btn.click()
-#
-# All_btn = wait_for_child_element(region_wrapper, By.XPATH, ".//dd/ul[2]//button[text()='전체']")
-# All_btn.click()
+# class가 'region'인 버튼 찾기
+region_wrapper = wait_for_element(driver, By.CLASS_NAME, "region")
+region_wrapper.click()
+
+# region_wrapper 내부에서 '대전광역시' 버튼 찾기
+daejeon_btn = wait_for_child_element(region_wrapper, By.XPATH, ".//button[text()='대전광역시']")
+daejeon_btn.click()
+
+All_btn = wait_for_child_element(region_wrapper, By.XPATH, ".//dd/ul[2]//button[text()='전체']")
+All_btn.click()
+
 
 # class가 'category'인 버튼 찾기
 category_wrapper = wait_for_element(driver, By.CLASS_NAME, "category")
 category_wrapper.click()
+
+time.sleep(1)
 
 category_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[1]")
 
 category_li_count = category_ul.find_elements(By.TAG_NAME, "li")
 print("li 개수:", len(category_li_count))
 
-for idx, li in enumerate(category_li_count, start=2):
+for idx, li in enumerate(category_li_count[1:], start=2):
     try:
         li_button = li.find_element(By.TAG_NAME, "button")
-        print(f"{idx}번째 버튼 텍스트:", li_button.text.strip())
         li_button.click()
+        print(f"{idx}번째 버튼 텍스트:", li_button.text.strip())
 
         category_second_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[2]")
 
-        category_second_li_count = category_second_ul.find_elements(By.TAG_NAME, "li")
-
+        category_second_li_count = wait_for_child_elements(category_second_ul, By.TAG_NAME, "li")
+        print(category_second_li_count)
         # ✅ 2차 li 순회
-        for jdx, li2 in enumerate(category_second_li_count, start=2):
+        for jdx, li2 in enumerate(category_second_li_count[1:], start=2):
             try:
                 second_button = li2.find_element(By.TAG_NAME, "button")
-                print(f"    [{idx}-{jdx}] 2차 버튼 클릭: {second_button.text.strip()}")
                 second_button.click()
-                time.sleep(1)  # 클릭 후 로딩 대기
 
-                # 👉 이 자리에 크롤링 또는 데이터 수집 작업 가능
+                box_class = wait_for_element(driver, By.CLASS_NAME, "boxSearch")
+                result_button = box_class.find_element(By.XPATH, "./button")
+                result_button.click()
+                time.sleep(3)
 
             except Exception as e2:
                 print(f"    [{idx}-{jdx}] 2차 li 오류:", e2)
 
     except Exception as e:
         print(f"{idx}번째 li에서 오류 발생:", e)
-
-
-time.sleep(2)
 
 driver.quit()
