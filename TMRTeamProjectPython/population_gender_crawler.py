@@ -50,7 +50,6 @@ daejeon_btn.click()
 All_btn = wait_for_child_element(region_wrapper, By.XPATH, ".//dd/ul[2]//button[text()='전체']")
 All_btn.click()
 
-
 # class가 'category'인 버튼 찾기
 category_wrapper = wait_for_element(driver, By.CLASS_NAME, "category")
 category_wrapper.click()
@@ -73,18 +72,39 @@ for idx, li in enumerate(category_li_count[1:], start=2):
         category_second_li_count = wait_for_child_elements(category_second_ul, By.TAG_NAME, "li")
         print(category_second_li_count)
         # ✅ 2차 li 순회
-        for jdx, li2 in enumerate(category_second_li_count[1:], start=2):
+        for li2 in enumerate(category_second_li_count[1:]):
             try:
                 second_button = li2.find_element(By.TAG_NAME, "button")
                 second_button.click()
-
                 box_class = wait_for_element(driver, By.CLASS_NAME, "boxSearch")
                 result_button = box_class.find_element(By.XPATH, "./button")
                 result_button.click()
-                time.sleep(3)
+                time.sleep(1)
+
+                table_class = wait_for_element(driver, By.CLASS_NAME, "q-table")
+                tbody_class = table_class.find_element(By.TAG_NAME, "tbody")
+                tr_class = wait_for_child_elements(tbody_class, By.TAG_NAME, "tr")
+
+                for tr in enumerate(tr_class[1:]):
+                    try:
+                        td = tr.find_element(By.TAG_NAME, "td")
+
+                        for data in enumerate(td[1:]):
+                            try:
+                                pass
+
+                            except Exception as e4:
+                                print("4차 오류:", e4)
+
+                        value = td.text.strip()
+
+                    except Exception as e3:
+                        print("3차 오류" + e3)
+
+
 
             except Exception as e2:
-                print(f"    [{idx}-{jdx}] 2차 li 오류:", e2)
+                print("2차 오류" + e2)
 
     except Exception as e:
         print(f"{idx}번째 li에서 오류 발생:", e)
