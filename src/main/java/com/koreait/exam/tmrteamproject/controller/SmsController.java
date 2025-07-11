@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.UnsupportedEncodingException;
+        import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -33,7 +33,7 @@ public class SmsController {
 
     @GetMapping("/send-one")
     public SingleMessageSentResponse sendOne() {
-        return smsService.sendSms("01030417745", "테스트 메시지입니다.");
+        return smsService.sendSms("01030417745", "테스트 메시지입니다.123");
     }
 }
 
