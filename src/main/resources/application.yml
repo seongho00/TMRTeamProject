@@ -13,13 +13,11 @@ spring:
     restart:
       enabled: true
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
+    url: jdbc:mariadb://127.0.0.1:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
+    driver-class-name: org.mariadb.jdbc.Driver
     username: root
-    password:
-mybatis:
-  type-aliases-package: com.koreait.exam.tmrteamproject.vo
-  mapper-locations: classpath:/mappers/**/*.xml
+    password: ""
+
 
 
 # application.yml

@@ -2,6 +2,7 @@ package com.koreait.exam.tmrteamproject.controller;
 
 
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
+import com.koreait.exam.tmrteamproject.service.MemberService;
 import com.koreait.exam.tmrteamproject.service.NaverOAuthService;
 import com.koreait.exam.tmrteamproject.service.SolapiSmsService;
 import com.koreait.exam.tmrteamproject.vo.Rq;
@@ -36,6 +37,9 @@ public class MemberController {
     private NaverOAuthService naverOAuthService;
     @Autowired
     private SolapiSmsService smsService ;
+    @Autowired
+    private MemberService memberService ;
+
 
 
     @Autowired
@@ -58,8 +62,7 @@ public class MemberController {
     @PostMapping("/createAccount")
     public String createAccount(String name, String loginPw, String email, String phoneNum) {
 
-//        memberService.createAccount(name, loginPw, email, phoneNum);
-
+        memberService.createAccount(name, loginPw, email, phoneNum);
 
         return "redirect:login";
     }
