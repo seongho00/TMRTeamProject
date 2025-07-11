@@ -1,9 +1,9 @@
 package com.koreait.exam.tmrteamproject.vo;
 
 import com.koreait.exam.tmrteamproject.util.Ut;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.context.annotation.Scope;

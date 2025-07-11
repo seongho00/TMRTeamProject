@@ -13,13 +13,18 @@ spring:
     restart:
       enabled: true
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
-    username: root
-    password:
-mybatis:
-  type-aliases-package: com.koreait.exam.tmrteamproject.vo
-  mapper-locations: classpath:/mappers/**/*.xml
+    url: jdbc:mariadb://database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com:3306/TMRTeamProject_LSH?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useUnicode=true
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: admin
+    password: tk123412345!!
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect  # ← 요게 핵심!!
+
 
 
 # application.yml
@@ -34,3 +39,8 @@ naver:
   api:
     clientId: bEMZzWiWu06Pk2b7R6D3
     clientSecret: 730aCbbDQO
+
+solapi:
+  apiKey: NCS8X6JXYL5LGJ0B
+  apiSecret: OPMRNQJAWXRAEDUGNAOPOI8AZNRTTSCO
+  sender: 01030417745
