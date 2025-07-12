@@ -53,16 +53,6 @@ All_btn.click()
 
 # 여기서부터 다시 시작해야함
 
-# class가 'category'인 버튼 찾기
-category_wrapper = wait_for_element(driver, By.CLASS_NAME, "category")
-category_wrapper.click()
-
-time.sleep(0.5)
-
-category_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[1]")
-
-category_li = category_ul.find_elements(By.TAG_NAME, "li")
-
 regions = wait_for_child_elements(region_wrapper, By.XPATH, ".//dd/ul[2]//li")
 
 for jdx, region in enumerate(regions[1:], start=2):
@@ -72,137 +62,74 @@ for jdx, region in enumerate(regions[1:], start=2):
         region_wrapper = wait_for_element(driver, By.CLASS_NAME, "region")
         region_wrapper.click()
         time.sleep(0.5)
-        category_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[1]")
         region.click()
 
-    for idx, li in enumerate(category_li[1:], start=2):
-        try:
+    try:
+        # 결과 버튼 누르기
+        box_class = wait_for_element(driver, By.CLASS_NAME, "boxSearch")
+        result_button = box_class.find_element(By.XPATH, "./button")
+        result_button.click()
 
-            # ✅ 반복마다 카테고리 열기
-            category_wrapper = wait_for_element(driver, By.CLASS_NAME, "category")
-            category_wrapper.click()
-            time.sleep(0.5)
+        # 데이터 찾아가기
+        table_class = wait_for_element(driver, By.CLASS_NAME, "q-table")
+        tbody_class = table_class.find_element(By.TAG_NAME, "tbody")
+        tr_class = wait_for_child_elements(tbody_class, By.TAG_NAME, "tr")
 
-            # 카테고리 목록 다시 참조
-            category_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[1]")
-            category_li = category_ul.find_elements(By.TAG_NAME, "li")
-            li = category_li[idx - 1]  # 현재 idx에 해당하는 li 재조회
+        for tr in tr_class[2:]:
+            try:
+                td = tr.find_elements(By.TAG_NAME, "td")
 
-            li_button = li.find_element(By.TAG_NAME, "button")
-            first_category = li_button.text.strip()
-            li_button.click()
-            print(f"{idx}번째 버튼 텍스트:", li_button.text.strip())
+                # 시구
+                sido_name_list = tr_class[0].find_elements(By.TAG_NAME, "td")
+                sido_name = sido_name_list[0].text.strip()
+                print("시구 이름 : " + sido_name)
 
-            category_second_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[2]")
+                # 시군구
+                sigungu_name_list = tr_class[1].find_elements(By.TAG_NAME, "td")
+                sigungu_name = sigungu_name_list[0].text.strip()
+                print("시군구 이름 : " + sigungu_name)
 
-            category_second_li_count = wait_for_child_elements(category_second_ul, By.TAG_NAME, "li")
-            print("li2 개수:", len(category_second_li_count))
+                # 행정동
+                emd_name = td[0].text.strip()
+                print("행정동 이름 : " + emd_name)
 
-            # ✅ 2차 li 순회
-            for li2_idx, li2 in enumerate(category_second_li_count[1:], start=2):
+                # 총 유동인구수
+                total = td[1].text.strip()
+                print("총 유동인구수 : " + total)
+                # 업소수
+                business_cnt = td[2].text.strip()
+                print("업소수 : " + business_cnt)
+                # 남성인구수
+                male = td[3].text.strip()
+                print("남성인구수 : " + male)
 
-                # 2번째부터
-                if li2_idx != 2:
-                    # ✅ 반복마다 카테고리 열기
-                    category_wrapper = wait_for_element(driver, By.CLASS_NAME, "category")
-                    category_wrapper.click()
-                    time.sleep(0.5)
-
-                    # 카테고리 목록 다시 참조
-                    category_ul = wait_for_child_element(category_wrapper, By.XPATH, ".//dd/ul[1]")
-                    category_li = category_ul.find_elements(By.TAG_NAME, "li")
-                    li = category_li[idx - 1]  # 현재 idx에 해당하는 li 재조회
-
-                    li_button = li.find_element(By.TAG_NAME, "button")
-                    li_button.click()
-
-
-                try:
-                    # 상세 카테고리 선택
-                    second_button = li2.find_element(By.TAG_NAME, "button")
-                    sec_category = second_button.text.strip()
-                    second_button.click()
-
-                    # 결과 버튼 누르기
-                    box_class = wait_for_element(driver, By.CLASS_NAME, "boxSearch")
-                    result_button = box_class.find_element(By.XPATH, "./button")
-                    result_button.click()
-
-                    # 데이터 찾아가기
-                    table_class = wait_for_element(driver, By.CLASS_NAME, "q-table")
-                    tbody_class = table_class.find_element(By.TAG_NAME, "tbody")
-                    tr_class = wait_for_child_elements(tbody_class, By.TAG_NAME, "tr")
-
-                    # 3차 순회
-                    for tr in tr_class[2:]:
-                        try:
-                            td = tr.find_elements(By.TAG_NAME, "td")
-
-                            # 4차 순회
-                            # 순서 : 행정구역, 유동인구수, 업소수, 남성인구수, 여성인구수, 10대, 20대, 30대, 40대, 50대, 60대이상인구
-                            print(li_button.text.strip())
-
-                            # 시구
-                            sido_name_list = tr_class[0].find_elements(By.TAG_NAME, "td")
-                            sido_name = sido_name_list[0].text.strip()
-                            print("시구 이름 : " + sido_name)
-
-                            # 시군구
-                            sigungu_name_list = tr_class[1].find_elements(By.TAG_NAME, "td")
-                            sigungu_name = sigungu_name_list[0].text.strip()
-                            print("시군구 이름 : " + sigungu_name)
-
-                            # 행정동
-                            emd_name = td[0].text.strip()
-                            print("행정동 이름 : " + emd_name)
-
-                            # 1번쨰 카테고리
-                            print("1번째 버튼 텍스트:" + first_category)
-
-                            # 2번쨰 카테고리
-                            print("2번째 버튼 텍스트:" + sec_category)
-
-                            # 총 유동인구수
-                            total = td[1].text.strip()
-                            print("총 유동인구수 : " + total)
-                            # 업소수
-                            business_cnt = td[2].text.strip()
-                            print("업소수 : " + business_cnt)
-                            # 남성인구수
-                            male = td[3].text.strip()
-                            print("남성인구수 : " + male)
-
-                            # 여성인구수
-                            female = td[4].text.strip()
-                            print("여성인구수 : " + female)
-                            # 10대
-                            age_10 = td[5].text.strip()
-                            print("10대 : " + age_10)
-                            # 20대
-                            age_20 = td[6].text.strip()
-                            print("20대 : " + age_20)
-                            # 30대
-                            age_30 = td[7].text.strip()
-                            print("30대 : " + age_30)
-                            # 40대
-                            age_40 = td[8].text.strip()
-                            print("40대 : " + age_40)
-                            # 50대
-                            age_50 = td[9].text.strip()
-                            print("50대 : " + age_50)
-                            # 60대이상인구
-                            age_60 = td[9].text.strip()
-                            print("60대 : " + age_60)
+                # 여성인구수
+                female = td[4].text.strip()
+                print("여성인구수 : " + female)
+                # 10대
+                age_10 = td[5].text.strip()
+                print("10대 : " + age_10)
+                # 20대
+                age_20 = td[6].text.strip()
+                print("20대 : " + age_20)
+                # 30대
+                age_30 = td[7].text.strip()
+                print("30대 : " + age_30)
+                # 40대
+                age_40 = td[8].text.strip()
+                print("40대 : " + age_40)
+                # 50대
+                age_50 = td[9].text.strip()
+                print("50대 : " + age_50)
+                # 60대이상인구
+                age_60 = td[9].text.strip()
+                print("60대 : " + age_60)
 
 
-                        except Exception as e3:
-                            print(f"3번째 오류 발생: {e3}")
+            except Exception as e3:
+                print(f"2번째 오류 발생: {e3}")
 
-                except Exception as e2:
-                    print(f"2번째 오류 발생: {e2}")
-
-
-        except Exception as e:
-            print(f"{idx}번째 li에서 오류 발생:", e)
+    except Exception as e2:
+        print(f"1번째 오류 발생: {e2}")
 
 driver.quit()
