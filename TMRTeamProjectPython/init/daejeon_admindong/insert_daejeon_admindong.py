@@ -3,7 +3,7 @@ import pandas as pd
 import pymysql
 
 
-tree = ET.parse("C:\\Users\\qjvpd\\OneDrive\\바탕 화면\\행정동데이터.json")  # 실제로는 XML
+tree = ET.parse("행정동데이터.json")  # 실제로는 XML
 root = tree.getroot()
 
 rows = []
