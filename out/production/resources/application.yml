@@ -13,10 +13,11 @@ spring:
     restart:
       enabled: true
   datasource:
-    url: jdbc:mariadb://127.0.0.1:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
+                                                                                      # 여기 프로젝트 이름 바꾸기
+    url: jdbc:mariadb://database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com:3306/TMRTeamProject_LSH?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useUnicode=true
     driver-class-name: org.mariadb.jdbc.Driver
-    username: root
-    password:
+    username: admin
+    password: tk123412345!!
   jpa:
     show-sql: true
     hibernate:
