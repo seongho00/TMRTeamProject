@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support import expected_conditions as EC
 import time
+import pymysql
 
 from selenium.webdriver.support.wait import WebDriverWait
 
@@ -28,9 +29,20 @@ def wait_for_child_elements(parent_element, by, value, min_count=1, timeout=10):
     return parent_element.find_elements(by, value)
 
 
-# 아이디 : By.ID
-# 클래스 : By.CLASS_NAME
-# value : By.XPATH
+# 숫자 쉼표제거 함수
+def clean_number(text):
+    return int(text.replace(",", "")) if text else 0
+
+
+# DB 연결
+conn = pymysql.connect(
+    host='localhost',
+    user='root',
+    password='',  # 비밀번호 입력
+    database='TMRTeamProject',
+    charset='utf8mb4'
+)
+cursor = conn.cursor()
 
 # ChromeDriver 경로 설정
 
@@ -94,37 +106,59 @@ for jdx, region in enumerate(regions[1:], start=2):
                 print("행정동 이름 : " + emd_name)
 
                 # 총 유동인구수
-                total = td[1].text.strip()
-                print("총 유동인구수 : " + total)
+                total = clean_number(td[1].text.strip())
+                print("총 유동인구수 : " + str(total))
+
                 # 업소수
-                business_cnt = td[2].text.strip()
-                print("업소수 : " + business_cnt)
+                business_cnt = clean_number(td[2].text.strip())
+                print("업소수 : " + str(business_cnt))
+
                 # 남성인구수
-                male = td[3].text.strip()
-                print("남성인구수 : " + male)
+                male = clean_number(td[3].text.strip())
+                print("남성인구수 : " + str(male))
 
                 # 여성인구수
-                female = td[4].text.strip()
-                print("여성인구수 : " + female)
+                female = clean_number(td[4].text.strip())
+                print("여성인구수 : " + str(female))
                 # 10대
-                age_10 = td[5].text.strip()
-                print("10대 : " + age_10)
+                age_10 = clean_number(td[5].text.strip())
+                print("10대 : " + str(age_10))
                 # 20대
-                age_20 = td[6].text.strip()
-                print("20대 : " + age_20)
+                age_20 = clean_number(td[6].text.strip())
+                print("20대 : " + str(age_20))
                 # 30대
-                age_30 = td[7].text.strip()
-                print("30대 : " + age_30)
+                age_30 = clean_number(td[7].text.strip())
+                print("30대 : " + str(age_30))
                 # 40대
-                age_40 = td[8].text.strip()
-                print("40대 : " + age_40)
+                age_40 = clean_number(td[8].text.strip())
+                print("40대 : " + str(age_40))
                 # 50대
-                age_50 = td[9].text.strip()
-                print("50대 : " + age_50)
+                age_50 = clean_number(td[9].text.strip())
+                print("50대 : " + str(age_50))
                 # 60대이상인구
-                age_60 = td[9].text.strip()
-                print("60대 : " + age_60)
+                age_60 = clean_number(td[9].text.strip())
+                print("60대 : " + str(age_60))
 
+                # admi_nm으로 emd_cd 가져오기
+                admi_nm = f"{sido_name} {sigungu_name} {emd_name}"  # 예: 대전광역시 대덕구 법1동
+
+                cursor.execute("SELECT emd_cd FROM admin_dong WHERE admi_nm = %s", (admi_nm,))
+                result = cursor.fetchone()
+
+                # 데이터 DB에 넣기
+                if result:
+                    emd_cd = result[0]
+                    print("읍면동 코드:", emd_cd)
+
+                    # INSERT
+                    cursor.execute("""
+                        INSERT INTO population_stat (emd_cd, total, business_cnt, male, female, age_10, age_20, age_30, age_40, age_50, age_60)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (emd_cd, total, business_cnt, male, female, age_10, age_20, age_30, age_40, age_50, age_60))
+                    conn.commit()
+
+                else:
+                    print("❌ 지역코드 없음:", admi_nm)
 
             except Exception as e3:
                 print(f"2번째 오류 발생: {e3}")
