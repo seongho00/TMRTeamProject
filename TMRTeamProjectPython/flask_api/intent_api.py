@@ -4,6 +4,9 @@ import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 import numpy as np
 import pickle
+import re
+
+
 
 app = Flask(__name__)
 
@@ -38,21 +41,61 @@ def predict_intent(text, threshold=0.1):
     predicted_label = label_encoder.inverse_transform([class_idx])[0]
     return predicted_label, confidence
 
+def extract_location(text):
+    # 시도 + 시/군/구 패턴 매칭
+    pattern = r"(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[\s]*(?:특별시|광역시|도)?[\s]*([가-힣]+구|[가-힣]+시|[가-힣]+군)?"
+    match = re.search(pattern, text)
+    if match:
+        sido = match.group(1)
+        sigungu = match.group(2)
+        if sigungu:
+            return f"{sido} {sigungu}"
+        else:
+            return sido  # ex: "서울"
+    return None
+
+
+# ✅ 의도 + 지역 기반 응답 생성
+def generate_response(user_input):
+    intent, confidence = predict_intent(user_input)
+    location = extract_location(user_input)
+
+    if intent == "매출_조회":
+        if location:
+            return f"✅ '{location}'의 매출 정보를 조회합니다."
+        else:
+            return "⚠️ 매출 정보를 조회하려면 지역명을 입력해 주세요."
+
+    elif intent == "인구_조회":
+        if location:
+            return f"📊 '{location}'의 인구 통계를 조회합니다."
+        else:
+            return "⚠️ 인구 정보를 조회하려면 지역명을 입력해 주세요."
+
+    elif intent == "위험도":
+        return "🚨 폐업 위험도 높은 상권을 분석 중입니다."
+
+    else:
+        return "❓ 지원하지 않는 서비스입니다."
 
 # ✅ API 라우팅
 @app.route("/predict", methods=["GET"])
 def predict():
-    question = request.args.get("text", "")
+    question = request.args.get("text", "").strip()
 
     if not question:
         return jsonify({"error": "text 파라미터가 비어있습니다."}), 400
 
     intent, confidence = predict_intent(question)
+    location = extract_location(question)
+    message = generate_response(question)
 
     return Response(
         json.dumps({
-            "intent": str(intent),
-            "confidence": float(round(confidence, 4))
+            "intent": intent,
+            "confidence": round(confidence, 4),
+            "location": location,
+            "message": message
         }, ensure_ascii=False),
         content_type="application/json; charset=utf-8"
     )
