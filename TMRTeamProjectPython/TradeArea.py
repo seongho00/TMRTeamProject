@@ -1,9 +1,14 @@
 import requests
 import pymysql
-import pandas as pd
 import time
 import os
 import random
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
@@ -14,7 +19,19 @@ USER_AGENTS = [
 success_list = []
 error_list = []
 
-download_path = os.path.join(os.path.expanduser("~"), "Downloads")
+download_path = r"C:\Users\user\Desktop\TeamProject\data"
+os.makedirs(download_path, exist_ok=True)
+
+# Chrome 옵션 설정
+chrome_options = Options()
+chrome_options.add_experimental_option("prefs", {
+    "download.default_directory": download_path,  # 다운로드 폴더
+    "plugins.always_open_pdf_externally": True,  # PDF를 바로 다운로드
+    "download.prompt_for_download": False,       # 다운로드 시 팝업 비활성화
+    "safebrowsing.enabled": True
+})
+chrome_options.add_argument("--headless")  # 창 안 뜨게
+chrome_options.add_argument("--disable-gpu")  # GPU 비활성화 (윈도우에서 headless 안정성)
 
 conn = pymysql.connect(
     host="localhost",
@@ -25,10 +42,10 @@ conn = pymysql.connect(
 )
 cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM admin_dong WHERE emd_nm = '효동';")
+cursor.execute("SELECT * FROM admin_dong ORDER BY emd_cd DESC;")
 dong_rows = cursor.fetchall()
 
-cursor.execute("SELECT minor_cd FROM upjong_code;")
+cursor.execute("SELECT * FROM upjong_code;")
 upjong_rows = cursor.fetchall()
 
 for dong in dong_rows:
@@ -40,8 +57,8 @@ for dong in dong_rows:
     print(f"[동 시작] {simple_loc} ({admi_cd})")
 
     for upjong in upjong_rows:
-        upjong_cd = upjong[0]
-
+        upjong_cd = upjong[4]
+        minor_nm = upjong[5]
         try:
             headers = {
                 "User-Agent": random.choice(USER_AGENTS),
@@ -62,14 +79,8 @@ for dong in dong_rows:
             avg_res = requests.get(avg_url, headers=headers, params=params, timeout=10)
             avg_res.raise_for_status()
             avg_data = avg_res.json()
-
-            mililis = avg_data.get("mililis")
-
             analyNo = avg_data.get("analyNo")
             print(analyNo)
-
-            if not mililis:
-                raise Exception("mililis 없음")
 
             popular_url = "https://bigdata.sbiz.or.kr/gis/simpleAnls/getPopularInfo.json"
             popular_params = {
@@ -103,13 +114,46 @@ for dong in dong_rows:
 
             time.sleep(0.5)
 
-            df = pd.DataFrame(success_list)
-            err_df = pd.DataFrame(error_list)
+            # 드라이버 실행
+            driver = webdriver.Chrome(options=chrome_options)
+            driver.get(report_url)
 
-            df.to_csv(os.path.join(download_path, "analy_results.csv"), index=False, encoding="utf-8-sig")
-            err_df.to_csv(os.path.join(download_path, "analy_errors.csv"), index=False, encoding="utf-8-sig")
+            wait = WebDriverWait(driver, 3)
 
-            print("✅ 완료: Downloads 폴더에 analy_results.csv / analy_errors.csv 저장됨")
+            # "저장" 버튼 클릭 (클래스: btnSAVEAS)
+            try:
+                # "저장" 버튼 클릭
+                save_btn = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "btnSAVEAS")))
+                save_btn.click()
+                print("[1] 저장 버튼 클릭")
+
+                confirm_button = WebDriverWait(driver, 3).until(
+                    EC.element_to_be_clickable((By.XPATH, "/html/body/div[2]/div[3]/div/button[2]"))
+                )
+                confirm_button.click()
+                print("저장 성공")
+            except Exception as e:
+                print("저장 버튼 클릭 실패:", e)
+
+            new_filename = simple_loc + minor_nm + ".pdf"
+
+            # 6. 다운로드 완료 후 파일 이름 변경
+            timeout = 30
+            while timeout > 0:
+                files = [f for f in os.listdir(download_path) if f.endswith(".pdf")]
+                if files:
+                    files.sort(key=lambda f: os.path.getmtime(os.path.join(download_path, f)), reverse=True)
+                    latest_file = files[0]
+                    latest_path = os.path.join(download_path, latest_file)
+                    if not latest_file.endswith(".crdownload"):
+                        target_path = os.path.join(download_path, new_filename)
+                        if os.path.exists(target_path):
+                            os.remove(target_path)
+                        os.rename(latest_path, target_path)
+                        print(f"[완료] {latest_file} → {new_filename}")
+                        break
+                time.sleep(1)
+                timeout -= 1
 
         except Exception as e:
             print(f"   → 오류: {upjong_cd}: {e}")
