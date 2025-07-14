@@ -29,10 +29,19 @@ conn = pymysql.connect(
     host='localhost',
     user='root',
     password='',  # 비밀번호 입력
-    database='TMRTeamProject',
+    database='tmrteamproject',
     charset='utf8mb4'
 )
+
 cursor = conn.cursor()
+cursor.execute("SELECT DATABASE();")
+print("현재 연결된 DB:", cursor.fetchone())
+
+cursor.execute("SHOW TABLES;")
+print("📂 테이블 목록:", cursor.fetchall())
+
+cursor.execute("SHOW CREATE TABLE admin_dong;")
+print("🧱 테이블 구조:", cursor.fetchone())
 
 sql = """
 INSERT INTO admin_dong (
