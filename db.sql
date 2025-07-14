@@ -12,7 +12,17 @@ CREATE TABLE MEMBER (
                         phoneNum VARCHAR(20)
 );
 
-# 행정동 코드 저장
+CREATE TABLE floating_population (
+                                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                     region_name VARCHAR(100),             -- 예: 강남구 역삼동
+                                     gender ENUM('M', 'F') NOT NULL,       -- 남(M), 여(F)
+                                     age_group VARCHAR(10) NOT NULL,       -- 예: '10대', '20대'
+                                     population_count INT NOT NULL,        -- 유동인구 수
+                                     collected_date DATE NOT NULL,         -- 데이터 수집 기준일
+                                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
 CREATE TABLE admin_dong (
                             admi_nm VARCHAR(100),                -- 전체 이름
                             sido_cd CHAR(2),
