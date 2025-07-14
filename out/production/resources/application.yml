@@ -1,0 +1,47 @@
+server:
+  port: 8080
+spring:
+  thymeleaf:
+    cache: false
+    prefix: classpath:templates//
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+  devtools:
+    livereload:
+      enabled: true
+    restart:
+      enabled: true
+  datasource:
+                                                                                      # 여기 프로젝트 이름 바꾸기
+    url: jdbc:mariadb://database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com:3306/TMRTeamProject_LSH?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useUnicode=true
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: admin
+    password: tk123412345!!
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect  # ← 요게 핵심!!
+
+
+
+# application.yml
+kakao:
+  api:
+    clientId: 5617b43c5e1f8f47e45f4d510a88e8fc
+    clientSecret: 5yc5smUCscGZlKcfjqsfV46wFiVdsbzq
+
+
+# application.yml
+naver:
+  api:
+    clientId: bEMZzWiWu06Pk2b7R6D3
+    clientSecret: 730aCbbDQO
+
+solapi:
+  apiKey: NCS8X6JXYL5LGJ0B
+  apiSecret: OPMRNQJAWXRAEDUGNAOPOI8AZNRTTSCO
+  sender: 01030417745
