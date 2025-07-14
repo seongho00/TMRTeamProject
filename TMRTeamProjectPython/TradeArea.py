@@ -3,6 +3,7 @@ import pymysql
 import time
 import os
 import random
+import re
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -135,7 +136,11 @@ for dong in dong_rows:
             except Exception as e:
                 print("저장 버튼 클릭 실패:", e)
 
-            new_filename = simple_loc + minor_nm + ".pdf"
+            new_filename = f"{simple_loc} {minor_nm}.pdf"
+
+            # 파일명에 사용 불가능한 문자 제거 함수
+            def sanitize_filename(name):
+                return re.sub(r'[\\/:*?"<>|]', '_', name)
 
             # 6. 다운로드 완료 후 파일 이름 변경
             timeout = 30
@@ -146,11 +151,13 @@ for dong in dong_rows:
                     latest_file = files[0]
                     latest_path = os.path.join(download_path, latest_file)
                     if not latest_file.endswith(".crdownload"):
-                        target_path = os.path.join(download_path, new_filename)
+                        # 유효한 파일명으로 변환
+                        safe_filename = sanitize_filename(new_filename)
+                        target_path = os.path.join(download_path, safe_filename)
                         if os.path.exists(target_path):
                             os.remove(target_path)
                         os.rename(latest_path, target_path)
-                        print(f"[완료] {latest_file} → {new_filename}")
+                        print(f"[완료] {latest_file} → {safe_filename}")
                         break
                 time.sleep(1)
                 timeout -= 1
