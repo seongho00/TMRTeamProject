@@ -46,7 +46,7 @@ cursor = conn.cursor()
 
 # ChromeDriver 경로 설정
 driver = webdriver.Chrome(
-    service=Service("../chromedriver.exe")
+    service=Service("chromedriver.exe")
 )
 # 접속할 URL
 driver.get("https://bigdata.sbiz.or.kr/#/sbiz/sttus/dynpplSttus")
