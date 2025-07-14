@@ -47,7 +47,7 @@ cursor = conn.cursor()
 # ChromeDriver 경로 설정
 
 driver = webdriver.Chrome(
-    service=Service("C:/Users/qjvpd/IdeaProjects/TMRTeamProject/TMRTeamProjectPython/crawling/chromedriver.exe")
+    service=Service("C:/Users/admin/IdeaProjects/TMRTeamProject/TMRTeamProjectPython/crawling/chromedriver.exe")
 )
 # 접속할 URL
 driver.get("https://bigdata.sbiz.or.kr/#/sbiz/sttus/dynpplSttus")
@@ -109,10 +109,6 @@ for jdx, region in enumerate(regions[1:], start=2):
                 total = clean_number(td[1].text.strip())
                 print("총 유동인구수 : " + str(total))
 
-                # 업소수
-                business_cnt = clean_number(td[2].text.strip())
-                print("업소수 : " + str(business_cnt))
-
                 # 남성인구수
                 male = clean_number(td[3].text.strip())
                 print("남성인구수 : " + str(male))
@@ -152,9 +148,9 @@ for jdx, region in enumerate(regions[1:], start=2):
 
                     # INSERT
                     cursor.execute("""
-                        INSERT INTO population_stat (emd_cd, total, business_cnt, male, female, age_10, age_20, age_30, age_40, age_50, age_60)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, (emd_cd, total, business_cnt, male, female, age_10, age_20, age_30, age_40, age_50, age_60))
+                        INSERT INTO population_stat (emd_cd, total, male, female, age_10, age_20, age_30, age_40, age_50, age_60)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (emd_cd, total, male, female, age_10, age_20, age_30, age_40, age_50, age_60))
                     conn.commit()
 
                 else:
