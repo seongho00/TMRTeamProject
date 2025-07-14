@@ -1,7 +1,7 @@
 import requests
-
-KAKAO_API_KEY = "493573b251c629cab49ffc76ab14ea28"
-HEADERS = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
+import pymysql
+import pandas as pd
+import time
 
 # 업종 대분류 코드 매핑
 major_category_codes = {
@@ -10,16 +10,17 @@ major_category_codes = {
     "부동산": "L1", "숙박": "I1", "보건의료": "Q1", "관리/임대": "N1"
 }
 
-# 주소 → 위도/경도 및 행정동 코드
-def get_coords_from_address(address):
-    url = "https://dapi.kakao.com/v2/local/search/address.json"
-    params = {"query": address}
-    res = requests.get(url, headers=HEADERS, params=params)
-    res.raise_for_status()
-    docs = res.json().get("documents", [])
-    print(docs)
-    if not docs:
-        raise ValueError(f"[좌표 오류] {address}")
+conn = pymysql.connect(
+    host="localhost",
+    user="root",
+    password="",
+    db="TMRTeamProject",
+    charset="utf8mb4"
+)
+
+cursor = conn.cursor()
+cursor.execute("SELECT emd_cd FROM admin_dong;")
+rows = cursor.fetchall()
 
 # 대분류 → 중분류 업종 리스트 요청
 def get_mid_categories(major_code):
@@ -29,27 +30,13 @@ def get_mid_categories(major_code):
     res.raise_for_status()
     return res.json()
 
-# 분석 번호 analyNo 요청
-def get_analy_no(admiCd, upjongCd, address):
-    url = "https://bigdata.sbiz.or.kr/gis/simpleAnls/getAvgAmtInfo.json"
-    params = {
-        "admiCd": admiCd,
-        "upjongCd": upjongCd,
-        "simpleLoc": address,
-        "bizonNumber": "",
-        "bizonName": "",
-        "bzznType": "1",
-        "xtLoginId": ""
-    }
-    res = requests.get(url, params=params)
-    res.raise_for_status()
-    data = res.json()
-    return data.get("analyNo")
+for row in rows:
+    adminCd = row[0]
+    try:
+        print(f"[요청 중] admiCd: {adminCd}")
 
-# 대전광역시 행정동 예시 리스트
-daejeon_dongs = [
-    "대전광역시 동구 효동"
-]
 
-for dong in daejeon_dongs:
-    get_coords_from_address(dong)
+
+    except Exception as e:
+        print(f"[오류 발생] {adminCd}: e")
+        time.sleep(3)
