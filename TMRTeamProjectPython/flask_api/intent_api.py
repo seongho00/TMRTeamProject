@@ -8,44 +8,41 @@ import pickle
 
 app = Flask(__name__)
 
-# intent label 목록
-intent_labels = ["매출_조회", "인구_조회", "상권_위험도", "기타"]
+# intent label 목록 (기타 제거)
+intent_labels = ["매출_조회", "인구_조회", "상권_위험도"]
 
-# 모델 및 tokenizer 로드
-model = tf.keras.models.load_model("intent_model.h5")
+# ✅ 모델 로드
+model = tf.keras.models.load_model("intent_model.keras")
 
-# tokenizer도 저장/불러오기 해야 함 (여기선 코드상 재생성)
-tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=1000, oov_token="<OOV>")
-tokenizer.fit_on_texts([
-    "대전 유성구 매출 알려줘",
-    "2023년 인구 수 알려줘",
-    "폐업 위험이 높은 지역 알려줘",
-    "안녕"
-])
+# ✅ tokenizer 로드
+with open("tokenizer.pickle", "rb") as handle:
+    tokenizer = pickle.load(handle)
 
-def predict_intent(text):
+# ✅ intent 예측 함수
+def predict_intent(text, threshold=0.1):
     seq = tokenizer.texts_to_sequences([text])
-    padded = pad_sequences(seq, maxlen=10, padding='post')  # maxlen은 학습 때와 동일
+    padded = pad_sequences(seq, maxlen=10, padding='post')  # 학습 시 maxlen과 동일하게
     pred = model.predict(padded)
-    class_idx = np.argmax(pred)
-    return intent_labels[class_idx]
+    confidence = float(np.max(pred))
+    class_idx = int(np.argmax(pred))
 
+    if confidence < threshold:
+        return "지원하지 않는 서비스입니다.", confidence
+
+    return intent_labels[class_idx], confidence
+
+# ✅ Flask 라우팅
 @app.route("/predict", methods=["GET"])
 def predict():
-    # 📌 GET 방식에서는 URL 쿼리 파라미터에서 값 가져오기
     question = request.args.get("text", "")
 
     if not question:
         return jsonify({"error": "text 파라미터가 비어있습니다."}), 400
 
-    intent = predict_intent(question)
-    if intent == "unknown":
-        return jsonify({"answer": "죄송합니다. 해당 질문은 아직 지원하지 않습니다."})
+    intent, confidence = predict_intent(question)
 
-
-    # 👇 한글을 유니코드로 인코딩하지 않도록
     return Response(
-        json.dumps({"intent": intent}, ensure_ascii=False),
+        json.dumps({"intent": intent, "confidence": round(confidence, 4)}, ensure_ascii=False),
         content_type="application/json; charset=utf-8"
     )
 
