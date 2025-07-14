@@ -36,7 +36,7 @@ options.add_argument("window-size=1600,1000")  # 원하는 크기로 조절 (예
 
 # ✅ ChromeDriver 실행 (경로 설정 포함)
 driver = webdriver.Chrome(
-    service=Service("../chromedriver.exe"),
+    service=Service("chromedriver.exe"),
     options=options
 )
 
