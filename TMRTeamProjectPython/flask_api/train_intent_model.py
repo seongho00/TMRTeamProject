@@ -1,8 +1,16 @@
-import tensorflow as tf
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 import numpy as np
+from sklearn.preprocessing import LabelEncoder
+from datasets import Dataset
 import pickle
+from transformers import (
+    BertTokenizer,
+    BertForSequenceClassification,
+    Trainer,
+    TrainingArguments,
+)
+
 
 # 모듈 학습
 # intent: 0 - 매출_조회
@@ -32,38 +40,56 @@ import pickle
     "위험 지역 분석해줘"
 ]
 
-
-
-
 # ✅ 2. 텍스트 전처리
 train_sentences = 매출_조회 + 인구_조회 + 위험도
 train_labels = [0]*len(매출_조회) + [1]*len(인구_조회) + [2]*len(위험도)
 
-tokenizer = Tokenizer(num_words=1000, oov_token="<OOV>")
-tokenizer.fit_on_texts(train_sentences)
+# ✅ 2. 라벨 인코딩
+le = LabelEncoder()
+encoded_labels = le.fit_transform(train_labels)
+texts = train_sentences  # 누락되어 있었음!
 
-train_sequences = tokenizer.texts_to_sequences(train_sentences)
-train_padded = pad_sequences(train_sequences, padding='post')
+# ✅ 3. BERT 모델 및 토크나이저 로드 (한국어용 사전학습 모델 사용)
+model_name = "klue/bert-base"
+tokenizer = BertTokenizer.from_pretrained(model_name)
 
-train_labels = np.array(train_labels)
 
-# ✅ 3. 모델 정의
-model = tf.keras.Sequential([
-    tf.keras.layers.Embedding(1000, 16),
-    tf.keras.layers.GlobalAveragePooling1D(),
-    tf.keras.layers.Dense(16, activation='relu'),
-    tf.keras.layers.Dense(4, activation='softmax')  # intent 클래스 수
-])
+# ✅ 4. HuggingFace Dataset 생성
+data = Dataset.from_dict({"text": texts, "label": encoded_labels})
 
-model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.fit(train_padded, train_labels, epochs=30)
+def tokenize(batch):
+    return tokenizer(batch["text"], truncation=True, padding="max_length", max_length=32)
 
-# ✅ 4. 모델 저장
-model.save("intent_model.keras")  # 또는
-tf.keras.saving.save_model(model, "intent_model.keras")
+tokenized_data = data.map(tokenize, batched=True)
 
-# ✅ 5. 토크나이저도 저장 (Flask에서 재사용)
-with open("tokenizer.pickle", "wb") as handle:
-    pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+# ✅ 5. 모델 정의
+model = BertForSequenceClassification.from_pretrained(model_name, num_labels=len(le.classes_))
 
-print("✅ 모델 및 토크나이저 저장 완료")
+
+# ✅ 6. Trainer 학습 설정
+training_args = TrainingArguments(
+    output_dir="./results",
+    num_train_epochs=5,
+    per_device_train_batch_size=8,
+    logging_dir="./logs",
+    logging_steps=10,
+    save_strategy="no"
+)
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_data,
+)
+
+# ✅ 7. 학습 실행
+trainer.train()
+
+# ✅ 8. 모델 및 라벨 인코더 저장
+model.save_pretrained("./intent_bert_model")
+tokenizer.save_pretrained("./intent_bert_model")
+
+with open("label_encoder.pickle", "wb") as f:
+    pickle.dump(le, f)
+
+print("✅ BERT intent 분류 모델 저장 완료")
