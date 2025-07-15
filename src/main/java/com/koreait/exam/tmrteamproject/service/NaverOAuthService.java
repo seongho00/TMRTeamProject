@@ -119,7 +119,5 @@ public class NaverOAuthService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
-
 }

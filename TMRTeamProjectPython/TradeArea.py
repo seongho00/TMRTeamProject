@@ -26,7 +26,7 @@ os.makedirs(download_path, exist_ok=True)
 # Chrome 옵션 설정
 chrome_options = Options()
 chrome_options.add_experimental_option("prefs", {
-    "download.default_directory": download_path,  # 다운로드 폴더
+    "download.default_directory": download_path, # 다운로드 폴더
     "plugins.always_open_pdf_externally": True,  # PDF를 바로 다운로드
     "download.prompt_for_download": False,       # 다운로드 시 팝업 비활성화
     "safebrowsing.enabled": True
@@ -43,10 +43,10 @@ conn = pymysql.connect(
 )
 cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM admin_dong ORDER BY emd_cd DESC;")
+cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '중구';")
 dong_rows = cursor.fetchall()
 
-cursor.execute("SELECT * FROM upjong_code;")
+cursor.execute("SELECT * FROM upjong_code WHERE NOT major_cd = 'I2' ORDER BY major_cd DESC;")
 upjong_rows = cursor.fetchall()
 
 for dong in dong_rows:
@@ -59,7 +59,9 @@ for dong in dong_rows:
 
     for upjong in upjong_rows:
         upjong_cd = upjong[4]
+        print(upjong_cd)
         minor_nm = upjong[5]
+        print(minor_nm)
         try:
             headers = {
                 "User-Agent": random.choice(USER_AGENTS),
@@ -102,14 +104,7 @@ for dong in dong_rows:
 
             if analy_no:
                 report_url = f"https://bigdata.sbiz.or.kr/gis/report/viewer.sg?reportId={analy_no}"
-                print(f"   → 성공: {upjong_cd} 분석번호: {analy_no}")
-                success_list.append({
-                    "admiCd": admi_cd,
-                    "dongName": emd_nm,
-                    "upjongCd": upjong_cd,
-                    "analyNo": analy_no,
-                    "url": report_url
-                })
+                print(f" → 성공: {upjong_cd} 분석번호: {analy_no}")
             else:
                 raise Exception("analyNo 없음")
 
@@ -119,7 +114,7 @@ for dong in dong_rows:
             driver = webdriver.Chrome(options=chrome_options)
             driver.get(report_url)
 
-            wait = WebDriverWait(driver, 3)
+            wait = WebDriverWait(driver, 10)
 
             # "저장" 버튼 클릭 (클래스: btnSAVEAS)
             try:
@@ -128,7 +123,7 @@ for dong in dong_rows:
                 save_btn.click()
                 print("[1] 저장 버튼 클릭")
 
-                confirm_button = WebDriverWait(driver, 3).until(
+                confirm_button = WebDriverWait(driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, "/html/body/div[2]/div[3]/div/button[2]"))
                 )
                 confirm_button.click()
@@ -142,32 +137,38 @@ for dong in dong_rows:
             def sanitize_filename(name):
                 return re.sub(r'[\\/:*?"<>|]', '_', name)
 
-            # 6. 다운로드 완료 후 파일 이름 변경
-            timeout = 30
+            # 현재 시각 기준
+            download_started = time.time()
+
+            # 다운로드 완료 후 파일 이름 변경
+            timeout = 10
             while timeout > 0:
                 files = [f for f in os.listdir(download_path) if f.endswith(".pdf")]
                 if files:
                     files.sort(key=lambda f: os.path.getmtime(os.path.join(download_path, f)), reverse=True)
                     latest_file = files[0]
                     latest_path = os.path.join(download_path, latest_file)
-                    if not latest_file.endswith(".crdownload"):
-                        # 유효한 파일명으로 변환
-                        safe_filename = sanitize_filename(new_filename)
+                    file_mtime = os.path.getmtime(latest_path)
+
+                    if not latest_file.endswith(".crdownload") and file_mtime >= download_started:
+                        safe_filename = sanitize_filename(f"{simple_loc} {minor_nm}.pdf")
                         target_path = os.path.join(download_path, safe_filename)
+
                         if os.path.exists(target_path):
                             os.remove(target_path)
+
                         os.rename(latest_path, target_path)
                         print(f"[완료] {latest_file} → {safe_filename}")
                         break
-                time.sleep(1)
-                timeout -= 1
+                time.sleep(0.5)
+                timeout -= 0.5
 
         except Exception as e:
-            print(f"   → 오류: {upjong_cd}: {e}")
+            print(f" → 오류: {upjong_cd}: {e}")
             error_list.append({
                 "admiCd": admi_cd,
                 "dongName": emd_nm,
                 "upjongCd": upjong_cd,
                 "error": str(e)
             })
-            time.sleep(4)
+            time.sleep(1)
