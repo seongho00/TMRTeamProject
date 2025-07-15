@@ -36,12 +36,13 @@ def clean_number(text):
 
 # DB 연결
 conn = pymysql.connect(
-    host='localhost',
-    user='root',
-    password='',  # 비밀번호 입력
+    host='database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com',
+    user='admin',
+    password='tk123412345!!',  # 비밀번호 입력
     database='TMRTeamProject',
     charset='utf8mb4'
 )
+
 cursor = conn.cursor()
 
 # ChromeDriver 경로 설정

@@ -34,14 +34,6 @@ conn = pymysql.connect(
 )
 
 cursor = conn.cursor()
-cursor.execute("SELECT DATABASE();")
-print("현재 연결된 DB:", cursor.fetchone())
-
-cursor.execute("SHOW TABLES;")
-print("📂 테이블 목록:", cursor.fetchall())
-
-cursor.execute("SHOW CREATE TABLE admin_dong;")
-print("🧱 테이블 구조:", cursor.fetchone())
 
 sql = """
 INSERT INTO admin_dong (

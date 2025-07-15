@@ -6,8 +6,6 @@ import numpy as np
 import pickle
 import re
 
-
-
 app = Flask(__name__)
 
 # ✅ intent label 복원 (라벨 인코더로)
@@ -41,8 +39,8 @@ def predict_intent(text, threshold=0.1):
     predicted_label = label_encoder.inverse_transform([class_idx])[0]
     return predicted_label, confidence
 
-def extract_location(text):
 
+def extract_location(text):
     valid_city_map = {
         '대전': ['서구', '유성구', '대덕구', '동구', '중구']
     }
@@ -84,6 +82,37 @@ def generate_response(user_input):
     else:
         return "❓ 지원하지 않는 서비스입니다."
 
+
+# 성별, 연령대에 따른 분류
+def analyze_input(user_input):
+    gender = None
+    age_group = None
+    location = extract_location(user_input)
+
+    # 성별 추출
+    if "남자" in user_input or "남성" in user_input:
+        gender = "male"
+    elif "여자" in user_input or "여성" in user_input:
+        gender = "female"
+
+    # 연령대 추출
+    age_keywords = {
+        "10대": "age_10",
+        "20대": "age_20",
+        "30대": "age_30",
+        "40대": "age_40",
+        "50대": "age_50",
+        "60대": "age_60"
+    }
+
+    for keyword, column in age_keywords.items():
+        if keyword in user_input:
+            age_group = column
+            break
+
+    return gender, age_group, location
+
+
 # ✅ API 라우팅
 @app.route("/predict", methods=["GET"])
 def predict():
@@ -105,6 +134,7 @@ def predict():
         }, ensure_ascii=False),
         content_type="application/json; charset=utf-8"
     )
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
