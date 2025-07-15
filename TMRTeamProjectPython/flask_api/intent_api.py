@@ -4,9 +4,10 @@ import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 import pickle
 import re
-from konlpy.tag import Mecab
-import os
+import mecab_ko
 
+tagger = mecab_ko.Tagger()
+print(tagger.parse("대전에 있는 유성구의 유동인구 알려줘"))
 
 app = Flask(__name__)
 
@@ -21,10 +22,6 @@ tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
 model = BertForSequenceClassification.from_pretrained(MODEL_PATH)
 model.eval()
 
-
-# DLL 폴더 등록
-os.add_dll_directory(r"C:\Users\admin\IdeaProjects\TMRTeamProject\TMRTeamProjectPython\flask_api\mecab-ko-msvc-x64")
-mecab = Mecab(dicpath=r"C:\Users\admin\IdeaProjects\TMRTeamProject\TMRTeamProjectPython\flask_api\mecab-ko-dic")
 
 # ✅ 예측 함수
 def predict_intent(text, threshold=0.1):
@@ -90,58 +87,46 @@ def generate_response(user_input):
 
 
 
-def analyze_input(user_input):
-    nouns = mecab.nouns(user_input)
-
-    # 시도/시군구/읍면동 사전
-    valid_city_map = {
-        '대전': ['서구', '유성구', '대덕구', '동구', '중구']
-        # 필요 시 추가
-    }
-
-    gender_keywords = {
-        "남자": "male", "남성": "male",
-        "여자": "female", "여성": "female"
-    }
-
-    age_keywords = {
-        "10대": "age_10",
-        "20대": "age_20",
-        "30대": "age_30",
-        "40대": "age_40",
-        "50대": "age_50",
-        "60대": "age_60"
-    }
-
-    gender = None
-    age_group = None
-    sido = None
-    sigungu = None
-
-    # ✅ 명사 하나씩 검사
-    for token in nouns:
-        # 시도 검사
-        for city in valid_city_map:
-            if token.startswith(city):
-                sido = city
-
-        # 시군구 검사
-        if sido and token in valid_city_map[sido]:
-            sigungu = token
-
-        # 성별 검사
-        if token in gender_keywords:
-            gender = gender_keywords[token]
-
-        # 연령대 검사
-        if token in age_keywords:
-            age_group = age_keywords[token]
-
-    # ✅ 지역 결합
-    location_parts = [sido, sigungu]
-    location = " ".join(p for p in location_parts if p) if sido else None
-
-    return gender, age_group, location
+# def analyze_input(user_input):
+#     valid_city_map = {
+#         '대전': ['서구', '유성구', '대덕구', '동구', '중구']
+#     }
+#
+#     gender_keywords = {
+#         "남자": "male", "남성": "male",
+#         "여자": "female", "여성": "female"
+#     }
+#
+#     age_keywords = {
+#         "10대": "age_10",
+#         "20대": "age_20",
+#         "30대": "age_30",
+#         "40대": "age_40",
+#         "50대": "age_50",
+#         "60대": "age_60"
+#     }
+#
+#
+#     gender = None
+#     age_group = None
+#     sido = None
+#     sigungu = None
+#
+#     for token in nouns:
+#         for city in valid_city_map:
+#             if token.startswith(city):
+#                 sido = city
+#         if sido and token in valid_city_map[sido]:
+#             sigungu = token
+#         if token in gender_keywords:
+#             gender = gender_keywords[token]
+#         if token in age_keywords:
+#             age_group = age_keywords[token]
+#
+#     location_parts = [sido, sigungu]
+#     location = " ".join(p for p in location_parts if p) if sido else None
+#
+#     return gender, age_group, location
 
 
 # ✅ API 라우팅
@@ -159,7 +144,7 @@ def predict():
     message = generate_response(question)
 
     # ✅ 성별, 연령, 지역 모두 추출 (MeCab 기반)
-    gender, age_group, location = analyze_input(question)
+    # gender, age_group, location = analyze_input(question)
 
 
     return Response(
