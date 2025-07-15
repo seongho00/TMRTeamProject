@@ -18,6 +18,4 @@ public class UsrHomeController {
 
         return "home/main";
     }
-
-
 }
