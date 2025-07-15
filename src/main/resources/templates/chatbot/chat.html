@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head::head"></head> <!-- ✅ 공백 제거 -->
+
+<script>
+    function showChatBot() {
+        $(".chatbot").toggleClass('hidden');
+    }
+
+    function sendMessage() {
+        const message = $("#chatbotText").val();
+        const $chatBox = $("#chat-box");
+        $.ajax({
+            type: "POST",
+            url: "sendMessage",
+            data: {message: message},
+            success: function (response) {
+                $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${response}</div>`);
+                $("#chatbotText").val("");  // 입력창 비우기
+                $chatBox.scrollTop($chatBox[0].scrollHeight); // 스크롤 하단으로
+            },
+            error: function () {
+                $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> 오류가 발생했습니다.</div>`);
+            }
+        });
+    }
+</script>
+
+<h1> 챗봇 테스트 </h1>
+
+<input type="text" id="chatbotText">
+<div id="chat-box"></div>
+<button onClick="sendMessage();">보내기</button>
+
+
+<img onClick="showChatBot();"
+     src="/images/상담봇_아이콘.png"
+     class="w-[50px] h-[50px] rounded-[202.5px] object-cover border border-black fixed bottom-5 right-5 cursor-pointer"
+/>
