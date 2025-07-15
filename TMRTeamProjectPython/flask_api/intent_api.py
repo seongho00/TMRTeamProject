@@ -86,48 +86,62 @@ def generate_response(user_input):
         return "❓ 지원하지 않는 서비스입니다."
 
 
+# ✅ 명사만 추출하는 함수
+def extract_nouns(text):
+    parsed = tagger.parse(text)
+    lines = parsed.split('\n')
+    nouns = []
 
-# def analyze_input(user_input):
-#     valid_city_map = {
-#         '대전': ['서구', '유성구', '대덕구', '동구', '중구']
-#     }
-#
-#     gender_keywords = {
-#         "남자": "male", "남성": "male",
-#         "여자": "female", "여성": "female"
-#     }
-#
-#     age_keywords = {
-#         "10대": "age_10",
-#         "20대": "age_20",
-#         "30대": "age_30",
-#         "40대": "age_40",
-#         "50대": "age_50",
-#         "60대": "age_60"
-#     }
-#
-#
-#     gender = None
-#     age_group = None
-#     sido = None
-#     sigungu = None
-#
-#     for token in nouns:
-#         for city in valid_city_map:
-#             if token.startswith(city):
-#                 sido = city
-#         if sido and token in valid_city_map[sido]:
-#             sigungu = token
-#         if token in gender_keywords:
-#             gender = gender_keywords[token]
-#         if token in age_keywords:
-#             age_group = age_keywords[token]
-#
-#     location_parts = [sido, sigungu]
-#     location = " ".join(p for p in location_parts if p) if sido else None
-#
-#     return gender, age_group, location
+    for line in lines:
+        if line == 'EOS' or line == '':
+            continue
+        word, feature = line.split('\t')
+        pos = feature.split(',')[0]
 
+        if pos in ['NNG', 'NNP']:  # 일반명사 or 고유명사
+            nouns.append(word)
+
+    return nouns
+
+# ✅ 의미 분석 함수
+def analyze_input(user_input):
+    valid_city_map = {
+        '대전': ['서구', '유성구', '대덕구', '동구', '중구']
+    }
+
+    gender_keywords = {
+        "남자": "male", "남성": "male",
+        "여자": "female", "여성": "female"
+    }
+
+    age_keywords = {
+        "10대": "age_10",
+        "20대": "age_20",
+        "30대": "age_30",
+        "40대": "age_40",
+        "50대": "age_50",
+        "60대": "age_60"
+    }
+
+    nouns = extract_nouns(user_input)
+
+    gender = None
+    age_group = None
+    sido = None
+    sigungu = None
+
+    for token in nouns:
+        for city in valid_city_map:
+            if token.startswith(city):
+                sido = city
+        if sido and token in valid_city_map[sido]:
+            sigungu = token
+        if token in gender_keywords:
+            gender = gender_keywords[token]
+        if token in age_keywords:
+            age_group = age_keywords[token]
+
+    return gender, age_group, sido, sigungu
 
 # ✅ API 라우팅
 @app.route("/predict", methods=["GET"])
@@ -144,20 +158,22 @@ def predict():
     message = generate_response(question)
 
     # ✅ 성별, 연령, 지역 모두 추출 (MeCab 기반)
-    # gender, age_group, location = analyze_input(question)
+    gender, age_group, sido, sigungu = analyze_input(question)
 
 
     return Response(
         json.dumps({
             "intent": str(intent),
             "confidence": float(round(confidence, 4)),
-            "location": str(location),
+            "sido": str(sido),
+            "sigungu": str(sigungu),
             "gender": str(gender),
             "age_group": str(age_group),
             "message": str(message)
         }, ensure_ascii=False),
         content_type="application/json; charset=utf-8"
     )
+
 
 
 if __name__ == "__main__":
