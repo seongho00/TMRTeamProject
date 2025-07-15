@@ -42,16 +42,22 @@ def predict_intent(text, threshold=0.1):
     return predicted_label, confidence
 
 def extract_location(text):
-    # 시도 + 시/군/구 패턴 매칭
-    pattern = r"(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[\s]*(?:특별시|광역시|도)?[\s]*([가-힣]+구|[가-힣]+시|[가-힣]+군)?"
+
+    valid_city_map = {
+        '대전': ['서구', '유성구', '대덕구', '동구', '중구']
+    }
+    # 시도 + 시군구 + 읍면동까지 추출
+    pattern = r"(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[\s]*(?:특별시|광역시|도)?[\s]*" \
+              r"([가-힣]+[시군구])?[\s]*([가-힣]+[동면읍])?"
+
     match = re.search(pattern, text)
     if match:
-        sido = match.group(1)
-        sigungu = match.group(2)
-        if sigungu:
-            return f"{sido} {sigungu}"
-        else:
-            return sido  # ex: "서울"
+        sido, sigungu, eupmyeondong = match.groups()
+        if sigungu and sigungu not in valid_city_map.get(sido, []):
+            return "❌ 행정구역 형식에 맞지 않음"  # ❌ 유효하지 않은 조합
+        parts = [sido, sigungu, eupmyeondong]
+        return " ".join(p for p in parts if p)
+
     return None
 
 
@@ -60,19 +66,19 @@ def generate_response(user_input):
     intent, confidence = predict_intent(user_input)
     location = extract_location(user_input)
 
-    if intent == "매출_조회":
+    if intent == 0:
         if location:
             return f"✅ '{location}'의 매출 정보를 조회합니다."
         else:
             return "⚠️ 매출 정보를 조회하려면 지역명을 입력해 주세요."
 
-    elif intent == "인구_조회":
+    elif intent == 1:
         if location:
             return f"📊 '{location}'의 인구 통계를 조회합니다."
         else:
             return "⚠️ 인구 정보를 조회하려면 지역명을 입력해 주세요."
 
-    elif intent == "위험도":
+    elif intent == 2:
         return "🚨 폐업 위험도 높은 상권을 분석 중입니다."
 
     else:
@@ -92,10 +98,10 @@ def predict():
 
     return Response(
         json.dumps({
-            "intent": intent,
-            "confidence": round(confidence, 4),
-            "location": location,
-            "message": message
+            "intent": str(intent),
+            "confidence": float(round(confidence, 4)),
+            "location": str(location),
+            "message": str(message)
         }, ensure_ascii=False),
         content_type="application/json; charset=utf-8"
     )

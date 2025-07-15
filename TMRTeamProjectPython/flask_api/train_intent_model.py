@@ -1,6 +1,5 @@
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from datasets import Dataset
 import pickle
@@ -12,7 +11,7 @@ from transformers import (
 )
 
 
-# 모듈 학습
+# 모듈 학습 단어
 # intent: 0 - 매출_조회
 매출_조회 = [
     "이 매장의 매출이 궁금해",
