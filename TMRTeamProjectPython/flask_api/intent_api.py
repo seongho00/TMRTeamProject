@@ -2,9 +2,9 @@ from flask import Flask, request, jsonify, Response
 import json
 import torch
 from transformers import BertTokenizer, BertForSequenceClassification
-import numpy as np
 import pickle
 import re
+from konlpy.tag import Mecab
 
 app = Flask(__name__)
 
@@ -83,19 +83,22 @@ def generate_response(user_input):
         return "❓ 지원하지 않는 서비스입니다."
 
 
-# 성별, 연령대에 따른 분류
+
 def analyze_input(user_input):
-    gender = None
-    age_group = None
-    location = extract_location(user_input)
+    mecab = Mecab()
+    nouns = mecab.nouns(user_input)
 
-    # 성별 추출
-    if "남자" in user_input or "남성" in user_input:
-        gender = "male"
-    elif "여자" in user_input or "여성" in user_input:
-        gender = "female"
+    # 시도/시군구/읍면동 사전
+    valid_city_map = {
+        '대전': ['서구', '유성구', '대덕구', '동구', '중구']
+        # 필요 시 추가
+    }
 
-    # 연령대 추출
+    gender_keywords = {
+        "남자": "male", "남성": "male",
+        "여자": "female", "여성": "female"
+    }
+
     age_keywords = {
         "10대": "age_10",
         "20대": "age_20",
@@ -105,10 +108,33 @@ def analyze_input(user_input):
         "60대": "age_60"
     }
 
-    for keyword, column in age_keywords.items():
-        if keyword in user_input:
-            age_group = column
-            break
+    gender = None
+    age_group = None
+    sido = None
+    sigungu = None
+
+    # ✅ 명사 하나씩 검사
+    for token in nouns:
+        # 시도 검사
+        for city in valid_city_map:
+            if token.startswith(city):
+                sido = city
+
+        # 시군구 검사
+        if sido and token in valid_city_map[sido]:
+            sigungu = token
+
+        # 성별 검사
+        if token in gender_keywords:
+            gender = gender_keywords[token]
+
+        # 연령대 검사
+        if token in age_keywords:
+            age_group = age_keywords[token]
+
+    # ✅ 지역 결합
+    location_parts = [sido, sigungu]
+    location = " ".join(p for p in location_parts if p) if sido else None
 
     return gender, age_group, location
 
@@ -121,15 +147,23 @@ def predict():
     if not question:
         return jsonify({"error": "text 파라미터가 비어있습니다."}), 400
 
+    # 예측
     intent, confidence = predict_intent(question)
-    location = extract_location(question)
+
+    # 메세지
     message = generate_response(question)
+
+    # ✅ 성별, 연령, 지역 모두 추출 (MeCab 기반)
+    gender, age_group, location = analyze_input(question)
+
 
     return Response(
         json.dumps({
             "intent": str(intent),
             "confidence": float(round(confidence, 4)),
             "location": str(location),
+            "gender": str(gender),
+            "age_group": str(age_group),
             "message": str(message)
         }, ensure_ascii=False),
         content_type="application/json; charset=utf-8"
