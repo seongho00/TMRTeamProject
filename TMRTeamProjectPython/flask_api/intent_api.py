@@ -5,6 +5,8 @@ from transformers import BertTokenizer, BertForSequenceClassification
 import pickle
 import re
 from konlpy.tag import Mecab
+import os
+
 
 app = Flask(__name__)
 
@@ -19,6 +21,10 @@ tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
 model = BertForSequenceClassification.from_pretrained(MODEL_PATH)
 model.eval()
 
+
+# DLL 폴더 등록
+os.add_dll_directory(r"C:\Users\admin\IdeaProjects\TMRTeamProject\TMRTeamProjectPython\flask_api\mecab-ko-msvc-x64")
+mecab = Mecab(dicpath=r"C:\Users\admin\IdeaProjects\TMRTeamProject\TMRTeamProjectPython\flask_api\mecab-ko-dic")
 
 # ✅ 예측 함수
 def predict_intent(text, threshold=0.1):
@@ -85,7 +91,6 @@ def generate_response(user_input):
 
 
 def analyze_input(user_input):
-    mecab = Mecab()
     nouns = mecab.nouns(user_input)
 
     # 시도/시군구/읍면동 사전
