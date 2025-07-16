@@ -1,6 +1,5 @@
 package com.koreait.exam.tmrteamproject.controller;
 
-
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.MemberService;
 import com.koreait.exam.tmrteamproject.service.NaverOAuthService;
@@ -40,11 +39,8 @@ public class MemberController {
     @Autowired
     private MemberService memberService ;
 
-
-
     @Autowired
     private Rq rq;
-
 
     @GetMapping("/join")
     public String join() {
@@ -131,8 +127,4 @@ public class MemberController {
         return "redirect:" + url;
 
     }
-
-
-
-
 }

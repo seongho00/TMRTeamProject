@@ -12,10 +12,10 @@ df.columns = ["major_cd", "major_nm", "middle_cd", "middle_nm", "minor_cd", "min
 
 # MySQL 연결
 conn = pymysql.connect(
-    host="localhost",
-    user="root",
-    password="",     # ← 여기에 실제 비밀번호 입력
-    database="TMRTeamProject",
+    host="database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com",
+    user="admin",
+    password="tk123412345!!",
+    database="SHW",
     charset="utf8mb4"
 )
 
