@@ -136,9 +136,9 @@ def analyze_input(user_input, valid_emd_list):
 # 앱 시작 시 한 번만 실행 (DB에서 행정동 데이터 가져오기)
 def extract_emd_nm_list():
     conn = pymysql.connect(
-        host='localhost',
-        user='root',
-        password='',
+        host='database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com',
+        user='admin',
+        password='tk123412345!!',
         db='TMRTeamProject',
         charset='utf8'
     )
@@ -196,11 +196,8 @@ def extract_nouns_with_age_merge(text):
 
     return result
 
-# 서버 시작 시 캐싱
-
-
+# 서버 시작
 tagger = mecab_ko.Tagger()
-print(tagger.parse("대전에 있는 유성구의 20대 남자 유동인구 알려줘"))
 
 app = Flask(__name__)
 
