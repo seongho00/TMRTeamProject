@@ -136,9 +136,9 @@ def analyze_input(user_input, valid_emd_list):
 # 앱 시작 시 한 번만 실행 (DB에서 행정동 데이터 가져오기)
 def extract_emd_nm_list():
     conn = pymysql.connect(
-        host='database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com',
-        user='admin',
-        password='tk123412345!!',
+        host='localhost',
+        user='root',
+        password='',
         db='TMRTeamProject',
         charset='utf8'
     )

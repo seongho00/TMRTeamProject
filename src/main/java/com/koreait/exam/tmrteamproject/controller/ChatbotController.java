@@ -54,7 +54,7 @@ public class ChatbotController {
 
             case "1":
                 // 유동인구 관련 로직
-                chatBotService.getPopulationInfo(flaskResult);
+                System.out.println(chatBotService.getPopulationInfo(flaskResult));
                 System.out.println("유동인구 조회 요청");
                 break;
 
