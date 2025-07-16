@@ -13,13 +13,23 @@ import java.util.Optional;
 
 public interface PopulationStatRepository extends JpaRepository<PopulationStat, Long> {
 
-    @Query("SELECT p FROM PopulationStat p JOIN p.adminDong a " +
-            "WHERE (:sido IS NULL OR a.sidoNm = :sido) " +
-            "AND (:sigungu IS NULL OR a.sggNm = :sigungu) " +
-            "AND (:emd IS NULL OR a.emdNm = :emd)")
-    PopulationStat findBySidoAndSigunguAndEmd(@Param("sido") String sido,
-                                              @Param("sigungu") String sigungu,
-                                              @Param("emd") String emd);
+    @Query(value = """
+            SELECT 
+                SUM(p.total) AS total,
+                SUM(p.male) AS male,
+                SUM(p.female) AS female,
+                SUM(p.age_10) AS age10,
+                SUM(p.age_20) AS age20,
+                SUM(p.age_30) AS age30,
+                SUM(p.age_40) AS age40,
+                SUM(p.age_50) AS age50,
+                SUM(p.age_60) AS age60
+            FROM population_stat p
+            JOIN admin_dong a ON p.emd_cd = a.emd_cd
+            WHERE a.sido_nm = :sido AND a.sgg_nm = :sigungu AND a.emd_nm = :emd
+            """, nativeQuery = true)
+    PopulationSummary findBySidoAndSigunguAndEmd(@Param("sido") String sido, @Param("sigungu") String sigungu, @Param("emd") String emd);
+
 
     @Query(value = """
             SELECT 
