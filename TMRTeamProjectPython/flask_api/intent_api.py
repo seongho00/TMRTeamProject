@@ -5,22 +5,8 @@ from transformers import BertTokenizer, BertForSequenceClassification
 import pickle
 import re
 import mecab_ko
+import pymysql
 
-tagger = mecab_ko.Tagger()
-print(tagger.parse("대전에 있는 유성구의 유동인구 알려줘"))
-
-app = Flask(__name__)
-
-# ✅ intent label 복원 (라벨 인코더로)
-with open("label_encoder.pickle", "rb") as f:
-    label_encoder = pickle.load(f)
-intent_labels = list(label_encoder.classes_)
-
-# ✅ HuggingFace BERT 모델 및 토크나이저 로드
-MODEL_PATH = "./intent_bert_model"
-tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
-model = BertForSequenceClassification.from_pretrained(MODEL_PATH)
-model.eval()
 
 
 # ✅ 예측 함수
@@ -104,7 +90,7 @@ def extract_nouns(text):
     return nouns
 
 # ✅ 의미 분석 함수
-def analyze_input(user_input):
+def analyze_input(user_input, valid_emd_list):
     valid_city_map = {
         '대전': ['서구', '유성구', '대덕구', '동구', '중구']
     }
@@ -129,6 +115,7 @@ def analyze_input(user_input):
     age_group = None
     sido = None
     sigungu = None
+    emd_nm = None
 
     for token in nouns:
         for city in valid_city_map:
@@ -140,8 +127,56 @@ def analyze_input(user_input):
             gender = gender_keywords[token]
         if token in age_keywords:
             age_group = age_keywords[token]
+        if token in valid_emd_list:
+            emd_nm = token  # ✅ 행정동 이름 저장
 
-    return gender, age_group, sido, sigungu
+    return gender, age_group, sido, sigungu, emd_nm
+
+
+# 앱 시작 시 한 번만 실행 (DB에서 행정동 데이터 가져오기)
+def extract_emd_nm_list():
+    conn = pymysql.connect(
+        host='localhost',
+        user='root',
+        password='',
+        db='TMRTeamProject',
+        charset='utf8'
+    )
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT DISTINCT emd_nm FROM admin_dong")
+            result = cursor.fetchall()
+            if result:
+                return [row[0] for row in result]
+            else:
+                return []  # ✅ 빈 리스트라도 리턴
+    except Exception as e:
+        print("❌ emd_nm 리스트 로딩 실패:", e)
+        return []  # ✅ 예외 발생 시에도 빈 리스트
+    finally:
+        conn.close()
+
+# 서버 시작 시 캐싱
+
+
+tagger = mecab_ko.Tagger()
+print(tagger.parse("대전에 있는 유성구의 유동인구 알려줘"))
+
+app = Flask(__name__)
+
+# ✅ intent label 복원 (라벨 인코더로)
+with open("label_encoder.pickle", "rb") as f:
+    label_encoder = pickle.load(f)
+intent_labels = list(label_encoder.classes_)
+
+# ✅ HuggingFace BERT 모델 및 토크나이저 로드
+MODEL_PATH = "./intent_bert_model"
+tokenizer = BertTokenizer.from_pretrained(MODEL_PATH)
+model = BertForSequenceClassification.from_pretrained(MODEL_PATH)
+model.eval()
+
+# 앱 전체에서 사용할 전역 리스트
+valid_emd_list = extract_emd_nm_list()
 
 # ✅ API 라우팅
 @app.route("/predict", methods=["GET"])
@@ -157,8 +192,8 @@ def predict():
     # 메세지
     message = generate_response(question)
 
-    # ✅ 성별, 연령, 지역 모두 추출 (MeCab 기반)
-    gender, age_group, sido, sigungu = analyze_input(question)
+    # ✅ 의미 분석 수행
+    gender, age_group, sido, sigungu, emd_nm = analyze_input(question, valid_emd_list)
 
 
     return Response(
@@ -167,6 +202,7 @@ def predict():
             "confidence": float(round(confidence, 4)),
             "sido": str(sido),
             "sigungu": str(sigungu),
+            "emd_nm": str(emd_nm),  # ✅ 추가된 행정동
             "gender": str(gender),
             "age_group": str(age_group),
             "message": str(message)
