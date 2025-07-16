@@ -20,7 +20,7 @@ USER_AGENTS = [
 success_list = []
 error_list = []
 
-download_path = r"C:\Users\user\Desktop\TeamProject\data"
+download_path = r"C:\Users\user\Desktop\TeamProject\SimpAnly"
 os.makedirs(download_path, exist_ok=True)
 
 # Chrome 옵션 설정
@@ -43,7 +43,7 @@ conn = pymysql.connect(
 )
 cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '동구';")
+cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '대덕구';")
 dong_rows = cursor.fetchall()
 
 cursor.execute("SELECT * FROM upjong_code;")
@@ -52,11 +52,11 @@ upjong_rows = cursor.fetchall()
 for dong in dong_rows:
     sido_nm = dong[2]
     sgg_nm = dong[4]
-    admi_cd = dong[5]
+    emd_cd = dong[5]
     emd_nm = dong[6]
 
     simple_loc = f"{sido_nm} {sgg_nm} {emd_nm}"
-    print(f"[동 시작] {simple_loc} ({admi_cd})")
+    print(f"[동 시작] {simple_loc} ({emd_cd})")
 
     for upjong in upjong_rows:
         major_cd = upjong[0]
@@ -73,7 +73,7 @@ for dong in dong_rows:
             # getAvgAmtInfo 요청
             avg_url = "https://bigdata.sbiz.or.kr/gis/simpleAnls/getAvgAmtInfo.json"
             params = {
-                "admiCd": admi_cd,
+                "admiCd": emd_cd,
                 "upjongCd": minor_cd,
                 "simpleLoc": simple_loc,
                 "bizonNumber": "",
@@ -96,7 +96,7 @@ for dong in dong_rows:
             if baemin == 'Y':
                 baemin_url = "https://bigdata.sbiz.or.kr/gis/simpleAnls/getBaeminInfo.json"
                 baemin_params = {
-                    "admiCd": admi_cd,
+                    "admiCd": emd_cd,
                     "analyNo": analyNo,
                     "upjongCd": minor_cd,
                     "stdYm": baeminStdYm,
@@ -117,7 +117,7 @@ for dong in dong_rows:
             popular_url = "https://bigdata.sbiz.or.kr/gis/simpleAnls/getPopularInfo.json"
             popular_params = {
                 "analyNo": analyNo,
-                "admiCd": admi_cd,
+                "admiCd": emd_cd,
                 "upjongCd": minor_cd,
                 "mililis": mililis,
                 "bizonNumber": "",
@@ -196,7 +196,7 @@ for dong in dong_rows:
         except Exception as e:
             print(f" → 오류: {minor_cd}: {e}")
             error_list.append({
-                "admiCd": admi_cd,
+                "admiCd": emd_cd,
                 "dongName": emd_nm,
                 "upjongCd": minor_cd,
                 "error": str(e)
