@@ -91,21 +91,21 @@ public class ChatBotService {
             System.out.println("실행됨");
             // "대전 동구"
             return populationStatRepository.findBySidoAndSigungu(sido, sigungu);
-//        } else if (sido != null && emd != null) {
-//            // "대전 효동"
-//            return populationStatRepository.findBySidoAndEmd(sido, emd);
-//        } else if (sigungu != null && emd != null) {
-//            // "동구 효동"
-//            return populationStatRepository.findBySigunguAndEmd(sigungu, emd);
-//        } else if (sido != null) {
-//            // "대전"
-//            return populationStatRepository.findBySido(sido);
-//        } else if (sigungu != null) {
-//            // "동구"
-//            return populationStatRepository.findBySigungu(sigungu);
-//        } else if (emd != null) {
-//            // "효동"
-//            return populationStatRepository.findByEmd(emd);
+        } else if (!sido.equals("None") && !emd.equals("None")) {
+            // "대전 효동"
+            return populationStatRepository.findBySidoAndEmd(sido, emd);
+        } else if (!sigungu.equals("None") && !emd.equals("None")) {
+            // "동구 효동"
+            return populationStatRepository.findBySigunguAndEmd(sigungu, emd);
+        } else if (!sido.equals("None")) {
+            // "대전"
+            return populationStatRepository.findBySido(sido);
+        } else if (!sigungu.equals("None")) {
+            // "동구"
+            return populationStatRepository.findBySigungu(sigungu);
+        } else if (!emd.equals("None")) {
+            // "효동"
+            return populationStatRepository.findByEmd(emd);
         }
 
         return null;
