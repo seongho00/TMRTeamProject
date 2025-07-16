@@ -8,7 +8,6 @@ import mecab_ko
 import pymysql
 
 
-
 # ✅ 예측 함수
 def predict_intent(text, threshold=0.1):
     inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=32)
@@ -109,13 +108,14 @@ def analyze_input(user_input, valid_emd_list):
         "60대": "age_60"
     }
 
-    nouns = extract_nouns(user_input)
-
+    nouns = extract_nouns_with_age_merge(user_input)
+    print("추출된 명사:", nouns)
     gender = None
     age_group = None
     sido = None
     sigungu = None
     emd_nm = None
+
 
     for token in nouns:
         for city in valid_city_map:
@@ -156,11 +156,51 @@ def extract_emd_nm_list():
     finally:
         conn.close()
 
+# 숫자 포함 분석
+def extract_nouns_with_age_merge(text):
+    parsed = tagger.parse(text)
+    lines = parsed.split('\n')
+
+    result = []
+    i = 0
+    while i < len(lines) - 1:  # 마지막 'EOS' 제외
+        line = lines[i]
+        if line == '' or line == 'EOS':
+            i += 1
+            continue
+
+        word, feature = line.split('\t')
+        features = feature.split(',')
+
+        # 현재 품사
+        current_tag = features[0]
+
+        # 숫자 + 대 조합이면 병합
+        if current_tag == 'SN' and i + 1 < len(lines):
+            next_line = lines[i + 1]
+            if '\t' not in next_line:
+                i += 1
+                continue
+            next_word, next_feature = next_line.split('\t')
+            next_tag = next_feature.split(',')[0]
+            if next_tag == 'NNBC' and next_word == '대':
+                result.append(word + next_word)  # 예: "20대"
+                i += 2
+                continue
+
+        # 명사류만 필터링 (지명/일반명사 등)
+        if current_tag in ['NNG', 'NNP']:
+            result.append(word)
+
+        i += 1
+
+    return result
+
 # 서버 시작 시 캐싱
 
 
 tagger = mecab_ko.Tagger()
-print(tagger.parse("대전에 있는 유성구의 유동인구 알려줘"))
+print(tagger.parse("대전에 있는 유성구의 20대 남자 유동인구 알려줘"))
 
 app = Flask(__name__)
 
