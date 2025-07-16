@@ -6,7 +6,6 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.Column;
 import javax.persistence.Entity;
 
 @Entity
@@ -21,6 +20,4 @@ public class Member extends BaseEntity {
     private String loginPw;
     private String email;
     private String phoneNum;
-
-
 }
