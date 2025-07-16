@@ -4,6 +4,7 @@ import com.koreait.exam.tmrteamproject.repository.MemberRepository;
 import com.koreait.exam.tmrteamproject.repository.PopulationStatRepository;
 import com.koreait.exam.tmrteamproject.vo.FlaskResult;
 import com.koreait.exam.tmrteamproject.vo.Member;
+import com.koreait.exam.tmrteamproject.vo.PopulationSummary;
 import com.koreait.exam.tmrteamproject.vo.ResultData;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
@@ -65,14 +66,11 @@ public class ChatBotService {
         }
     }
 
-    public Object getPopulationInfo(FlaskResult flaskResult) {
+    public PopulationSummary getPopulationSummary(FlaskResult flaskResult) {
 
         String sido = flaskResult.getSido();
         String sigungu = flaskResult.getSigungu();
         String emd = flaskResult.getEmd();
-        flaskResult.getAgeGroup();
-        flaskResult.getMessage();
-        flaskResult.getGender();
 
         if (sido.equals("대전")) {
             sido = "대전광역시";
@@ -82,18 +80,17 @@ public class ChatBotService {
         System.out.println("sigungu: " + sigungu);
         System.out.println("emd: " + emd);
 
-
         // 지역 관련
         if (!sido.equals("None") && !sigungu.equals("None") && !emd.equals("None")) {
             // "대전 동구 효동"
             return populationStatRepository.findBySidoAndSigunguAndEmd(sido, sigungu, emd);
         } else if (!sido.equals("None") && !sigungu.equals("None")) {
-            System.out.println("실행됨");
             // "대전 동구"
             return populationStatRepository.findBySidoAndSigungu(sido, sigungu);
         } else if (!sido.equals("None") && !emd.equals("None")) {
             // "대전 효동"
-            return populationStatRepository.findBySidoAndEmd(sido, emd);
+            System.out.println("실행됨");
+            return populationStatRepository.findBySidoAndEmd(sido, emd).get(0);
         } else if (!sigungu.equals("None") && !emd.equals("None")) {
             // "동구 효동"
             return populationStatRepository.findBySigunguAndEmd(sigungu, emd);
@@ -105,9 +102,11 @@ public class ChatBotService {
             return populationStatRepository.findBySigungu(sigungu);
         } else if (!emd.equals("None")) {
             // "효동"
-            return populationStatRepository.findByEmd(emd);
+            return populationStatRepository.findByEmd(emd).get(0);
         }
 
         return null;
     }
+
+
 }

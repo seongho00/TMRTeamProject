@@ -3,12 +3,14 @@ package com.koreait.exam.tmrteamproject.controller;
 import com.koreait.exam.tmrteamproject.service.ChatBotService;
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.vo.FlaskResult;
+import com.koreait.exam.tmrteamproject.vo.PopulationSummary;
 import com.koreait.exam.tmrteamproject.vo.ResultData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,17 +34,19 @@ public class ChatbotController {
 
     @PostMapping("/sendMessage")
     @ResponseBody
-    public String sendMessage(String message) {
+    public ResultData sendMessage(String message) {
 
         ResultData result = chatBotService.analyzeMessage(message);
 
         if (result.isFail()) {
-            return result.getMsg();  // "❌ Flask 서버 연결 실패"
+            return ResultData.from("F-1", result.getMsg());  // "❌ Flask 서버 연결 실패"
         }
         FlaskResult flaskResult = (FlaskResult) result.getData1();
+
         String intent = flaskResult.getIntent();
+
         if (flaskResult.getSido() == null && flaskResult.getSigungu() == null && flaskResult.getEmd() == null) {
-            return "지역을 입력하지 않으셨어요. 예: '대전 유성구 궁동' 처럼 말해 주세요.";
+            return ResultData.from("F-2", "지역을 입력하지 않으셨어요. 예: '대전 유성구 궁동' 처럼 말해 주세요.");
         }
 
 
@@ -53,10 +57,13 @@ public class ChatbotController {
                 break;
 
             case "1":
-                // 유동인구 관련 로직
-                System.out.println(chatBotService.getPopulationInfo(flaskResult));
+                // 지역 분류
+                PopulationSummary populationSummary = chatBotService.getPopulationSummary(flaskResult);
+
+                // 성별 및 나이대 분류
                 System.out.println("유동인구 조회 요청");
-                break;
+
+                return ResultData.from("S-2", "유동인구 데이터 출력", "유동인구", populationSummary, "flaskResult", flaskResult);
 
             case "2":
                 // 상권 위험도 예측 로직
@@ -75,6 +82,6 @@ public class ChatbotController {
         }
 
 
-        return "success";
+        return ResultData.from("F-1", "데이터 요청 실패");
     }
 }

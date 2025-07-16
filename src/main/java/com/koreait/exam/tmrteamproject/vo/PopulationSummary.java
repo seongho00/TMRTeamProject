@@ -7,13 +7,13 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 public interface PopulationSummary {
-    int getTotal();
-    int getMale();
-    int getFemale();
-    int getAge10();
-    int getAge20();
-    int getAge30();
-    int getAge40();
-    int getAge50();
-    int getAge60();
+    Integer getTotal();
+    Integer getMale();
+    Integer getFemale();
+    Integer getAge10();
+    Integer getAge20();
+    Integer getAge30();
+    Integer getAge40();
+    Integer getAge50();
+    Integer getAge60();
 }
