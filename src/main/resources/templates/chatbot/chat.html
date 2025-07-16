@@ -19,6 +19,11 @@
 
                 const populationSummary = data.data1;
                 const flaskResult = data.data2;
+                const sido = "";
+                const sigungu = "";
+                const emd = "";
+
+                // 데이터 가져와서 지역도 보여주기
 
                 if (flaskResult.gender === "None" && flaskResult.ageGroup === "None") {
                     // 성별도 없고, 나이대도 없을 때 → 전체 인구 출력
@@ -31,6 +36,8 @@
                     $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${genderKor} 유동인구는 ${genderValue}명입니다.</div>`);
                 } else if (flaskResult.gender === "None" && flaskResult.ageGroup !== "None") {
                     // 나이대만 있을 때
+                    const convertAgeKey = (ageGroup) => ageGroup?.replace("age_", "age");
+
                     const ageGroupMap = {
                         "age_10": "10대",
                         "age_20": "20대",
@@ -39,8 +46,11 @@
                         "age_50": "50대",
                         "age_60": "60대"
                     };
-                    const ageKor = ageGroupMap[flaskResult.ageGroup];
-                    const ageValue = populationSummary[flaskResult.ageGroup];
+
+                    const rawAgeGroup = flaskResult.ageGroup;         // 예: "age_20"
+                    const ageKor = ageGroupMap[rawAgeGroup];          // 예: "20대"
+                    const ageKey = convertAgeKey(rawAgeGroup);        // 예: "age20"
+                    const ageValue = populationSummary?.[ageKey];     // 올바르게 접근
 
                     $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${ageKor} 유동인구는 ${ageValue}명입니다.</div>`);
                 } else {
@@ -48,22 +58,31 @@
                     const genderKor = flaskResult.gender === "male" ? "남성" : "여성";
                     const genderValue = flaskResult.gender === "male" ? populationSummary.male : populationSummary.female;
 
-                    const ageGroupMap = {
-                        "age_10": "10대",
-                        "age_20": "20대",
-                        "age_30": "30대",
-                        "age_40": "40대",
-                        "age_50": "50대",
-                        "age_60": "60대"
-                    };
-                    const ageKor = ageGroupMap[flaskResult.ageGroup];
-                    const ageValue = populationSummary[flaskResult.ageGroup];
+                    const convertAgeKey = (ageGroup) => ageGroup?.replace("age_", "age");
 
-                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> 죄송합니다! "${ageKor} ${genderKor}"에 대한 정확한 인구수는 제공되지 않지만,<br>
-                                    각각의 통계는 다음과 같습니다 😊 <br>
-                                    👉 ${ageKor} 인구: ${ageValue}명<br>
-                                    👉 ${genderKor} 인구: ${genderValue}명</div>`);
-                                    }
+                    const ageGroupMap = {
+                        "age10": "10대",
+                        "age20": "20대",
+                        "age30": "30대",
+                        "age40": "40대",
+                        "age50": "50대",
+                        "age60": "60대"
+                    };
+
+                    const ageKey = convertAgeKey(flaskResult.ageGroup);  // "age_20" → "age20"
+                    const ageKor = ageGroupMap[ageKey];
+                    const ageValue = populationSummary?.[ageKey];
+
+                    console.log("flaskResult.ageGroup:", flaskResult.ageGroup);
+                    console.log("변환된 ageKey:", ageKey);
+                    console.log("ageKor:", ageKor);
+                    console.log("populationSummary keys:", Object.keys(populationSummary));
+
+                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b>"${ageKor} ${genderKor}"에 대한 정확한 인구수는 제공되지 않지만,<br>
+                    각각의 통계는 다음과 같습니다 😊 <br>
+                    👉 ${ageKor} 인구: ${ageValue}명<br>
+                    👉 ${genderKor} 인구: ${genderValue}명</div>`);
+                }
 
                 $("#chatbotText").val("");  // 입력창 비우기
                 $chatBox.scrollTop($chatBox[0].scrollHeight); // 스크롤 하단으로
