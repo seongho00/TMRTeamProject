@@ -7,7 +7,6 @@ import pymysql
 
 from selenium.webdriver.support.wait import WebDriverWait
 
-
 # 요소가 로드될 때까지 기다리는 함수
 def wait_for_element(driver, by, value, timeout=10):
     return WebDriverWait(driver, timeout).until(
@@ -36,10 +35,10 @@ def clean_number(text):
 
 # DB 연결
 conn = pymysql.connect(
-    host='localhost',
-    user='root',
-    password='',  # 비밀번호 입력
-    database='TMRTeamProject',
+    host='database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com',
+    user='admin',
+    password='tk123412345!!',  # 비밀번호 입력
+    database='SHW',
     charset='utf8mb4'
 )
 cursor = conn.cursor()
@@ -154,7 +153,7 @@ for jdx, region in enumerate(regions[1:], start=2):
                     conn.commit()
 
                 else:
-                    print("❌ 지역코드 없음:", admi_nm)
+                    print("지역코드 없음:", admi_nm)
 
             except Exception as e3:
                 print(f"2번째 오류 발생: {e3}")
