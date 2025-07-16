@@ -2,18 +2,40 @@ package com.koreait.exam.tmrteamproject.repository;
 
 
 import com.koreait.exam.tmrteamproject.vo.PopulationStat;
+import com.koreait.exam.tmrteamproject.vo.PopulationSummary;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface PopulationStatRepository extends JpaRepository<PopulationStat, Long> {
 
-    @Query("SELECT p FROM PopulationStat p JOIN AdminDong a ON p.emd_cd = a.emdCd " +
+    @Query("SELECT p FROM PopulationStat p JOIN p.adminDong a " +
             "WHERE (:sido IS NULL OR a.sidoNm = :sido) " +
             "AND (:sigungu IS NULL OR a.sggNm = :sigungu) " +
-            "AND (:emd IS NULL OR a.emdNm = :emdNm)")
-    Optional<PopulationStat> findFirstByRegion(@Param("sido") String sido,
-                                               @Param("sigungu") String sigungu,
-                                               @Param("emdNm") String emdNm);
+            "AND (:emd IS NULL OR a.emdNm = :emd)")
+    PopulationStat findBySidoAndSigunguAndEmd(@Param("sido") String sido,
+                                              @Param("sigungu") String sigungu,
+                                              @Param("emd") String emd);
+
+    @Query(value = """
+            SELECT 
+                SUM(p.total) AS total,
+                SUM(p.male) AS male,
+                SUM(p.female) AS female,
+                SUM(p.age_10) AS age10,
+                SUM(p.age_20) AS age20,
+                SUM(p.age_30) AS age30,
+                SUM(p.age_40) AS age40,
+                SUM(p.age_50) AS age50,
+                SUM(p.age_60) AS age60
+            FROM population_stat p
+            JOIN admin_dong a ON p.emd_cd = a.emd_cd
+            WHERE a.sido_nm = :sido AND a.sgg_nm = :sigungu
+            """, nativeQuery = true)
+    PopulationSummary findBySidoAndSigungu(@Param("sido") String sido, @Param("sigungu") String sigungu);
+
 }
