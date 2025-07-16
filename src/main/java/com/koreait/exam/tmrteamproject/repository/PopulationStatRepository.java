@@ -1,6 +1,7 @@
 package com.koreait.exam.tmrteamproject.repository;
 
 
+import com.koreait.exam.tmrteamproject.vo.AdminDong;
 import com.koreait.exam.tmrteamproject.vo.PopulationStat;
 import com.koreait.exam.tmrteamproject.vo.PopulationSummary;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -136,4 +137,11 @@ public interface PopulationStatRepository extends JpaRepository<PopulationStat, 
             """, nativeQuery = true)
     List<PopulationSummary> findByEmd(@Param("emd") String emd);
 
+    @Query(value = """
+                SELECT *
+                FROM admin_dong
+                WHERE emd_nm = :emdNm
+                GROUP BY sido_nm, sgg_nm
+            """, nativeQuery = true)
+    AdminDong findRegionByEmdNm(@Param("emdNm") String emdNm);
 }

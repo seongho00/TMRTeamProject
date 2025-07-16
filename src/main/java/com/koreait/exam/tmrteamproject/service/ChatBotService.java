@@ -1,11 +1,9 @@
 package com.koreait.exam.tmrteamproject.service;
 
+import com.koreait.exam.tmrteamproject.repository.AdminDongRepository;
 import com.koreait.exam.tmrteamproject.repository.MemberRepository;
 import com.koreait.exam.tmrteamproject.repository.PopulationStatRepository;
-import com.koreait.exam.tmrteamproject.vo.FlaskResult;
-import com.koreait.exam.tmrteamproject.vo.Member;
-import com.koreait.exam.tmrteamproject.vo.PopulationSummary;
-import com.koreait.exam.tmrteamproject.vo.ResultData;
+import com.koreait.exam.tmrteamproject.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
@@ -23,6 +21,7 @@ public class ChatBotService {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final PopulationStatRepository populationStatRepository;
+    private final AdminDongRepository adminDongRepository;
 
 
     public ResultData analyzeMessage(String message) {
@@ -80,6 +79,7 @@ public class ChatBotService {
         System.out.println("sigungu: " + sigungu);
         System.out.println("emd: " + emd);
 
+
         // 지역 관련
         if (!sido.equals("None") && !sigungu.equals("None") && !emd.equals("None")) {
             // "대전 동구 효동"
@@ -89,7 +89,6 @@ public class ChatBotService {
             return populationStatRepository.findBySidoAndSigungu(sido, sigungu);
         } else if (!sido.equals("None") && !emd.equals("None")) {
             // "대전 효동"
-            System.out.println("실행됨");
             return populationStatRepository.findBySidoAndEmd(sido, emd).get(0);
         } else if (!sigungu.equals("None") && !emd.equals("None")) {
             // "동구 효동"
@@ -109,4 +108,21 @@ public class ChatBotService {
     }
 
 
+    public FlaskResult setFlaskResult(FlaskResult flaskResult) {
+        String sigungu = flaskResult.getSigungu();
+        String emd = flaskResult.getEmd();
+
+        if (!sigungu.equals("None")) {
+            flaskResult.setSido("대전광역시");
+        }
+
+        if (!emd.equals("None")) {
+            AdminDong adminDong = adminDongRepository.findRegionByEmdNm(emd);
+            flaskResult.setSido(adminDong.getSidoNm());
+            flaskResult.setSigungu(adminDong.getSggNm());
+            flaskResult.setEmd(adminDong.getEmdNm());
+        }
+
+        return flaskResult;
+    }
 }
