@@ -29,7 +29,7 @@ conn = pymysql.connect(
     host='localhost',
     user='root',
     password='',  # 비밀번호 입력
-    database='tmrteamproject',
+    database='TMRTeamProject',
     charset='utf8mb4'
 )
 

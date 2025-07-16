@@ -74,14 +74,23 @@ public class ChatBotService {
         flaskResult.getMessage();
         flaskResult.getGender();
 
-        System.out.println(populationStatRepository.findFirstByRegion(sido, sigungu, emd));
+        if (sido.equals("대전")) {
+            sido = "대전광역시";
+        }
+
+        System.out.println("sido: " + sido);
+        System.out.println("sigungu: " + sigungu);
+        System.out.println("emd: " + emd);
+
+
         // 지역 관련
-//        if (sido != null && sigungu != null && emd != null) {
-//            // "대전 동구 효동"
-//            return populationStatRepository.findBySidoAndSigunguAndEmd(sido, sigungu, emd);
-//        } else if (sido != null && sigungu != null) {
-//            // "대전 동구"
-//            return populationStatRepository.findBySidoAndSigungu(sido, sigungu);
+        if (!sido.equals("None") && !sigungu.equals("None") && !emd.equals("None")) {
+            // "대전 동구 효동"
+            return populationStatRepository.findBySidoAndSigunguAndEmd(sido, sigungu, emd);
+        } else if (!sido.equals("None") && !sigungu.equals("None")) {
+            System.out.println("실행됨");
+            // "대전 동구"
+            return populationStatRepository.findBySidoAndSigungu(sido, sigungu);
 //        } else if (sido != null && emd != null) {
 //            // "대전 효동"
 //            return populationStatRepository.findBySidoAndEmd(sido, emd);
@@ -97,9 +106,8 @@ public class ChatBotService {
 //        } else if (emd != null) {
 //            // "효동"
 //            return populationStatRepository.findByEmd(emd);
-//        } else {
-//            return null; // 또는 에러 메시지 응답
-//        }
+        }
+
         return null;
     }
 }
