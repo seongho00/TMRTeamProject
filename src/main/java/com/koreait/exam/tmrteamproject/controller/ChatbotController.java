@@ -60,7 +60,9 @@ public class ChatbotController {
                 // 지역 분류
                 PopulationSummary populationSummary = chatBotService.getPopulationSummary(flaskResult);
 
-                // 성별 및 나이대 분류
+                // 지역 검색
+
+                flaskResult = chatBotService.setFlaskResult(flaskResult);
                 System.out.println("유동인구 조회 요청");
 
                 return ResultData.from("S-2", "유동인구 데이터 출력", "유동인구", populationSummary, "flaskResult", flaskResult);
