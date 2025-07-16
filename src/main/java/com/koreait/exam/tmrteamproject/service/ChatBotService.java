@@ -1,19 +1,28 @@
 package com.koreait.exam.tmrteamproject.service;
 
+import com.koreait.exam.tmrteamproject.repository.MemberRepository;
+import com.koreait.exam.tmrteamproject.repository.PopulationStatRepository;
 import com.koreait.exam.tmrteamproject.vo.FlaskResult;
 import com.koreait.exam.tmrteamproject.vo.Member;
 import com.koreait.exam.tmrteamproject.vo.ResultData;
+import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import javax.xml.transform.Result;
+import java.util.Collections;
 
 
 @Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ChatBotService {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final PopulationStatRepository populationStatRepository;
+
 
     public ResultData analyzeMessage(String message) {
         String flaskUrl = "http://localhost:5000/predict?text=" + message;
@@ -54,5 +63,43 @@ public class ChatBotService {
             e.printStackTrace();
             return ResultData.from("F-1", "❌ Flask 서버 연결 실패");
         }
+    }
+
+    public Object getPopulationInfo(FlaskResult flaskResult) {
+
+        String sido = flaskResult.getSido();
+        String sigungu = flaskResult.getSigungu();
+        String emd = flaskResult.getEmd();
+        flaskResult.getAgeGroup();
+        flaskResult.getMessage();
+        flaskResult.getGender();
+
+        System.out.println(populationStatRepository.findFirstByRegion(sido, sigungu, emd));
+        // 지역 관련
+//        if (sido != null && sigungu != null && emd != null) {
+//            // "대전 동구 효동"
+//            return populationStatRepository.findBySidoAndSigunguAndEmd(sido, sigungu, emd);
+//        } else if (sido != null && sigungu != null) {
+//            // "대전 동구"
+//            return populationStatRepository.findBySidoAndSigungu(sido, sigungu);
+//        } else if (sido != null && emd != null) {
+//            // "대전 효동"
+//            return populationStatRepository.findBySidoAndEmd(sido, emd);
+//        } else if (sigungu != null && emd != null) {
+//            // "동구 효동"
+//            return populationStatRepository.findBySigunguAndEmd(sigungu, emd);
+//        } else if (sido != null) {
+//            // "대전"
+//            return populationStatRepository.findBySido(sido);
+//        } else if (sigungu != null) {
+//            // "동구"
+//            return populationStatRepository.findBySigungu(sigungu);
+//        } else if (emd != null) {
+//            // "효동"
+//            return populationStatRepository.findByEmd(emd);
+//        } else {
+//            return null; // 또는 에러 메시지 응답
+//        }
+        return null;
     }
 }
