@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>LH청약플러스 상가 공고 목록</title>
+
+    <style>
+        :root{
+            --border: #e0e0e0;
+            --bg-head: #f7f7f7;
+        }
+        *{box-sizing: border-box}
+        body{
+            font-family: system-ui, Arial, sans-serif;
+            margin: 0;
+            padding: 1.5rem;
+        }
+        h1{margin: 0 0 1rem; font-size: 1.4rem}
+        table{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .875rem;
+        }
+        th,td{
+            border: 1px solid var(--border);
+            padding: .55rem .8rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+        th{background: var(--bg-head); font-weight: 600}
+
+        .status-공고중 {
+            color: #4CAF50;
+            font-weight: 600;
+        }
+        .status-접수중 {
+            color: #D32F2F;
+            font-weight: 600;
+        }
+        .status-접수마감 {
+            color: #757575;
+            font-weight: 600;
+        }
+        /* 정정공고중, 상담요청은 기본 색상으로 표시 */
+
+    </style>
+</head>
+<body>
+<h1>LH청약플러스 상가 공고 목록</h1>
+
+<div th:if="${loading}" style="margin-bottom:1rem;color:#1976d2;font-weight:600;">
+    📡 최신 데이터를 불러오고 있습니다…
+</div>
+
+<table>
+    <thead>
+    <tr>
+        <th>번호</th>
+        <th>유형</th>
+        <th>공고명</th>
+        <th>지역</th>
+        <th>첨부</th>
+        <th>게시일</th>
+        <th>마감일</th>
+        <th>상태</th>
+        <th>조회수</th>
+        <th>문의전화</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <tr th:each="item : ${lhList}">
+        <td th:text="${item.siteNo}">77</td>
+        <td th:text="${item.type}">임대상가(추첨)</td>
+        <td th:text="${item.title}" style="text-align:left;">공고명</td>
+        <td th:text="${item.address}">지역</td>
+        <td>-</td> <td th:text="${#temporals.format(item.postDate,'yyyy-MM-dd')}">2025-07-15</td>
+        <td th:text="${#temporals.format(item.deadlineDate,'yyyy-MM-dd') ?: '-'}">2025-07-22</td>
+        <td th:text="${item.status ?: '-'}"
+            th:classappend="'status-' + ${item.status}">공고중</td>
+        <td th:text="${item.views ?: 0}">0</td>
+        <td>-</td> </tr>
+
+    <tr th:if="${#lists.isEmpty(lhList)}">
+        <td colspan="10" style="padding:2rem 0">표시할 데이터가 없습니다.</td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>
