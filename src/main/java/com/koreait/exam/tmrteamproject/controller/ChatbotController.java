@@ -1,7 +1,12 @@
 package com.koreait.exam.tmrteamproject.controller;
 
+import com.koreait.exam.tmrteamproject.service.ChatBotService;
+import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
+import com.koreait.exam.tmrteamproject.vo.FlaskResult;
+import com.koreait.exam.tmrteamproject.vo.ResultData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,7 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
-import org.json.JSONObject;
 
 @Controller
 @RequestMapping("usr/chatbot")
@@ -17,7 +21,9 @@ import org.json.JSONObject;
 @RequiredArgsConstructor
 public class ChatbotController {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+
+    @Autowired
+    private ChatBotService chatBotService;
 
     @GetMapping("/chat")
     public String chat() {
@@ -27,17 +33,44 @@ public class ChatbotController {
     @PostMapping("/sendMessage")
     @ResponseBody
     public String sendMessage(String message) {
-        System.out.println(message);
-        String flaskUrl = "http://localhost:5000/predict?text=" + message;
 
-        try {
-            String response = restTemplate.getForObject(flaskUrl, String.class);
-            JSONObject json = new JSONObject(response);
-            return json.getString("message"); // ✅ 응답 메시지만 꺼내서 리턴
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "❌ Flask 서버 연결 실패";
+        ResultData result = chatBotService.analyzeMessage(message);
+
+        if (result.isFail()) {
+            return result.getMsg();  // "❌ Flask 서버 연결 실패"
+        }
+        FlaskResult flaskResult = (FlaskResult) result.getData1();
+        String intent = flaskResult.getIntent();
+
+        switch (intent) {
+            case "0":
+                // 매출 관련 조회 로직
+                System.out.println("매출 분석 요청");
+                break;
+
+            case "1":
+                // 유동인구 관련 로직
+                System.out.println("유동인구 조회 요청");
+                break;
+
+            case "2":
+                // 상권 위험도 예측 로직
+                
+                System.out.println("위험도 예측 요청");
+                break;
+
+            case "3":
+                // 청약 관련 로직
+                System.out.println("청약 조회 요청");
+                break;
+
+            default:
+                // 알 수 없는 intent
+                System.out.println("알 수 없는 요청");
+                break;
         }
 
+
+        return "success";
     }
 }
