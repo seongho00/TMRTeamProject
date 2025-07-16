@@ -2,7 +2,6 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 import pymysql
 
-
 tree = ET.parse("행정동데이터.json")  # 실제로는 XML
 root = tree.getroot()
 
@@ -23,14 +22,13 @@ df = pd.DataFrame(rows)
 
 print(df.head())  # 또는 df.to_string(index=False)
 
-# 연결
-
+# MySQL 연결
 conn = pymysql.connect(
-    host='localhost',
-    user='root',
-    password='',  # 비밀번호 입력
-    database='tmrteamproject',
-    charset='utf8mb4'
+    host="database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com",
+    user="admin",
+    password="tk123412345!!",
+    database="SHW",
+    charset="utf8mb4"
 )
 
 cursor = conn.cursor()
