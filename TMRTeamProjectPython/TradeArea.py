@@ -35,61 +35,91 @@ chrome_options.add_argument("--headless")  # 창 안 뜨게
 chrome_options.add_argument("--disable-gpu")  # GPU 비활성화 (윈도우에서 headless 안정성)
 
 conn = pymysql.connect(
-    host="localhost",
-    user="root",
-    password="",
+    host="database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com",
+    user="admin",
+    password="tk123412345!!",
     db="TMRTeamProject",
     charset="utf8mb4"
 )
 cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '중구';")
+cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '동구';")
 dong_rows = cursor.fetchall()
 
-cursor.execute("SELECT * FROM upjong_code WHERE NOT major_cd = 'I2' ORDER BY major_cd DESC;")
+cursor.execute("SELECT * FROM upjong_code;")
 upjong_rows = cursor.fetchall()
 
 for dong in dong_rows:
-    admi_cd = dong[5]
     sido_nm = dong[2]
     sgg_nm = dong[4]
+    admi_cd = dong[5]
     emd_nm = dong[6]
+
     simple_loc = f"{sido_nm} {sgg_nm} {emd_nm}"
     print(f"[동 시작] {simple_loc} ({admi_cd})")
 
     for upjong in upjong_rows:
-        upjong_cd = upjong[4]
-        print(upjong_cd)
+        major_cd = upjong[0]
+        middle_cd = upjong[2]
+        minor_cd = upjong[4]
         minor_nm = upjong[5]
-        print(minor_nm)
+
         try:
             headers = {
                 "User-Agent": random.choice(USER_AGENTS),
                 "Referer": "https://bigdata.sbiz.or.kr/"
             }
 
+            # getAvgAmtInfo 요청
+            avg_url = "https://bigdata.sbiz.or.kr/gis/simpleAnls/getAvgAmtInfo.json"
             params = {
                 "admiCd": admi_cd,
-                "upjongCd": upjong_cd,
+                "upjongCd": minor_cd,
                 "simpleLoc": simple_loc,
                 "bizonNumber": "",
                 "bizonName": "",
                 "bzznType": "1",
                 "xtLoginId": ""
             }
-
-            avg_url = "https://bigdata.sbiz.or.kr/gis/simpleAnls/getAvgAmtInfo.json"
             avg_res = requests.get(avg_url, headers=headers, params=params, timeout=10)
             avg_res.raise_for_status()
             avg_data = avg_res.json()
             analyNo = avg_data.get("analyNo")
-            print(analyNo)
+            mililis = avg_data.get("mililis")
+            baeminStdYm = avg_data.get("baeminStdYm")
+            baemin = avg_data.get("baemin")
 
+            if not analyNo:
+                raise Exception("analyNo 없음")
+
+            # baemin 코드가 'Y'인것만 getBaeminInfo 요청
+            if baemin == 'Y':
+                baemin_url = "https://bigdata.sbiz.or.kr/gis/simpleAnls/getBaeminInfo.json"
+                baemin_params = {
+                    "admiCd": admi_cd,
+                    "analyNo": analyNo,
+                    "upjongCd": minor_cd,
+                    "stdYm": baeminStdYm,
+                    "mililis": mililis,
+                    "dong": emd_nm,
+                    "gu": sgg_nm,
+                    "si": sido_nm,
+                    "xtLoginId": ""
+                }
+                baemin_res = requests.get(baemin_url, headers=headers, params=baemin_params, timeout=10)
+                baemin_res.raise_for_status()
+                baemin_data = baemin_res.json()
+
+                analyNo = baemin_data.get("analyNo")
+                mililis = baemin_data.get("mililis")
+
+            # getPopularInfo 요청
             popular_url = "https://bigdata.sbiz.or.kr/gis/simpleAnls/getPopularInfo.json"
             popular_params = {
                 "analyNo": analyNo,
                 "admiCd": admi_cd,
-                "upjongCd": upjong_cd,
+                "upjongCd": minor_cd,
+                "mililis": mililis,
                 "bizonNumber": "",
                 "bizonName": "",
                 "bzznType": "1",
@@ -104,7 +134,7 @@ for dong in dong_rows:
 
             if analy_no:
                 report_url = f"https://bigdata.sbiz.or.kr/gis/report/viewer.sg?reportId={analy_no}"
-                print(f" → 성공: {upjong_cd} 분석번호: {analy_no}")
+                print(f" → 성공: {minor_cd} 분석번호: {analy_no}")
             else:
                 raise Exception("analyNo 없음")
 
@@ -164,11 +194,14 @@ for dong in dong_rows:
                 timeout -= 0.5
 
         except Exception as e:
-            print(f" → 오류: {upjong_cd}: {e}")
+            print(f" → 오류: {minor_cd}: {e}")
             error_list.append({
                 "admiCd": admi_cd,
                 "dongName": emd_nm,
-                "upjongCd": upjong_cd,
+                "upjongCd": minor_cd,
                 "error": str(e)
             })
             time.sleep(1)
+
+        finally:
+            driver.quit()
