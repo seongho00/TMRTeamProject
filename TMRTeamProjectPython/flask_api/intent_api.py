@@ -90,9 +90,11 @@ def extract_nouns(text):
 
 # ✅ 의미 분석 함수
 def analyze_input(user_input, valid_emd_list):
-    valid_city_map = {
-        '대전': ['서구', '유성구', '대덕구', '동구', '중구']
-    }
+    # 시도 목록 (단일 단어 기준)
+    valid_sido = {'대전'}
+
+    # 시군구 목록
+    valid_sigungu = {'서구', '유성구', '대덕구', '동구', '중구'}
 
     gender_keywords = {
         "남자": "male", "남성": "male",
@@ -116,17 +118,24 @@ def analyze_input(user_input, valid_emd_list):
     sigungu = None
     emd_nm = None
 
-
     for token in nouns:
-        for city in valid_city_map:
-            if token.startswith(city):
-                sido = city
-        if sido and token in valid_city_map[sido]:
+        # 시도 설정
+        if token in valid_sido:
+            sido = token
+        
+        # 시군구 설정
+        if token in valid_sigungu:
             sigungu = token
+            
+        # 성별 설정
         if token in gender_keywords:
             gender = gender_keywords[token]
+            
+        # 나이대 설정
         if token in age_keywords:
             age_group = age_keywords[token]
+            
+        # 행정동 설정
         if token in valid_emd_list:
             emd_nm = token  # ✅ 행정동 이름 저장
 
