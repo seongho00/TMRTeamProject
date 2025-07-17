@@ -29,15 +29,16 @@
             width: 100%;
             border-collapse: collapse;
             font-size: .875rem;
-            table-layout: fixed;
+            table-layout: fixed; /* 너비 비율 유지를 위해 고정 */
         }
 
         th, td {
             border: 1px solid var(--border);
-            padding: .55rem .3rem;
+            padding: .55rem .4rem; /* 전체적인 좌우 여백 */
             text-align: center;
             vertical-align: middle;
-            white-space: nowrap; /* 줄바꿈 방지 */
+            /* 넓은 화면에서는 한 줄로 표시, 넘치면 말줄임표  */
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -48,51 +49,28 @@
         }
 
         /* 상태별 색상 */
-        .status-공고중 {
-            color: #4CAF50;
-            font-weight: 600;
-        }
-
-        .status-접수중 {
-            color: #D32F2F;
-            font-weight: 600;
-        }
-
-        .status-정정공고중 {
-            color: #1976D2;
-            font-weight: 600;
-        }
-
-        .status-접수마감 {
-            color: #757575;
-            font-weight: 600;
-        }
+        .status-공고중 { color: #4CAF50; font-weight: 600; }
+        .status-접수중 { color: #D32F2F; font-weight: 600; }
+        .status-접수마감 { color: #757575; font-weight: 600; }
 
         /* 첨부파일 UI */
         .attachment-cell, .col-title {
             text-align: left;
-            white-space: normal; /* 공고명, 첨부파일 줄바꿈 허용 */
+            /* 공고명과 첨부파일은 기본적으로 줄바꿈 허용 */
+            white-space: normal;
         }
-
-        .attachment-list {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-
+        .attachment-list { margin: 0; padding: 0; list-style: none; }
         .attachment-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 2px;
         }
-
         .attachment-name {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
         .attachment-button {
             flex-shrink: 0;
             font-size: 11px;
@@ -102,6 +80,15 @@
             border: 1px solid #ccc;
             border-radius: 3px;
             margin-left: 5px;
+        }
+
+       /* 반응형 디자인 */
+        @media (max-width: 1400px) {
+            th, td {
+                white-space: normal;
+                overflow: visible;
+                text-overflow: clip;
+            }
         }
     </style>
 </head>
