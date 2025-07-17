@@ -24,23 +24,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect  # ← 요게 핵심!!
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: 1042006957683-qrmsmr42e04771d74v6f1sssung4aukt.apps.googleusercontent.com
-            client-secret: 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
-            redirect-uri: "http://localhost:8080/login/oauth2/code/google" # ✅ 이거 있어야 함
-            scope:
-              - email
-              - profile
-              - https://www.googleapis.com/auth/user.phonenumbers.read
-        provider:
-          google:
-            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
-            token-uri: https://oauth2.googleapis.com/token
-            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+  
 
 
 

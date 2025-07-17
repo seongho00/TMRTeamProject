@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head::head"></head> <!-- ✅ 공백 제거 -->
+
+
+<h2>Firebase Social Login</h2>
+
+<button onclick="googleLogin()">구글 로그인</button>
+<button onclick="githubLogin()">깃허브 로그인</button>
+
+<!-- ✅ 모듈 방식으로 수정 -->
+<script type="module">
+    import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+        getAuth,
+        GoogleAuthProvider,
+        GithubAuthProvider,
+        signInWithPopup
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    // ✅ Firebase 설정
+    const firebaseConfig = {
+        apiKey: "AIzaSyDqY-Lj2sJliSi2FOF-nwXf5d99lrlWyMs",
+        authDomain: "tmrteamproject.firebaseapp.com",
+        projectId: "tmrteamproject",
+        storageBucket: "tmrteamproject.firebasestorage.app",
+        messagingSenderId: "1042006957683",
+        appId: "1:1042006957683:web:7aa5565d3dacc30fda5406",
+        measurementId: "G-RE253T3ZQY"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // ✅ Google 로그인
+    window.googleLogin = () => {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider)
+            .then(result => result.user.getIdToken())
+            .then(idToken => sendTokenToServer(idToken))
+            .catch(console.error);
+    };
+
+    // ✅ GitHub 로그인
+    window.githubLogin = () => {
+        const provider = new GithubAuthProvider();
+        signInWithPopup(auth, provider)
+            .then(result => result.user.getIdToken())
+            .then(idToken => sendTokenToServer(idToken))
+            .catch(console.error);
+    };
+
+    // ✅ 서버로 토큰 전송
+    function sendTokenToServer(idToken) {
+        fetch("http://localhost:8080/api/login-check", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + idToken
+            },
+            body: JSON.stringify({msg: "로그인 성공"})
+        })
+            .then(res => res.text())
+            .then(console.log)
+            .catch(console.error);
+    }
+</script>
