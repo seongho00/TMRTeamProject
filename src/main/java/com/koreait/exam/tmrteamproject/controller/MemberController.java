@@ -138,6 +138,9 @@ public class MemberController {
     @PostMapping("/login-check")
     public ResponseEntity<?> loginCheck(@RequestBody Map<String, String> body) {
         String idToken = body.get("idToken");
+
+        System.out.println(body);
+
         if (idToken == null) {
             return ResponseEntity.badRequest().body("idToken 누락됨");
         }
