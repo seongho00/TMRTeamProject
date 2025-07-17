@@ -2,6 +2,16 @@ DROP DATABASE IF EXISTS `TMRTeamProject`;
 CREATE DATABASE `TMRTeamProject`;
 USE `TMRTeamProject`;
 
+<<<<<<< HEAD
+CREATE TABLE `member` (
+                          id INT(10) AUTO_INCREMENT PRIMARY KEY,
+                          reg_date DATETIME NOT NULL,
+                          update_date DATETIME NOT NULL,
+                          `name` VARCHAR(50) NOT NULL,
+                          login_pw VARCHAR(100) NOT NULL,
+                          email VARCHAR(100) NOT NULL,
+                          phone_num VARCHAR(20)
+=======
 CREATE TABLE MEMBER (
                         id INT(10) AUTO_INCREMENT PRIMARY KEY,
                         regDate DATETIME NOT NULL,
@@ -20,6 +30,7 @@ CREATE TABLE floating_population (
                                      population_count INT NOT NULL,        -- 유동인구 수
                                      collected_date DATE NOT NULL,         -- 데이터 수집 기준일
                                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+>>>>>>> c5aa3711261c631264f06b16539d98231c20c6b3
 );
 
 
@@ -33,6 +44,28 @@ CREATE TABLE admin_dong (
                             emd_nm VARCHAR(20)
 );
 
+<<<<<<< HEAD
+CREATE TABLE population_stat (
+                                 id INT AUTO_INCREMENT PRIMARY KEY,
+                                 emd_cd CHAR(10),             -- 읍면동 코드
+                                 total INT,
+                                 male INT,
+                                 female INT,
+                                 age_10 INT,
+                                 age_20 INT,
+                                 age_30 INT,
+                                 age_40 INT,
+                                 age_50 INT,
+                                 age_60 INT
+
+);
+
+
+SELECT * FROM admin_dong;
+SELECT * FROM population_stat;
+
+
+=======
 SELECT * FROM admin_dong;
 
 # 업종별 코드 저장
@@ -46,3 +79,4 @@ CREATE TABLE upjong_code (
 );
 
 SELECT * FROM upjong_code;
+>>>>>>> c5aa3711261c631264f06b16539d98231c20c6b3
