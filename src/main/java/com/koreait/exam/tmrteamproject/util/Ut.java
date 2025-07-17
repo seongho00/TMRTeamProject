@@ -59,7 +59,7 @@ public class Ut {
     }
 
     public static boolean isEmptyOrNull(String str) {
-        return str == null || str.trim().length() == 0;
+        return str == null || str.trim().isEmpty();
     }
 
     public static boolean isEmpty(Object obj) {
@@ -69,7 +69,7 @@ public class Ut {
         }
 
         if (obj instanceof String) {
-            return ((String) obj).trim().length() == 0;
+            return ((String) obj).trim().isEmpty();
         }
 
         if (obj instanceof Map) {
@@ -101,5 +101,4 @@ public class Ut {
 
         return sb.toString();
     }
-
 }

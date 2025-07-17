@@ -14,7 +14,6 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class KakaoOAuthService {
 
-
     @Value("${kakao.api.clientId}")
     private String kakaoClientId;
     @Value("${kakao.api.clientSecret}")
@@ -22,7 +21,6 @@ public class KakaoOAuthService {
 
     @Autowired
     private Rq rq;
-
 
     // 토큰 요청 함수
     public String requestAccessToken(String authorizationCode) {
@@ -122,11 +120,8 @@ public class KakaoOAuthService {
             System.out.println("email: " + email);
             System.out.println("phoneNumber: " + phoneNumber);
 
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
-
 }
