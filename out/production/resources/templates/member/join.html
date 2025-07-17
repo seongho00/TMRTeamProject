@@ -176,7 +176,7 @@
 
     });
 
-    // submut 눌렀을 떄
+    // submit 눌렀을 떄
     function handleSubmit(e) {
         e.preventDefault(); // 전송 막기
 
@@ -187,9 +187,7 @@
             checkPhoneNum(true);
 
         console.log(isValid);
-        console.log("실행됨1");
         if (isValid) {
-            console.log("실행됨2");
             $("#createAccountForm").submit(); // ✅ 수동 제출
         }
     }
@@ -420,4 +418,6 @@
         </div>
     </div>
 </div>
+
+
 
