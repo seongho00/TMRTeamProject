@@ -7,6 +7,9 @@
 
 <button onclick="googleLogin()">구글 로그인</button>
 <button onclick="githubLogin()">깃허브 로그인</button>
+<button onclick="logout()">로그아웃</button>
+<button onclick="checkLoginStatus()">로그인 상태 확인</button>
+<button onclick="deleteAccount()">계정 삭제</button>
 
 <!-- ✅ 모듈 방식으로 수정 -->
 <script type="module">
@@ -16,9 +19,9 @@
         GoogleAuthProvider,
         GithubAuthProvider,
         signInWithPopup,
-        signInWithRedirect,
         linkWithCredential,
-        getRedirectResult
+        onAuthStateChanged,
+        fetchSignInMethodsForEmail
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     // ✅ Firebase 설정
@@ -35,39 +38,47 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            console.log("✅ 로그인된 사용자:", user.email);
+            console.log("🔗 연결된 Provider들:", user.providerData.map(p => p.providerId));
+        } else {
+            console.log("❌ 로그인 안됨");
+        }
+    });
+
     // ✅ Google 로그인
     window.googleLogin = () => {
         const provider = new GoogleAuthProvider();
-
-        // ✅ 항상 계정 선택 창을 띄우기 위한 설정
-        provider.setCustomParameters({
-            prompt: 'select_account'
-        });
+        provider.setCustomParameters({prompt: 'select_account'});
 
         signInWithPopup(auth, provider)
-            .then(result => result.user.getIdToken())
-            .then(idToken => sendTokenToServer(idToken))
+            .then(async (result) => {
+                // 🔁 병합 정보 확인
+                const storedCred = sessionStorage.getItem("pendingGithubCred");
+                console.log(storedCred);
+                console.log("실행됨1");
+                if (storedCred) {
+                    console.log("실행됨2");
+
+                    try {
+                        const pendingCred = GithubAuthProvider.credentialFromJSON(JSON.parse(storedCred));
+                        await linkWithCredential(result.user, pendingCred);
+                        console.log("✅ GitHub 계정 병합 완료 (팝업)");
+
+                        sessionStorage.removeItem("pendingGithubCred");
+                    } catch (mergeError) {
+                        console.error("🔴 병합 중 오류 (팝업):", mergeError);
+                    }
+                }
+
+                // ✅ 로그인 성공 → 토큰 전송
+                const idToken = await result.user.getIdToken();
+                sendTokenToServer(idToken);
+            })
             .catch(console.error);
     };
 
-    // ✅ 페이지 진입 시 리다이렉트 결과 처리
-    getRedirectResult(auth)
-        .then(async (result) => {
-            if (result && result.user) {
-                console.log("✅ Google 로그인 완료:", result.user.email);
-
-                // 병합할 GitHub credential이 있다면 병합
-                if (window.pendingGithubCred) {
-                    await linkWithCredential(result.user, window.pendingGithubCred);
-                    delete window.pendingGithubCred;
-                    console.log("✅ GitHub 계정 병합 완료");
-                }
-
-                const idToken = await result.user.getIdToken();
-                sendTokenToServer(idToken);
-            }
-        })
-        .catch(console.error);
 
     // ✅ GitHub 로그인
     window.githubLogin = () => {
@@ -81,22 +92,36 @@
             })
             .catch(async (error) => {
                 if (error.code === "auth/account-exists-with-different-credential") {
-                    const email = error.customData?.email;
                     const pendingCred = GithubAuthProvider.credentialFromError(error);
+                    const email = error.customData?.email;
 
-                    alert(`"${email}"은 이미 Google 계정으로 가입되어 있습니다.\nGoogle로 로그인하겠습니다.`);
+                    if (!email) return;
 
-                    // ✅ 병합 정보 전역 저장
-                    window.pendingGithubCred = pendingCred;
+                    // 👉 병합 정보를 임시 저장
+                    sessionStorage.setItem("pendingGithubCred", JSON.stringify(pendingCred));
 
-                    // ✅ GitHub 팝업 닫히고, Google 리다이렉트 로그인 시도
+                    // 👉 Google 로그인 시도 (팝업 또는 버튼 클릭 등)
                     const googleProvider = new GoogleAuthProvider();
-                    googleProvider.setCustomParameters({ prompt: "select_account" });
+                    googleProvider.setCustomParameters({prompt: "select_account"});
 
-                    signInWithRedirect(auth, googleProvider);
+                    console.log("googleProvider : " + googleProvider);
+
+                    // ❗ fetchSignInMethodsForEmail 생략 → 직접 로그인 시도
+                    const googleResult = await signInWithPopup(auth, googleProvider);
+                    console.log("googleResult : " + googleResult);
+
+
+                    // ✅ 병합 시도
+                    const stored = sessionStorage.getItem("pendingGithubCred");
+                    console.log("stored : " + stored);
+                    if (stored) {
+                        const cred = GithubAuthProvider.credentialFromJSON(JSON.parse(stored));
+                        await linkWithCredential(googleResult.user, cred);
+                        sessionStorage.removeItem("pendingGithubCred");
+                        alert("✅ 병합 완료");
+                    }
                 } else {
-                    console.error("🔴 기타 로그인 오류:", error);
-                    alert("로그인 중 오류가 발생했습니다.");
+                    console.error("🔴 로그인 실패:", error);
                 }
             });
     };
@@ -108,10 +133,64 @@
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ idToken })  // ✅ 여기에 idToken 추가
+            body: JSON.stringify({idToken})  // ✅ 여기에 idToken 추가
         })
             .then(res => res.text())
             .then(console.log)
             .catch(console.error);
     }
+
+    // ✅ 로그아웃 함수
+    window.logout = () => {
+        auth.signOut()
+            .then(() => {
+                alert("로그아웃 되었습니다.");
+                console.log("✅ Firebase 로그아웃 완료");
+            })
+            .catch((error) => {
+                console.error("❌ 로그아웃 오류:", error);
+                alert("로그아웃 중 오류가 발생했습니다.");
+            });
+    };
+
+    // ✅ 로그인 상태 확인 버튼 클릭 시 호출
+    window.checkLoginStatus = () => {
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                alert(`✅ 로그인 상태입니다.\n사용자: ${user.email}`);
+                console.log("✅ 로그인됨:", user.email);
+            } else {
+                alert("❌ 현재 로그인되어 있지 않습니다.");
+                console.log("❌ 로그아웃 상태");
+            }
+        });
+    };
+
+    window.deleteAccount = () => {
+        const user = auth.currentUser;
+
+        if (user) {
+            const confirmDelete = confirm("정말로 계정을 삭제하시겠습니까?\n복구가 불가능합니다.");
+            if (!confirmDelete) return;
+
+            user.delete()
+                .then(() => {
+                    alert("✅ 계정이 성공적으로 삭제되었습니다.");
+                    console.log("✅ Firebase 사용자 삭제 완료");
+                })
+                .catch((error) => {
+                    console.error("❌ 계정 삭제 실패:", error);
+
+                    // 🔑 예외: 최근 로그인 필요
+                    if (error.code === 'auth/requires-recent-login') {
+                        alert("🔐 보안을 위해 최근 로그인 후 다시 시도해주세요.");
+                    } else {
+                        alert("계정 삭제 중 오류가 발생했습니다.");
+                    }
+                });
+        } else {
+            alert("❌ 현재 로그인된 사용자가 없습니다.");
+        }
+    };
+
 </script>
