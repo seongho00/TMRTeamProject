@@ -27,14 +27,13 @@ spring:
 
 
 
-# application.yml
+# 카카오 api 키
 kakao:
   api:
     clientId: 5617b43c5e1f8f47e45f4d510a88e8fc
     clientSecret: 5yc5smUCscGZlKcfjqsfV46wFiVdsbzq
 
-
-# application.yml
+# 네이버 api 키
 naver:
   api:
     clientId: bEMZzWiWu06Pk2b7R6D3
