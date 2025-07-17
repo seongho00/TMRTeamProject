@@ -15,7 +15,9 @@
         getAuth,
         GoogleAuthProvider,
         GithubAuthProvider,
-        signInWithPopup
+        signInWithPopup,
+        linkWithCredential,
+        fetchSignInMethodsForEmail    // ✅ 이거 추가!
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     // ✅ Firebase 설정
@@ -35,6 +37,12 @@
     // ✅ Google 로그인
     window.googleLogin = () => {
         const provider = new GoogleAuthProvider();
+
+        // ✅ 항상 계정 선택 창을 띄우기 위한 설정
+        provider.setCustomParameters({
+            prompt: 'select_account'
+        });
+
         signInWithPopup(auth, provider)
             .then(result => result.user.getIdToken())
             .then(idToken => sendTokenToServer(idToken))
@@ -44,10 +52,41 @@
     // ✅ GitHub 로그인
     window.githubLogin = () => {
         const provider = new GithubAuthProvider();
+
         signInWithPopup(auth, provider)
             .then(result => result.user.getIdToken())
             .then(idToken => sendTokenToServer(idToken))
-            .catch(console.error);
+            .catch(async (error) => {
+                if (error.code === 'auth/account-exists-with-different-credential') {
+                    const email = error.customData?.email;
+                    const pendingCred = GithubAuthProvider.credentialFromError(error);
+
+                    // 이메일에 연결된 로그인 방식 조회
+                    const methods = await fetchSignInMethodsForEmail(auth, email);
+
+                    if (methods.includes('google.com')) {
+                        // 기존에 Google로 가입되어 있음 → Google 로그인 시도
+                        const googleProvider = new GoogleAuthProvider();
+                        googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+                        try {
+                            const googleResult = await signInWithPopup(auth, googleProvider);
+
+                            // 병합: 기존 Google 계정에 GitHub credential 연결
+                            await linkWithCredential(googleResult.user, pendingCred);
+
+                            const idToken = await googleResult.user.getIdToken();
+                            sendTokenToServer(idToken);
+                        } catch (e) {
+                            console.error("Google 로그인 실패:", e);
+                        }
+                    } else {
+                        console.warn("지원되지 않는 방식:", methods);
+                    }
+                } else {
+                    console.error("기타 로그인 에러:", error);
+                }
+            });
     };
 
     // ✅ 서버로 토큰 전송
