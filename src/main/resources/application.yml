@@ -13,7 +13,7 @@ spring:
     restart:
       enabled: true
   datasource:
-    url: jdbc:mysql://database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com:3306/SHW?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
+    url: jdbc:mysql://127.0.0.1:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password:
@@ -24,6 +24,23 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect  # ← 요게 핵심!!
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 1042006957683-qrmsmr42e04771d74v6f1sssung4aukt.apps.googleusercontent.com
+            client-secret: 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
+            redirect-uri: "http://localhost:8080/login/oauth2/code/google" # ✅ 이거 있어야 함
+            scope:
+              - email
+              - profile
+              - https://www.googleapis.com/auth/user.phonenumbers.read
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
 
 
 
@@ -39,6 +56,7 @@ naver:
     clientId: bEMZzWiWu06Pk2b7R6D3
     clientSecret: 730aCbbDQO
 
+# SMS 문자 api 키
 solapi:
   apiKey: NCS8X6JXYL5LGJ0B
   apiSecret: OPMRNQJAWXRAEDUGNAOPOI8AZNRTTSCO
