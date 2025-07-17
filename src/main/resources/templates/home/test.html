@@ -54,15 +54,23 @@
 
         signInWithPopup(auth, provider)
             .then(async (result) => {
-                // 🔁 병합 정보 확인
-                const storedCred = sessionStorage.getItem("pendingGithubCred");
-                console.log(storedCred);
-                console.log("실행됨1");
-                if (storedCred) {
-                    console.log("실행됨2");
+                console.log("result");
+                console.log(result);
 
+                // 🔁 병합 정보 확인
+                const storedCredJson  = sessionStorage.getItem("pendingGithubCred");
+
+                // ✅ 문자열 → 객체로 변환
+                const storedCred = JSON.parse(storedCredJson);
+                const accessToken = storedCred.accessToken;
+                console.log("storedCred : " + storedCred);
+                console.log("accessToken : " + accessToken);
+
+                if (storedCred) {
                     try {
-                        const pendingCred = GithubAuthProvider.credentialFromJSON(JSON.parse(storedCred));
+                        const pendingCred = GithubAuthProvider.credential(accessToken);
+                        console.log("pendingCred");
+                        console.log(pendingCred);
                         await linkWithCredential(result.user, pendingCred);
                         console.log("✅ GitHub 계정 병합 완료 (팝업)");
 
