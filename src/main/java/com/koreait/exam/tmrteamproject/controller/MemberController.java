@@ -9,8 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -108,22 +106,6 @@ public class MemberController {
         return "redirect:../home/main";
     }
 
-    @PostMapping("/googleCallback")
-    public String googleCallback(@AuthenticationPrincipal OAuth2User oauthUser) {
-        if (oauthUser == null) {
-            System.out.println("❌ 인증되지 않은 접근 (oauthUser가 null)");
-            return "redirect:/login";  // 로그인 페이지로 유도
-        }
-
-        System.out.println("✅ OAuth2User Attributes: " + oauthUser.getAttributes());
-        String name = oauthUser.getAttribute("name");
-        String email = oauthUser.getAttribute("email");
-
-        System.out.println("이름: " + name);
-        System.out.println("이메일: " + email);
-
-        return "redirect:../home/main";
-    }
 
     @GetMapping("/doLogout")
     public String doLogout() {

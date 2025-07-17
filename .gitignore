@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# ✅ Firebase 서비스 계정 키 제외
+firebase-adminsdk.json
