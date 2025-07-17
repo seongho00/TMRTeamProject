@@ -52,13 +52,12 @@
 
     // ✅ 서버로 토큰 전송
     function sendTokenToServer(idToken) {
-        fetch("http://localhost:8080/api/login-check", {
+        fetch("http://localhost:8080/usr/member/login-check", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + idToken
+                "Content-Type": "application/json"
             },
-            body: JSON.stringify({msg: "로그인 성공"})
+            body: JSON.stringify({ idToken })  // ✅ 여기에 idToken 추가
         })
             .then(res => res.text())
             .then(console.log)
