@@ -1,79 +1,81 @@
-// com.ltk.TMR.service.LhApplyInfoService
 package com.ltk.TMR.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.ltk.TMR.entity.LhApplyInfo;
 import com.ltk.TMR.repository.LhApplyInfoRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.file.Path;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.ResolverStyle;
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
+@Transactional(readOnly = true)
 public class LhApplyInfoService {
 
     private final LhApplyInfoRepository repo;
-
-    /* yyyy-MM-dd, yyyy.MM.dd 모두 허용 */
-    private static final DateTimeFormatter FLEXIBLE =
-            DateTimeFormatter.ofPattern("uuuu[-MM[-dd]][.MM[.dd]]")
-                    .withResolverStyle(ResolverStyle.STRICT);
+    private final AtomicBoolean loading = new AtomicBoolean(false);
 
     private final ObjectMapper mapper = new ObjectMapper()
-            /* Java 8 Time 지원 */
-            .registerModule(new JavaTimeModule()
-                    .addDeserializer(
-                            LocalDate.class,
-                            new LocalDateDeserializer(FLEXIBLE)))
-            /* JSON 필드 초과 허용 */
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            /* timestamp ↔ 문자열 변환 */
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-            .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE);
+            .registerModule(new JavaTimeModule())
+            .setDateFormat(new SimpleDateFormat("yyyy-MM-dd"))
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    /* JSON 파일 경로 */
     @Value("${crawler.json-path:python_LH_crawler/data/lh_data.json}")
     private String jsonPath;
 
-    private final AtomicBoolean loading = new AtomicBoolean(false);
     public boolean isLoading() { return loading.get(); }
 
-    /* 수동 호출 */
-    @Async @Transactional
+    @Async
+    @Transactional
     public void refreshFromCrawler() {
         if (loading.compareAndSet(false, true)) {
-            try { saveFromJson(Path.of(jsonPath)); }
-            finally { loading.set(false); }
+            try {
+                // Map 형태로 리딩 후 attachments 별도 처리
+                List<Map<String, Object>> rawDataList = mapper.readValue(
+                        new File(jsonPath),
+                        new TypeReference<>() {}
+                );
+                log.info("[LH] {}건의 크롤링 데이터를 읽었습니다.", rawDataList.size());
+
+                for (Map<String, Object> rawData : rawDataList) {
+                    LhApplyInfo newInfo = mapper.convertValue(rawData, LhApplyInfo.class);
+
+                    // attachments 리스트를 JSON 문자열 변환 후 저장
+                    if (rawData.get("attachments") != null) {
+                        String attachmentsJson = mapper.writeValueAsString(rawData.get("attachments"));
+                        newInfo.setAttachmentsJson(attachmentsJson);
+                    }
+
+                    upsert(newInfo);
+                }
+                log.info("[LH] {}건 적재/업데이트 완료", rawDataList.size());
+
+            } catch (IOException e) {
+                log.error("JSON 파일 읽기 또는 처리 중 에러", e);
+            } finally {
+                loading.set(false);
+            }
         }
     }
 
-    /* JSON → DB 저장 */
-    void saveFromJson(Path json) {
-        try {
-            List<LhApplyInfo> list = mapper.readValue(
-                    json.toFile(), new TypeReference<>(){});
-            list.forEach(this::upsert);
-            log.info("[LH] {}건 적재/업데이트 완료", list.size());
-        } catch (Exception e) {
-            throw new RuntimeException("[LhApplyInfoService] JSON 처리 실패", e);
-        }
-    }
-
-    /* siteNo 우선, 없으면 (title+postDate) 로 upsert */
     private void upsert(LhApplyInfo dto) {
         if (dto.getSiteNo() == null) {
             log.warn("[LH] siteNo 없음 → SKIP : {}", dto.getTitle());
@@ -86,8 +88,27 @@ public class LhApplyInfoService {
                 }, () -> repo.save(dto));
     }
 
-    /* 화면 조회 */
     public List<LhApplyInfo> findAllDesc() {
-        return repo.findAllByOrderBySiteNoDesc();
+        List<LhApplyInfo> resultList = repo.findAllByOrderBySiteNoDesc();
+
+        // JSON 문자열을 DTO 리스트로 변환
+        resultList.forEach(item -> {
+            if (item.getAttachmentsJson() != null && !item.getAttachmentsJson().isEmpty()) {
+                try {
+                    List<LhApplyInfo.AttachmentDto> attachments = mapper.readValue(
+                            item.getAttachmentsJson(),
+                            new TypeReference<>() {}
+                    );
+                    item.setAttachments(attachments);
+                } catch (JsonProcessingException e) {
+                    log.error("Failed to parse attachments JSON for siteNo: {}", item.getSiteNo(), e);
+                    item.setAttachments(Collections.emptyList());
+                }
+            } else {
+                item.setAttachments(Collections.emptyList());
+            }
+        });
+
+        return resultList;
     }
 }

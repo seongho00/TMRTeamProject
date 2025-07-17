@@ -1,23 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-상가 공고 목록 크롤러
----------------------------------
-* 매핑 (2025-07-15 기준)
-    siteNo       : 1번째 <td> (게시물 번호)
-    type         : 2번째 <td> (유형)
-    title        : 3번째 <td> (공고명)
-    address      : 4번째 <td> (지역)
-    postDate     : 6번째 <td> (게시일, yyyy.MM.dd → yyyy-MM-dd)
-    deadlineDate : 7번째 <td> (마감일, 〃)
-    status       : 8번째 <td> (상태)
-    views        : 9번째 <td> (조회수, 콤마 제거 후 int)
-    callNumber   : 목록에 표시되지 않음 → None
-"""
+# LH 임대·분양 상가 공고 목록 크롤러 (상세 페이지 포함 최종본)
+# ---------------------------------
+# - 각 공고의 상세 페이지에 진입하여 첨부파일(공고문) 정보 수집
+# - PDF, HWP 등 여러 개의 공고문이 있는 경우 모두 수집
 
 from __future__ import annotations
 
 import json
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -29,13 +20,8 @@ from playwright.sync_api import (
     Page,
 )
 
-
-# 주소
-URL: str = (
-    "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1069"
-)
-
-# 선택자
+# --- 설정값 ---
+URL: str = "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1069"
 TABLE_ROW: str = "table > tbody > tr"
 TABLE_HEADER: str = "table > thead > tr"
 NEXT_CANDIDATES: List[str] = [
@@ -43,12 +29,14 @@ NEXT_CANDIDATES: List[str] = [
     "button.next:not([disabled])",
     "a[title='다음']",
 ]
+# 상세 페이지에서 공고문 파일이 있는 항목
+ATTACHMENT_ITEM_SELECTOR = "div.bbsV_atchmnfl dl.col_red li"
 
 # 출력 파일
 OUT_FILE: Path = Path(__file__).parent / "data" / "lh_data.json"
 OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-# 유틸 (변경 없음)
+# 유틸 함수 
 def to_std_date(txt: str) -> Optional[str]:
     txt = txt.strip()
     if not txt: return None
@@ -69,32 +57,22 @@ def safe_click(page: Page, selectors: List[str]) -> bool:
         except PlaywrightTimeout: pass
     return False
 
-# 메인 크롤링 로직
-
+# 메인 크롤링 
 def crawl() -> None:
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True) # 다시 자동화 모드로 변경
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
         print("[INFO] open →", URL)
         page.goto(URL, timeout=60_000)
 
-        # 팝업 찾아서 클릭
         try:
-            # 팝업 버튼 선택
             agree_button_selector = "div.pop_layer_wrap button.btn_pop_agree"
-
-            # 팝업이 나타날 때까지 최대 5초 대기
             page.wait_for_selector(agree_button_selector, timeout=5000)
-
             print("[INFO] Consent pop-up detected. Clicking 'Agree'.")
             page.click(agree_button_selector)
-
-            # 팝업이 사라질 때까지 대기
             page.wait_for_selector(agree_button_selector, state='detached', timeout=5000)
-
         except PlaywrightTimeout:
-            # 5초 내에 팝업이 안 뜨면 동의했거나 없는 경우이므로 통과
             print("[INFO] No consent pop-up detected or already handled.")
 
         try:
@@ -102,7 +80,6 @@ def crawl() -> None:
             page.wait_for_load_state("networkidle", timeout=20_000)
             page.wait_for_selector(TABLE_HEADER, timeout=10_000)
             print("[INFO] Table is ready.")
-
         except PlaywrightTimeout as e:
             print(f"[ERROR] Page loading failed or table not found: {e}")
             browser.close()
@@ -114,17 +91,49 @@ def crawl() -> None:
         while True:
             print(f"[INFO] page {page_no}")
 
-            for row in page.query_selector_all(TABLE_ROW):
-                tds = [td.inner_text().strip() for td in row.query_selector_all("td")]
-                if len(tds) < 9:
-                    continue
+            rows_on_page = page.query_selector_all(TABLE_ROW)
+            num_rows = len(rows_on_page)
+
+            for i in range(num_rows):
+                # 상세 페이지 이동 후 돌아와서 목록을 다시 찾기 위해 인덱스 처리 
+                current_row = page.query_selector_all(TABLE_ROW)[i]
+
+                tds = [td.inner_text().strip() for td in current_row.query_selector_all("td")]
+                if len(tds) < 9: continue
 
                 site_no = to_int(tds[0])
+                print(f"  > Processing [{site_no}] {tds[2][:20]}...")
+
+                attachments = []
+                detail_link = current_row.query_selector("a.wrtancInfoBtn")
+                if detail_link:
+                    # 상세 페이지로 이동
+                    detail_link.click()
+                    page.wait_for_load_state("networkidle", timeout=20_000)
+
+                    # 상세 페이지에서 첨부파일 정보 가져오기
+                    attachment_items = page.query_selector_all(ATTACHMENT_ITEM_SELECTOR)
+                    for item in attachment_items:
+                        file_link = item.query_selector("a:first-child")
+                        if file_link:
+                            file_name = file_link.inner_text()
+                            href = file_link.get_attribute("href")
+                            match = re.search(r"fileDownLoad\('(\d+)'\)", href)
+                            if match:
+                                file_id = match.group(1)
+                                download_url = f"https://apply.lh.or.kr/lhapply/lhFile.do?fileid={file_id}"
+                                attachments.append({"name": file_name, "url": download_url})
+
+                    # 목록으로 복귀
+                    page.go_back()
+                    page.wait_for_load_state("networkidle", timeout=20_000)
+
                 rows_out.append({
                     "siteNo": site_no, "type": tds[1], "title": tds[2],
                     "address": tds[3], "postDate": to_std_date(tds[5]),
                     "deadlineDate": to_std_date(tds[6]), "status": tds[7] or None,
                     "views": to_int(tds[8]), "callNumber": None,
+                    "attachments": attachments # ★★★ Gemini 추가: 수집한 첨부파일 정보 추가 ★★★
                 })
 
             if not safe_click(page, NEXT_CANDIDATES):
@@ -132,7 +141,6 @@ def crawl() -> None:
 
             page.wait_for_load_state("networkidle", timeout=20_000)
             page_no += 1
-            time.sleep(0.5)
 
         browser.close()
 
@@ -140,6 +148,5 @@ def crawl() -> None:
     print(f"[INFO] saved → {OUT_FILE} ({len(rows_out)} rows)")
 
 
-# main 함수
 if __name__ == "__main__":
     crawl()

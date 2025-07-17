@@ -2,57 +2,129 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>LH청약플러스 상가 공고 목록</title>
+    <title>LH청약플러스 상가 공고문</title>
 
     <style>
-        :root{
+        :root {
             --border: #e0e0e0;
             --bg-head: #f7f7f7;
         }
-        *{box-sizing: border-box}
-        body{
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
             font-family: system-ui, Arial, sans-serif;
             margin: 0;
             padding: 1.5rem;
         }
-        h1{margin: 0 0 1rem; font-size: 1.4rem}
-        table{
+
+        h1 {
+            margin: 0 0 1rem;
+            font-size: 1.4rem
+        }
+
+        table {
             width: 100%;
             border-collapse: collapse;
             font-size: .875rem;
+            table-layout: fixed;
         }
-        th,td{
+
+        th, td {
             border: 1px solid var(--border);
-            padding: .55rem .8rem;
+            padding: .55rem .3rem;
             text-align: center;
             vertical-align: middle;
+            white-space: nowrap; /* 줄바꿈 방지 */
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        th{background: var(--bg-head); font-weight: 600}
 
+        th {
+            background: var(--bg-head);
+            font-weight: 600
+        }
+
+        /* 상태별 색상 */
         .status-공고중 {
             color: #4CAF50;
             font-weight: 600;
         }
+
         .status-접수중 {
             color: #D32F2F;
             font-weight: 600;
         }
+
+        .status-정정공고중 {
+            color: #1976D2;
+            font-weight: 600;
+        }
+
         .status-접수마감 {
             color: #757575;
             font-weight: 600;
         }
-        /* 정정공고중, 상담요청은 기본 색상으로 표시 */
 
+        /* 첨부파일 UI */
+        .attachment-cell, .col-title {
+            text-align: left;
+            white-space: normal; /* 공고명, 첨부파일 줄바꿈 허용 */
+        }
+
+        .attachment-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .attachment-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+        }
+
+        .attachment-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .attachment-button {
+            flex-shrink: 0;
+            font-size: 11px;
+            padding: 2px 6px;
+            color: #333;
+            text-decoration: none;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
-<h1>LH청약플러스 상가 공고 목록</h1>
+<h1>LH청약플러스 상가 공고문</h1>
 
 <div th:if="${loading}" style="margin-bottom:1rem;color:#1976d2;font-weight:600;">
-    📡 최신 데이터를 불러오고 있습니다…
+    데이터를 불러오고 있습니다…
 </div>
 
 <table>
+    <colgroup>
+        <col style="width: 3%;">
+        <col style="width: 10%;">
+        <col style="width: auto;">
+        <col style="width: 6%;">
+        <col style="width: 28%;">
+        <col style="width: 5%;">
+        <col style="width: 5%;">
+        <col style="width: 5%;">
+        <col style="width: 3%;">
+        <col style="width: 7%;">
+    </colgroup>
     <thead>
     <tr>
         <th>번호</th>
@@ -72,14 +144,27 @@
     <tr th:each="item : ${lhList}">
         <td th:text="${item.siteNo}">77</td>
         <td th:text="${item.type}">임대상가(추첨)</td>
-        <td th:text="${item.title}" style="text-align:left;">공고명</td>
+        <td class="col-title" th:text="${item.title}" th:title="${item.title}">공고명</td>
         <td th:text="${item.address}">지역</td>
-        <td>-</td> <td th:text="${#temporals.format(item.postDate,'yyyy-MM-dd')}">2025-07-15</td>
+
+        <td class="attachment-cell">
+            <ul th:if="${!#lists.isEmpty(item.attachments)}" class="attachment-list">
+                <li th:each="file : ${item.attachments}" class="attachment-item">
+                    <span class="attachment-name" th:text="${file.name}" th:title="${file.name}"></span>
+                    <a th:href="${file.url}" th:download="${file.name}" class="attachment-button" title="다운로드">다운로드</a>
+                </li>
+            </ul>
+            <span th:if="${#lists.isEmpty(item.attachments)}">-</span>
+        </td>
+
+        <td th:text="${#temporals.format(item.postDate,'yyyy-MM-dd')}">2025-07-15</td>
         <td th:text="${#temporals.format(item.deadlineDate,'yyyy-MM-dd') ?: '-'}">2025-07-22</td>
         <td th:text="${item.status ?: '-'}"
-            th:classappend="'status-' + ${item.status}">공고중</td>
+            th:classappend="'status-' + ${item.status}">공고중
+        </td>
         <td th:text="${item.views ?: 0}">0</td>
-        <td>-</td> </tr>
+        <td>-</td>
+    </tr>
 
     <tr th:if="${#lists.isEmpty(lhList)}">
         <td colspan="10" style="padding:2rem 0">표시할 데이터가 없습니다.</td>
