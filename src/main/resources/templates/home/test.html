@@ -16,8 +16,9 @@
         GoogleAuthProvider,
         GithubAuthProvider,
         signInWithPopup,
+        signInWithRedirect,
         linkWithCredential,
-        fetchSignInMethodsForEmail    // ✅ 이거 추가!
+        getRedirectResult
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     // ✅ Firebase 설정
@@ -49,42 +50,53 @@
             .catch(console.error);
     };
 
+    // ✅ 페이지 진입 시 리다이렉트 결과 처리
+    getRedirectResult(auth)
+        .then(async (result) => {
+            if (result && result.user) {
+                console.log("✅ Google 로그인 완료:", result.user.email);
+
+                // 병합할 GitHub credential이 있다면 병합
+                if (window.pendingGithubCred) {
+                    await linkWithCredential(result.user, window.pendingGithubCred);
+                    delete window.pendingGithubCred;
+                    console.log("✅ GitHub 계정 병합 완료");
+                }
+
+                const idToken = await result.user.getIdToken();
+                sendTokenToServer(idToken);
+            }
+        })
+        .catch(console.error);
+
     // ✅ GitHub 로그인
     window.githubLogin = () => {
         const provider = new GithubAuthProvider();
+        provider.addScope("user:email");
 
         signInWithPopup(auth, provider)
-            .then(result => result.user.getIdToken())
-            .then(idToken => sendTokenToServer(idToken))
+            .then(async (result) => {
+                const idToken = await result.user.getIdToken();
+                sendTokenToServer(idToken);
+            })
             .catch(async (error) => {
-                if (error.code === 'auth/account-exists-with-different-credential') {
+                if (error.code === "auth/account-exists-with-different-credential") {
                     const email = error.customData?.email;
                     const pendingCred = GithubAuthProvider.credentialFromError(error);
 
-                    // 이메일에 연결된 로그인 방식 조회
-                    const methods = await fetchSignInMethodsForEmail(auth, email);
+                    alert(`"${email}"은 이미 Google 계정으로 가입되어 있습니다.\nGoogle로 로그인하겠습니다.`);
 
-                    if (methods.includes('google.com')) {
-                        // 기존에 Google로 가입되어 있음 → Google 로그인 시도
-                        const googleProvider = new GoogleAuthProvider();
-                        googleProvider.setCustomParameters({ prompt: 'select_account' });
+                    // ✅ 병합 정보 전역 저장
+                    window.pendingGithubCred = pendingCred;
 
-                        try {
-                            const googleResult = await signInWithPopup(auth, googleProvider);
+                    // ✅ GitHub 팝업 닫히고, Google 리다이렉트 로그인 시도
+                    const googleProvider = new GoogleAuthProvider();
+                    googleProvider.setCustomParameters({ prompt: "select_account" });
 
-                            // 병합: 기존 Google 계정에 GitHub credential 연결
-                            await linkWithCredential(googleResult.user, pendingCred);
-
-                            const idToken = await googleResult.user.getIdToken();
-                            sendTokenToServer(idToken);
-                        } catch (e) {
-                            console.error("Google 로그인 실패:", e);
-                        }
-                    } else {
-                        console.warn("지원되지 않는 방식:", methods);
-                    }
+                    signInWithRedirect(auth, googleProvider);
                 } else {
-                    console.error("기타 로그인 에러:", error);
+                    console.error("🔴 기타 로그인 오류:", error);
+                    alert("로그인 중 오류가 발생했습니다.");
                 }
             });
     };
