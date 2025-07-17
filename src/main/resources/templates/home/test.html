@@ -58,26 +58,30 @@
                 console.log(result);
 
                 // 🔁 병합 정보 확인
-                const storedCredJson  = sessionStorage.getItem("pendingGithubCred");
+                const storedCredJson = sessionStorage.getItem("pendingGithubCred");
 
-                // ✅ 문자열 → 객체로 변환
-                const storedCred = JSON.parse(storedCredJson);
-                const accessToken = storedCred.accessToken;
-                console.log("storedCred : " + storedCred);
-                console.log("accessToken : " + accessToken);
 
-                if (storedCred) {
+                if (storedCredJson) {
                     try {
-                        const pendingCred = GithubAuthProvider.credential(accessToken);
-                        console.log("pendingCred");
-                        console.log(pendingCred);
-                        await linkWithCredential(result.user, pendingCred);
-                        console.log("✅ GitHub 계정 병합 완료 (팝업)");
+                        // ✅ 문자열 → 객체로 변환
+                        const parsed = JSON.parse(storedCredJson);
+                        const accessToken = parsed.accessToken;
+
+                        console.log("parsed : " + storedCred);
+                        console.log("accessToken : " + accessToken);
+
+                        if (accessToken) {
+                            const pendingCred = GithubAuthProvider.credential(accessToken);
+                            await linkWithCredential(result.user, pendingCred);
+                            console.log("✅ GitHub 계정 병합 완료");
+                        }
 
                         sessionStorage.removeItem("pendingGithubCred");
-                    } catch (mergeError) {
-                        console.error("🔴 병합 중 오류 (팝업):", mergeError);
+                    } catch (e) {
+                        console.error("❌ 병합 실패 (파싱 오류):", e);
                     }
+                } else {
+                    console.log("✅ 병합할 GitHub 정보 없음 → 단순 로그인");
                 }
 
                 // ✅ 로그인 성공 → 토큰 전송
