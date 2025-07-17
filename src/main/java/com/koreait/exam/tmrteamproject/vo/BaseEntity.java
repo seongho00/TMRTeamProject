@@ -1,6 +1,5 @@
 package com.koreait.exam.tmrteamproject.vo;
 
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,12 +11,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static javax.persistence.GenerationType.IDENTITY;
-
 
 @MappedSuperclass
 @Getter
