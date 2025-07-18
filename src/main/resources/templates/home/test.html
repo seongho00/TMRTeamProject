@@ -59,7 +59,7 @@
 
                 // 🔁 병합 정보 확인
                 const storedCredJson = sessionStorage.getItem("pendingGithubCred");
-
+                console.log(storedCredJson);
 
                 if (storedCredJson) {
                     try {
@@ -67,7 +67,7 @@
                         const parsed = JSON.parse(storedCredJson);
                         const accessToken = parsed.accessToken;
 
-                        console.log("parsed : " + storedCred);
+                        console.log("parsed : " + parsed);
                         console.log("accessToken : " + accessToken);
 
                         if (accessToken) {
@@ -82,6 +82,13 @@
                     }
                 } else {
                     console.log("✅ 병합할 GitHub 정보 없음 → 단순 로그인");
+
+                    // 👉 구글 로그인 정보도 저장 (반대 병합용)
+                    const credential = GoogleAuthProvider.credentialFromResult(result);
+                    if (credential) {
+                        sessionStorage.setItem("pendingGoogleCred", JSON.stringify(credential));
+                        console.log("📦 pendingGoogleCred 저장 완료");
+                    }
                 }
 
                 // ✅ 로그인 성공 → 토큰 전송
@@ -99,41 +106,29 @@
 
         signInWithPopup(auth, provider)
             .then(async (result) => {
+                // 👉 반대 병합용 세션 저장
+                const credential = GithubAuthProvider.credentialFromResult(result);
+                if (credential) {
+                    sessionStorage.setItem("pendingGithubCred", JSON.stringify(credential));
+                    console.log("📦 pendingGithubCred 저장 완료");
+                }
+
+                // ✅ GitHub 로그인 성공 & 병합 필요 없음
                 const idToken = await result.user.getIdToken();
                 sendTokenToServer(idToken);
             })
             .catch(async (error) => {
+                // 🔁 병합 에러 처리
                 if (error.code === "auth/account-exists-with-different-credential") {
-                    const pendingCred = GithubAuthProvider.credentialFromError(error);
+                    console.warn("🔁 병합 필요: Google로 이미 가입된 계정");
                     const email = error.customData?.email;
 
                     if (!email) return;
 
-                    // 👉 병합 정보를 임시 저장
-                    sessionStorage.setItem("pendingGithubCred", JSON.stringify(pendingCred));
-
-                    // 👉 Google 로그인 시도 (팝업 또는 버튼 클릭 등)
-                    const googleProvider = new GoogleAuthProvider();
-                    googleProvider.setCustomParameters({prompt: "select_account"});
-
-                    console.log("googleProvider : " + googleProvider);
-
-                    // ❗ fetchSignInMethodsForEmail 생략 → 직접 로그인 시도
-                    const googleResult = await signInWithPopup(auth, googleProvider);
-                    console.log("googleResult : " + googleResult);
-
-
-                    // ✅ 병합 시도
-                    const stored = sessionStorage.getItem("pendingGithubCred");
-                    console.log("stored : " + stored);
-                    if (stored) {
-                        const cred = GithubAuthProvider.credentialFromJSON(JSON.parse(stored));
-                        await linkWithCredential(googleResult.user, cred);
-                        sessionStorage.removeItem("pendingGithubCred");
-                        alert("✅ 병합 완료");
-                    }
+                    // 👉 사용자에게 병합 유도 (예: Google 로그인 버튼 자동 클릭 또는 안내)
+                    alert("이 계정은 Google로 가입되어 있습니다. Google로 먼저 로그인 후 병합하세요.");
                 } else {
-                    console.error("🔴 로그인 실패:", error);
+                    console.error("❌ GitHub 로그인 실패:", error);
                 }
             });
     };
