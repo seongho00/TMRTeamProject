@@ -29,9 +29,11 @@ public class MemberService {
     }
 
 
-    public Member getMemberByEmailAndLoginPw(String email, String loginPw) {
+    public Member getMemberByEmail(String email) {
+        Member loginedMember = memberRepository.getMemberByEmail(email);
+        System.out.println(loginedMember);
 
-        return memberRepository.getMemberByEmailAndLoginPw(email, loginPw);
+        return loginedMember;
 
     }
 

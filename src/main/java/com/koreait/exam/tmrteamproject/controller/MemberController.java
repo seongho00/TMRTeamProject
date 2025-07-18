@@ -83,8 +83,9 @@ public class MemberController {
     @PostMapping("/doLogin")
     @ResponseBody
     public String doLogin(String email, String loginPw) {
-
-        Member loginedMember = memberService.getMemberByEmailAndLoginPw(email, loginPw);
+        
+        // 이메일로 멤버 찾기
+        Member loginedMember = memberService.getMemberByEmail(email);
 
         if (loginedMember == null) {
             return Ut.jsHistoryBack("F-1", "가입된 아이디가 없습니다.");
