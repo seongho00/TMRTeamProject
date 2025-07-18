@@ -6,13 +6,18 @@
 
     // 비밀번호 눈 누르면 보이게하기
     function showPassword(el) {
-        const currentType = $(el).attr("type");
+        const $icon = $(el);
 
+        // 가장 가까운 부모 중에서 label이 있는 쪽에서 input을 찾는다
+        const $input = $icon.closest("div").find("label").find("input");
+        const currentType = $input.attr("type");
+
+        console.log("실행됨");
         if (currentType === "password") {
-            $(el).attr("type", "text");
+            $input.attr("type", "text");
             $(el).removeClass("fa-eye").addClass("fa-eye-slash");
         } else {
-            $(el).attr("type", "password");
+            $input.attr("type", "password");
             $(el).removeClass("fa-eye-slash").addClass("fa-eye");
         }
     }
@@ -560,7 +565,6 @@
                             </svg>
 
                         </label>
-                        <div class="emailCheck-msg text-red-500 mt-2 flex hidden w-[502px]"></div>
                     </div>
                     <div
                             class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative"
@@ -585,7 +589,6 @@
                             </svg>
 
                         </label>
-                        <div class="passwordCheck-msg text-red-500 mt-2 flex hidden w-[502px]"></div>
                         <i onClick="showPassword(this);"
                            class="fa-solid fa-eye absolute top-0 right-0 text-2xl cursor-pointer"></i>
                     </div>

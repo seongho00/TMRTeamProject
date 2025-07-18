@@ -48,18 +48,13 @@ public class MemberController {
     @Autowired
     private Rq rq;
 
-    @GetMapping("/join")
-    public String join() {
+    @GetMapping("/joinAndLogin")
+    public String joinAndLogin() {
 
-        return "member/join";
+        return "member/joinAndLogin";
     }
 
-    @GetMapping("/login")
-    public String login() {
 
-
-        return "member/login";
-    }
 
     @PostMapping("/createAccount")
     public String createAccount(String name, String loginPw, String email, String phoneNum) {
