@@ -2,6 +2,7 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.MemberRepository;
 import com.koreait.exam.tmrteamproject.vo.Member;
+import com.koreait.exam.tmrteamproject.vo.ResultData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,7 +15,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
 
     @Transactional
-    public Member createAccount(String name, String loginPw, String email,String phoneNum) {
+    public Member createAccount(String name, String loginPw, String email, String phoneNum) {
         Member member = Member.builder()
                 .name(name)
                 .loginPw(loginPw)
@@ -25,5 +26,24 @@ public class MemberService {
         memberRepository.save(member);
 
         return member;
+    }
+
+
+    public Member getMemberByEmailAndLoginPw(String email, String loginPw) {
+
+        return memberRepository.getMemberByEmailAndLoginPw(email, loginPw);
+
+    }
+
+    public ResultData checkDupMemberByEmail(String email) {
+
+        // 이메일로 멤버 가져와보기
+        Member loginedMember = memberRepository.getMemberByEmail(email);
+
+        if (loginedMember != null) {
+            return ResultData.from("F-1", "이미 가입된 이메일이 있음.");
+        }
+
+        return ResultData.from("S-1", "가입 가능");
     }
 }
