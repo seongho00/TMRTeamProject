@@ -1,5 +1,8 @@
 package com.koreait.exam.tmrteamproject.controller;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.MemberService;
 import com.koreait.exam.tmrteamproject.service.NaverOAuthService;
@@ -9,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +22,7 @@ import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.Map;
 
 @Controller
 @RequestMapping("usr/member")
@@ -35,9 +41,9 @@ public class MemberController {
     @Autowired
     private NaverOAuthService naverOAuthService;
     @Autowired
-    private SolapiSmsService smsService ;
+    private SolapiSmsService smsService;
     @Autowired
-    private MemberService memberService ;
+    private MemberService memberService;
 
     @Autowired
     private Rq rq;
@@ -106,6 +112,7 @@ public class MemberController {
         return "redirect:../home/main";
     }
 
+
     @GetMapping("/doLogout")
     public String doLogout() {
 
@@ -126,5 +133,31 @@ public class MemberController {
                 + URLEncoder.encode(logoutRedirectUri, StandardCharsets.UTF_8);
         return "redirect:" + url;
 
+    }
+
+    @PostMapping("/login-check")
+    public ResponseEntity<?> loginCheck(@RequestBody Map<String, String> body) {
+        String idToken = body.get("idToken");
+
+        System.out.println(body);
+
+        if (idToken == null) {
+            return ResponseEntity.badRequest().body("idToken 누락됨");
+        }
+
+        try {
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+            String uid = decodedToken.getUid();
+            String email = decodedToken.getEmail();
+
+            // ✅ 사용자 정보 처리 (회원 가입 또는 기존 사용자 확인)
+            // 예시:
+            // Optional<Member> member = memberRepository.findByUid(uid);
+            // if (!member.isPresent()) -> 회원가입 로직 실행
+            System.out.println("로그인 성공: UID = " + uid + ", email = " + email);
+            return ResponseEntity.ok("로그인 성공: UID = " + uid + ", email = " + email);
+        } catch (FirebaseAuthException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰 검증 실패: " + e.getMessage());
+        }
     }
 }
