@@ -180,7 +180,7 @@
 
     });
 
-    // submit 눌렀을 떄
+    // join submit 눌렀을 떄
     function handleSubmit(e) {
         e.preventDefault(); // 전송 막기
 
@@ -190,10 +190,30 @@
             checkPassword(true) &&
             checkPhoneNum(true);
 
-        console.log(isValid);
         if (isValid) {
             $("#createAccountForm").submit(); // ✅ 수동 제출
         }
+    }
+
+    // login submit 눌렀을 떄
+    function handleLoginSubmit(e) {
+        e.preventDefault(); // 전송 막기
+
+        const email = $('#loginEmail').val();
+        const loginPw = $('#loginPw').val();
+
+        // 유효성 검사 등 가능
+        if (!email) {
+            alert("이메일을 입력하세요.");
+            return;
+        }
+
+        if (!loginPw) {
+            alert("비밀번호를 입력해주세요");
+            return;
+        }
+
+        $("#loginForm").submit(); // ✅ 수동 제출
     }
 
     function toggleDiv() {
@@ -381,7 +401,7 @@
                             class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative"
                     >
                         <label>
-                            <input type="password" placeholder="Password" name="joinPw" id="joinPw" autocomplete="off"
+                            <input type="password" placeholder="Password" name="loginPw" id="joinPw" autocomplete="off"
                                    class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
                             />
 
@@ -535,7 +555,7 @@
             >
                 <p class="flex-grow w-[71px] text-2xl font-bold text-left text-[#1a1717]/[0.38]">-OR-</p>
             </div>
-            <form action="loginForm" method="post" id="loginForm">
+            <form action="doLogin" method="post" id="loginForm">
                 <div
                         class="flex flex-col justify-start items-end flex-grow-0 flex-shrink-0 w-[546px] overflow-hidden gap-[40px] px-[22px] py-[13px]"
                 >
@@ -596,7 +616,7 @@
 
                 </div>
             </form>
-            <button form="loginForm" onClick="handleSubmit(event);"
+            <button form="loginForm" onClick="handleLoginSubmit(event);"
                     class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[502px] h-12 relative gap-2.5 p-2.5 rounded-lg bg-[#279574] cursor-pointer"
             >
                 <p
