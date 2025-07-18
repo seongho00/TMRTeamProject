@@ -1,0 +1,47 @@
+server:
+  port: 8080
+spring:
+  thymeleaf:
+    cache: false
+    prefix: classpath:templates//
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+  devtools:
+    livereload:
+      enabled: true
+    restart:
+      enabled: true
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect  # ← 요게 핵심!!
+  
+
+
+
+# 카카오 api 키
+kakao:
+  api:
+    clientId: 5617b43c5e1f8f47e45f4d510a88e8fc
+    clientSecret: 5yc5smUCscGZlKcfjqsfV46wFiVdsbzq
+
+# 네이버 api 키
+naver:
+  api:
+    clientId: bEMZzWiWu06Pk2b7R6D3
+    clientSecret: 730aCbbDQO
+
+# SMS 문자 api 키
+solapi:
+  apiKey: NCS8X6JXYL5LGJ0B
+  apiSecret: OPMRNQJAWXRAEDUGNAOPOI8AZNRTTSCO
+  sender: 01030417745
