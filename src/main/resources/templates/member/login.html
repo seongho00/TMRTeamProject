@@ -1,28 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="common/head::head"></head> <!-- ✅ 공백 제거 -->
-<script>
-    function createAccount() {
 
-    }
-
-    function showPassword(el) {
-        const $pwInput = $("#loginPw");
-        const currentType = $pwInput.attr("type");
-
-        if (currentType === "password") {
-            $pwInput.attr("type", "text");
-            $(el).removeClass("fa-eye").addClass("fa-eye-slash");
-        } else {
-            $pwInput.attr("type", "password");
-            $(el).removeClass("fa-eye-slash").addClass("fa-eye");
-        }
-    }
-
-</script>
 
 <div
-        class="flex flex-col justify-center items-center w-screen h-screen overflow-hidden gap-2.5 px-[75px] py-[50px] bg-white"
+        class="flex flex-col justify-center items-center w-screen h-screen overflow-hidden gap-2.5 px-[297px] py-[98px] bg-white"
 >
     <div
             class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[1326px] h-[884px] relative overflow-hidden gap-2.5 p-2.5"
@@ -30,7 +12,12 @@
     >
         <img src="/images/로그인 배경사진.png" class="flex-grow-0 flex-shrink-0 w-[1326px] h-[883px] object-cover"/>
         <div
-                class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[607px] absolute left-[719px] top-2.5 overflow-hidden gap-[47px] py-[11px] rounded-tl-3xl rounded-bl-3xl bg-white"
+                class="flex justify-start items-start flex-grow h-[189.5px] relative gap-2.5 pl-[25px] pr-2.5 py-2.5"
+        >
+            <p class="flex-grow w-px text-2xl font-bold text-left text-[#181818]">Sign In</p>
+        </div>
+        <div
+                class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 h-[874px] w-[607px] absolute left-[719px] top-2.5 overflow-hidden gap-[47px] pt-[11px] rounded-tl-3xl rounded-bl-3xl bg-white"
                 style="box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.25);"
         >
             <div
@@ -43,10 +30,6 @@
                 <div
                         class="flex justify-start items-center flex-grow-0 flex-shrink-0 relative overflow-hidden py-6"
                 >
-
-                    <p class="flex-grow-0 flex-shrink-0 text-base text-left text-[#1a1717]/[0.53]">
-                        English (UK)
-                    </p>
                     <svg
                             width="17"
                             height="18"
@@ -56,37 +39,38 @@
                             class="flex-grow-0 flex-shrink-0 w-4 h-4 relative"
                             preserveAspectRatio="none"
                     >
-                        <g clip-path="url(#clip0_34_35)">
+                        <g clip-path="url(#clip0_148_110)">
                             <path
                                     fill-rule="evenodd"
                                     clip-rule="evenodd"
-                                    d="M9.50432 15.4628C9.39968 15.6319 9.25228 15.7704 9.07701 15.8643C8.90174 15.9581 8.7048 16.0041 8.50608 15.9975C8.30736 15.9909 8.11389 15.932 7.94521 15.8268C7.77654 15.7215 7.63862 15.5736 7.54539 15.398L1.0783 3.51042C0.647305 2.71772 1.22874 1.74743 2.11625 1.77682L15.8237 2.23076C16.7122 2.26018 17.2272 3.26778 16.7447 4.02922L9.50432 15.4628Z"
+                                    d="M9.50383 15.4628C9.39919 15.6319 9.25179 15.7704 9.07652 15.8643C8.90125 15.9581 8.70431 16.0041 8.50559 15.9975C8.30687 15.9909 8.1134 15.932 7.94473 15.8268C7.77605 15.7215 7.63813 15.5736 7.54491 15.398L1.07782 3.51042C0.646816 2.71772 1.22825 1.74743 2.11576 1.77682L15.8232 2.23076C16.7118 2.26018 17.2267 3.26778 16.7442 4.02922L9.50383 15.4628Z"
                                     fill="#1A1717"
                                     fill-opacity="0.38"
                             ></path>
                         </g>
                         <defs>
-                            <clipPath id="clip0_34_35">
+                            <clipPath id="clip0_148_110">
                                 <rect
                                         width="16"
                                         height="16"
                                         fill="white"
-                                        transform="translate(16.4705 17.2604) rotate(-178.103)"
+                                        transform="translate(16.4702 17.2604) rotate(-178.103)"
                                 ></rect>
                             </clipPath>
                         </defs>
                     </svg>
+                    <p class="flex-grow-0 flex-shrink-0 text-base text-left text-[#1a1717]/[0.53]">
+                        English (UK)
+                    </p>
                 </div>
             </div>
             <div
                     class="flex justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-2.5 pl-[25px] pr-2.5 py-2.5"
             >
-                <p class="flex-grow w-[572px] text-2xl font-bold text-left text-[#181818]">
-                    Create Account
-                </p>
+                <p class="flex-grow w-[572px] text-2xl font-bold text-left text-[#181818]">Sign up</p>
             </div>
             <div
-                    class="flex justify-center items-center self-stretch flex-grow-0 flex-shrink-0 h-[91px] relative overflow-hidden gap-[45px] px-[29px] py-[13px]"
+                    class="flex justify-center items-center flex-grow w-[607px] relative overflow-hidden gap-[45px] px-[29px] py-[13px]"
             >
                 <a href="../member/loginKakao">
                     <img src="/images/카카오로그인.png"
@@ -106,97 +90,104 @@
                 <p class="flex-grow w-[71px] text-2xl font-bold text-left text-[#1a1717]/[0.38]">-OR-</p>
             </div>
             <div
-                    class="flex flex-col justify-start items-end flex-grow-0 flex-shrink-0 w-[546px] overflow-hidden gap-[58px] px-[22px] py-[13px]"
+                    class="flex flex-col justify-end items-center self-stretch flex-grow-0 flex-shrink-0 h-[462px] overflow-hidden gap-[47px] p-2.5"
             >
-                <div class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-[11px]">
-                    <label>
-                        <input type="text" placeholder="Full Name" autocomplete="off"
-                               class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-left text-2xl outline-none focus:outline-none focus:border-none"/>
-
-                        <svg
-                                width="503"
-                                height="2"
-                                viewBox="0 0 503 2"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="flex-grow-0 flex-shrink-0"
-                                preserveAspectRatio="none"
+                <div class="flex flex-col justify-between items-center flex-grow overflow-hidden p-2.5">
+                    <div
+                            class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 h-[159px] w-[546px] overflow-hidden gap-[58px] px-[22px] py-[13px]"
+                    >
+                        <div
+                                class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-[11px]"
                         >
-
-                            <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
-                        </svg>
-                    </label>
-
+                            <p
+                                    class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-[#1a1717]/[0.38]"
+                            >
+                                Email Address
+                            </p>
+                            <svg
+                                    width="503"
+                                    height="1"
+                                    viewBox="0 0 503 1"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="flex-grow-0 flex-shrink-0"
+                                    preserveAspectRatio="none"
+                            >
+                                <path d="M0.5 0.5H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
+                            </svg>
+                        </div>
+                        <div
+                                class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-10 relative"
+                        >
+                            <div
+                                    class="flex justify-start items-end flex-grow-0 flex-shrink-0 w-[500px] relative"
+                            >
+                                <p class="flex-grow w-[480px] text-xl text-left text-[#1a1717]/[0.38]">Password</p>
+                                <svg
+                                        width="21"
+                                        height="21"
+                                        viewBox="0 0 21 21"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="flex-grow-0 flex-shrink-0 w-5 h-5 relative"
+                                        preserveAspectRatio="none"
+                                >
+                                    <g clip-path="url(#clip0_148_130)">
+                                        <path
+                                                d="M13.9875 16.64L11.97 14.6212C11.1898 14.9002 10.3464 14.9519 9.53803 14.7702C8.72962 14.5886 7.98941 14.1811 7.40352 13.5952C6.81764 13.0093 6.41018 12.2691 6.22854 11.4607C6.0469 10.6523 6.09856 9.80895 6.3775 9.02875L3.8025 6.45375C1.6725 8.3475 0.5 10.5 0.5 10.5C0.5 10.5 4.25 17.375 10.5 17.375C11.7005 17.3708 12.8874 17.1207 13.9875 16.64V16.64ZM7.0125 4.36C8.11257 3.87928 9.29949 3.62913 10.5 3.625C16.75 3.625 20.5 10.5 20.5 10.5C20.5 10.5 19.3263 12.6512 17.1988 14.5475L14.6212 11.97C14.9002 11.1898 14.9519 10.3464 14.7702 9.53803C14.5886 8.72962 14.1811 7.98941 13.5952 7.40352C13.0093 6.81764 12.2691 6.41018 11.4607 6.22854C10.6523 6.0469 9.80895 6.09856 9.02875 6.3775L7.0125 4.36125V4.36Z"
+                                                fill="#1A1717"
+                                                fill-opacity="0.38"
+                                        ></path>
+                                        <path
+                                                d="M7.40637 10.0575C7.33761 10.5379 7.38167 11.0277 7.53507 11.4881C7.68847 11.9485 7.94698 12.3668 8.29013 12.71C8.63328 13.0531 9.05163 13.3116 9.51203 13.465C9.97243 13.6184 10.4622 13.6625 10.9426 13.5937L7.40512 10.0575H7.40637ZM13.5939 10.9425L10.0576 7.405C10.538 7.33624 11.0278 7.3803 11.4882 7.5337C11.9486 7.6871 12.367 7.94561 12.7101 8.28876C13.0533 8.63191 13.3118 9.05026 13.4652 9.51066C13.6186 9.97106 13.6626 10.4609 13.5939 10.9412V10.9425ZM17.5576 18.4425L2.55762 3.4425L3.44262 2.5575L18.4426 17.5575L17.5576 18.4425Z"
+                                                fill="black"
+                                        ></path>
+                                    </g>
+                                    <defs>
+                                        <clipPath id="clip0_148_130">
+                                            <rect
+                                                    width="20"
+                                                    height="20"
+                                                    fill="white"
+                                                    transform="translate(0.5 0.5)"
+                                            ></rect>
+                                        </clipPath>
+                                    </defs>
+                                </svg>
+                            </div>
+                            <svg
+                                    width="503"
+                                    height="1"
+                                    viewBox="0 0 503 1"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="flex-grow-0 flex-shrink-0"
+                                    preserveAspectRatio="none"
+                            >
+                                <path d="M0.5 0.5H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
                 <div
-                        class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-[11px]"
+                        class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[502px] h-12 relative gap-2.5 p-2.5 rounded-lg bg-[#279574]"
                 >
-                    <label>
-                        <input type="text" placeholder="Email Address" autocomplete="off"
-                               class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
-                        />
-
-
-                        <svg
-                                width="503"
-                                height="2"
-                                viewBox="0 0 503 2"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="flex-grow-0 flex-shrink-0"
-                                preserveAspectRatio="none"
-                        >
-                            <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
-                        </svg>
-                    </label>
+                    <p class="flex-grow w-[482px] text-xl font-semibold text-center text-white">Sign In</p>
                 </div>
                 <div
-                        class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-10 relative"
+                        class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[330px] h-11 relative gap-2.5 p-2.5"
                 >
-                    <label>
-                        <input type="text" placeholder="Password" name="loginPw" id="loginPw" autocomplete="off"
-                               class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
-                        />
-
-                        <svg
-                                width="503"
-                                height="2"
-                                viewBox="0 0 503 2"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="flex-grow-0 flex-shrink-0"
-                                preserveAspectRatio="none"
-                        >
-                            <path d="M0.5 1H502.5" stroke="#1A1717" stroke-opacity="0.38"></path>
-                        </svg>
-
-                    </label>
-                    <i onClick="showPassword(this);"
-                       class="fa-solid fa-eye absolute top-0 right-0 text-2xl cursor-pointer"></i>
+                    <p class="flex-grow w-[310px] text-xl font-medium text-center">
+            <span class="flex-grow w-[310px] text-xl font-medium text-center text-black/30"
+            >Don't Have an Account?</span
+            ><span class="flex-grow w-[310px] text-xl font-medium text-center text-black/[0.12]"
+                    > </span
+                    ><span class="flex-grow w-[310px] text-xl font-medium text-center text-[#54beb8]"
+                    >Sign Up</span
+                    >
+                    </p>
                 </div>
             </div>
-            <div
-                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[502px] h-12 relative gap-2.5 p-2.5 rounded-lg bg-[#279574]"
-            >
-                <p onClick="createAccount();"
-                   class="flex-grow w-[482px] text-xl font-semibold text-center text-white cursor-pointer">
-                    Create Account
-                </p>
-            </div>
-            <a href="login"
-                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[330px] h-11 relative gap-2.5 p-2.5 cursor-pointer"
-            >
-                <p class="flex-grow w-[310px] text-xl font-medium text-center">
-          <span class="flex-grow w-[310px] text-xl font-medium text-center text-black/30"
-          >Already have an account ?</span
-          ><span class="flex-grow w-[310px] text-xl font-medium text-center text-black/[0.12]">
-          </span
-          ><span class="flex-grow w-[310px] text-xl font-medium text-center text-[#54beb8]"
-                >Login</span
-                >
-                </p>
-            </a>
         </div>
     </div>
 </div>
-
