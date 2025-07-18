@@ -6,14 +6,13 @@
 
     // 비밀번호 눈 누르면 보이게하기
     function showPassword(el) {
-        const $pwInput = $("#joinPw");
-        const currentType = $pwInput.attr("type");
+        const currentType = $(el).attr("type");
 
         if (currentType === "password") {
-            $pwInput.attr("type", "text");
+            $(el).attr("type", "text");
             $(el).removeClass("fa-eye").addClass("fa-eye-slash");
         } else {
-            $pwInput.attr("type", "password");
+            $(el).attr("type", "password");
             $(el).removeClass("fa-eye-slash").addClass("fa-eye");
         }
     }
@@ -441,7 +440,7 @@
 
 
             <div onClick="toggleDiv();"
-                 class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[330px] h-11 relative gap-2.5 p-2.5 cursor-pointer"
+                 class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] h-11 relative gap-2.5 p-2.5 cursor-pointer"
             >
                 <p class="flex-grow w-[310px] text-xl font-medium text-center">
           <span class="flex-grow w-[310px] text-xl font-medium text-center text-black/30"
@@ -449,7 +448,7 @@
           ><span class="flex-grow w-[310px] text-xl font-medium text-center text-black/[0.12]">
           </span
           ><span class="flex-grow w-[310px] text-xl font-medium text-center text-[#54beb8]"
-                >Login</span
+                >Sign Up</span
                 >
                 </p>
             </div>
@@ -605,7 +604,7 @@
 
 
             <div onClick="toggleDiv();"
-                 class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[330px] h-11 relative gap-2.5 p-2.5 cursor-pointer"
+                 class="flex justify-center items-center flex-grow-0 flex-shrink-0  w-[400px] h-11 relative gap-2.5 p-2.5 cursor-pointer"
             >
                 <p class="flex-grow w-[310px] text-xl font-medium text-center">
           <span class="flex-grow w-[310px] text-xl font-medium text-center text-black/30"
@@ -613,7 +612,7 @@
           ><span class="flex-grow w-[310px] text-xl font-medium text-center text-black/[0.12]">
           </span
           ><span class="flex-grow w-[310px] text-xl font-medium text-center text-[#54beb8]"
-                >Sign Up</span
+                >Create Account</span
                 >
                 </p>
             </div>
