@@ -7,6 +7,9 @@ import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.MemberService;
 import com.koreait.exam.tmrteamproject.service.NaverOAuthService;
 import com.koreait.exam.tmrteamproject.service.SolapiSmsService;
+import com.koreait.exam.tmrteamproject.util.Ut;
+import com.koreait.exam.tmrteamproject.vo.Member;
+import com.koreait.exam.tmrteamproject.vo.ResultData;
 import com.koreait.exam.tmrteamproject.vo.Rq;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,13 +58,43 @@ public class MemberController {
     }
 
 
-
     @PostMapping("/createAccount")
+    @ResponseBody
     public String createAccount(String name, String loginPw, String email, String phoneNum) {
+
+        System.out.println(name);
+        System.out.println(loginPw);
+        System.out.println(email);
+        System.out.println(phoneNum);
+
+        // 겹치는 이메일 있는지 확인
+        ResultData checkDupMemberRd = memberService.checkDupMemberByEmail(email);
+
+        if (checkDupMemberRd.isFail()) {
+            return Ut.jsHistoryBack("F-1", "가입된 이메일이 있습니다.");
+        }
 
         memberService.createAccount(name, loginPw, email, phoneNum);
 
-        return "redirect:login";
+        return Ut.jsReplace("S-1", name + "님 가입을 환영합니다.", "joinAndLogin");
+
+    }
+
+    @PostMapping("/doLogin")
+    @ResponseBody
+    public String doLogin(String email, String loginPw) {
+
+        Member loginedMember = memberService.getMemberByEmailAndLoginPw(email, loginPw);
+
+        if (loginedMember == null) {
+            return Ut.jsHistoryBack("F-1", "가입된 아이디가 없습니다.");
+        }
+
+        if (!loginedMember.getLoginPw().equals(loginPw)) {
+            return Ut.jsHistoryBack("F-2", "비밀번호가 일치하지 않습니다.");
+        }
+
+        return Ut.jsReplace("S-1", loginedMember.getName() + "님 환영합니다.", "../home/main");
     }
 
     @GetMapping("/loginKakao")
