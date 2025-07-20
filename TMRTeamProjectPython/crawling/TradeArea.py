@@ -43,10 +43,10 @@ conn = pymysql.connect(
 )
 cursor = conn.cursor()
 
-cursor.execute("SELECT a.* FROM admin_dong a LEFT JOIN (SELECT emd_cd FROM admin_dong WHERE sgg_nm = '서구' LIMIT 12) b ON a.emd_cd = b.emd_cd WHERE a.sgg_nm = '서구' AND b.emd_cd IS NULL;")
+cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '유성구' AND emd_nm = '온천2동';")
 dong_rows = cursor.fetchall()
 
-cursor.execute("SELECT * FROM upjong_code;")
+cursor.execute("SELECT * FROM upjong_code WHERE major_cd IN ('M1', 'N1');")
 upjong_rows = cursor.fetchall()
 
 for dong in dong_rows:
