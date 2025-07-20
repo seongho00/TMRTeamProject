@@ -1,25 +1,68 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
+<head th:replace="common/head::head">
     <meta charset="UTF-8">
     <title>PDF 읽기 결과</title>
     <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 30px;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .text-section {
+            flex: 1 1 50%;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .image-section {
+            flex: 1 1 40%;
+        }
+
         img {
-            display: block;
-            max-width: 100%;
-            margin-bottom: 30px;
+            width: 100%;
+            margin-bottom: 20px;
             border: 1px solid #ccc;
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            border-radius: 6px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.05);
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
-<div th:text="${pdfText}"></div>
-<h1>PDF 이미지 출력</h1>
-<div class="image-container">
-    <th:block th:each="img : ${images}">
-        <img th:src="${img}" alt="PDF 이미지" />
-    </th:block>
+<div class="container">
+    <!-- PDF 텍스트 출력 -->
+    <div class="text-section">
+        <h2>PDF 텍스트 내용</h2>
+        <pre th:text="${pdfText}"></pre>
+    </div>
+
+    <!-- PDF 이미지 출력 -->
+    <div class="image-section">
+        <h2>PDF 이미지</h2>
+        <th:block th:each="img : ${images}">
+            <img th:src="${img}" alt="PDF 이미지" />
+        </th:block>
+    </div>
 </div>
+
+<footer th:replace="common/footer::footer"></footer>
 </body>
 </html>
