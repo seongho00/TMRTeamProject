@@ -23,7 +23,4 @@ public class FlaskResult{
     private String gender;
     private String ageGroup;
     private String message;
-
-
-
 }
