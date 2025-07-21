@@ -27,6 +27,9 @@ dependencies {
     // firebase 의존성
     implementation 'com.google.firebase:firebase-admin:9.2.0'
 
+    // spring security 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 

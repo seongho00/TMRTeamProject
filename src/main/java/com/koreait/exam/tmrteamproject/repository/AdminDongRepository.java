@@ -18,4 +18,6 @@ public interface AdminDongRepository extends JpaRepository<AdminDong, String> {
                 WHERE emd_nm = :emdNm
             """, nativeQuery = true)
     AdminDong findRegionByEmdNm(@Param("emdNm") String emdNm);
+
+    List<AdminDong> getAdminDongBySggNm(String sggNm);
 }

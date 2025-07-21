@@ -54,8 +54,6 @@ public class MemberController {
     @Autowired
     private NaverOAuthService naverOAuthService;
     @Autowired
-    private SolapiSmsService smsService;
-    @Autowired
     private MemberService memberService;
 
     @Autowired
