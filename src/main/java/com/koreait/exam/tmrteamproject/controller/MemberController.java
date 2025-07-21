@@ -3,6 +3,7 @@ package com.koreait.exam.tmrteamproject.controller;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import com.koreait.exam.tmrteamproject.security.MemberContext;
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.MemberService;
 import com.koreait.exam.tmrteamproject.service.NaverOAuthService;
@@ -17,6 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +31,11 @@ import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+
+import org.springframework.security.core.userdetails.User;
 
 @Controller
 @RequestMapping("usr/member")
@@ -72,7 +80,7 @@ public class MemberController {
             return Ut.jsHistoryBack("F-1", "가입된 이메일이 있습니다.");
         }
 
-        memberService.createAccount(name, loginPw, email, phoneNum);
+        memberService.createAccount("local", name, loginPw, email, phoneNum);
 
         return Ut.jsReplace("S-1", name + "님 가입을 환영합니다.", "joinAndLogin");
 
@@ -103,9 +111,21 @@ public class MemberController {
 
         String accessToken = kakaoOAuthService.requestAccessToken(code);
 
-        kakaoOAuthService.getUserInfo(accessToken);
+        Member kakaoUser = kakaoOAuthService.getUserInfo(accessToken);
 
-//        rq.getSession().setAttribute("accessToken", accessToken);
+        String kakaoEmail = kakaoUser.getEmail();
+
+        // 1. DB에 사용자 있는지 확인 (없으면 회원가입 처리)
+        Member member = memberService.getMemberByProviderAndEmail("kakao", kakaoEmail); // 없으면 생성해서 리턴
+        if (member == null) {
+            memberService.createAccount("kakao", kakaoUser.getName(), kakaoUser.getLoginPw(), kakaoUser.getEmail(), kakaoUser.getPhoneNum());
+            member = memberService.getMemberByProviderAndEmail("kakao", kakaoEmail);
+        }
+
+        // 2. SecurityContext에 사용자 로그인 처리
+        MemberContext memberContext = new MemberContext(member);
+        Authentication auth = new UsernamePasswordAuthenticationToken(memberContext, null, memberContext.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
         return "redirect:../home/main";
     }
@@ -129,20 +149,21 @@ public class MemberController {
 
         String accessToken = naverOAuthService.requestAccessToken(code, state);
 
-        naverOAuthService.getUserInfo(accessToken);
+        Member naverUser = naverOAuthService.getUserInfo(accessToken);
 
-        return "redirect:../home/main";
-    }
+        String naverEmail = naverUser.getEmail();
 
+        // 1. DB에 사용자 있는지 확인 (없으면 회원가입 처리)
+        Member member = memberService.getMemberByProviderAndEmail("naver", naverEmail); // 없으면 생성해서 리턴
+        if (member == null) {
+            memberService.createAccount("naver", naverUser.getName(), naverUser.getLoginPw(), naverUser.getEmail(), naverUser.getPhoneNum());
+            member = memberService.getMemberByProviderAndEmail("naver", naverEmail);
+        }
 
-    @GetMapping("/doLogout")
-    public String doLogout() {
-
-        rq.logout();
-//        if (rq.getSession().getAttribute("accessToken") != null) {
-//            rq.getSession().removeAttribute("accessToken");
-//            return "redirect:kakaoLogout";
-//        }
+        // 2. SecurityContext에 사용자 로그인 처리
+        MemberContext memberContext = new MemberContext(member);
+        Authentication auth = new UsernamePasswordAuthenticationToken(memberContext, null, memberContext.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
         return "redirect:../home/main";
     }
@@ -157,6 +178,7 @@ public class MemberController {
 
     }
 
+    // 구글 로그인 체크
     @PostMapping("/login-check")
     public ResponseEntity<?> loginCheck(@RequestBody Map<String, String> body) {
         String idToken = body.get("idToken");
