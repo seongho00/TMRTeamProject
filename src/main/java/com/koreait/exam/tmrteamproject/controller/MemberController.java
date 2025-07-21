@@ -179,29 +179,37 @@ public class MemberController {
     }
 
     // 구글 로그인 체크
-    @PostMapping("/login-check")
-    public ResponseEntity<?> loginCheck(@RequestBody Map<String, String> body) {
+    @PostMapping("/googleCallback")
+    @ResponseBody
+    public ResultData googleCallback(@RequestBody Map<String, String> body) {
         String idToken = body.get("idToken");
+        String name = body.get("name");
+        String email = body.get("email");
+        String phone = body.get("phone");
+        String photoUrl = body.get("photoUrl");
 
-        System.out.println(body);
+        System.out.println("idToken: " + idToken);
+        System.out.println("name: " + name);
+        System.out.println("email: " + email);
+        System.out.println("phone: " + phone);
+        System.out.println("photoUrl: " + photoUrl);
 
-        if (idToken == null) {
-            return ResponseEntity.badRequest().body("idToken 누락됨");
+
+        // 1. DB에 해당 이메일이 있는지 확인
+        Member member = memberService.getMemberByProviderAndEmail("google", email);
+
+        if (member == null) {
+            // 없으면 회원가입 처리
+            memberService.createAccount("google", name, "", email, phone); // 커스텀 로직 작성 필요
+            member = memberService.getMemberByProviderAndEmail("google", email);
         }
 
-        try {
-            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-            String uid = decodedToken.getUid();
-            String email = decodedToken.getEmail();
+        // 2. SecurityContext에 사용자 로그인 처리
+        MemberContext memberContext = new MemberContext(member);
+        Authentication auth = new UsernamePasswordAuthenticationToken(memberContext, null, memberContext.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-            // ✅ 사용자 정보 처리 (회원 가입 또는 기존 사용자 확인)
-            // 예시:
-            // Optional<Member> member = memberRepository.findByUid(uid);
-            // if (!member.isPresent()) -> 회원가입 로직 실행
-            System.out.println("로그인 성공: UID = " + uid + ", email = " + email);
-            return ResponseEntity.ok("로그인 성공: UID = " + uid + ", email = " + email);
-        } catch (FirebaseAuthException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰 검증 실패: " + e.getMessage());
-        }
+        return ResultData.from("S-1", "구글 로그인 성공", "구글 멤버", member);
+
     }
 }
