@@ -4,7 +4,6 @@ import com.koreait.exam.tmrteamproject.service.TradeAreaService;
 import com.koreait.exam.tmrteamproject.vo.TradeArea;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,8 +17,7 @@ import java.util.List;
 @RequestMapping("usr/trade")
 public class TradeAreaController {
 
-    @Autowired
-    private TradeAreaService tradeAreaService;
+    private final TradeAreaService tradeAreaService;
 
     @GetMapping("/pdfread")
     public String pdfread(String fileName, Model model) {
@@ -32,7 +30,6 @@ public class TradeAreaController {
 
         // PDF 텍스트 추출
         String pdfText = tradeAreaService.getPdfTextFromDb(fileName);
-        System.out.println("PDF 원문:\n" + pdfText);
 
         // PDF 텍스트에서 분석된 데이터 추출
         TradeArea tradeArea = tradeAreaService.parseAndSaveTradeArea(pdfText, fileName);
