@@ -168,14 +168,28 @@ public class MemberController {
         return "redirect:../home/main";
     }
 
-    @GetMapping("/kakaoLogout")
-    public String kakaoLogout() {
+    @GetMapping("/conditionalLogout")
+    public String conditionalLogout() {
 
-        String logoutRedirectUri = "http://localhost:8080/usr/home/main";
-        String url = "https://kauth.kakao.com/oauth/logout?client_id=" + kakaoClientId + "&logout_redirect_uri="
-                + URLEncoder.encode(logoutRedirectUri, StandardCharsets.UTF_8);
-        return "redirect:" + url;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
+        if (auth != null && auth.getPrincipal() instanceof MemberContext) {
+            MemberContext memberContext = (MemberContext) auth.getPrincipal();
+            String provider = memberContext.getMember().getProvider(); // "kakao", "local" 등
+
+            if ("kakao".equals(provider)) {
+                // ✅ 카카오 로그아웃 URL로 리디렉션
+                String logoutRedirectUri = "http://localhost:8080/usr/member/doLogout";
+                String url = "https://kauth.kakao.com/oauth/logout?client_id=" + kakaoClientId
+                        + "&logout_redirect_uri=" + URLEncoder.encode(logoutRedirectUri, StandardCharsets.UTF_8);
+
+                return "redirect:" + url;
+            }
+
+        }
+
+        // ✅ 일반 로그아웃 처리
+        return "redirect:/usr/member/doLogout";
     }
 
     // 구글 로그인 체크
