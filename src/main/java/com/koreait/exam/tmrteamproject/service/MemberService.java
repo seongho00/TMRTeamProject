@@ -20,8 +20,9 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;  // ✅ 여기 추가
 
     @Transactional
-    public Member createAccount(String name, String loginPw, String email, String phoneNum) {
+    public Member createAccount(String provider, String name, String loginPw, String email, String phoneNum) {
         Member member = Member.builder()
+                .provider(provider)
                 .name(name)
                 .loginPw(passwordEncoder.encode(loginPw))
                 .email(email)
@@ -33,14 +34,6 @@ public class MemberService {
         return member;
     }
 
-
-    public Member getMemberByEmail(String email) {
-        Member loginedMember = memberRepository.getMemberByEmail(email);
-        System.out.println(loginedMember);
-
-        return loginedMember;
-
-    }
 
     public ResultData checkDupMemberByEmail(String email) {
 
@@ -55,4 +48,10 @@ public class MemberService {
     }
 
 
+    public Member getMemberByProviderAndEmail(String provider, String email) {
+        Member loginedMember = memberRepository.findMemberByProviderAndEmail(provider, email);
+        System.out.println(loginedMember);
+
+        return loginedMember;
+    }
 }
