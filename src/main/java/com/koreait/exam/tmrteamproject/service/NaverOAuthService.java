@@ -2,6 +2,8 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.firebase.auth.UserInfo;
+import com.koreait.exam.tmrteamproject.vo.Member;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -67,7 +69,7 @@ public class NaverOAuthService {
         return "";
     }
 
-    public String getUserInfo(String accessToken) {
+    public Member getUserInfo(String accessToken) {
         String url = "https://openapi.naver.com/v1/nid/me";
 
         // 1. 헤더 구성
@@ -85,13 +87,14 @@ public class NaverOAuthService {
 //		System.out.println("응답 코드: " + response.getStatusCode());
         System.out.println("응답 바디: " + response.getBody());
 
-        parseUserResponseBody(response.getBody());
+        Member naverUser = parseUserResponseBody(response.getBody());
 
-        return response.getBody();
+        return naverUser;
     }
 
     // 유저 데이터 까보기
-    public void parseUserResponseBody(String responseBody) {
+    public Member parseUserResponseBody(String responseBody) {
+        Member naverUser = null;
         try {
 
             ObjectMapper objectMapper = new ObjectMapper();
@@ -115,9 +118,11 @@ public class NaverOAuthService {
             System.out.println("profileImage: " + profileImage);
             System.out.println("mobile: " + mobile);
 
+            naverUser = new Member("naver", name, "", email, mobile);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return naverUser;
     }
 }

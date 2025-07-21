@@ -2,6 +2,7 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.koreait.exam.tmrteamproject.vo.Member;
 import com.koreait.exam.tmrteamproject.vo.Rq;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -76,7 +77,7 @@ public class KakaoOAuthService {
     }
 
     // 토큰을 통해 유저 데이터 요청
-    public void getUserInfo(String accessToken) {
+    public Member getUserInfo(String accessToken) {
         String url = "https://kapi.kakao.com/v2/user/me?secure_resource=true";
 
         // 1. 헤더 설정
@@ -91,14 +92,15 @@ public class KakaoOAuthService {
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
 
         // 3. 응답 출력
-		System.out.println("응답 상태: " + response.getStatusCode());
-		System.out.println("응답 바디: " + response.getBody());
-        parseUserResponseBody(response.getBody());
-
+        System.out.println("응답 상태: " + response.getStatusCode());
+        System.out.println("응답 바디: " + response.getBody());
+        Member member = parseUserResponseBody(response.getBody());
+        return member;
     }
 
     // 유저 데이터 까보기
-    public void parseUserResponseBody(String responseBody) {
+    public Member parseUserResponseBody(String responseBody) {
+        Member member = null;
         try {
 
             ObjectMapper objectMapper = new ObjectMapper();
@@ -120,8 +122,11 @@ public class KakaoOAuthService {
             System.out.println("email: " + email);
             System.out.println("phoneNumber: " + phoneNumber);
 
+            member = new Member("kakao", nickname, "", email, phoneNumber);
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        return member;
     }
 }

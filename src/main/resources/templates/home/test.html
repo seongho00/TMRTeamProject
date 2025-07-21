@@ -3,11 +3,13 @@
 <head th:replace="common/head::head"></head> <!-- ✅ 공백 제거 -->
 
 
-<h2>Firebase Social Login</h2>
+<div class=" flex">
+    <img src="/images/g-normal.png" width="30px">
+    <span class="buttonText">Log in with Google</span>
+</div>
 
-<button onclick="googleLogin()">구글 로그인</button>
-<button onclick="githubLogin()">깃허브 로그인</button>
-<button onclick="logout()">로그아웃</button>
+
+<a href="/usr/member/conditionalLogout">로그아웃</a>
 <button onclick="checkLoginStatus()">로그인 상태 확인</button>
 <button onclick="deleteAccount()">계정 삭제</button>
 
@@ -67,7 +69,6 @@
 
             // ✅ Firebase idToken → 서버 전송 (선택)
             const idToken = await user.getIdToken();
-            sendTokenToServer(idToken); // 네가 이미 만든 함수라고 가정
 
             const token = await user.getIdTokenResult();
             console.log(token.claims);
@@ -83,6 +84,7 @@
                 console.log("📧 이메일:", profile.email);
                 console.log("📞 전화번호:", profile.phone);
                 console.log("🖼️ 프로필 이미지:", profile.photoUrl);
+                sendTokenToServer(idToken, profile);
             }
         } catch (error) {
             console.error("❌ 로그인 실패:", error);
@@ -129,31 +131,35 @@
 
 
     // ✅ 서버로 토큰 전송
-    function sendTokenToServer(idToken) {
-        fetch("http://localhost:8080/usr/member/login-check", {
+    function sendTokenToServer(idToken, profile) {
+        fetch("http://localhost:8080/usr/member/googleCallback", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({idToken})  // ✅ 여기에 idToken 추가
+            body: JSON.stringify({
+                idToken,
+                name: profile.name,
+                email: profile.email,
+                phone: profile.phone,
+                photoUrl: profile.photoUrl
+            })  // ✅ 여기에 idToken 추가
         })
-            .then(res => res.text())
-            .then(console.log)
-            .catch(console.error);
+            .then(res => {
+                if (!res.ok) throw new Error("서버 응답 실패");
+                return res.text();
+            })
+            .then(result => {
+                console.log("✅ 서버 응답:", result);
+                // ✅ 리디렉션 실행
+                window.location.href = "/usr/home/main";  // 원하는 경로로 수정
+            })
+            .catch(err => {
+                console.error("❌ 서버 요청 실패:", err);
+                alert("로그인 처리 중 오류가 발생했습니다.");
+            });
     }
 
-    // ✅ 로그아웃 함수
-    window.logout = () => {
-        auth.signOut()
-            .then(() => {
-                alert("로그아웃 되었습니다.");
-                console.log("✅ Firebase 로그아웃 완료");
-            })
-            .catch((error) => {
-                console.error("❌ 로그아웃 오류:", error);
-                alert("로그아웃 중 오류가 발생했습니다.");
-            });
-    };
 
     // ✅ 로그인 상태 확인 버튼 클릭 시 호출
     window.checkLoginStatus = () => {
