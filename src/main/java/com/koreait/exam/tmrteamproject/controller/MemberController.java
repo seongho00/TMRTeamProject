@@ -18,8 +18,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLEncoder;
@@ -76,23 +78,18 @@ public class MemberController {
 
     }
 
-//    @PostMapping("/doLogin")
-//    @ResponseBody
-//    public String doLogin(String email, String loginPw) {
-//
-//        // 이메일로 멤버 찾기
-//        Member loginedMember = memberService.getMemberByEmail(email);
-//
-//        if (loginedMember == null) {
-//            return Ut.jsHistoryBack("F-1", "가입된 아이디가 없습니다.");
-//        }
-//
-//        if (!loginedMember.getLoginPw().equals(loginPw)) {
-//            return Ut.jsHistoryBack("F-2", "비밀번호가 일치하지 않습니다.");
-//        }
-//
-//        return Ut.jsReplace("S-1", loginedMember.getName() + "님 환영합니다.", "../home/main");
-//    }
+    @GetMapping("/login")
+    @ResponseBody
+    public String loginPage(HttpServletRequest request, Model model) {
+        Object errorMessage = request.getSession().getAttribute("errorMessage");
+        System.out.println(errorMessage);
+
+        if (errorMessage != null) {
+            request.getSession().removeAttribute("errorMessage");
+            return Ut.jsHistoryBack("F-1", errorMessage.toString());
+        }
+        return "redirect:../home/main";
+    }
 
     @GetMapping("/loginKakao")
     public String loginKakao() {
