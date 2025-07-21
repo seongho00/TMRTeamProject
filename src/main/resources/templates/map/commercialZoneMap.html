@@ -22,22 +22,63 @@
 <!--<div id="map" style="width:100%;height:350px;"></div>-->
 
 
+<script>
+    $(document).ready(function () {
+        $('#sggSelect').on('change', function () {
+            const sgg = $(this).val();
+
+            // 행정동 초기화
+            $('#emdSelect').empty().append('<option value="">행정동</option>');
+
+            if (sgg) {
+                $.ajax({
+                    url: 'getEmds',
+                    method: 'GET',
+                    data: {sgg: sgg},
+                    success: function (adminDongs) {
+
+                        $.each(adminDongs, function (index, adminDong) {
+                            $('#emdSelect').append(
+                                $('<option>', {value: adminDong.emdNm, text: adminDong.emdNm})
+                            );
+                        });
+                    },
+                    error: function () {
+                        alert('행정동 정보를 가져오는데 실패했습니다.');
+                    }
+                });
+            }
+        });
+    });
+
+</script>
+
+
 <ul class="flex justify-center items-center w-[450px] h-[47px] overflow-hidden gap-[37px] px-[46px] py-[15px] rounded-[10px] bg-white border border-black absolute left-1/2 -translate-x-1/2 top-[100px]">
     <li class="flex justify-center items-center h-[41px] cursor-pointer">
-        <p class="flex justify-center items-center w-[77.67px] h-[17px] text-[22px] text-center text-black">대전</p>
-        <i class="fa-solid fa-chevron-down ml-2"></i>
 
-        <ul>
-            <li></li>
-        </ul>
+        <select class="flex justify-center items-center text-[22px] text-center text-black" name="sidoSelect"
+                id="sidoSelect">
+            <option>대전광역시</option>
+        </select>
+
+    </li>
+    <li class="flex justify-center items-center h-[41px]  ">
+        <select class="flex justify-center items-center text-[22px] text-center text-black" name="sggSelect"
+                id="sggSelect">
+            <option value="">시/군/구</option>
+            <option value="동구">동구</option>
+            <option value="중구">중구</option>
+            <option value="서구">서구</option>
+            <option value="유성구">유성구</option>
+            <option value="대덕구">대덕구</option>
+        </select>
     </li>
     <li class="flex justify-center items-center h-[41px] cursor-pointer">
-        <p class="flex justify-center items-center w-[77.67px] h-[17px] text-[22px] text-center text-black">대덕구</p>
-        <i class="fa-solid fa-chevron-down ml-2"></i>
-    </li>
-    <li class="flex justify-center items-center h-[41px] cursor-pointer">
-        <p class="flex justify-center items-center w-[77.67px] h-[17px] text-[22px] text-center text-black">신흥동</p>
-        <i class="fa-solid fa-chevron-down ml-2"></i>
+        <select class="flex justify-center items-center  text-[22px] text-center text-black" name="emdSelect"
+                id="emdSelect">
+            <option>행정동</option>
+        </select>
     </li>
 </ul>
 
