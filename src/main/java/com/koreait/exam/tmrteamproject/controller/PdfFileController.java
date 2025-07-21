@@ -19,7 +19,7 @@ public class PdfFileController {
     @GetMapping("/upload")
     @ResponseBody
     public String upload() {
-        String foldPath = "C:/Users/user/Desktop/TeamProject/test/";
+        String foldPath = "C:/Users/admin/Desktop/shin/test/";
         pdfFileService.saveAllPdfsFromFolder(foldPath);
 
         return "모든 PDF 저장 완료!";
