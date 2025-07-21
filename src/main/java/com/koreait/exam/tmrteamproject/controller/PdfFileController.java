@@ -1,6 +1,7 @@
 package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.service.PdfFileService;
+import com.koreait.exam.tmrteamproject.vo.ResultData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -18,10 +19,10 @@ public class PdfFileController {
 
     @GetMapping("/upload")
     @ResponseBody
-    public String upload() {
+    public ResultData upload() {
         String foldPath = "C:/Users/user/Desktop/TeamProject/test/";
         pdfFileService.saveAllPdfsFromFolder(foldPath);
 
-        return "모든 PDF 저장 완료!";
+        return ResultData.from("S-1", "모든 pdf 파일 저장 완료");
     }
 }
