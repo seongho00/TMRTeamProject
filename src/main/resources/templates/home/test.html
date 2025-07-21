@@ -5,7 +5,7 @@
 <h2>Firebase Social Login</h2>
 
 <button onclick="googleLogin()">구글 로그인</button>
-<button onclick="logout()">로그아웃</button>
+<a href="/usr/member/conditionalLogout">로그아웃</a>
 <button onclick="checkLoginStatus()">로그인 상태 확인</button>
 <button onclick="deleteAccount()">계정 삭제</button>
 
@@ -156,18 +156,6 @@
             });
     }
 
-    // ✅ 로그아웃 함수
-    window.logout = () => {
-        auth.signOut()
-            .then(() => {
-                alert("로그아웃 되었습니다.");
-                console.log("✅ Firebase 로그아웃 완료");
-            })
-            .catch((error) => {
-                console.error("❌ 로그아웃 오류:", error);
-                alert("로그아웃 중 오류가 발생했습니다.");
-            });
-    };
 
     // ✅ 로그인 상태 확인 버튼 클릭 시 호출
     window.checkLoginStatus = () => {
