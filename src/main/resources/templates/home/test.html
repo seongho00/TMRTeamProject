@@ -2,9 +2,13 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="common/head::head"></head> <!-- ✅ 공백 제거 -->
 
-<h2>Firebase Social Login</h2>
 
-<button onclick="googleLogin()">구글 로그인</button>
+<div class=" flex">
+    <img src="/images/g-normal.png" width="30px">
+    <span class="buttonText">Log in with Google</span>
+</div>
+
+
 <a href="/usr/member/conditionalLogout">로그아웃</a>
 <button onclick="checkLoginStatus()">로그인 상태 확인</button>
 <button onclick="deleteAccount()">계정 삭제</button>
