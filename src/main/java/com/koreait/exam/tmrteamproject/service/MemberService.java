@@ -4,6 +4,10 @@ import com.koreait.exam.tmrteamproject.repository.MemberRepository;
 import com.koreait.exam.tmrteamproject.vo.Member;
 import com.koreait.exam.tmrteamproject.vo.ResultData;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,12 +17,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final PasswordEncoder passwordEncoder;  // ✅ 여기 추가
 
     @Transactional
     public Member createAccount(String name, String loginPw, String email, String phoneNum) {
         Member member = Member.builder()
                 .name(name)
-                .loginPw(loginPw)
+                .loginPw(passwordEncoder.encode(loginPw))
                 .email(email)
                 .phoneNum(phoneNum)
                 .build();
@@ -48,4 +53,6 @@ public class MemberService {
 
         return ResultData.from("S-1", "가입 가능");
     }
+
+
 }
