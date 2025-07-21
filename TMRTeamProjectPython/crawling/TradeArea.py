@@ -43,10 +43,10 @@ conn = pymysql.connect(
 )
 cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '유성구' AND emd_nm = '온천2동';")
+cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '동구' AND emd_nm = '산내동';")
 dong_rows = cursor.fetchall()
 
-cursor.execute("SELECT * FROM upjong_code WHERE major_cd IN ('M1', 'N1');")
+cursor.execute("SELECT * FROM upjong_code;")
 upjong_rows = cursor.fetchall()
 
 for dong in dong_rows:
@@ -144,7 +144,7 @@ for dong in dong_rows:
             driver = webdriver.Chrome(options=chrome_options)
             driver.get(report_url)
 
-            wait = WebDriverWait(driver, 5)
+            wait = WebDriverWait(driver, 10)
 
             # "저장" 버튼 클릭 (클래스: btnSAVEAS)
             try:
@@ -153,7 +153,7 @@ for dong in dong_rows:
                 save_btn.click()
                 print("[1] 저장 버튼 클릭")
 
-                confirm_button = WebDriverWait(driver, 5).until(
+                confirm_button = WebDriverWait(driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, "/html/body/div[2]/div[3]/div/button[2]"))
                 )
                 confirm_button.click()

@@ -23,7 +23,6 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class ChatbotController {
 
-
     @Autowired
     private ChatBotService chatBotService;
 

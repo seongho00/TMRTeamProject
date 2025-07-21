@@ -64,12 +64,16 @@ public class TradeAreaService {
         // 정규식 기반 데이터 추출
         int storeCount = extractInt(pdfText, "업소수는.*?(\\d+)개");
         int footTraffic = extractInt(pdfText, "유동인구.*?(\\d{1,3}(,\\d{3})*)명");
+        int deliveryOrders = extractInt(pdfText, "배달주문건수는.*?(\\d+)건");
         int monthlySales = extractInt(pdfText, "월평균 매출액은.*?(\\d{1,3}(,\\d{3})*)만원");
 
         // 증감률은 %, - 포함
-        double salesYoy = extractDouble(pdfText, "매출액은.*?전년동월대비\\s*([\\d.\\-]+)%");
-        double salesMom = extractDouble(pdfText, "전월대비\\s*([\\d.\\-]+)% 감소");
-        double storeYoy = extractDouble(pdfText, "업소수.*?전년동월대비\\s*([\\d.\\-]+)%");
+        double storeYoy = extractBlockChangeWithDecreaseCheck(pdfText, "업소수", "전년동월대비");
+        double storeMom = extractBlockChangeWithDecreaseCheck(pdfText, "업소수", "전월대비");
+        double deliveryYoy = extractBlockChangeWithDecreaseCheck(pdfText, "배달주문건수", "전년동월대비");
+        double deliveryMom = extractBlockChangeWithDecreaseCheck(pdfText, "배달주문건수", "전월대비");
+        double salesYoy = extractBlockChangeWithDecreaseCheck(pdfText, "매출액", "전년동월대비");
+        double salesMom = extractBlockChangeWithDecreaseCheck(pdfText, "매출액", "전월대비");
 
         // 피크 요일 및 시간대
         String peakDay = extractString(pdfText, "요일은\\s*(\\S+),");
@@ -85,10 +89,14 @@ public class TradeAreaService {
                 .industry(industry)
                 .storeCount(storeCount)
                 .storeCountYoyChange(storeYoy)
+                .storeCountMomChange(storeMom)
+                .delivery_orders(deliveryOrders)
+                .delivery_orders_yoy(deliveryYoy)
+                .delivery_orders_mom(deliveryMom)
                 .footTraffic(footTraffic)
+                .monthlySales(monthlySales)
                 .salesYoyChange(salesYoy)
                 .salesMomChange(salesMom)
-                .monthlySales(monthlySales)
                 .peakDay(peakDay)
                 .peakTime(peakTime)
                 .build();
@@ -126,15 +134,6 @@ public class TradeAreaService {
         return 0;
     }
 
-    private double extractDouble(String text, String pattern) {
-        Pattern p = Pattern.compile(pattern);
-        Matcher m = p.matcher(text);
-        if (m.find()) {
-            return Double.parseDouble(m.group(1));
-        }
-        return 0.0;
-    }
-
     private String extractString(String text, String pattern) {
         Pattern p = Pattern.compile(pattern);
         Matcher m = p.matcher(text);
@@ -159,5 +158,28 @@ public class TradeAreaService {
                 .stream()
                 .map(PdfFile::getFileName)
                 .collect(Collectors.toList());
+    }
+
+    //각각 전년동월대비 / 전월대비 분리
+    private double extractBlockChangeWithDecreaseCheck(String text, String blockKeyword, String targetKeyword) {
+        Pattern blockPattern = Pattern.compile(blockKeyword + ".*?(전년동월대비[\\s\\S]{0,50}|전월대비[\\s\\S]{0,50})", Pattern.DOTALL);
+        Matcher blockMatcher = blockPattern.matcher(text);
+
+        if (blockMatcher.find()) {
+            String block = blockMatcher.group(0);
+            Pattern valuePattern = Pattern.compile(targetKeyword + "\\s*([\\d.]+)%\\s*(많고|낮고|증가|감소)?");
+            Matcher valueMatcher = valuePattern.matcher(block);
+            if (valueMatcher.find()) {
+                double value = Double.parseDouble(valueMatcher.group(1));
+                String direction = valueMatcher.group(2);
+
+                if ("낮고".equals(direction) || "감소".equals(direction)) {
+                    return -value;
+                }
+
+                return value;
+            }
+        }
+        return 0.0;
     }
 }
