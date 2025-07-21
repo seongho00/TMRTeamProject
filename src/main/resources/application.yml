@@ -24,7 +24,10 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect  # ← 요게 핵심!!
-  
+
+logging:
+  level:
+    org.springframework.security: DEBUG
 
 
 
