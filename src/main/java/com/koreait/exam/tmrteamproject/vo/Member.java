@@ -1,9 +1,6 @@
 package com.koreait.exam.tmrteamproject.vo;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import javax.persistence.Entity;
@@ -12,12 +9,16 @@ import javax.persistence.Entity;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @SuperBuilder
 @ToString(callSuper = true)
 public class Member extends BaseEntity {
 
+    private String provider;
     private String name;
     private String loginPw;
     private String email;
     private String phoneNum;
+
+
 }

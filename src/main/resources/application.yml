@@ -25,6 +25,10 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect  # ← 요게 핵심!!
 
+logging:
+  level:
+    org.springframework.security: DEBUG
+
 
 
 # 카카오 api 키
@@ -39,6 +43,7 @@ naver:
     clientId: bEMZzWiWu06Pk2b7R6D3
     clientSecret: 730aCbbDQO
 
+# SMS 문자 api 키
 solapi:
   apiKey: NCS8X6JXYL5LGJ0B
   apiSecret: OPMRNQJAWXRAEDUGNAOPOI8AZNRTTSCO
