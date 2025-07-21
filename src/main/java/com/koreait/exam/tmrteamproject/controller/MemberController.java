@@ -62,10 +62,6 @@ public class MemberController {
     @ResponseBody
     public String createAccount(String name, String loginPw, String email, String phoneNum) {
 
-        System.out.println(name);
-        System.out.println(loginPw);
-        System.out.println(email);
-        System.out.println(phoneNum);
 
         // 겹치는 이메일 있는지 확인
         ResultData checkDupMemberRd = memberService.checkDupMemberByEmail(email);
@@ -80,23 +76,23 @@ public class MemberController {
 
     }
 
-    @PostMapping("/doLogin")
-    @ResponseBody
-    public String doLogin(String email, String loginPw) {
-        
-        // 이메일로 멤버 찾기
-        Member loginedMember = memberService.getMemberByEmail(email);
-
-        if (loginedMember == null) {
-            return Ut.jsHistoryBack("F-1", "가입된 아이디가 없습니다.");
-        }
-
-        if (!loginedMember.getLoginPw().equals(loginPw)) {
-            return Ut.jsHistoryBack("F-2", "비밀번호가 일치하지 않습니다.");
-        }
-
-        return Ut.jsReplace("S-1", loginedMember.getName() + "님 환영합니다.", "../home/main");
-    }
+//    @PostMapping("/doLogin")
+//    @ResponseBody
+//    public String doLogin(String email, String loginPw) {
+//
+//        // 이메일로 멤버 찾기
+//        Member loginedMember = memberService.getMemberByEmail(email);
+//
+//        if (loginedMember == null) {
+//            return Ut.jsHistoryBack("F-1", "가입된 아이디가 없습니다.");
+//        }
+//
+//        if (!loginedMember.getLoginPw().equals(loginPw)) {
+//            return Ut.jsHistoryBack("F-2", "비밀번호가 일치하지 않습니다.");
+//        }
+//
+//        return Ut.jsReplace("S-1", loginedMember.getName() + "님 환영합니다.", "../home/main");
+//    }
 
     @GetMapping("/loginKakao")
     public String loginKakao() {
