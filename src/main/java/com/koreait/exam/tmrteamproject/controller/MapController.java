@@ -54,4 +54,13 @@ public class MapController {
 
         return upjongCode;
     }
+
+    @GetMapping("/getMinorCategories")
+    @ResponseBody
+    public List<UpjongCode> getMinorCategories(String middleCd) {
+
+        List<UpjongCode> upjongCode = upjongCodeService.getUpjongCodesByMiddleCode(middleCd);
+
+        return upjongCode;
+    }
 }
