@@ -31,4 +31,9 @@ public class UpjongCodeService {
     public UpjongCode getUpjongCodeByMinorCd(String minorCd) {
         return upjongCodeRepository.getUpjongCodeByMinorCd(minorCd);
     }
+
+    public List<UpjongCode> getUpjongCodeByKeyword(String keyword) {
+
+        return upjongCodeRepository.getUpjongCodeByKeyword(keyword);
+    }
 }
