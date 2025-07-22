@@ -2,7 +2,6 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.firebase.auth.UserInfo;
 import com.koreait.exam.tmrteamproject.vo.Member;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;

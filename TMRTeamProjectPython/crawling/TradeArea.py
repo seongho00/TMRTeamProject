@@ -43,7 +43,7 @@ conn = pymysql.connect(
 )
 cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '동구' AND emd_nm = '산내동';")
+cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '동구' AND emd_nm = '삼성동';")
 dong_rows = cursor.fetchall()
 
 cursor.execute("SELECT * FROM upjong_code;")

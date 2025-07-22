@@ -19,6 +19,4 @@ public class Member extends BaseEntity {
     private String loginPw;
     private String email;
     private String phoneNum;
-
-
 }
