@@ -24,6 +24,7 @@
 
 <script>
     $(document).ready(function () {
+        // 지역 선택 UI 시군구 선택 시 그에 해당되는 행정동 나오게끔
         $('#sggSelect').on('change', function () {
             const sgg = $(this).val();
 
@@ -49,16 +50,51 @@
                 });
             }
         });
+
+        // 대분류 클릭 시 그에 해당하는 중분류 나오는 코드
+        $(".major-item").click(function () {
+            const majorCd = $(this).data("majorcd");
+            console.log(majorCd);
+
+            $.ajax({
+                url: "getMiddleCategories",   // 🔁 실제 서버 엔드포인트로 수정
+                method: "GET",                  // 또는 "POST"
+                data: {majorCd: majorCd},
+                success: function (upjongCodes) {
+                    console.log(upjongCodes);
+                    // li 항목만 생성
+                    let liHTML = "";
+
+                    upjongCodes.forEach(item => {
+                        liHTML += `
+                          <li class="middle-item h-12 w-full text-xl font-medium text-center text-black cursor-pointer hover:bg-gray-100"
+                              data-middle-cd="${item.middleCd}">
+                            ${item.middleNm}
+                          </li>
+                        `;
+                    });
+
+                    // 기존 ul 안에 li 추가 (ul은 유지)
+                    $(".middleSelector ul").html(liHTML);
+                },
+                error: function () {
+                    alert("중분류 데이터를 불러오는 데 실패했습니다.");
+                }
+            });
+
+        });
+
+
     });
 
 </script>
 
 <style>
-    .majorSelector p {
+    .majorSelector li {
         cursor: pointer;
     }
 
-    .middelSelector p {
+    .middelSelector li {
         cursor: pointer;
     }
 
@@ -139,44 +175,53 @@
             <div
                     class="majorSelector flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-[19px]"
             >
-                <div
-                        class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden px-[5px]"
-                >
-                    <p class="flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black border border-black">
+                <ul class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden px-[5px]">
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black border border-black cursor-pointer"
+                        data-majorCd="L1">
                         부동산
-                    </p>
-                    <p class="flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="I1">
                         숙박
-                    </p>
-                    <p class="flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="M1">
                         과학/기술
-                    </p>
-                    <p class="flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
-                        보건의료
-                    </p>
-                    <p class="flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        +
+                        data-majorCd="Q1">
+                        보건/의료
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="N1">
                         관리/임대
-                    </p>
-                </div>
-                <div
-                        class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden"
-                >
-                    <p class="flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
+                    </li>
+                </ul>
+
+                <ul class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden">
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="G2">
                         소매
-                    </p>
-                    <p class="flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="I2">
                         음식
-                    </p>
-                    <p class="flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="S2">
                         수리
-                    </p>
-                    <p class="flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="R1">
                         예체능
-                    </p>
-                    <p class="flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="P1">
                         교육
-                    </p>
-                </div>
+                    </li>
+                </ul>
+
             </div>
         </div>
         <div
@@ -212,99 +257,60 @@
         </div>
     </div>
     <div
-            class="middelSelector flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[10px] rounded-[15px] bg-white border border-black"
+            class="middleSelector  flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[10px] rounded-[15px] bg-white border border-black"
     >
-        <div
+        <ul
                 class="flex flex-col justify-start items-center w-full self-stretch flex-grow-0 flex-shrink-0 relative overflow-auto gap-2.5 p-2.5"
         >
-            <p
-                    class="flex justify-center items-center flex-grow-0 flex-shrink-0 h-12 text-xl font-medium text-black"
-            >
-                한식
-            </p>
-            <p
-                    class="flex-grow-0 flex-shrink-0 h-12 text-xl font-medium text-center text-black"
-            >
-                중식
-            </p>
-            <p
-                    class="flex-grow-0 flex-shrink-0 h-12 text-xl font-medium text-center text-black"
-            >
-                일식
-            </p>
-            <p
-                    class="flex-grow-0 flex-shrink-0 h-12 text-xl font-medium text-center text-black"
-            >
-                서양식
-            </p>
-            <p
-                    class="flex-grow-0 flex-shrink-0 h-12 text-xl font-medium text-center text-black"
-            >
-                동남아시아식
-            </p>
-            <p
-                    class="flex-grow-0 flex-shrink-0  h-12 text-xl font-medium text-center text-black"
-            >
-                기타 외국식
-            </p>
-            <p
-                    class="flex-grow-0 flex-shrink-0h-12 text-xl font-medium text-center text-black"
-            >
-                주점업
-            </p>
-            <p
-                    class="flex-grow-0 flex-shrink-0 h-12 text-xl font-medium text-center text-black"
-            >
-                비알코올 음료업
-            </p>
-        </div>
+
+        </ul>
     </div>
     <div
             class="flex flex-col hidden justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] overflow-hidden gap-2.5 px-[23px] py-[13px] rounded-[15px] bg-white border border-black"
     >
-        <div
+        <ul
                 class="flex justify-center items-center self-stretch flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5 p-2.5"
         >
-            <p
+            <li
                     class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
             >
                 백반/한정식
-            </p>
-            <p
+            </li>
+            <li
                     class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
             >
                 국/탕/찌개류
-            </p>
-            <p
+            </li>
+            <li
                     class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
             >
                 족발/보쌈
-            </p>
-            <p
+            </li>
+            <li
                     class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
             >
                 전/부침개
-            </p>
-            <p
+            </li>
+            <li
                     class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
             >
                 국수/칼국수
-            </p>
-            <p
+            </li>
+            <li
                     class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
             >
                 냉면/밀면
-            </p>
-            <p
+            </li>
+            <li
                     class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
             >
                 돼지고기
-            </p>
-            <p
+            </li>
+            <li
                     class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
             >
                 소고기
-            </p>
-        </div>
+            </li>
+        </ul>
     </div>
 </div>
