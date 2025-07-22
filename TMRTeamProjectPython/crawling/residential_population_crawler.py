@@ -67,9 +67,7 @@ for residential_population in residential_populations:
     if residential_population.text.strip() == "주거인구현황":
         residential_population.click()
         # region 요소가 등장할 때까지 기다림
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "region"))
-        )
+        time.sleep(1)
         break
 
 # class가 'region'인 버튼 찾기
@@ -101,6 +99,7 @@ for jdx, region in enumerate(regions[1:], start=2):
         box_class = wait_for_element(driver, By.CLASS_NAME, "boxSearch")
         result_button = box_class.find_element(By.XPATH, "./button")
         result_button.click()
+        time.sleep(0.5)
 
         # 데이터 찾아가기
         table_class = wait_for_element(driver, By.CLASS_NAME, "q-table")
