@@ -1,8 +1,11 @@
 package com.koreait.exam.tmrteamproject.controller;
 
+import com.koreait.exam.tmrteamproject.service.AdminDongService;
 import com.koreait.exam.tmrteamproject.service.MapService;
 import com.koreait.exam.tmrteamproject.service.MemberService;
+import com.koreait.exam.tmrteamproject.service.UpjongCodeService;
 import com.koreait.exam.tmrteamproject.vo.AdminDong;
+import com.koreait.exam.tmrteamproject.vo.UpjongCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +25,11 @@ public class MapController {
 
     @Autowired
     private MapService mapService;
+    @Autowired
+    private AdminDongService adminDongService;
+    @Autowired
+    private UpjongCodeService upjongCodeService;
+
 
     @GetMapping("/commercialZoneMap")
     public String commercialZoneMap() {
@@ -33,8 +41,17 @@ public class MapController {
     @ResponseBody
     public List<AdminDong> getEmds(String sgg) {
 
-        List<AdminDong> adminDong = mapService.getEmdsBySgg(sgg);
+        List<AdminDong> adminDong = adminDongService.getAdminDongsBySgg(sgg);
 
         return adminDong;
+    }
+
+    @GetMapping("/getMiddleCategories")
+    @ResponseBody
+    public List<UpjongCode> getMiddleCategories(String majorCd) {
+
+        List<UpjongCode> upjongCode = upjongCodeService.getGroupedUpjongCodesByMajorCd(majorCd);
+
+        return upjongCode;
     }
 }

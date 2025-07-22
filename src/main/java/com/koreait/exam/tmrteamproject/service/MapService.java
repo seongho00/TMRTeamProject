@@ -22,11 +22,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MapService {
-    private final AdminDongRepository adminDongRepository;
 
 
-    public List<AdminDong> getEmdsBySgg(String sgg) {
-
-        return adminDongRepository.getAdminDongBySggNm(sgg);
-    }
 }
