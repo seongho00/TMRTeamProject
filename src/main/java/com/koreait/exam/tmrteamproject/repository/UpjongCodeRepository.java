@@ -20,4 +20,6 @@ public interface UpjongCodeRepository extends JpaRepository<UpjongCode, String> 
                 GROUP BY middle_cd
             """, nativeQuery = true)
     List<UpjongCode> getGroupedUpjongCodesByMajorCd(String majorCd);
+
+    List<UpjongCode> getUpjongCodesByMiddleCd(String middleCd);
 }
