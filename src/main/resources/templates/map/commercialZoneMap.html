@@ -3,24 +3,66 @@
 <head th:replace="common/head::head"></head>
 <footer th:replace="common/header::header"></footer>
 
+<!-- 카카오맵 관련 코드 -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        kakao.maps.load(function () {
+            const mapContainer = document.getElementById('map');
+            const mapOption = {
+                center: new kakao.maps.LatLng(36.3504, 127.3845), // 대전 중심
+                level: 6
+            };
+            const map = new kakao.maps.Map(mapContainer, mapOption);
 
-<!--<script>-->
-<!--    // 카카오 지도 생성-->
-<!--    document.addEventListener("DOMContentLoaded", function () {-->
-<!--        kakao.maps.load(function () {-->
-<!--            var mapContainer = document.getElementById('map'), // 지도를 표시할 div-->
-<!--                mapOption = {-->
-<!--                    center: new kakao.maps.LatLng(33.450701, 126.570667), // 지도의 중심좌표-->
-<!--                    level: 3 // 지도의 확대 레벨-->
-<!--                };-->
-<!--            // 지도를 표시할 div와  지도 옵션으로  지도를 생성합니다-->
-<!--            var map = new kakao.maps.Map(mapContainer, mapOption);-->
-<!--        });-->
-<!--    });-->
-<!--</script>-->
+            // ✅ GeoJSON 파일 불러오기
+            fetch("/daejeon_emds.geojson") // ← 실제 파일 경로로 수정
+                .then(res => res.json())
+                .then(geojson => {
+                    geojson.features.forEach(feature => {
+                        const geometry = feature.geometry;
+                        const properties = feature.properties;
 
-<!--<div id="map" style="width:100%;height:350px;"></div>-->
+                        if (geometry.type === "Polygon") {
+                            drawPolygon([geometry.coordinates], properties);
+                        } else if (geometry.type === "MultiPolygon") {
+                            geometry.coordinates.forEach(polygon => {
+                                drawPolygon([polygon], properties);
+                            });
+                        }
+                    });
+                });
 
+            // ✅ 다각형 그리는 함수
+            function drawPolygon(coordinatesArray, properties) {
+                const paths = coordinatesArray[0][0].map(coord =>
+                    new kakao.maps.LatLng(coord[1], coord[0])
+                );
+
+                const polygon = new kakao.maps.Polygon({
+                    map: map,
+                    path: paths,
+                    strokeWeight: 2,
+                    strokeColor: '#004c80',
+                    strokeOpacity: 0.8,
+                    fillColor: '#00a0e9',
+                    fillOpacity: 0.3
+                });
+
+                // ✅ 마우스 오버 시 행정동 이름 표시
+                const infowindow = new kakao.maps.InfoWindow({removable: true});
+                kakao.maps.event.addListener(polygon, 'mouseover', function (mouseEvent) {
+                    infowindow.setContent(`<div style="padding:5px;font-size:14px;">${properties.ADM_NM}</div>`);
+                    infowindow.setPosition(mouseEvent.latLng);
+                    infowindow.open(map);
+                });
+
+                kakao.maps.event.addListener(polygon, 'mouseout', function () {
+                    infowindow.close();
+                });
+            }
+        });
+    });
+</script>
 
 <script>
     $(document).ready(function () {
@@ -76,6 +118,7 @@
 
                     // 기존 ul 안에 li 추가 (ul은 유지)
                     $(".middleSelector ul").html(liHTML);
+                    $(".middleSelector").removeClass('hidden');
                 },
                 error: function () {
                     alert("중분류 데이터를 불러오는 데 실패했습니다.");
@@ -110,6 +153,7 @@
 
                     // 기존 ul 안에 li 추가 (ul은 유지)
                     $(".minorSelector ul").html(liHTML);
+                    $(".minorSelector").removeClass('hidden');
                 },
                 error: function () {
                     alert("중분류 데이터를 불러오는 데 실패했습니다.");
@@ -132,6 +176,9 @@
     }
 
 </style>
+
+<!-- 카카오맵 -->
+<div id="map" style="width: 100%; height: 600px;"></div>
 
 <!-- 지역 선택 UI -->
 <ul class="flex justify-between items-center w-[450px] h-[47px] overflow-hidden  px-[10px] py-[15px] rounded-[10px] bg-white border border-black absolute left-1/2 -translate-x-1/2 top-[100px]">
@@ -290,7 +337,7 @@
         </div>
     </div>
     <div
-            class="middleSelector flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[10px] rounded-[15px] bg-white border border-black"
+            class="middleSelector hidden flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[10px] rounded-[15px] bg-white border border-black"
     >
         <ul
                 class="flex flex-col justify-start items-center w-full self-stretch flex-grow-0 flex-shrink-0 relative overflow-auto gap-2.5 p-2.5"
@@ -299,7 +346,7 @@
         </ul>
     </div>
     <div
-            class="minorSelector flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[23px] py-[13px] rounded-[15px] bg-white border border-black"
+            class="minorSelector hidden flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[23px] py-[13px] rounded-[15px] bg-white border border-black"
     >
         <ul
                 class="flex flex-col justify-start w-full items-center self-stretch flex-grow-0 flex-shrink-0 relative overflow-auto gap-2.5 p-2.5"
