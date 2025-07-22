@@ -2,16 +2,6 @@ DROP DATABASE IF EXISTS `TMRTeamProject`;
 CREATE DATABASE `TMRTeamProject`;
 USE `TMRTeamProject`;
 
-<<<<<<< HEAD
-CREATE TABLE `member` (
-                          id INT(10) AUTO_INCREMENT PRIMARY KEY,
-                          reg_date DATETIME NOT NULL,
-                          update_date DATETIME NOT NULL,
-                          `name` VARCHAR(50) NOT NULL,
-                          login_pw VARCHAR(100) NOT NULL,
-                          email VARCHAR(100) NOT NULL,
-                          phone_num VARCHAR(20)
-=======
 CREATE TABLE MEMBER (
                         id INT(10) AUTO_INCREMENT PRIMARY KEY,
                         regDate DATETIME NOT NULL,
@@ -21,18 +11,6 @@ CREATE TABLE MEMBER (
                         email VARCHAR(100) NOT NULL,
                         phoneNum VARCHAR(20)
 );
-
-CREATE TABLE floating_population (
-                                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                     region_name VARCHAR(100),             -- 예: 강남구 역삼동
-                                     gender ENUM('M', 'F') NOT NULL,       -- 남(M), 여(F)
-                                     age_group VARCHAR(10) NOT NULL,       -- 예: '10대', '20대'
-                                     population_count INT NOT NULL,        -- 유동인구 수
-                                     collected_date DATE NOT NULL,         -- 데이터 수집 기준일
-                                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
->>>>>>> c5aa3711261c631264f06b16539d98231c20c6b3
-);
-
 
 CREATE TABLE admin_dong (
                             admi_nm VARCHAR(100),                -- 전체 이름
@@ -44,7 +22,6 @@ CREATE TABLE admin_dong (
                             emd_nm VARCHAR(20)
 );
 
-<<<<<<< HEAD
 CREATE TABLE population_stat (
                                  id INT AUTO_INCREMENT PRIMARY KEY,
                                  emd_cd CHAR(10),             -- 읍면동 코드
@@ -60,15 +37,6 @@ CREATE TABLE population_stat (
 
 );
 
-
-SELECT * FROM admin_dong;
-SELECT * FROM population_stat;
-
-
-=======
-SELECT * FROM admin_dong;
-
-# 업종별 코드 저장
 CREATE TABLE upjong_code (
                              major_cd VARCHAR(10),        -- 대분류 코드
                              major_nm VARCHAR(50),        -- 대분류명
@@ -78,5 +46,13 @@ CREATE TABLE upjong_code (
                              minor_nm VARCHAR(100)        -- 소분류명
 );
 
-SELECT * FROM upjong_code;
->>>>>>> c5aa3711261c631264f06b16539d98231c20c6b3
+
+CREATE TABLE resident_stats(
+                               emd_cd CHAR(10) PRIMARY KEY,
+                               total_households INT(10) NOT NULL COMMENT '전체세대수',
+                               total_population INT(10) NOT NULL COMMENT '전체인구수',
+                               main_facility_count INT(10) NOT NULL COMMENT '주요시설수',
+                               misc_facility_count INT(10) NOT NULL COMMENT '잡객시설수'
+
+);
+
