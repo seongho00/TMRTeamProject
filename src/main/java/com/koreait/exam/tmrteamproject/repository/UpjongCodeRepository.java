@@ -24,4 +24,13 @@ public interface UpjongCodeRepository extends JpaRepository<UpjongCode, String> 
     List<UpjongCode> getUpjongCodesByMiddleCd(String middleCd);
 
     UpjongCode getUpjongCodeByMinorCd(String minorCd);
+
+    @Query("""
+                SELECT u
+                FROM UpjongCode u
+                WHERE u.majorNm LIKE CONCAT('%', :keyword, '%')
+                   OR u.middleNm LIKE CONCAT('%', :keyword, '%')
+                   OR u.minorNm LIKE CONCAT('%', :keyword, '%')
+            """)
+    List<UpjongCode> getUpjongCodeByKeyword(String keyword);
 }

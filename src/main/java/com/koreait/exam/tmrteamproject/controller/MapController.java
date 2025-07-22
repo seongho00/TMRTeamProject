@@ -72,4 +72,13 @@ public class MapController {
         UpjongCode upjongCode = upjongCodeService.getUpjongCodeByMinorCd(minorCd);
         return upjongCode;
     }
+
+    @GetMapping("/searchUpjong")
+    @ResponseBody
+    public List<UpjongCode> searchUpjong(String keyword) {
+        System.out.println(keyword);
+        List<UpjongCode> upjongCode = upjongCodeService.getUpjongCodeByKeyword(keyword);
+        System.out.println(upjongCode);
+        return upjongCode;
+    }
 }
