@@ -1,21 +1,17 @@
 package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.service.ChatBotService;
-import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.vo.FlaskResult;
 import com.koreait.exam.tmrteamproject.vo.PopulationSummary;
 import com.koreait.exam.tmrteamproject.vo.ResultData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.client.RestTemplate;
 
 @Controller
 @RequestMapping("usr/chatbot")
@@ -38,7 +34,7 @@ public class ChatbotController {
         ResultData result = chatBotService.analyzeMessage(message);
 
         if (result.isFail()) {
-            return ResultData.from("F-1", result.getMsg());  // "❌ Flask 서버 연결 실패"
+            return ResultData.from("F-1", result.getMsg());  // "Flask 서버 연결 실패"
         }
         FlaskResult flaskResult = (FlaskResult) result.getData1();
 
@@ -81,7 +77,6 @@ public class ChatbotController {
                 System.out.println("알 수 없는 요청");
                 break;
         }
-
 
         return ResultData.from("F-1", "데이터 요청 실패");
     }
