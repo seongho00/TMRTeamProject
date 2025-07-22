@@ -182,7 +182,63 @@
             });
         });
 
+        // 업종 입력 시 자동완성 코드
+        $('.upjongInput').on('compositionend', function () {
+            const keyword = $(this).val().trim();
+
+            // ✅ 여기서도 검색 호출 가능
+            handleSearch(keyword);
+
+
+        }).on('keydown', function (e) {
+            // keyCode 8 = Backspace, 46 = Delete
+            if (e.keyCode === 8 || e.keyCode === 46) {
+                setTimeout(() => {
+                    const keyword = $(this).val().trim();
+                    handleSearch(keyword);
+                }, 10);
+            }
+        });
+
+        // 리스트 클릭 시 input에 값 설정
+        $('#autocompleteList').on('click', 'div', function () {
+            const selected = $(this).data('value');
+            $('.upjongInput').val(selected);
+            $('#autocompleteList').empty().addClass('hidden');
+        });
     });
+
+    function handleSearch(keyword) {
+        if (keyword.length === 0) {
+            $('#autocompleteList').empty().addClass('hidden');
+            return;
+        }
+
+        $.ajax({
+            url: 'searchUpjong', // 백엔드 엔드포인트에 맞게 수정
+            method: 'GET',
+            data: {keyword: keyword},
+            success: function (upjongCodeList) {
+                console.log(upjongCodeList);
+                // if (upjongCodeList.length === 0) {
+                //     $('#autocompleteList').empty().addClass('hidden');
+                //     return;
+                // }
+                //
+                // let html = '';
+                // upjongCodeList.forEach(item => {
+                //     html += `<div class="p-2 hover:bg-gray-100 cursor-pointer" data-value="${item}">
+                //             ${item}
+                //          </div>`;
+                // });
+                //
+                // $('#autocompleteList').html(html).removeClass('hidden');
+            },
+            error: function () {
+                console.log('업종 검색 실패');
+            }
+        });
+    }
 
 </script>
 
@@ -253,11 +309,12 @@
                     class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-2.5 px-[104px] py-2.5"
             >
                 <div
-                        class="flex justify-between items-center flex-grow-0 flex-shrink-0 w-[381px] h-[41px] relative gap-2.5 px-2.5 py-[7px] rounded-[15px] bg-white border border-black"
+                        class="flex justify-between items-center flex-grow-0 flex-shrink-0 w-[381px] h-[41px] relative gap-2.5 px-2.5 py-[7px] rounded-[15px] bg-white border border-black relative"
                 >
                     <input placeholder="업종을 입력해주세요"
                            class="upjongInput flex-grow flex-shrink-0  text-xl font-medium text-left focus:outline-none focus:border-none"
                     />
+
                     <svg
                             width="22"
                             height="22"
@@ -270,6 +327,10 @@
                         <circle cx="9" cy="9" r="8.5" transform="matrix(-1 0 0 1 18 0)" stroke="black"></circle>
                         <path d="M15 15.5L21 21.5" stroke="black" stroke-linecap="round"></path>
                     </svg>
+                    <div id="autocompleteList"
+                         class="border border-gray-300 bg-white absolute z-10 hidden w-full max-h-48 overflow-auto">
+                        <!-- 자동완성 결과가 여기에 들어감 -->
+                    </div>
                 </div>
             </div>
             <div
