@@ -43,7 +43,7 @@ conn = pymysql.connect(
 )
 cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '동구' AND emd_nm = '삼성동';")
+cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '동구' ORDER BY emd_cd DESC LIMIT 11 OFFSET 5;")
 dong_rows = cursor.fetchall()
 
 cursor.execute("SELECT * FROM upjong_code;")
@@ -144,7 +144,7 @@ for dong in dong_rows:
             driver = webdriver.Chrome(options=chrome_options)
             driver.get(report_url)
 
-            wait = WebDriverWait(driver, 10)
+            wait = WebDriverWait(driver, 5)
 
             # "저장" 버튼 클릭 (클래스: btnSAVEAS)
             try:
