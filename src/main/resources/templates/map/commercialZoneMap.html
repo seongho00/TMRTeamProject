@@ -68,7 +68,7 @@
                     upjongCodes.forEach(item => {
                         liHTML += `
                           <li class="middle-item h-12 w-full text-xl font-medium text-center text-black cursor-pointer hover:bg-gray-100"
-                              data-middle-cd="${item.middleCd}">
+                              data-middleCd="${item.middleCd}">
                             ${item.middleNm}
                           </li>
                         `;
@@ -82,6 +82,39 @@
                 }
             });
 
+        });
+
+
+        // 중분류 클릭 시 그에 해당하는 소분류 나오는 코드
+        $(document).on("click", ".middle-item", function () {
+            const middleCd = $(this).data("middlecd");
+            console.log(middleCd);
+
+            $.ajax({
+                url: "getMinorCategories",   // 🔁 실제 서버 엔드포인트로 수정
+                method: "GET",                  // 또는 "POST"
+                data: {middleCd: middleCd},
+                success: function (upjongCodes) {
+                    console.log(upjongCodes);
+                    // li 항목만 생성
+                    let liHTML = "";
+
+                    upjongCodes.forEach(item => {
+                        liHTML += `
+                          <li class="minor-item h-12 w-full text-xl font-medium text-center text-black cursor-pointer hover:bg-gray-100"
+                              data-middle-cd="${item.minorCd}">
+                            ${item.minorNm}
+                          </li>
+                        `;
+                    });
+
+                    // 기존 ul 안에 li 추가 (ul은 유지)
+                    $(".minorSelector ul").html(liHTML);
+                },
+                error: function () {
+                    alert("중분류 데이터를 불러오는 데 실패했습니다.");
+                }
+            });
         });
 
 
@@ -257,7 +290,7 @@
         </div>
     </div>
     <div
-            class="middleSelector  flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[10px] rounded-[15px] bg-white border border-black"
+            class="middleSelector flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[10px] rounded-[15px] bg-white border border-black"
     >
         <ul
                 class="flex flex-col justify-start items-center w-full self-stretch flex-grow-0 flex-shrink-0 relative overflow-auto gap-2.5 p-2.5"
@@ -266,51 +299,11 @@
         </ul>
     </div>
     <div
-            class="flex flex-col hidden justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] overflow-hidden gap-2.5 px-[23px] py-[13px] rounded-[15px] bg-white border border-black"
+            class="minorSelector flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[23px] py-[13px] rounded-[15px] bg-white border border-black"
     >
         <ul
-                class="flex justify-center items-center self-stretch flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5 p-2.5"
+                class="flex flex-col justify-start w-full items-center self-stretch flex-grow-0 flex-shrink-0 relative overflow-auto gap-2.5 p-2.5"
         >
-            <li
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
-            >
-                백반/한정식
-            </li>
-            <li
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
-            >
-                국/탕/찌개류
-            </li>
-            <li
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
-            >
-                족발/보쌈
-            </li>
-            <li
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
-            >
-                전/부침개
-            </li>
-            <li
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
-            >
-                국수/칼국수
-            </li>
-            <li
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
-            >
-                냉면/밀면
-            </li>
-            <li
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
-            >
-                돼지고기
-            </li>
-            <li
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
-            >
-                소고기
-            </li>
         </ul>
     </div>
 </div>
