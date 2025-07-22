@@ -22,4 +22,6 @@ public interface UpjongCodeRepository extends JpaRepository<UpjongCode, String> 
     List<UpjongCode> getGroupedUpjongCodesByMajorCd(String majorCd);
 
     List<UpjongCode> getUpjongCodesByMiddleCd(String middleCd);
+
+    UpjongCode getUpjongCodeByMinorCd(String minorCd);
 }

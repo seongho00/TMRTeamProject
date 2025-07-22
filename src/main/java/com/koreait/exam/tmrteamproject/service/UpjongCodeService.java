@@ -24,7 +24,11 @@ public class UpjongCodeService {
         return upjongCodeRepository.getGroupedUpjongCodesByMajorCd(majorCd);
     }
 
-    public List<UpjongCode> getUpjongCodesByMiddleCode(String middleCd) {
+    public List<UpjongCode> getUpjongCodesByMiddleCd(String middleCd) {
         return upjongCodeRepository.getUpjongCodesByMiddleCd(middleCd);
+    }
+
+    public UpjongCode getUpjongCodeByMinorCd(String minorCd) {
+        return upjongCodeRepository.getUpjongCodeByMinorCd(minorCd);
     }
 }
