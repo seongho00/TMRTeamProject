@@ -72,7 +72,7 @@ for residential_population in residential_populations:
         )
         break
 
-# class가 'region'인 버튼 찾기
+# class가 'region'인 버튼 찾기 
 region_wrapper = wait_for_element(driver, By.CLASS_NAME, "region")
 region_wrapper.click()
 
