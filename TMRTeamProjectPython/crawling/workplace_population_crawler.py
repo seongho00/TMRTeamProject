@@ -7,6 +7,7 @@ import pymysql
 
 from selenium.webdriver.support.wait import WebDriverWait
 
+
 # 요소가 로드될 때까지 기다리는 함수
 def wait_for_element(driver, by, value, timeout=10):
     return WebDriverWait(driver, timeout).until(
@@ -19,6 +20,14 @@ def wait_for_child_element(parent_element, by, value, timeout=10):
     return WebDriverWait(parent_element, timeout).until(
         lambda el: el.find_element(by, value)
     )
+
+
+# 요소들이 일정 개수 이상 로드될 때까지 기다리는 함수
+def wait_for_elements(driver, by, value, min_count=1, timeout=10):
+    WebDriverWait(driver, timeout).until(
+        lambda d: len(d.find_elements(by, value)) >= min_count
+    )
+    return driver.find_elements(by, value)
 
 
 def wait_for_child_elements(parent_element, by, value, min_count=1, timeout=10):
@@ -51,9 +60,20 @@ driver = webdriver.Chrome(
 # 접속할 URL
 driver.get("https://bigdata.sbiz.or.kr/#/sbiz/sttus/dynpplSttus")
 
+# '직장인구현황' 버튼 누르기
+residential_populations = wait_for_elements(driver, By.CLASS_NAME, "q-tab__label")
+
+for residential_population in residential_populations:
+    if residential_population.text.strip() == "직장인구현황":
+        residential_population.click()
+        # region 요소가 등장할 때까지 기다림
+        time.sleep(1)
+        break
+
 # class가 'region'인 버튼 찾기
 region_wrapper = wait_for_element(driver, By.CLASS_NAME, "region")
 region_wrapper.click()
+
 
 # region_wrapper 내부에서 '대전광역시' 버튼 찾기
 daejeon_btn = wait_for_child_element(region_wrapper, By.XPATH, ".//button[text()='대전광역시']")
@@ -105,7 +125,7 @@ for jdx, region in enumerate(regions[1:], start=2):
                 emd_name = td[0].text.strip()
                 print("행정동 이름 : " + emd_name)
 
-                # 총 유동인구수
+                # 총인구수
                 total = clean_number(td[1].text.strip())
                 print("총 유동인구수 : " + str(total))
 
@@ -148,7 +168,7 @@ for jdx, region in enumerate(regions[1:], start=2):
 
                     # INSERT
                     cursor.execute("""
-                        INSERT INTO population_stat (emd_cd, total, male, female, age_10, age_20, age_30, age_40, age_50, age_60)
+                        INSERT INTO workplace_population (emd_cd, total, male, female, age_10, age_20, age_30, age_40, age_50, age_60)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (emd_cd, total, male, female, age_10, age_20, age_30, age_40, age_50, age_60))
                     conn.commit()
