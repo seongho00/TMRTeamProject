@@ -53,6 +53,17 @@
 
 </script>
 
+<style>
+    .majorSelector p {
+        cursor: pointer;
+    }
+
+    .middelSelector p {
+        cursor: pointer;
+    }
+
+</style>
+
 <!-- 지역 선택 UI -->
 <ul class="flex justify-between items-center w-[450px] h-[47px] overflow-hidden  px-[10px] py-[15px] rounded-[10px] bg-white border border-black absolute left-1/2 -translate-x-1/2 top-[100px]">
     <li class="flex justify-center items-center h-[41px] cursor-pointer">
@@ -86,7 +97,7 @@
 </ul>
 
 <!-- 업종 선택 UI -->
-<div class="flex justify-start items-start overflow-hidden gap-2.5 px-[7px] py-1">
+<div class="flex absolute top-[180px] left-[150px] justify-start items-start overflow-hidden gap-2.5 px-[7px] py-1">
     <div
             class="flex flex-col justify-start items-center flex-grow-0 flex-shrink-0 h-[615px] w-[445px] overflow-hidden gap-[31px] pt-[30px] pb-[99px] rounded-[15px] bg-white border border-black"
     >
@@ -106,20 +117,18 @@
                     class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-2.5 px-[104px] py-2.5"
             >
                 <div
-                        class="flex justify-start items-center flex-grow-0 flex-shrink-0 w-[381px] h-[41px] relative gap-2.5 px-2.5 py-[7px] rounded-[15px] bg-white border border-black"
+                        class="flex justify-between items-center flex-grow-0 flex-shrink-0 w-[381px] h-[41px] relative gap-2.5 px-2.5 py-[7px] rounded-[15px] bg-white border border-black"
                 >
-                    <p
-                            class="flex-grow-0 flex-shrink-0 w-[183px] text-xl font-medium text-left text-black/40"
-                    >
-                        업종을 입력해주세요
-                    </p>
+                    <input placeholder="업종을 입력해주세요"
+                           class="flex-grow flex-shrink-0  text-xl font-medium text-left focus:outline-none focus:border-none"
+                    />
                     <svg
                             width="22"
                             height="22"
                             viewBox="0 0 22 22"
                             fill="none"
                             xmlns="http://www.w3.org/2000/svg"
-                            class="flex-grow-0 flex-shrink-0 w-[21px] h-[21.5px]"
+                            class="flex-grow-0 flex-shrink-0 w-[21px] h-[21.5px] cursor-pointer"
                             preserveAspectRatio="none"
                     >
                         <circle cx="9" cy="9" r="8.5" transform="matrix(-1 0 0 1 18 0)" stroke="black"></circle>
@@ -128,52 +137,52 @@
                 </div>
             </div>
             <div
-                    class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-[19px]"
+                    class="majorSelector flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-[19px]"
             >
                 <div
                         class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden px-[5px]"
                 >
-                    <p class="self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
+                    <p class="flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black border border-black">
                         부동산
                     </p>
-                    <p class="self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
+                    <p class="flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
                         숙박
                     </p>
-                    <p class="self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
+                    <p class="flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
                         과학/기술
                     </p>
-                    <p class="self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
+                    <p class="flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
                         보건의료
                     </p>
-                    <p class="self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
+                    <p class="flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black">
                         관리/임대
                     </p>
                 </div>
                 <div
                         class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden"
                 >
-                    <p class="self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
+                    <p class="flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
                         소매
                     </p>
-                    <p class="self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
+                    <p class="flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
                         음식
                     </p>
-                    <p class="self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
+                    <p class="flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
                         수리
                     </p>
-                    <p class="self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
+                    <p class="flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
                         예체능
                     </p>
-                    <p class="self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
+                    <p class="flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black">
                         교육
                     </p>
                 </div>
             </div>
         </div>
         <div
-                class="flex justify-center items-center flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5 px-[115px] py-2.5 rounded-[10px] bg-[#10f]"
+                class="flex justify-center items-center flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5 px-[115px] py-2.5 rounded-[10px] bg-[#10f] cursor-pointer"
         >
-            <p class="flex-grow-0 flex-shrink-0 w-36 h-[38px] text-xl font-medium text-center text-white">
+            <p class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-36 h-[38px] text-xl font-medium text-center text-white ">
                 확인
             </p>
         </div>
@@ -195,7 +204,7 @@
                     class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[205px] h-12 relative overflow-hidden gap-2.5 px-[58px] rounded-[5px] bg-[#10f]"
             >
                 <p
-                        class="flex-grow-0 flex-shrink-0 w-[102px] h-8 text-xl font-medium text-center text-white"
+                        class="flex-grow-0 flex-shrink-0 w-[102px] h-8 text-xl font-medium text-center text-white cursor-pointer"
                 >
                     상세보기
                 </p>
@@ -203,55 +212,55 @@
         </div>
     </div>
     <div
-            class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] overflow-hidden gap-2.5 px-[23px] py-[13px] rounded-[15px] bg-white border border-black"
+            class="middelSelector flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[10px] rounded-[15px] bg-white border border-black"
     >
         <div
-                class="flex justify-center items-center self-stretch flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5 p-2.5"
+                class="flex flex-col justify-start items-center w-full self-stretch flex-grow-0 flex-shrink-0 relative overflow-auto gap-2.5 p-2.5"
         >
             <p
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
+                    class="flex justify-center items-center flex-grow-0 flex-shrink-0 h-12 text-xl font-medium text-black"
             >
                 한식
             </p>
             <p
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
+                    class="flex-grow-0 flex-shrink-0 h-12 text-xl font-medium text-center text-black"
             >
                 중식
             </p>
             <p
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
+                    class="flex-grow-0 flex-shrink-0 h-12 text-xl font-medium text-center text-black"
             >
                 일식
             </p>
             <p
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
+                    class="flex-grow-0 flex-shrink-0 h-12 text-xl font-medium text-center text-black"
             >
                 서양식
             </p>
             <p
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
+                    class="flex-grow-0 flex-shrink-0 h-12 text-xl font-medium text-center text-black"
             >
                 동남아시아식
             </p>
             <p
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
+                    class="flex-grow-0 flex-shrink-0  h-12 text-xl font-medium text-center text-black"
             >
                 기타 외국식
             </p>
             <p
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
+                    class="flex-grow-0 flex-shrink-0h-12 text-xl font-medium text-center text-black"
             >
                 주점업
             </p>
             <p
-                    class="flex-grow-0 flex-shrink-0 w-[141px] h-12 text-xl font-medium text-center text-black"
+                    class="flex-grow-0 flex-shrink-0 h-12 text-xl font-medium text-center text-black"
             >
                 비알코올 음료업
             </p>
         </div>
     </div>
     <div
-            class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] overflow-hidden gap-2.5 px-[23px] py-[13px] rounded-[15px] bg-white border border-black"
+            class="flex flex-col hidden justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] overflow-hidden gap-2.5 px-[23px] py-[13px] rounded-[15px] bg-white border border-black"
     >
         <div
                 class="flex justify-center items-center self-stretch flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5 p-2.5"
