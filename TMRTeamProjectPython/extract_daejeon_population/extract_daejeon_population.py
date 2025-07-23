@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 # 처리할 폴더 경로
-input_folder = "C:/Users/admin/Desktop/팀플 자료/2024년 대전 성별, 연령별 인구수"
+input_folder = "./daejeon_population_original"
 output_folder = "./daejeon_population_result"
 
 # 월별 이름 매핑
@@ -63,7 +63,7 @@ for filename in os.listdir(input_folder):
             daejeon_df.loc[:, total_col] = daejeon_df[male_col] + daejeon_df[female_col]
 
         # ✅ 나이별 개별 컬럼 삭제 (이 코드 추가!)
-        cols_to_drop = [col for col in daejeon_df.columns if '세남자' in col or '세여자' in col]
+        cols_to_drop = [col for col in daejeon_df.columns if '세남자' in col or '세여자' in col or '110세이상 남자' in col or '110세이상 여자' in col]
         daejeon_df.drop(columns=cols_to_drop, inplace=True)
 
         # 결과 저장
