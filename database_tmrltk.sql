@@ -108,11 +108,15 @@ CREATE TABLE `lh_apply_info`
 
     `post_date`     DATE            NULL,
     `deadline_date` DATE            NULL,
-    `ann_date`      DATE            NULL, -- ★ 공고 게시일(화면 표기 시) 추가
+    `ann_date`      DATE            NULL, -- 게시일
 
     `status`        VARCHAR(30)     NULL,
     `views`         INT UNSIGNED    NULL,
     `call_number`   VARCHAR(50)     NULL,
+
+    `attachments`   TEXT            NULL, -- 첨부파일
+
+    `extracted_text` LONGTEXT       NULL COMMENT -- pdf 텍스트
 
     PRIMARY KEY (`id`),
     KEY `idx_site_no` (`site_no`),

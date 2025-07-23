@@ -21,13 +21,14 @@ public class LhApplyInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 공고 고유번호
-    @Column(name = "site_no", nullable = false)
+    // 고유번호
+    @Column(name = "site_no", nullable = false, unique = true)
     private Integer siteNo;
 
     // 등록/수정일 자동 생성
-    @Column(name = "reg_date")
+    @Column(name = "reg_date", updatable = false)
     private LocalDateTime regDate;
+
     @Column(name = "update_date")
     private LocalDateTime updateDate;
 
@@ -38,6 +39,7 @@ public class LhApplyInfo {
 
     @Column(name = "post_date")
     private LocalDate postDate;
+
     @Column(name = "deadline_date")
     private LocalDate deadlineDate;
 
@@ -47,39 +49,48 @@ public class LhApplyInfo {
     @Column(name = "call_number")
     private String callNumber;
 
-    // 첨부파일 정보를 JSON 문자열로 저장
     @Column(columnDefinition = "TEXT")
-    private String attachmentsJson;
-
-    // 화면(Thymeleaf)에서 사용하기 위한 임시 필드 (DB에는 저장 x)
-    @Transient
+    @Convert(converter = AttachmentDtoListConverter.class)
     private List<AttachmentDto> attachments;
+
+    // PDF 추출 텍스트 저장
+    @Lob // 대용량 텍스트를 위한 어노테이션
+    @Column(name = "extracted_text", columnDefinition = "LONGTEXT")
+    private String extractedText;
 
 
     @PrePersist
-    void onCreate() {
+    protected void onCreate() {
         regDate = updateDate = LocalDateTime.now();
     }
 
     @PreUpdate
-    void onUpdate() {
+    protected void onUpdate() {
         updateDate = LocalDateTime.now();
     }
 
-    // JSON 정보로 기존 엔티티 업데이트
+    /**
+     * 최신 정보로 엔티티 내용을 업데이트
+     * @param src 크롤링 결과로 생성된 엔티티 객체
+     */
     public void updateFrom(LhApplyInfo src) {
         this.type = src.type;
         this.address = src.address;
+        this.postDate = src.postDate; // postDate 추가
         this.deadlineDate = src.deadlineDate;
         this.status = src.status;
         this.views = src.views;
         this.callNumber = src.callNumber;
-        // ★★★ 3. JSON 필드도 업데이트 되도록 추가 ★★★
-        this.attachmentsJson = src.attachmentsJson;
+        this.attachments = src.attachments;
+        // extractedText는 별도의 PDF 처리 프로세스에서 업데이트, 여기엔 포함 X
     }
 
-    // 첨부파일 정보를 담을 DTO
-    @Getter @Setter
+    /**
+     * 첨부파일 정보를 담기 위한 내부 DTO 클래스
+     */
+    @Getter
+    @Setter
+    @ToString
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AttachmentDto {

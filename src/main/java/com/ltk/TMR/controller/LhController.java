@@ -1,14 +1,16 @@
 package com.ltk.TMR.controller;
 
+import com.ltk.TMR.entity.LhApplyInfo;
 import com.ltk.TMR.service.LhApplyInfoService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;           // ★ 추가
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable; // 추가
 import org.springframework.web.bind.annotation.RequestMapping;
 
-@Slf4j                                      // ★ 추가
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/lh")
@@ -16,22 +18,20 @@ public class LhController {
 
     private final LhApplyInfoService svc;
 
-    /** 공고 목록 화면 */
+    // 목록 페이지
     @GetMapping
     public String list(Model model) {
-
-        // 서비스에서 가져온 데이터
         var lhList   = svc.findAllDesc();
-        var isLoading = svc.isLoading();
-
-        // 진단용
-        log.info("LH list size  = {}", lhList.size());
-        log.info("LH isLoading  = {}", isLoading);
-
-        // 뷰로 전달
         model.addAttribute("lhList",  lhList);
-        model.addAttribute("loading", isLoading);
+        return "lh_list";
+    }
 
-        return "lh_list";   // templates/lh_list.html
+    // 상세 페이지
+    @GetMapping("/{id}")
+    public String detail(@PathVariable Long id, Model model) {
+        // ID로 공고 데이터 하나를 찾아 모델에 추가
+        LhApplyInfo item = svc.findById(id);
+        model.addAttribute("item", item);
+        return "lh_detail"; // templates/lh_detail.html
     }
 }
