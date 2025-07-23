@@ -33,8 +33,14 @@ dependencies {
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    // https://mvnrepository.com/artifact/org.apache.pdfbox/pdfbox
+
+    // pdf 읽기 의존성
     implementation("org.apache.pdfbox:pdfbox:3.0.5")
+
+    // Excel 읽기 의존성
+    implementation("org.apache.poi:poi:5.4.1")
+    implementation("org.apache.poi:poi-ooxml:5.4.1")
+    implementation("org.apache.poi:poi-scratchpad:5.4.1")
 }
 
 tasks.withType(Test).configureEach {
