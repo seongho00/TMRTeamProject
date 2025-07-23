@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 # 처리할 폴더 경로
-input_folder = "./daejeon_population_original"
+input_folder = "C:/Users/admin/Desktop/팀플 자료/2024년 대전 성별, 연령별 인구수"
 output_folder = "./daejeon_population_result"
 
 # 월별 이름 매핑
