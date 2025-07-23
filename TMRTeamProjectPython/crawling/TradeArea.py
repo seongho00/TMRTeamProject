@@ -43,7 +43,7 @@ conn = pymysql.connect(
 )
 cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '동구' ORDER BY emd_cd DESC LIMIT 11 OFFSET 5;")
+cursor.execute("SELECT * FROM admin_dong WHERE emd_nm = '가양1동';")
 dong_rows = cursor.fetchall()
 
 cursor.execute("SELECT * FROM upjong_code;")
