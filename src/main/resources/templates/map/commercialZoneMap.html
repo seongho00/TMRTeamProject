@@ -13,7 +13,7 @@
         kakao.maps.load(function () {
             const mapContainer = document.getElementById('map');
             const mapOption = {
-                center: new kakao.maps.LatLng(36.3504, 127.3845), // 대전 중심
+                center: new kakao.maps.LatLng(37.5665, 126.9780),
                 level: 6
             };
             const map = new kakao.maps.Map(mapContainer, mapOption);
@@ -52,17 +52,62 @@
                     fillOpacity: 0.3
                 });
 
-                // ✅ 마우스 오버 시 행정동 이름 표시
-                const infowindow = new kakao.maps.InfoWindow({removable: true});
-                kakao.maps.event.addListener(polygon, 'mouseover', function (mouseEvent) {
-                    infowindow.setContent(`<div style="padding:5px;font-size:14px;">${properties.ADM_NM}</div>`);
-                    infowindow.setPosition(mouseEvent.latLng);
-                    infowindow.open(map);
+                // ✅ 중심 좌표 직접 계산
+                const latSum = paths.reduce((sum, p) => sum + p.getLat(), 0);
+                const lngSum = paths.reduce((sum, p) => sum + p.getLng(), 0);
+                const center = new kakao.maps.LatLng(latSum / paths.length, lngSum / paths.length);
+
+
+
+                // 마우스 상태 추적용 플래그
+                // ✅ Overlay HTML - pointer-events 활성화!
+                const overlayContent = document.createElement('div');
+                overlayContent.innerText = properties.ADSTRD_NM;
+                overlayContent.style.cssText = `
+                        background: white;
+                        border: 1px solid #444;
+                        padding: 3px 6px;
+                        font-size: 13px;
+                        pointer-events: auto;
+                        z-index: 1000;
+                        position: relative;
+                    `;
+
+                const overlay = new kakao.maps.CustomOverlay({
+                    content: overlayContent,
+                    position: center,
+                    yAnchor: 1,
+                    zIndex: 3,
+                    map: null
                 });
 
-                kakao.maps.event.addListener(polygon, 'mouseout', function () {
-                    infowindow.close();
-                });
+                let isInside = false;
+                let hideTimeout = null;
+
+                const showOverlay = () => {
+                    if (!isInside) {
+                        overlay.setMap(map);
+                        isInside = true;
+                    }
+                    if (hideTimeout) {
+                        clearTimeout(hideTimeout);
+                        hideTimeout = null;
+                    }
+                };
+
+                const hideOverlay = () => {
+                    hideTimeout = setTimeout(() => {
+                        overlay.setMap(null);
+                        isInside = false;
+                    }, 50);
+                };
+
+                // ✅ 이벤트 공유
+                kakao.maps.event.addListener(polygon, 'mouseover', showOverlay);
+                kakao.maps.event.addListener(polygon, 'mouseout', hideOverlay);
+
+                overlayContent.addEventListener('mouseenter', showOverlay);
+                overlayContent.addEventListener('mouseleave', hideOverlay);
             }
         });
     });
@@ -263,7 +308,7 @@
         <select class="flex justify-center items-center text-[22px] text-center text-black cursor-pointer focus:outline-none focus:ring-0 focus:border-transparent"
                 name="sidoSelect"
                 id="sidoSelect">
-            <option>대전광역시</option>
+            <option>서울특별시</option>
         </select>
 
     </li>
