@@ -13,7 +13,6 @@ import org.springframework.web.client.RestTemplate;
 import javax.xml.transform.Result;
 import java.util.Collections;
 
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
