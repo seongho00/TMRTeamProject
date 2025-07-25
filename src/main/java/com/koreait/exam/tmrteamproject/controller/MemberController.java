@@ -54,8 +54,6 @@ public class MemberController {
     @Autowired
     private NaverOAuthService naverOAuthService;
     @Autowired
-    private SolapiSmsService smsService;
-    @Autowired
     private MemberService memberService;
 
     @Autowired
@@ -226,4 +224,6 @@ public class MemberController {
         return ResultData.from("S-1", "구글 로그인 성공", "구글 멤버", member);
 
     }
+
+
 }
