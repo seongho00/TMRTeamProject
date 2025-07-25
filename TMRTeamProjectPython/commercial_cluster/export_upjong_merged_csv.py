@@ -24,8 +24,8 @@ for file_path in csv_files:
     print(f"✅ 불러옴: {name_without_ext} → {df.shape[0]}행 {df.shape[1]}열")
 
 # 3. 기준 키 설정
-area_keys = ['기준_년분기_코드', '행정동_코드', '행정동_코드_명']
-upjong_keys = area_keys + ['서비스_업종_코드', '서비스_업종_코드_명']
+area_keys = ['기준_년분기_코드', '행정동_코드']
+upjong_keys = area_keys + ['서비스_업종_코드']
 
 
 # 4. 업종별 병합 시작
@@ -51,6 +51,12 @@ for code in base_df['서비스_업종_코드'].dropna().unique():
     ]:
         if name in data_dict:
             area_df = data_dict[name]
+            # ✅ 중복 컬럼 제거 (병합 충돌 방지)
+            drop_cols = [col for col in area_df.columns if col not in area_keys and col in filtered_df.columns]
+            if drop_cols:
+                print(f"⚠️ {name} 병합 전 중복 컬럼 제거: {drop_cols}")
+                area_df.drop(columns=drop_cols, inplace=True)
+
             filtered_df = pd.merge(filtered_df, area_df, on=area_keys, how='left')
 
     # 파일명 구성
@@ -60,7 +66,35 @@ for code in base_df['서비스_업종_코드'].dropna().unique():
     else:
         filename = f"{code}.csv"
 
+    # ✅ 병합 후 _x, _y 컬럼 정리
+    if '서비스_업종_코드_명_x' in filtered_df.columns:
+        filtered_df['서비스_업종_코드_명'] = filtered_df['서비스_업종_코드_명_x']
+        filtered_df.drop(columns=['서비스_업종_코드_명_x', '서비스_업종_코드_명_y'], errors='ignore', inplace=True)
+
+    if '행정동_코드_명_x' in filtered_df.columns:
+        filtered_df['행정동_코드_명'] = filtered_df['행정동_코드_명_x']
+        filtered_df.drop(columns=['행정동_코드_명_x', '행정동_코드_명_y'], errors='ignore', inplace=True)
+
+    # ✅ 원하는 컬럼 순서로 정렬
+    fixed_columns = [
+        '기준_년분기_코드', '행정동_코드', '행정동_코드_명',
+        '서비스_업종_코드', '서비스_업종_코드_명'
+    ]
+    # fixed_columns를 앞으로, 나머지는 뒤에 이어붙이기
+    rest_columns = [col for col in filtered_df.columns if col not in fixed_columns]
+    filtered_df = filtered_df[fixed_columns + rest_columns]
+
+    # 🔽 파일명 구성
+    if '서비스_업종_코드_명' in filtered_df.columns:
+        upjong_name = str(filtered_df['서비스_업종_코드_명'].iloc[0])
+        upjong_name = upjong_name.replace('/', '_').replace(' ', '_').replace('?', '').strip()
+        filename = f"{code}_{upjong_name}.csv"
+    else:
+        filename = f"{code}.csv"
+
     # 저장
     save_path = os.path.join(SAVE_DIR, filename)
     filtered_df.to_csv(save_path, index=False, encoding='utf-8-sig')
     print(f"📁 저장 완료: {filename} → {filtered_df.shape[0]}행")
+
+
