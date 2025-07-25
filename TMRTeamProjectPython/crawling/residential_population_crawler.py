@@ -7,11 +7,20 @@ import pymysql
 
 from selenium.webdriver.support.wait import WebDriverWait
 
+
 # 요소가 로드될 때까지 기다리는 함수
 def wait_for_element(driver, by, value, timeout=10):
     return WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((by, value))
     )
+
+
+# 요소들이 일정 개수 이상 로드될 때까지 기다리는 함수
+def wait_for_elements(driver, by, value, min_count=1, timeout=10):
+    WebDriverWait(driver, timeout).until(
+        lambda d: len(d.find_elements(by, value)) >= min_count
+    )
+    return driver.find_elements(by, value)
 
 
 # 부모 요소 안에서 자식 요소를 기다리는 함수
@@ -51,7 +60,17 @@ driver = webdriver.Chrome(
 # 접속할 URL
 driver.get("https://bigdata.sbiz.or.kr/#/sbiz/sttus/dynpplSttus")
 
-# class가 'region'인 버튼 찾기
+# '주거인구현황' 버튼 누르기
+residential_populations = wait_for_elements(driver, By.CLASS_NAME, "q-tab__label")
+
+for residential_population in residential_populations:
+    if residential_population.text.strip() == "주거인구현황":
+        residential_population.click()
+        # region 요소가 등장할 때까지 기다림
+        time.sleep(1)
+        break
+
+# class가 'region'인 버튼 찾기 
 region_wrapper = wait_for_element(driver, By.CLASS_NAME, "region")
 region_wrapper.click()
 
@@ -105,35 +124,20 @@ for jdx, region in enumerate(regions[1:], start=2):
                 emd_name = td[0].text.strip()
                 print("행정동 이름 : " + emd_name)
 
-                # 총 유동인구수
-                total = clean_number(td[1].text.strip())
-                print("총 유동인구수 : " + str(total))
+                # 총세대수
+                total_households = clean_number(td[1].text.strip())
+                print("총세대수 : " + str(total_households))
 
-                # 남성인구수
-                male = clean_number(td[3].text.strip())
-                print("남성인구수 : " + str(male))
+                # 총인구수
+                total_population = clean_number(td[2].text.strip())
+                print("총인구수 : " + str(total_population))
 
-                # 여성인구수
-                female = clean_number(td[4].text.strip())
-                print("여성인구수 : " + str(female))
-                # 10대
-                age_10 = clean_number(td[5].text.strip())
-                print("10대 : " + str(age_10))
-                # 20대
-                age_20 = clean_number(td[6].text.strip())
-                print("20대 : " + str(age_20))
-                # 30대
-                age_30 = clean_number(td[7].text.strip())
-                print("30대 : " + str(age_30))
-                # 40대
-                age_40 = clean_number(td[8].text.strip())
-                print("40대 : " + str(age_40))
-                # 50대
-                age_50 = clean_number(td[9].text.strip())
-                print("50대 : " + str(age_50))
-                # 60대이상인구
-                age_60 = clean_number(td[9].text.strip())
-                print("60대 : " + str(age_60))
+                # 주요시설수
+                main_facility_count = clean_number(td[3].text.strip())
+                print("주요시설수 : " + str(main_facility_count))
+                # 잡객시설수
+                misc_facility_count = clean_number(td[4].text.strip())
+                print("잡객시설수 : " + str(misc_facility_count))
 
                 # admi_nm으로 emd_cd 가져오기
                 admi_nm = f"{sido_name} {sigungu_name} {emd_name}"  # 예: 대전광역시 대덕구 법1동
@@ -148,9 +152,9 @@ for jdx, region in enumerate(regions[1:], start=2):
 
                     # INSERT
                     cursor.execute("""
-                        INSERT INTO population_stat (emd_cd, total, male, female, age_10, age_20, age_30, age_40, age_50, age_60)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, (emd_cd, total, male, female, age_10, age_20, age_30, age_40, age_50, age_60))
+                        INSERT INTO resident_stats (emd_cd, total_households, total_population, main_facility_count, misc_facility_count)
+                        VALUES (%s, %s, %s, %s, %s)
+                    """, (emd_cd, total_households, total_population, main_facility_count, misc_facility_count))
                     conn.commit()
 
                 else:
