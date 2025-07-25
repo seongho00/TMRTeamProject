@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head th:replace="common/head::head">
+    <meta charset="UTF-8">
+    <title>PDF 파일 선택</title>
+    <style>
+        .file-list {
+            max-width: 600px;
+            margin: 50px auto;
+        }
+        .file-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        .file-list li {
+            margin: 10px 0;
+        }
+        .file-list a {
+            text-decoration: none;
+            color: #2c3e50;
+            font-size: 18px;
+            padding: 8px 12px;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+        .file-list a:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+<div class="file-list">
+    <h2>PDF 파일을 선택해주세요</h2>
+    <ul>
+        <li th:each="fileName : ${fileList}">
+            <a th:href="@{|/usr/trade/pdfread?fileName=${fileName}|}" th:text="${fileName}"></a>
+        </li>
+    </ul>
+</div>
+<footer th:replace="common/footer::footer"></footer>
+</body>
+</html>
