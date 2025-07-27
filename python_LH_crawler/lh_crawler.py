@@ -77,8 +77,8 @@ def crawl() -> None:
 
         try:
             print("[INFO] Waiting for table to be ready...")
-            page.wait_for_load_state("networkidle", timeout=20_000)
-            page.wait_for_selector(TABLE_HEADER, timeout=10_000)
+            # ▼▼▼ [수정] networkidle 대신 selector를 기다립니다. ▼▼▼
+            page.wait_for_selector(TABLE_HEADER, timeout=20_000)
             print("[INFO] Table is ready.")
         except PlaywrightTimeout as e:
             print(f"[ERROR] Page loading failed or table not found: {e}")
@@ -95,7 +95,6 @@ def crawl() -> None:
             num_rows = len(rows_on_page)
 
             for i in range(num_rows):
-                # 상세 페이지 이동 후 돌아와서 목록을 다시 찾기 위해 인덱스 처리 
                 current_row = page.query_selector_all(TABLE_ROW)[i]
 
                 tds = [td.inner_text().strip() for td in current_row.query_selector_all("td")]
@@ -107,11 +106,10 @@ def crawl() -> None:
                 attachments = []
                 detail_link = current_row.query_selector("a.wrtancInfoBtn")
                 if detail_link:
-                    # 상세 페이지로 이동
                     detail_link.click()
-                    page.wait_for_load_state("networkidle", timeout=20_000)
+                    # ▼▼▼ [수정] networkidle 대신 selector를 기다립니다. ▼▼▼
+                    page.wait_for_selector(ATTACHMENT_ITEM_SELECTOR, timeout=20_000)
 
-                    # 상세 페이지에서 첨부파일 정보 가져오기
                     attachment_items = page.query_selector_all(ATTACHMENT_ITEM_SELECTOR)
                     for item in attachment_items:
                         file_link = item.query_selector("a:first-child")
@@ -124,22 +122,24 @@ def crawl() -> None:
                                 download_url = f"https://apply.lh.or.kr/lhapply/lhFile.do?fileid={file_id}"
                                 attachments.append({"name": file_name, "url": download_url})
 
-                    # 목록으로 복귀
                     page.go_back()
-                    page.wait_for_load_state("networkidle", timeout=20_000)
+                    # ▼▼▼ [수정] networkidle 대신 selector를 기다립니다. ▼▼▼
+                    page.wait_for_selector(TABLE_ROW, timeout=20_000)
 
                 rows_out.append({
                     "siteNo": site_no, "type": tds[1], "title": tds[2],
                     "address": tds[3], "postDate": to_std_date(tds[5]),
                     "deadlineDate": to_std_date(tds[6]), "status": tds[7] or None,
                     "views": to_int(tds[8]), "callNumber": None,
-                    "attachments": attachments # ★★★ Gemini 추가: 수집한 첨부파일 정보 추가 ★★★
+                    "attachments": attachments
                 })
 
             if not safe_click(page, NEXT_CANDIDATES):
                 break
 
-            page.wait_for_load_state("networkidle", timeout=20_000)
+            # ▼▼▼ [수정] 클릭 후 잠시 대기하고 selector를 기다립니다. ▼▼▼
+            time.sleep(0.5)
+            page.wait_for_selector(TABLE_ROW, timeout=20_000)
             page_no += 1
 
         browser.close()

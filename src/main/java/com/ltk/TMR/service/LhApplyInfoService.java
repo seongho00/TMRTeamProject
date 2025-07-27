@@ -40,7 +40,6 @@ public class LhApplyInfoService {
 
     public boolean isLoading() { return loading.get(); }
 
-    @Async
     @Transactional
     public void refreshFromCrawler() {
         if (loading.compareAndSet(false, true)) {

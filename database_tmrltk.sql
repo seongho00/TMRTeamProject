@@ -2,7 +2,10 @@ DROP DATABASE IF EXISTS `tmrltk`;
 CREATE DATABASE `tmrltk` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE `tmrltk`;
 
-/* 공통 테이블 */
+/*==============================================================*/
+/* Table: 공통                                                    */
+/*==============================================================*/
+
 CREATE TABLE `member`
 (
     `id`          INT(10)      NOT NULL,
@@ -95,36 +98,71 @@ CREATE TABLE `area_code`
     PRIMARY KEY (`id`)
 );
 
-/* 상가 공고 */
+
+/*==============================================================*/
+/* Table: 상가 공고                                               */
+/*==============================================================*/
+
 CREATE TABLE `lh_apply_info`
 (
-    `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `site_no`       INT             NOT NULL COMMENT 'LH 원본 번호',
-    `reg_date`      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `update_date`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-    `title`         VARCHAR(255)    NOT NULL,
-    `address`       VARCHAR(255)    NOT NULL,
-
-    `post_date`     DATE            NULL,
-    `deadline_date` DATE            NULL,
-    `ann_date`      DATE            NULL, -- 게시일
-
-    `status`        VARCHAR(30)     NULL,
-    `views`         INT UNSIGNED    NULL,
-    `call_number`   VARCHAR(50)     NULL,
-
-    `attachments`   TEXT            NULL, -- 첨부파일
-
-    `extracted_text` LONGTEXT       NULL COMMENT -- pdf 텍스트
-
+    `id`             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `site_no`        INT             NOT NULL COMMENT 'LH 원본 번호',
+    `reg_date`       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_date`    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `title`          VARCHAR(255)    NOT NULL,
+    `address`        VARCHAR(255)    NOT NULL,
+    `post_date`      DATE            NULL,
+    `deadline_date`  DATE            NULL,
+    `ann_date`       DATE            NULL     COMMENT '게시일',
+    `status`         VARCHAR(30)     NULL,
+    `views`          INT UNSIGNED    NULL,
+    `call_number`    VARCHAR(50)     NULL,
+    `attachments`    TEXT            NULL     COMMENT '첨부파일',
+    `extracted_text` LONGTEXT        NULL     COMMENT 'pdf 전체 텍스트',
+    `markdown_text`  LONGTEXT        NULL     COMMENT '추출된 PDF 전체 내용 마크다운',
     PRIMARY KEY (`id`),
-    KEY `idx_site_no` (`site_no`),
+    UNIQUE KEY `uk_site_no` (`site_no`),
     KEY `idx_title_post` (`title`, `post_date`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
-/* 참고용 테이블 */
+CREATE TABLE `lh_shop_detail`
+(
+    `id`                     BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
+    `lh_apply_info_id`       BIGINT UNSIGNED NOT NULL COMMENT '원본 공고 ID',
+    `supply_type_detail`     VARCHAR(100)    NULL     COMMENT '상세 공급유형',
+    `complex_type`           VARCHAR(100)    NULL     COMMENT '단지 유형',
+    `shop_usage`             VARCHAR(100)    NULL     COMMENT '용도',
+    `dong`                   VARCHAR(50)     NULL     COMMENT '동',
+    `floor`                  VARCHAR(50)     NULL     COMMENT '층',
+    `ho`                     VARCHAR(50)     NULL     COMMENT '호수',
+    `area_exclusive`         DOUBLE          NULL     COMMENT '전용 면적',
+    `area_common`            DOUBLE          NULL     COMMENT '공용 면적',
+    `area_common_etc`        DOUBLE          NULL     COMMENT '기타 공용 면적',
+    `area_total`             DOUBLE          NULL     COMMENT '분양/임대 면적 (계)',
+    `land_stake`             DOUBLE          NULL     COMMENT '공유대지 지분',
+    `deposit`                BIGINT          NULL     COMMENT '임대 보증금 (계)',
+    `deposit_down_payment`   BIGINT          NULL     COMMENT '임대보증금 (계약금)',
+    `deposit_balance`        BIGINT          NULL     COMMENT '임대보증금 (잔금)',
+    `rent_monthly`           BIGINT          NULL     COMMENT '월 임대료 (VAT 별도)',
+    `price_estimated`        BIGINT          NULL     COMMENT '분양 예정가격',
+    `rent_total_period`      BIGINT          NULL     COMMENT '기간 총 임대료',
+    `rent_period_months`     INT             NULL     COMMENT '임대료 기간 (개월)',
+    `housing_units`          INT             NULL     COMMENT '주택 세대수',
+    `capacity_personnel`     INT             NULL     COMMENT '추정 정원 (명)',
+    `move_in_date`           VARCHAR(100)    NULL     COMMENT '입주(입점) 가능 시기',
+    `remarks`                VARCHAR(255)    NULL     COMMENT '비고',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_detail_to_info` FOREIGN KEY (`lh_apply_info_id`)
+        REFERENCES `lh_apply_info` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT = 'LH 상가 공고별 상세 정보';
+
+
+/*==============================================================*/
+/* Table: 참고용 및 기타                                            */
+/*==============================================================*/
+
 CREATE TABLE `commercial_stats`
 (
     `id`               INT(10) NOT NULL,
