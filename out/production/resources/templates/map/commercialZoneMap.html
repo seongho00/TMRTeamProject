@@ -86,12 +86,13 @@
                         const coords = polygonCoords[0];
                         const path = coords.map(c => new kakao.maps.LatLng(c[1], c[0]));
 
+
                         const guide = new kakao.maps.Polygon({
                             path: path,
-                            strokeWeight: 2,
-                            strokeColor: color,
-                            strokeOpacity: 0.5,
-                            strokeStyle: "dash",
+                            strokeWeight: nameKey === 'SIGUNGU_NM' ? 2 : 1,
+                            strokeColor: nameKey === 'SIGUNGU_NM' ? "#e60000" : color,
+                            strokeOpacity: 1,
+                            strokeStyle: nameKey === 'SIGUNGU_NM' ? "solid" : "dash",
                             fillOpacity: 0
                         });
 
@@ -125,26 +126,23 @@
 
 
     function updatePolygonsByZoom() {
-        const isSGG = currentLevel >= 7;
+        currentLevel = map.getLevel();
 
-        const show = isSGG ? sggPolygons : emdPolygons;
-        const hide = isSGG ? emdPolygons : sggPolygons;
-        const showOverlay = isSGG ? sggOverlayList : emdOverlayList;
-        const hideOverlay = isSGG ? emdOverlayList : sggOverlayList;
+        const showEMD = currentLevel < 7; // EMD는 레벨 6 이하면 표시
 
-        // ✅ 기존 강조된 polygon 제거
+        // ✅ EMD polygon/overlay만 보여주기
+        emdPolygons.forEach(p => p.guide.setMap(showEMD ? map : null));
+        emdOverlayList.forEach(o => o.setMap(showEMD ? map : null));
+
+        // ✅ SGG는 항상 표시되도록 고정
+        sggPolygons.forEach(p => p.guide.setMap(map));
+        sggOverlayList.forEach(o => o.setMap(map));
+
+        // ✅ 선택한 polygon은 항상 제거
         if (currentPolygon) {
             currentPolygon.setMap(null);
             currentPolygon = null;
         }
-
-        // polygon 보이기/숨기기
-        hide.forEach(p => p.guide.setMap(null));
-        show.forEach(p => p.guide.setMap(map));
-
-        // overlay 보이기/숨기기
-        hideOverlay.forEach(o => o.setMap(null));
-        showOverlay.forEach(o => o.setMap(map));
     }
 
     function isSamePath(path1, path2) {
@@ -364,7 +362,7 @@
 <div id="map" style="width: 100%; height: 1000px;"></div>
 
 <!-- 지역 선택 UI -->
-<ul class="flex justify-between items-center w-[450px] h-[47px] overflow-hidden  px-[10px] py-[15px] rounded-[10px] bg-white border border-black absolute left-1/2 -translate-x-1/2 top-[100px] z-10">
+<ul class="flex justify-between items-center w-[450px] h-[47px] overflow-hidden px-[10px] py-[15px] rounded-[10px] bg-white border border-black absolute left-1/2 -translate-x-1/2 top-[110px] z-10">
     <li class="flex justify-center items-center h-[41px] cursor-pointer">
 
         <select class="flex justify-center items-center text-[22px] text-center text-black cursor-pointer focus:outline-none focus:ring-0 focus:border-transparent"
