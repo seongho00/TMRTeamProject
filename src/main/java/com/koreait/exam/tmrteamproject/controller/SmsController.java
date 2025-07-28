@@ -16,6 +16,6 @@ public class SmsController {
 
     @GetMapping("/send-one")
     public SingleMessageSentResponse sendOne() {
-        return smsService.sendSms("01030417745", "테스트 메시지입니다.123");
+        return smsService.sendSms("01030417745", "TMRTeamProject 테스트 메시지입니다.");
     }
 }

@@ -35,10 +35,10 @@ def clean_number(text):
 
 # DB 연결
 conn = pymysql.connect(
-    host='database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com',
-    user='admin',
-    password='tk123412345!!',  # 비밀번호 입력
-    database='SHW',
+    host='localhost',
+    user='root',
+    password='',  # 비밀번호 입력
+    database='TMRTeamProject',
     charset='utf8mb4'
 )
 
@@ -80,6 +80,7 @@ for jdx, region in enumerate(regions[1:], start=2):
         box_class = wait_for_element(driver, By.CLASS_NAME, "boxSearch")
         result_button = box_class.find_element(By.XPATH, "./button")
         result_button.click()
+        time.sleep(0.5)
 
         # 데이터 찾아가기
         table_class = wait_for_element(driver, By.CLASS_NAME, "q-table")
