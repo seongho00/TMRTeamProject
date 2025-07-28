@@ -7,7 +7,7 @@ root = tree.getroot()
 
 rows = []
 for item in root.findall(".//item"):
-    if item.find("ctprvnNm").text == "대전광역시":
+    if item.find("ctprvnNm").text == "서울특별시":
         rows.append({
             "admi_nm": f"{item.find('ctprvnNm').text} {item.find('signguNm').text} {item.find('adongNm').text}",
             "sido_cd": item.find("ctprvnCd").text,

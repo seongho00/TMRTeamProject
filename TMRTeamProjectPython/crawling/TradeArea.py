@@ -43,7 +43,7 @@ conn = pymysql.connect(
 )
 cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM admin_dong WHERE emd_nm = '가양1동';")
+cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '동구' AND emd_nm = '대동';")
 dong_rows = cursor.fetchall()
 
 cursor.execute("SELECT * FROM upjong_code;")
@@ -153,7 +153,7 @@ for dong in dong_rows:
                 save_btn.click()
                 print("[1] 저장 버튼 클릭")
 
-                confirm_button = WebDriverWait(driver, 10).until(
+                confirm_button = WebDriverWait(driver, 5).until(
                     EC.element_to_be_clickable((By.XPATH, "/html/body/div[2]/div[3]/div/button[2]"))
                 )
                 confirm_button.click()
