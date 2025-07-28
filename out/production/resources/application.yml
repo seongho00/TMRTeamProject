@@ -25,9 +25,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect  # ← 요게 핵심!!
 
-logging:
-  level:
-    org.springframework.security: DEBUG
 
 
 
@@ -36,9 +33,6 @@ kakao:
   api:
     clientId: 5617b43c5e1f8f47e45f4d510a88e8fc
     clientSecret: 5yc5smUCscGZlKcfjqsfV46wFiVdsbzq
-
-# 카카오맵 javascript 키
-
 
 # 네이버 api 키
 naver:
