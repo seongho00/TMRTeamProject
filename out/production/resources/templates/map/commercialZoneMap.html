@@ -20,9 +20,8 @@
             };
             const map = new kakao.maps.Map(mapContainer, mapOption);
 
+            const guidePolygons = []; // 점선 가이드용 polygon
             const polygons = [];
-            let currentPolygon = null;
-            let currentOverlay = null;
 
             // ✅ GeoJSON 불러오기
             fetch("/seoul_emds.geojson")
@@ -40,9 +39,23 @@
                             const coords = polygonCoords[0];
                             const path = coords.map(c => new kakao.maps.LatLng(c[1], c[0]));
                             polygons.push({ path, properties });
+
+
+                            // 점선 가이드용
+                            const guide = new kakao.maps.Polygon({
+                                map: map,
+                                path: path,
+                                strokeWeight: 2,
+                                strokeColor: '#999',
+                                strokeOpacity: 0.6,
+                                strokeStyle: 'dash',   // 점선 스타일
+                                fillOpacity: 0          // 안은 비워둠
+                            });
+                            guidePolygons.push(guide);
                         });
                     });
                 });
+
 
             // ✅ Ray-casting 알고리즘
             function isPointInPolygon(latLng, path) {
@@ -96,6 +109,15 @@
                     if (!bounds.contains(clickedLatLng)) continue;
                     if (!isPointInPolygon(clickedLatLng, path)) continue;
 
+                    // ✅ 이미 표시된 동일한 polygon을 클릭했다면 → 제거
+                    if (currentPolygon && isSamePath(currentPolygon.getPath(), path)) {
+                        currentPolygon.setMap(null);
+                        currentOverlay.setMap(null);
+                        currentPolygon = null;
+                        currentOverlay = null;
+                        return;
+                    }
+
                     // ✅ 이전 polygon/overlay 제거
                     if (currentPolygon) currentPolygon.setMap(null);
                     if (currentOverlay) currentOverlay.setMap(null);
@@ -143,6 +165,20 @@
             });
         });
     });
+
+    function isSamePath(path1, path2) {
+        if (!path1 || !path2) return false;
+        if (path1.length !== path2.length) return false;
+        for (let i = 0; i < path1.length; i++) {
+            if (
+                path1[i].getLat().toFixed(6) !== path2[i].getLat().toFixed(6) ||
+                path1[i].getLng().toFixed(6) !== path2[i].getLng().toFixed(6)
+            ) {
+                return false;
+            }
+        }
+        return true;
+    }
 </script>
 
 
