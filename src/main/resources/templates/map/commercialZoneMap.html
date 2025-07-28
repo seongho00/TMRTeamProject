@@ -26,7 +26,7 @@
             // GeoJSON 불러오기
             Promise.all([
                 loadPolygons("/seoul_emds.geojson", emdPolygons, emdOverlayList, "#004c80", "ADSTRD_NM"),
-                loadPolygons("/seoul_sggs.geojson", sggPolygons, sggOverlayList, "#e45c2f", "SGG_NM")
+                loadPolygons("/seoul_sggs.geojson", sggPolygons, sggOverlayList, "#e45c2f", "SIGUNGU_NM")
             ]).then(() => {
                 updatePolygonsByZoom();
             });
@@ -61,29 +61,6 @@
                         strokeOpacity: 0.8,
                         fillColor: '#00a0e9',
                         fillOpacity: 0.3
-                    });
-
-                    const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
-                    const lngSum = path.reduce((sum, p) => sum + p.getLng(), 0);
-                    const center = new kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
-
-                    const overlayContent = document.createElement('div');
-                    overlayContent.innerText = properties.ADSTRD_NM || properties.SGG_NM || "지역명";
-                    overlayContent.style.cssText = `
-                        background: white;
-                        border: 1px solid #444;
-                        padding: 3px 6px;
-                        font-size: 13px;
-                        z-index: 1000;
-                        position: relative;
-                    `;
-
-                    const overlay = new kakao.maps.CustomOverlay({
-                        content: overlayContent,
-                        position: center,
-                        yAnchor: 1,
-                        zIndex: 3,
-                        map: map
                     });
 
                     currentPolygon = polygon;
@@ -129,7 +106,7 @@
                         border: 1px solid #444;
                         padding: 3px 6px;
                         font-size: 13px;
-                        z-index: 1000;
+                        z-index: 9;
                         position: relative;
                     `;
 
@@ -155,6 +132,12 @@
         const hide = isSGG ? emdPolygons : sggPolygons;
         const showOverlay = isSGG ? sggOverlayList : emdOverlayList;
         const hideOverlay = isSGG ? emdOverlayList : sggOverlayList;
+
+        // ✅ 기존 강조된 polygon 제거
+        if (currentPolygon) {
+            currentPolygon.setMap(null);
+            currentPolygon = null;
+        }
 
         // polygon 보이기/숨기기
         hide.forEach(p => p.guide.setMap(null));
