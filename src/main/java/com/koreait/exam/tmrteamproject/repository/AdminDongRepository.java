@@ -1,6 +1,5 @@
 package com.koreait.exam.tmrteamproject.repository;
 
-
 import com.koreait.exam.tmrteamproject.vo.AdminDong;
 import com.koreait.exam.tmrteamproject.vo.PopulationStat;
 import com.koreait.exam.tmrteamproject.vo.PopulationSummary;

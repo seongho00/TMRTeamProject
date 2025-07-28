@@ -224,4 +224,6 @@ public class MemberController {
         return ResultData.from("S-1", "구글 로그인 성공", "구글 멤버", member);
 
     }
+
+
 }
