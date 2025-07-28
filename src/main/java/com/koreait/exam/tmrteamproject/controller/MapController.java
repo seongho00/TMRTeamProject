@@ -32,7 +32,11 @@ public class MapController {
 
 
     @GetMapping("/commercialZoneMap")
-    public String commercialZoneMap() {
+    public String commercialZoneMap(Model model) {
+
+        List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
+
+        model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
 
         return "map/commercialZoneMap";
     }

@@ -19,4 +19,9 @@ public class AdminDongService {
 
         return adminDongRepository.getAdminDongsBySggNm(sgg);
     }
+
+    public List<AdminDong> getAdminDongsGroupBySgg() {
+
+        return adminDongRepository.getAdminDongGroupBySggCd();
+    }
 }
