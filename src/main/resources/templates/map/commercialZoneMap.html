@@ -7,66 +7,173 @@
 <script type="text/javascript"
         src="//dapi.kakao.com/v2/maps/sdk.js?appkey=819000337dba5ebac1dbf7847f383c66&libraries=services&autoload=false"></script>
 
-<!-- 카카오맵 관련 코드 -->
 <script>
+    let map;
+    let currentPolygon = null;
+    let emdPolygons = [], emdOverlayList = [];
+    let sggPolygons = [], sggOverlayList = [];
+    let currentLevel = 6;
+
     document.addEventListener("DOMContentLoaded", function () {
         kakao.maps.load(function () {
             const mapContainer = document.getElementById('map');
             const mapOption = {
-                center: new kakao.maps.LatLng(36.3504, 127.3845), // 대전 중심
+                center: new kakao.maps.LatLng(37.5665, 126.9780),
                 level: 6
             };
-            const map = new kakao.maps.Map(mapContainer, mapOption);
+            map = new kakao.maps.Map(mapContainer, mapOption);
 
-            // ✅ GeoJSON 파일 불러오기
-            fetch("/daejeon_emds.geojson") // ← 실제 파일 경로로 수정
-                .then(res => res.json())
-                .then(geojson => {
-                    geojson.features.forEach(feature => {
-                        const geometry = feature.geometry;
-                        const properties = feature.properties;
+            // GeoJSON 불러오기
+            Promise.all([
+                loadPolygons("/seoul_emds.geojson", emdPolygons, emdOverlayList, "#004c80", "ADSTRD_NM"),
+                loadPolygons("/seoul_sggs.geojson", sggPolygons, sggOverlayList, "#e45c2f", "SIGUNGU_NM")
+            ]).then(() => {
+                updatePolygonsByZoom();
+            });
 
-                        if (geometry.type === "Polygon") {
-                            drawPolygon([geometry.coordinates], properties);
-                        } else if (geometry.type === "MultiPolygon") {
-                            geometry.coordinates.forEach(polygon => {
-                                drawPolygon([polygon], properties);
-                            });
-                        }
+            // 줌 변경 시 표시 항목 변경
+            kakao.maps.event.addListener(map, 'zoom_changed', function () {
+                currentLevel = map.getLevel();
+                updatePolygonsByZoom();
+            });
+
+            // 클릭 시 강조 polygon 표시
+            kakao.maps.event.addListener(map, 'click', function (mouseEvent) {
+                const clickedLatLng = mouseEvent.latLng;
+                const targets = currentLevel >= 7 ? sggPolygons : emdPolygons;
+                for (let i = 0; i < targets.length; i++) {
+                    const {path, properties} = targets[i];
+                    if (!isPointInPolygon(clickedLatLng, path)) continue;
+
+                    if (currentPolygon && isSamePath(currentPolygon.getPath(), path)) {
+                        currentPolygon.setMap(null);
+                        currentPolygon = null;
+                        return;
+                    }
+
+                    if (currentPolygon) currentPolygon.setMap(null);
+
+                    const polygon = new kakao.maps.Polygon({
+                        map: map,
+                        path: path,
+                        strokeWeight: 2,
+                        strokeColor: '#004c80',
+                        strokeOpacity: 0.8,
+                        fillColor: '#00a0e9',
+                        fillOpacity: 0.3
                     });
-                });
 
-            // ✅ 다각형 그리는 함수
-            function drawPolygon(coordinatesArray, properties) {
-                const paths = coordinatesArray[0][0].map(coord =>
-                    new kakao.maps.LatLng(coord[1], coord[0])
-                );
-
-                const polygon = new kakao.maps.Polygon({
-                    map: map,
-                    path: paths,
-                    strokeWeight: 2,
-                    strokeColor: '#004c80',
-                    strokeOpacity: 0.8,
-                    fillColor: '#00a0e9',
-                    fillOpacity: 0.3
-                });
-
-                // ✅ 마우스 오버 시 행정동 이름 표시
-                const infowindow = new kakao.maps.InfoWindow({removable: true});
-                kakao.maps.event.addListener(polygon, 'mouseover', function (mouseEvent) {
-                    infowindow.setContent(`<div style="padding:5px;font-size:14px;">${properties.ADM_NM}</div>`);
-                    infowindow.setPosition(mouseEvent.latLng);
-                    infowindow.open(map);
-                });
-
-                kakao.maps.event.addListener(polygon, 'mouseout', function () {
-                    infowindow.close();
-                });
-            }
+                    currentPolygon = polygon;
+                    break;
+                }
+            });
         });
     });
+
+    function loadPolygons(url, container, overlayList, color, nameKey) {
+        return fetch(url)
+            .then(res => res.json())
+            .then(geojson => {
+                geojson.features.forEach(feature => {
+                    const geometry = feature.geometry;
+                    const properties = feature.properties;
+
+                    const multiCoords = (geometry.type === "Polygon")
+                        ? [geometry.coordinates]
+                        : geometry.coordinates;
+
+                    multiCoords.forEach(polygonCoords => {
+                        const coords = polygonCoords[0];
+                        const path = coords.map(c => new kakao.maps.LatLng(c[1], c[0]));
+
+                        const guide = new kakao.maps.Polygon({
+                            path: path,
+                            strokeWeight: 2,
+                            strokeColor: color,
+                            strokeOpacity: 0.5,
+                            strokeStyle: "dash",
+                            fillOpacity: 0
+                        });
+
+                        const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
+                        const lngSum = path.reduce((sum, p) => sum + p.getLng(), 0);
+                        const center = new kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
+
+                        const overlayContent = document.createElement('div');
+                        overlayContent.innerText = properties[nameKey];
+                        overlayContent.style.cssText = `
+                        background: white;
+                        border: 1px solid #444;
+                        padding: 3px 6px;
+                        font-size: 13px;
+                        position: relative;
+                    `;
+
+                        const overlay = new kakao.maps.CustomOverlay({
+                            content: overlayContent,
+                            position: center,
+                            yAnchor: 1,
+                            zIndex: 3
+                        });
+
+                        container.push({path, properties, guide, overlay});
+                        overlayList.push(overlay);
+                    });
+                });
+            });
+    }
+
+
+    function updatePolygonsByZoom() {
+        const isSGG = currentLevel >= 7;
+
+        const show = isSGG ? sggPolygons : emdPolygons;
+        const hide = isSGG ? emdPolygons : sggPolygons;
+        const showOverlay = isSGG ? sggOverlayList : emdOverlayList;
+        const hideOverlay = isSGG ? emdOverlayList : sggOverlayList;
+
+        // ✅ 기존 강조된 polygon 제거
+        if (currentPolygon) {
+            currentPolygon.setMap(null);
+            currentPolygon = null;
+        }
+
+        // polygon 보이기/숨기기
+        hide.forEach(p => p.guide.setMap(null));
+        show.forEach(p => p.guide.setMap(map));
+
+        // overlay 보이기/숨기기
+        hideOverlay.forEach(o => o.setMap(null));
+        showOverlay.forEach(o => o.setMap(map));
+    }
+
+    function isSamePath(path1, path2) {
+        if (!path1 || !path2 || path1.length !== path2.length) return false;
+        for (let i = 0; i < path1.length; i++) {
+            if (path1[i].getLat().toFixed(6) !== path2[i].getLat().toFixed(6) ||
+                path1[i].getLng().toFixed(6) !== path2[i].getLng().toFixed(6)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function isPointInPolygon(latLng, path) {
+        let x = latLng.getLng(), y = latLng.getLat();
+        let inside = false;
+        for (let i = 0, j = path.length - 1; i < path.length; j = i++) {
+            let xi = path[i].getLng(), yi = path[i].getLat();
+            let xj = path[j].getLng(), yj = path[j].getLat();
+            let intersect = ((yi > y) !== (yj > y)) &&
+                (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-10) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    }
+
+
 </script>
+
 
 <script>
     $(document).ready(function () {
@@ -254,16 +361,16 @@
 </style>
 
 <!-- 카카오맵 -->
-<div id="map" style="width: 100%; height: 600px;"></div>
+<div id="map" style="width: 100%; height: 1000px;"></div>
 
 <!-- 지역 선택 UI -->
-<ul class="flex justify-between items-center w-[450px] h-[47px] overflow-hidden  px-[10px] py-[15px] rounded-[10px] bg-white border border-black absolute left-1/2 -translate-x-1/2 top-[100px]">
+<ul class="flex justify-between items-center w-[450px] h-[47px] overflow-hidden px-[10px] py-[15px] rounded-[10px] bg-white border border-black absolute left-1/2 -translate-x-1/2 top-[110px] z-10">
     <li class="flex justify-center items-center h-[41px] cursor-pointer">
 
         <select class="flex justify-center items-center text-[22px] text-center text-black cursor-pointer focus:outline-none focus:ring-0 focus:border-transparent"
                 name="sidoSelect"
                 id="sidoSelect">
-            <option>대전광역시</option>
+            <option>서울특별시</option>
         </select>
 
     </li>
@@ -289,7 +396,7 @@
 </ul>
 
 <!-- 업종 선택 UI -->
-<div class="flex absolute top-[180px] left-[150px] justify-start items-start overflow-hidden gap-2.5 px-[7px] py-1">
+<div class="flex absolute top-[180px] left-[150px] justify-start items-start overflow-hidden gap-2.5 px-[7px] py-1 z-10">
     <div
             class="flex flex-col justify-start items-center flex-grow-0 flex-shrink-0 h-[615px] w-[445px] overflow-hidden gap-[31px] pt-[30px] pb-[99px] rounded-[15px] bg-white border border-black"
     >
