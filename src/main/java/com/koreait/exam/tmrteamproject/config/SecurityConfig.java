@@ -1,10 +1,6 @@
 package com.koreait.exam.tmrteamproject.config;
 
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.koreait.exam.tmrteamproject.service.CustomUserDetailsService;
-import com.koreait.exam.tmrteamproject.service.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,7 +8,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.AuthenticationException;
@@ -24,12 +19,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
 
 @Configuration
 @EnableWebSecurity
@@ -44,9 +37,9 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider(customUserDetailsService, passwordEncoder()))
                 .csrf().disable()
                 .authorizeHttpRequests((auth) -> auth
-                        .antMatchers("usr/static/**", "usr/images/**", "/css/**", "/js/**").permitAll()  // 정적 리소스 먼저 허용
+                        .antMatchers("usr/static/**", "usr/images/**", "/css/**", "/static/js/**").permitAll()  // 정적 리소스 먼저 허용
                         .antMatchers("/admin/**").hasRole("ADMIN")
-                        .antMatchers("/usr/home/main").hasAnyRole("USER", "ADMIN") // 여기에 막을 url 적기
+                        .antMatchers("usr/chatbot/chat").hasAnyRole("USER", "ADMIN") // 여기에 막을 url 적기
                         .anyRequest().permitAll()
                 )
                 .formLogin((login) -> login

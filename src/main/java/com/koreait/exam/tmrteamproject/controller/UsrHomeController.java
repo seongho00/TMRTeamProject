@@ -14,12 +14,11 @@ public class UsrHomeController {
 
     @GetMapping("/main")
     public String homeMain() {
-
         return "home/main";
     }
+
     @GetMapping("/test")
     public String test() {
-
         return "home/test";
     }
 }

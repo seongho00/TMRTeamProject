@@ -1,21 +1,11 @@
 package com.koreait.exam.tmrteamproject.controller;
 
-import com.koreait.exam.tmrteamproject.service.AdminDongService;
-import com.koreait.exam.tmrteamproject.service.MapService;
-import com.koreait.exam.tmrteamproject.service.MemberService;
-import com.koreait.exam.tmrteamproject.service.UpjongCodeService;
-import com.koreait.exam.tmrteamproject.vo.AdminDong;
-import com.koreait.exam.tmrteamproject.vo.UpjongCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("usr/map")
@@ -39,6 +29,11 @@ public class MapController {
         model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
 
         return "map/commercialZoneMap";
+    }
+
+    @GetMapping("/correlationMap")
+    public String correlationMap() {
+        return "map/correlationMap";
     }
 
     @GetMapping("/getEmdsBySggNm")
