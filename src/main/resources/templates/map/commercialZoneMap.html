@@ -298,25 +298,6 @@
 
                 if (properties.ADSTRD_NM === emd) {
 
-                    // ✅ 이전 강조된 polygon 제거
-                    if (currentPolygon) {
-                        currentPolygon.setMap(null);
-                    }
-
-                    currentPolygon = null;
-
-                    // ✅ polygon 강조
-                    const polygon =  new kakao.maps.Polygon({
-                        map: map,
-                        path: path,
-                        strokeWeight: 2,
-                        strokeColor: '#004c80',
-                        strokeOpacity: 0.8,
-                        fillColor: '#00a0e9',
-                        fillOpacity: 0.3
-                    });
-
-
                     // ✅ 지도 중심 이동은 사용자 선택일 때만
                     if (!isProgrammatic) {
                         const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
@@ -325,6 +306,27 @@
 
                         map.setLevel(5); // 필요 시 확대
                         map.panTo(center); // 좀 더 부드러운 이동
+
+                        // ✅ 이전 강조된 polygon 제거
+                        if (currentPolygon) {
+                            currentPolygon.setMap(null);
+                        }
+
+                        currentPolygon = null;
+
+                        // ✅ polygon 강조
+                        const polygon =  new kakao.maps.Polygon({
+                            map: map,
+                            path: path,
+                            strokeWeight: 2,
+                            strokeColor: '#004c80',
+                            strokeOpacity: 0.8,
+                            fillColor: '#00a0e9',
+                            fillOpacity: 0.3
+                        });
+
+                        currentPolygon = polygon;
+
                     }
 
                     break;
