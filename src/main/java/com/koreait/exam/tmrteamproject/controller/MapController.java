@@ -49,6 +49,15 @@ public class MapController {
 
         return adminDong;
     }
+    @GetMapping("/getSggByEmd")
+    @ResponseBody
+    public List<AdminDong> getSggByEmd(String sgg) {
+
+        List<AdminDong> adminDong = adminDongService.getAdminDongsBySggNm(sgg);
+
+        return adminDong;
+    }
+
 
     @GetMapping("/getMiddleCategories")
     @ResponseBody
