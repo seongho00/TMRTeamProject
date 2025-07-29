@@ -15,7 +15,7 @@ public class AdminDongService {
     private final AdminDongRepository adminDongRepository;
 
 
-    public List<AdminDong> getAdminDongsBySgg(String sgg) {
+    public List<AdminDong> getAdminDongsBySggNm(String sgg) {
 
         return adminDongRepository.getAdminDongsBySggNm(sgg);
     }
