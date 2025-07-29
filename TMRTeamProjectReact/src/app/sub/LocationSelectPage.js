@@ -5,69 +5,111 @@ import { useEffect, useRef, useState } from "react";
 
 const LocationSelectPage = ({ onSelect }) => {
     const mapRef = useRef(null);
-    const markerRef = useRef(null);
+    const [scriptLoaded, setScriptLoaded] = useState(false);
     const [selectedInfo, setSelectedInfo] = useState(null);
+    const currentPolygon = useRef(null);
+    const emdPolygons = useRef([]);
+    const overlayList = useRef([]);
 
-    const initMap = () => {
-        try {
+    useEffect(() => {
+        if (!scriptLoaded || !window.kakao) return;
+
+        kakao.maps.load(() => {
             const container = document.getElementById("map");
-            if (!container) {
-                console.error("❌ map div 없음");
-                return;
-            }
-
             const options = {
-                center: new window.kakao.maps.LatLng(37.5665, 126.9780),
+                center: new kakao.maps.LatLng(37.5665, 126.9780),
                 level: 6,
             };
 
-            const map = new window.kakao.maps.Map(container, options);
+            const map = new kakao.maps.Map(container, options);
             mapRef.current = map;
 
-            window.kakao.maps.event.addListener(map, "click", function (mouseEvent) {
-                const latlng = mouseEvent.latLng;
+            fetch("/seoul_emds.geojson")
+                .then((res) => res.json())
+                .then((geojson) => {
+                    geojson.features.forEach((feature) => {
+                        const name = feature.properties.ADSTRD_NM;
+                        const coords =
+                            feature.geometry.type === "Polygon"
+                                ? [feature.geometry.coordinates]
+                                : feature.geometry.coordinates;
 
-                if (markerRef.current) markerRef.current.setMap(null);
+                        coords.forEach((polygonCoords) => {
+                            const path = polygonCoords[0].map(
+                                (c) => new kakao.maps.LatLng(c[1], c[0])
+                            );
 
-                const marker = new window.kakao.maps.Marker({ position: latlng });
-                marker.setMap(map);
-                markerRef.current = marker;
+                            // 기본 guide polygon (dash, no fill)
+                            const polygon = new kakao.maps.Polygon({
+                                path,
+                                strokeWeight: 2,
+                                strokeColor: "#004c80",
+                                strokeOpacity: 0.8,
+                                strokeStyle: "dash",
+                                fillColor: "#00a0e9",
+                                fillOpacity: 0,
+                            });
+                            polygon.setMap(map);
 
-                const geocoder = new window.kakao.maps.services.Geocoder();
-                geocoder.coord2Address(latlng.getLng(), latlng.getLat(), function (result, status) {
-                    if (status === window.kakao.maps.services.Status.OK) {
-                        const address = result[0].address.address_name;
-                        setSelectedInfo({
-                            lat: latlng.getLat(),
-                            lng: latlng.getLng(),
-                            address: address,
+                            // 중심 좌표 계산
+                            const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
+                            const lngSum = path.reduce((sum, p) => sum + p.getLng(), 0);
+                            const center = new kakao.maps.LatLng(
+                                latSum / path.length,
+                                lngSum / path.length
+                            );
+
+                            // 라벨 오버레이
+                            const label = document.createElement("div");
+                            label.innerText = name;
+                            label.style.cssText = `
+                                background: white;
+                                border: 1px solid #444;
+                                padding: 2px 6px;
+                                font-size: 12px;
+                                border-radius: 4px;
+                              `;
+
+                            const overlay = new kakao.maps.CustomOverlay({
+                                content: label,
+                                position: center,
+                                yAnchor: 1,
+                                zIndex: 3,
+                            });
+                            overlay.setMap(map);
+                            overlayList.current.push(overlay);
+
+                            // 클릭 이벤트
+                            kakao.maps.event.addListener(polygon, "click", () => {
+                                if (currentPolygon.current) {
+                                    currentPolygon.current.setOptions({ fillOpacity: 0.01 });
+                                }
+
+                                polygon.setOptions({
+                                    strokeStyle: "solid",
+                                    fillOpacity: 0.3,
+                                });
+                                currentPolygon.current = polygon;
+
+                                setSelectedInfo({
+                                    address: name,
+                                    path,
+                                });
+                            });
+
+                            emdPolygons.current.push(polygon);
                         });
-                    }
+                    });
                 });
-            });
-
-            console.log("✅ 지도 초기화 완료");
-        } catch (err) {
-            console.error("❌ 지도 초기화 실패", err);
-        }
-    };
+        });
+    }, [scriptLoaded]);
 
     return (
         <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
             <Script
                 src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=819000337dba5ebac1dbf7847f383c66&autoload=false&libraries=services`}
                 strategy="afterInteractive"
-                onLoad={() => {
-                    console.log("✅ Kakao Maps SDK 로드됨");
-                    if (window.kakao && window.kakao.maps) {
-                        window.kakao.maps.load(() => {
-                            initMap();
-                        });
-                    } else {
-                        console.error("❌ window.kakao 또는 maps가 없음");
-                    }
-                }}
-                onError={() => console.error("❌ Kakao Maps SDK 로드 실패")}
+                onLoad={() => setScriptLoaded(true)}
             />
 
             <h1 className="tw-text-3xl tw-font-bold tw-mb-4">📍 창업 지역 선택</h1>
@@ -75,7 +117,7 @@ const LocationSelectPage = ({ onSelect }) => {
 
             {selectedInfo && (
                 <div className="tw-text-center tw-mb-6">
-                    <p className="tw-text-lg">선택된 위치: {selectedInfo.address}</p>
+                    <p className="tw-text-lg">선택된 행정동: {selectedInfo.address}</p>
                 </div>
             )}
 
