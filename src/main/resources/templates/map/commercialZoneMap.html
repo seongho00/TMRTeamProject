@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="common/head::head"></head>
-<footer th:replace="common/header::header"></footer>
 
 <!-- 카카오맵 -->
 <script type="text/javascript"
@@ -490,8 +489,10 @@
 
 </style>
 
+<header th:replace="common/header::header"></header>
+
 <!-- 카카오맵 -->
-<div id="map" style="width: 100%; height: 1000px;"></div>
+<div id="map" class="absolute inset-0 z-0"></div>
 
 <!-- 지역 선택 UI -->
 <ul class="flex justify-between items-center w-[450px] h-[47px] overflow-hidden px-[10px] py-[15px] rounded-[10px] bg-white border border-black absolute left-1/2 -translate-x-1/2 top-[110px] z-10">
