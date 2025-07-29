@@ -13,6 +13,7 @@
     let emdPolygons = [], emdOverlayList = [];
     let sggPolygons = [], sggOverlayList = [];
     let currentLevel = 6;
+    let isProgrammatic = false;
 
     document.addEventListener("DOMContentLoaded", function () {
         kakao.maps.load(function () {
@@ -55,11 +56,12 @@
                     let matchedSggName = null;
 
                     if (sggName != null) {
+                        isProgrammatic = true;
                         $('#sggSelect').val(sggName).trigger('change');
+                        isProgrammatic = false;
                     }
 
                     if (emdName != null) {
-
                         for (let i = 0; i < sggPolygons.length; i++) {
                             const sgg = sggPolygons[i];
                             if (isPointInPolygon(clickedLatLng, sgg.path)) {
@@ -71,7 +73,9 @@
                         if (matchedSggName) {
                             console.log("📍 행정동:", emdName, "/ 시군구:", matchedSggName);
                             window.autoSelectedEmd = emdName;
+                            isProgrammatic = true;
                             $('#sggSelect').val(matchedSggName).trigger('change');
+                            isProgrammatic = false;
 
                         } else {
                             console.warn("시군구를 찾을 수 없습니다");
@@ -210,11 +214,51 @@
 
 <script>
     $(document).ready(function () {
+
         // 지역 선택 UI 시군구 선택 시 그에 해당되는 행정동 나오게끔
         $('#sggSelect').on('change', function () {
             const sgg = $(this).val();
             // 행정동 초기화
             $('#emdSelect').empty().append('<option value="">행정동</option>');
+
+            if (!isProgrammatic) {
+                // 선택된 시군구 이름에 해당하는 polygon 찾기
+                for (let i = 0; i < sggPolygons.length; i++) {
+                    const {properties, path} = sggPolygons[i];
+
+                    if (properties.SIGUNGU_NM === sgg) {
+
+
+                        // 중심 좌표 계산
+                        const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
+                        const lngSum = path.reduce((sum, p) => sum + p.getLng(), 0);
+                        const center = new kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
+
+                        // 지도 중심 이동
+                        map.setLevel(7);
+                        map.panTo(center); // 좀 더 부드러운 이동
+
+                        // ✅ 이전 강조된 polygon 제거
+                        if (currentPolygon) {
+                            currentPolygon.setMap(null);
+                            currentPolygon = null;
+                        }
+
+                        // ✅ 새 polygon 강조 (선택 효과)
+                        currentPolygon = new kakao.maps.Polygon({
+                            map: map,
+                            path: path,
+                            strokeWeight: 2,
+                            strokeColor: '#004c80',
+                            strokeOpacity: 0.8,
+                            fillColor: '#00a0e9',
+                            fillOpacity: 0.3
+                        });
+
+                        break;
+                    }
+                }
+            }
 
             if (sgg) {
                 $.ajax({
