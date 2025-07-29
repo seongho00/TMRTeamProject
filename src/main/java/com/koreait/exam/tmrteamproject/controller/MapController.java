@@ -41,11 +41,11 @@ public class MapController {
         return "map/commercialZoneMap";
     }
 
-    @GetMapping("/getEmds")
+    @GetMapping("/getEmdsBySggNm")
     @ResponseBody
-    public List<AdminDong> getEmds(String sgg) {
+    public List<AdminDong> getEmdsBySggNm(String sgg) {
 
-        List<AdminDong> adminDong = adminDongService.getAdminDongsBySgg(sgg);
+        List<AdminDong> adminDong = adminDongService.getAdminDongsBySggNm(sgg);
 
         return adminDong;
     }

@@ -180,13 +180,12 @@
         // 지역 선택 UI 시군구 선택 시 그에 해당되는 행정동 나오게끔
         $('#sggSelect').on('change', function () {
             const sgg = $(this).val();
-
             // 행정동 초기화
             $('#emdSelect').empty().append('<option value="">행정동</option>');
 
             if (sgg) {
                 $.ajax({
-                    url: 'getEmds',
+                    url: 'getEmdsBySggNm',
                     method: 'GET',
                     data: {sgg: sgg},
                     success: function (adminDongs) {
@@ -380,7 +379,7 @@
                 id="sggSelect">
             <option value="">시/군/구</option>
             <th:block th:each="adminDong : ${adminDongsGroupBySggCd}">
-                <option th:value="${adminDong.sggCd}" th:text="${adminDong.sggNm}"></option>
+                <option th:value="${adminDong.sggNm}" th:text="${adminDong.sggNm}"></option>
             </th:block>
         </select>
     </li>
