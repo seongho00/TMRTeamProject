@@ -94,4 +94,17 @@ public class MapController {
         System.out.println(upjongCode);
         return upjongCode;
     }
+
+
+    @GetMapping("/searchInfoByRegionAndUpjong")
+    @ResponseBody
+    public String searchInfoByRegionAndUpjong(String sgg, String emd, String upjong) {
+
+        System.out.println(sgg);
+        System.out.println(emd);
+        System.out.println(upjong);
+
+        return "";
+    }
+
 }
