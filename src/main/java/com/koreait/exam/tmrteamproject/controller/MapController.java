@@ -16,4 +16,9 @@ public class MapController {
     public String commercialZoneMap() {
         return "map/commercialZoneMap";
     }
+
+    @GetMapping("/correlationMap")
+    public String correlationMap() {
+        return "map/correlationMap";
+    }
 }
