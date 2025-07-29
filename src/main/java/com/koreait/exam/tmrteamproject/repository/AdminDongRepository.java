@@ -13,4 +13,13 @@ public interface AdminDongRepository extends JpaRepository<AdminDong, String> {
                 WHERE emd_nm = :emdNm
             """, nativeQuery = true)
     AdminDong findRegionByEmdNm(@Param("emdNm") String emdNm);
+
+    List<AdminDong> getAdminDongsBySggNm(String sggNm);
+
+    @Query(value = """
+                SELECT *
+                FROM admin_dong
+                GROUP BY sgg_nm
+            """, nativeQuery = true)
+    List<AdminDong> getAdminDongGroupBySggCd();
 }

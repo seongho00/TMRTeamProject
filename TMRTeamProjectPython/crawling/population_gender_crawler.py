@@ -80,6 +80,7 @@ for jdx, region in enumerate(regions[1:], start=2):
         box_class = wait_for_element(driver, By.CLASS_NAME, "boxSearch")
         result_button = box_class.find_element(By.XPATH, "./button")
         result_button.click()
+        time.sleep(0.5)
 
         # 데이터 찾아가기
         table_class = wait_for_element(driver, By.CLASS_NAME, "q-table")
