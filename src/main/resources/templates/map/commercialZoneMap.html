@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="common/head::head"></head>
-<footer th:replace="common/header::header"></footer>
 
 <!-- 카카오맵 -->
 <script type="text/javascript"
@@ -13,6 +12,7 @@
     let emdPolygons = [], emdOverlayList = [];
     let sggPolygons = [], sggOverlayList = [];
     let currentLevel = 6;
+    let isProgrammatic = false;
 
     document.addEventListener("DOMContentLoaded", function () {
         kakao.maps.load(function () {
@@ -44,6 +44,41 @@
                 for (let i = 0; i < targets.length; i++) {
                     const {path, properties} = targets[i];
                     if (!isPointInPolygon(clickedLatLng, path)) continue;
+
+                    // 시군구 이름 가져오기
+                    const sggName = properties.SIGUNGU_NM;
+
+                    // 시군구 이름 가져오기
+                    const emdName = properties.ADSTRD_NM;
+
+                    // 🔍 행정동 클릭 시 시군구 polygon 찾기
+                    let matchedSggName = null;
+
+                    if (sggName != null) {
+                        isProgrammatic = true;
+                        $('#sggSelect').val(sggName).trigger('change');
+                        isProgrammatic = false;
+                    }
+
+                    if (emdName != null) {
+                        for (let i = 0; i < sggPolygons.length; i++) {
+                            const sgg = sggPolygons[i];
+                            if (isPointInPolygon(clickedLatLng, sgg.path)) {
+                                matchedSggName = sgg.properties.SIGUNGU_NM;
+                                break;
+                            }
+                        }
+
+                        if (matchedSggName) {
+                            console.log("📍 행정동:", emdName, "/ 시군구:", matchedSggName);
+                            window.autoSelectedEmd = emdName;
+                            isProgrammatic = true;
+                            $('#sggSelect').val(matchedSggName).trigger('change');
+
+                        } else {
+                            console.warn("시군구를 찾을 수 없습니다");
+                        }
+                    }
 
                     if (currentPolygon && isSamePath(currentPolygon.getPath(), path)) {
                         currentPolygon.setMap(null);
@@ -177,16 +212,55 @@
 
 <script>
     $(document).ready(function () {
+
         // 지역 선택 UI 시군구 선택 시 그에 해당되는 행정동 나오게끔
         $('#sggSelect').on('change', function () {
             const sgg = $(this).val();
-
             // 행정동 초기화
             $('#emdSelect').empty().append('<option value="">행정동</option>');
 
+            if (!isProgrammatic) {
+                // 선택된 시군구 이름에 해당하는 polygon 찾기
+                for (let i = 0; i < sggPolygons.length; i++) {
+                    const {properties, path} = sggPolygons[i];
+
+                    if (properties.SIGUNGU_NM === sgg) {
+
+
+                        // 중심 좌표 계산
+                        const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
+                        const lngSum = path.reduce((sum, p) => sum + p.getLng(), 0);
+                        const center = new kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
+
+                        // 지도 중심 이동
+                        map.setLevel(7);
+                        map.panTo(center); // 좀 더 부드러운 이동
+
+                        // ✅ 이전 강조된 polygon 제거
+                        if (currentPolygon) {
+                            currentPolygon.setMap(null);
+                            currentPolygon = null;
+                        }
+
+                        // ✅ 새 polygon 강조 (선택 효과)
+                        currentPolygon = new kakao.maps.Polygon({
+                            map: map,
+                            path: path,
+                            strokeWeight: 2,
+                            strokeColor: '#004c80',
+                            strokeOpacity: 0.8,
+                            fillColor: '#00a0e9',
+                            fillOpacity: 0.3
+                        });
+
+                        break;
+                    }
+                }
+            }
+
             if (sgg) {
                 $.ajax({
-                    url: 'getEmds',
+                    url: 'getEmdsBySggNm',
                     method: 'GET',
                     data: {sgg: sgg},
                     success: function (adminDongs) {
@@ -196,11 +270,66 @@
                                 $('<option>', {value: adminDong.emdNm, text: adminDong.emdNm})
                             );
                         });
+
+                        // ✅ 이 시점에서 emdNm 설정하면 확실히 작동
+                        if (window.autoSelectedEmd) {
+                            $('#emdSelect').val(window.autoSelectedEmd).trigger('change');
+                            window.autoSelectedEmd = null;
+                            isProgrammatic = false;
+                        }
+
                     },
                     error: function () {
                         alert('행정동 정보를 가져오는데 실패했습니다.');
                     }
                 });
+            }
+        });
+
+        $('#emdSelect').on('change', function () {
+
+            const emd = $(this).val();
+
+            if (!emd) return;
+
+            for (let i = 0; i < emdPolygons.length; i++) {
+                const {properties, path} = emdPolygons[i];
+
+                if (properties.ADSTRD_NM === emd) {
+
+                    // ✅ 지도 중심 이동은 사용자 선택일 때만
+                    if (!isProgrammatic) {
+                        const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
+                        const lngSum = path.reduce((sum, p) => sum + p.getLng(), 0);
+                        const center = new kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
+
+                        map.setLevel(5); // 필요 시 확대
+                        map.panTo(center); // 좀 더 부드러운 이동
+
+                        // ✅ 이전 강조된 polygon 제거
+                        if (currentPolygon) {
+                            currentPolygon.setMap(null);
+                        }
+
+                        currentPolygon = null;
+
+                        // ✅ polygon 강조
+                        const polygon = new kakao.maps.Polygon({
+                            map: map,
+                            path: path,
+                            strokeWeight: 2,
+                            strokeColor: '#004c80',
+                            strokeOpacity: 0.8,
+                            fillColor: '#00a0e9',
+                            fillOpacity: 0.3
+                        });
+
+                        currentPolygon = polygon;
+
+                    }
+
+                    break;
+                }
             }
         });
 
@@ -347,6 +476,43 @@
         });
     }
 
+    // 지역, 업종 데이터를 통해 정보 얻기 (위험도, 청약 데이터 등등..)
+    function searchInfoByRegionAndUpjong() {
+        const sgg = $('#sggSelect').val();
+        const emd = $('#emdSelect').val();
+        const upjong = $('.upjongInput').val().trim();
+
+        if (!sgg || !emd) {
+            alert('지역을 선택해주세요.');
+            return;
+        }
+
+        if (!upjong) {
+            alert('업종을 선택해주세요.');
+            return;
+        }
+
+        $.ajax({
+            url: 'searchInfoByRegionAndUpjong', // ✅ 실제 백엔드 URL로 바꿔야 함
+            method: 'GET',
+            data: {
+                sgg: sgg,
+                emd: emd,
+                upjong: upjong
+            },
+            success: function (response) {
+                console.log('서버 응답:', response);
+                // ✅ 여기에 데이터 렌더링 로직 작성
+                // 예: $('#resultArea').html(response.data);
+            },
+            error: function (xhr, status, error) {
+                console.error('에러 발생:', error);
+                alert('데이터를 불러오는 데 실패했습니다.');
+            }
+        });
+
+
+    }
 </script>
 
 <style>
@@ -360,8 +526,10 @@
 
 </style>
 
+<header th:replace="common/header::header" class="z-10 relative"></header>
+
 <!-- 카카오맵 -->
-<div id="map" style="width: 100%; height: 1000px;"></div>
+<div id="map" class="absolute inset-0 z-0"></div>
 
 <!-- 지역 선택 UI -->
 <ul class="flex justify-between items-center w-[450px] h-[47px] overflow-hidden px-[10px] py-[15px] rounded-[10px] bg-white border border-black absolute left-1/2 -translate-x-1/2 top-[110px] z-10">
@@ -379,11 +547,9 @@
                 name="sggSelect"
                 id="sggSelect">
             <option value="">시/군/구</option>
-            <option value="동구">동구</option>
-            <option value="중구">중구</option>
-            <option value="서구">서구</option>
-            <option value="유성구">유성구</option>
-            <option value="대덕구">대덕구</option>
+            <th:block th:each="adminDong : ${adminDongsGroupBySggCd}">
+                <option th:value="${adminDong.sggNm}" th:text="${adminDong.sggNm}"></option>
+            </th:block>
         </select>
     </li>
     <li class="flex justify-center items-center h-[41px] ">
@@ -492,13 +658,14 @@
 
             </div>
         </div>
-        <div
-                class="flex justify-center items-center flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5 px-[115px] py-2.5 rounded-[10px] bg-[#10f] cursor-pointer"
+        <div onclick="searchInfoByRegionAndUpjong();"
+             class="flex justify-center items-center flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5 px-[115px] py-2.5 rounded-[10px] bg-[#10f] cursor-pointer"
         >
             <p class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-36 h-[38px] text-xl font-medium text-center text-white ">
                 확인
             </p>
         </div>
+
         <div
                 class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 h-[181px] relative overflow-hidden gap-[35px] px-[53px]"
         >

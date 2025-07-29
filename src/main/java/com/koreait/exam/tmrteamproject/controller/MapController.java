@@ -32,19 +32,32 @@ public class MapController {
 
 
     @GetMapping("/commercialZoneMap")
-    public String commercialZoneMap() {
+    public String commercialZoneMap(Model model) {
+
+        List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
+
+        model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
 
         return "map/commercialZoneMap";
     }
 
-    @GetMapping("/getEmds")
+    @GetMapping("/getEmdsBySggNm")
     @ResponseBody
-    public List<AdminDong> getEmds(String sgg) {
+    public List<AdminDong> getEmdsBySggNm(String sgg) {
 
-        List<AdminDong> adminDong = adminDongService.getAdminDongsBySgg(sgg);
+        List<AdminDong> adminDong = adminDongService.getAdminDongsBySggNm(sgg);
 
         return adminDong;
     }
+    @GetMapping("/getSggByEmd")
+    @ResponseBody
+    public List<AdminDong> getSggByEmd(String sgg) {
+
+        List<AdminDong> adminDong = adminDongService.getAdminDongsBySggNm(sgg);
+
+        return adminDong;
+    }
+
 
     @GetMapping("/getMiddleCategories")
     @ResponseBody
@@ -81,4 +94,17 @@ public class MapController {
         System.out.println(upjongCode);
         return upjongCode;
     }
+
+
+    @GetMapping("/searchInfoByRegionAndUpjong")
+    @ResponseBody
+    public String searchInfoByRegionAndUpjong(String sgg, String emd, String upjong) {
+
+        System.out.println(sgg);
+        System.out.println(emd);
+        System.out.println(upjong);
+
+        return "";
+    }
+
 }
