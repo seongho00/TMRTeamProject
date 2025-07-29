@@ -45,6 +45,39 @@
                     const {path, properties} = targets[i];
                     if (!isPointInPolygon(clickedLatLng, path)) continue;
 
+                    // 시군구 이름 가져오기
+                    const sggName = properties.SIGUNGU_NM;
+
+                    // 시군구 이름 가져오기
+                    const emdName = properties.ADSTRD_NM;
+
+                    // 🔍 행정동 클릭 시 시군구 polygon 찾기
+                    let matchedSggName = null;
+
+                    if (sggName != null) {
+                        $('#sggSelect').val(sggName).trigger('change');
+                    }
+
+                    if (emdName != null) {
+
+                        for (let i = 0; i < sggPolygons.length; i++) {
+                            const sgg = sggPolygons[i];
+                            if (isPointInPolygon(clickedLatLng, sgg.path)) {
+                                matchedSggName = sgg.properties.SIGUNGU_NM;
+                                break;
+                            }
+                        }
+
+                        if (matchedSggName) {
+                            console.log("📍 행정동:", emdName, "/ 시군구:", matchedSggName);
+                            window.autoSelectedEmd = emdName;
+                            $('#sggSelect').val(matchedSggName).trigger('change');
+
+                        } else {
+                            console.warn("시군구를 찾을 수 없습니다");
+                        }
+                    }
+
                     if (currentPolygon && isSamePath(currentPolygon.getPath(), path)) {
                         currentPolygon.setMap(null);
                         currentPolygon = null;
@@ -195,6 +228,13 @@
                                 $('<option>', {value: adminDong.emdNm, text: adminDong.emdNm})
                             );
                         });
+
+                        // ✅ 이 시점에서 emdNm 설정하면 확실히 작동
+                        if (window.autoSelectedEmd) {
+                            $('#emdSelect').val(window.autoSelectedEmd).trigger('change');
+                            window.autoSelectedEmd = null;
+                        }
+
                     },
                     error: function () {
                         alert('행정동 정보를 가져오는데 실패했습니다.');
