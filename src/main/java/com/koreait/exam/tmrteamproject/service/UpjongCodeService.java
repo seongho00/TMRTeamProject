@@ -1,6 +1,5 @@
 package com.koreait.exam.tmrteamproject.service;
 
-import com.koreait.exam.tmrteamproject.repository.AdminDongRepository;
 import com.koreait.exam.tmrteamproject.repository.UpjongCodeRepository;
 import com.koreait.exam.tmrteamproject.vo.UpjongCode;
 import lombok.RequiredArgsConstructor;

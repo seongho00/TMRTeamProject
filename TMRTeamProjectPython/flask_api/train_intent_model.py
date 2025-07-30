@@ -1,15 +1,13 @@
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from sklearn.preprocessing import LabelEncoder
-from datasets import Dataset
 import pickle
+
+from datasets import Dataset
+from sklearn.preprocessing import LabelEncoder
 from transformers import (
     BertTokenizer,
     BertForSequenceClassification,
     Trainer,
     TrainingArguments,
 )
-
 
 # 모듈 학습 단어
 # intent: 0 - 매출_조회

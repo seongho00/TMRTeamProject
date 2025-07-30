@@ -7,7 +7,6 @@ import re
 import mecab_ko
 import pymysql
 
-
 # ✅ 예측 함수
 def predict_intent(text, threshold=0.1):
     inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=32)
