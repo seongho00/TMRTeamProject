@@ -2,7 +2,7 @@
 
 import React from "react";
 
-const SimulationPage = ({ character, business }) => {
+const SimulationPage = ({character, business, location}) => {
     return (
         <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
             <h1 className="tw-text-3xl tw-font-bold tw-mb-6">📊 시뮬레이션 시작</h1>
@@ -12,15 +12,17 @@ const SimulationPage = ({ character, business }) => {
                 <p>👤 이름: {character.name}</p>
                 <p>📝 설명: {character.description}</p>
 
-                <hr className="tw-my-4" />
+                <hr className="tw-my-4"/>
 
                 <h2 className="tw-text-xl tw-font-bold tw-mb-2">선택된 업종</h2>
                 <p>🏪 업종명: {business.name}</p>
                 <p>🏪 업종코드: {business.upjongCd}</p>
                 <p>📋 설명: {business.description}</p>
 
+                <hr className="tw-my-4"/>
+
                 <h2 className="tw-text-xl tw-font-bold tw-mb-2">선택된 위치</h2>
-                <p>선택한 위치: {location?.emdName}</p>
+                <p>선택한 위치: {location.address}</p>
             </div>
 
             <p className="tw-text-gray-500 tw-mt-8">

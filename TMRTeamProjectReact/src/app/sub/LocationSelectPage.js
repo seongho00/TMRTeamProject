@@ -189,7 +189,9 @@ const LocationSelectPage = ({onSelect}) => {
             )}
 
             <button
-                onClick={() => selectedInfo && onSelect(selectedInfo)}
+                onClick={() => {
+                    if (selectedInfo) onSelect(selectedInfo);
+                }}
                 disabled={!selectedInfo}
                 className="tw-bg-blue-500 tw-text-white tw-px-6 tw-py-2 tw-rounded-xl hover:tw-bg-blue-600 tw-transition disabled:tw-bg-gray-400"
             >
