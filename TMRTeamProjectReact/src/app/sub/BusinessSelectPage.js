@@ -3,11 +3,12 @@
 import React, { useState } from "react";
 
 const businessTypes = [
-    { id: 1, name: "카페", description: "커피, 디저트 중심 매장" },
-    { id: 2, name: "편의점", description: "24시간 운영 프랜차이즈 소매점" },
-    { id: 3, name: "분식집", description: "떡볶이, 김밥 등 빠른 회전율" },
-    { id: 4, name: "헬스장", description: "고정 회원 수 기반 수익" },
-    { id: 5, name: "의류 매장", description: "시즌 트렌드에 민감한 판매" },
+    { id: 1, name: "카페", description: "커피, 디저트 중심 매장" , upjongCode: "CS100010"},
+    { id: 2, name: "편의점", description: "24시간 운영 프랜차이즈 소매점" , upjongCode: "CS300002"},
+    { id: 3, name: "분식집", description: "떡볶이, 김밥 등 빠른 회전율" , upjongCode: "CS100008"},
+    { id: 4, name: "패스트푸드점", description: "고정 회원 수 기반 수익" , upjongCode: "CS100006"},
+    { id: 5, name: "의류 매장", description: "시즌 트렌드에 민감한 판매" , upjongCode: "CS300011"},
+    { id: 6, name: "기타", description: "" }
 ];
 
 const BusinessSelectPage = ({ onSelect }) => {
