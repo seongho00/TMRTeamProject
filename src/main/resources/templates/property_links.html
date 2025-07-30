@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>상가 매물 바로가기</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; padding: 20px; background-color: #f9f9f9; text-align: center; }
+        h1 { margin-bottom: 30px; }
+        .selection-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; padding: 20px; border-radius: 8px; }
+        select { padding: 8px 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+        #link-section { margin-top: 30px; padding: 20px; display: none; }
+        #link-section h2 { margin-top: 0; font-size: 1.2rem; color: #333; margin-bottom: 20px; }
+        .link-buttons { display: flex; justify-content: center; gap: 15px; }
+        .site-link { display: inline-block; padding: 12px 24px; border-radius: 5px; text-decoration: none; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .site-link:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        #naver-link { background-color: #03C75A; color: white; }
+        #zigbang-link { background-color: #FF6600; color: white; }
+        #dabang-link { background-color: #3366FF; color: white; }
+    </style>
+</head>
+<body>
+<h1>상가 매물 바로가기</h1>
+<p style="color: #666; margin-top:-20px; margin-bottom: 30px;">확인하고 싶은 지역을 선택하세요.</p>
+
+<div class="selection-container">
+    <select id="sido">
+        <option value="">-- 시/도 선택 --</option>
+        <option th:each="sido : ${regionData.keySet()}" th:text="${sido}"></option>
+    </select>
+    <select id="sigungu">
+        <option value="">-- 시/군/구 선택 --</option>
+    </select>
+    <select id="dong">
+        <option value="">-- 읍/면/동 선택 --</option>
+    </select>
+</div>
+
+<div id="link-section">
+    <h2 id="link-title"></h2>
+    <div class="link-buttons">
+        <a id="naver-link" class="site-link" href="#" target="_blank">네이버 부동산</a>
+        <a id="zigbang-link" class="site-link" href="#" target="_blank">직방</a>
+        <a id="dabang-link" class="site-link" href="#" target="_blank">다방</a>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const regionData = /*[[${regionData}]]*/ {};
+
+    const sidoSelect = document.getElementById('sido');
+    const sigunguSelect = document.getElementById('sigungu');
+    const dongSelect = document.getElementById('dong');
+
+    const linkSection = document.getElementById('link-section');
+    const linkTitle = document.getElementById('link-title');
+    const naverLink = document.getElementById('naver-link');
+    const zigbangLink = document.getElementById('zigbang-link');
+    const dabangLink = document.getElementById('dabang-link');
+
+    // 1. 시/도 선택
+    sidoSelect.addEventListener('change', function() {
+        const selectedSido = this.value;
+        sigunguSelect.innerHTML = '<option value="">-- 시/군/구 선택 --</option>';
+        dongSelect.innerHTML = '<option value="">-- 읍/면/동 선택 --</option>';
+        linkSection.style.display = 'none';
+
+        if (selectedSido && regionData[selectedSido]) {
+            Object.keys(regionData[selectedSido]).forEach(function(sigungu) {
+                const option = document.createElement('option');
+                option.value = sigungu;
+                option.textContent = sigungu;
+                sigunguSelect.appendChild(option);
+            });
+        }
+    });
+
+    // 2. 시/군/구 선택
+    sigunguSelect.addEventListener('change', function() {
+        const selectedSido = sidoSelect.value;
+        const selectedSigungu = this.value;
+        dongSelect.innerHTML = '<option value="">-- 읍/면/동 선택 --</option>';
+        linkSection.style.display = 'none';
+
+        if (selectedSido && selectedSigungu && regionData[selectedSido][selectedSigungu]) {
+            regionData[selectedSido][selectedSigungu].forEach(function(dong) {
+                const option = document.createElement('option');
+                // dong.code(8자리 코드)는 현재 사용 X
+                option.value = dong.name;
+                option.textContent = dong.name;
+                dongSelect.appendChild(option);
+            });
+        }
+    });
+
+    // 3. 읍/면/동 선택
+    dongSelect.addEventListener('change', function() {
+        if (this.value) {
+            const sidoText = sidoSelect.value;
+            const sigunguText = sigunguSelect.value;
+            const dongText = this.value;
+
+            const query = `${sidoText} ${sigunguText} ${dongText}`;
+            const encodedQuery = encodeURIComponent(query);
+
+            naverLink.href = `https://m.land.naver.com/search/result/${encodedQuery}`;
+            zigbangLink.href = `https://www.zigbang.com/home/store/map?q=${encodedQuery}`;
+            dabangLink.href = `https://www.dabangapp.com/search?keyword=${encodedQuery}`;
+
+            linkTitle.textContent = `'${query}' 매물 바로가기`;
+            linkSection.style.display = 'block';
+        } else {
+            linkSection.style.display = 'none';
+        }
+    });
+    /*]]>*/
+</script>
+</body>
+</html>

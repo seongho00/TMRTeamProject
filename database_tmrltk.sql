@@ -2,10 +2,6 @@ DROP DATABASE IF EXISTS `tmrltk`;
 CREATE DATABASE `tmrltk` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE `tmrltk`;
 
-/*==============================================================*/
-/* Table: 공통                                                    */
-/*==============================================================*/
-
 CREATE TABLE `member`
 (
     `id`          INT(10)      NOT NULL,
@@ -99,10 +95,9 @@ CREATE TABLE `area_code`
 );
 
 
-/*==============================================================*/
-/* Table: 상가 공고                                               */
-/*==============================================================*/
-
+/*
+ LH청약플러스 상가
+ */
 CREATE TABLE `lh_apply_info`
 (
     `id`             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -126,6 +121,9 @@ CREATE TABLE `lh_apply_info`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
+/*
+ 상가 상세정보
+ */
 CREATE TABLE `lh_shop_detail`
 (
     `id`                     BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '고유 ID',
@@ -157,11 +155,6 @@ CREATE TABLE `lh_shop_detail`
         REFERENCES `lh_apply_info` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4 COMMENT = 'LH 상가 공고별 상세 정보';
-
-
-/*==============================================================*/
-/* Table: 참고용 및 기타                                            */
-/*==============================================================*/
 
 CREATE TABLE `commercial_stats`
 (

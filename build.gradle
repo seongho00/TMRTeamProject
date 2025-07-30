@@ -35,6 +35,10 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
+    // JAXB (XML to Java Object) 라이브러리
+    implementation 'jakarta.xml.bind:jakarta.xml.bind-api:4.0.0'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.3'
+
     // 외부 API SDK
     implementation 'net.nurigo:sdk:4.1.3'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
@@ -45,7 +49,6 @@ dependencies {
 
     // PDF 라이브러리
     implementation 'org.apache.pdfbox:pdfbox:3.0.2'
-    // ▼▼▼ [수정] 이 부분을 아래와 같이 변경하세요. ▼▼▼
     implementation("technology.tabula:tabula:1.0.5") {
         exclude group: 'org.slf4j', module: 'slf4j-simple'
     }
