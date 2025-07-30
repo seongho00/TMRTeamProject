@@ -22,7 +22,7 @@ const Page = () => {
         return <BusinessSelectPage onSelect={setBusiness}/>;
     }
 
-    if (!location) return <LocationSelectPage onSelect={setLocation} />;
+    if (!location) return <LocationSelectPage onSelect={setLocation}/>;
 
     if (!costs)
         return (
@@ -37,6 +37,7 @@ const Page = () => {
         <SimulationPage
             character={character}
             business={business}
+            location={location}
         />
     );
 };
