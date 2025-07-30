@@ -16,7 +16,11 @@ const SimulationPage = ({ character, business }) => {
 
                 <h2 className="tw-text-xl tw-font-bold tw-mb-2">선택된 업종</h2>
                 <p>🏪 업종명: {business.name}</p>
+                <p>🏪 업종코드: {business.upjongCd}</p>
                 <p>📋 설명: {business.description}</p>
+
+                <h2 className="tw-text-xl tw-font-bold tw-mb-2">선택된 위치</h2>
+                <p>선택한 위치: {location?.emdName}</p>
             </div>
 
             <p className="tw-text-gray-500 tw-mt-8">
