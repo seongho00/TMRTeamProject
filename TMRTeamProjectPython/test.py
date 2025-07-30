@@ -15,16 +15,16 @@ plt.rcParams['axes.unicode_minus'] = False
 gdf = gpd.read_file("C:/Users/user/Downloads/서울시 상권분석서비스(영역-행정동)/서울시 상권분석서비스(영역-행정동).shp", encoding='utf-8')
 
 # 2. CSV 파일 불러오기
-df = pd.read_csv("C:/Users/user/Downloads/유동인구_매출_분석결과_2024_1분기.csv", encoding='utf-8-sig')
+df = pd.read_csv("C:/Users/user/Downloads/유동인구_매출_분석결과_20241.csv", encoding='utf-8-sig')
 
 # 3. 병합
-df['행정동코드'] = df['행정동코드'].astype(str)
+df['행정동_코드'] = df['행정동_코드'].astype(str)
 gdf['adm_cd'] = gdf['ADSTRD_CD'].astype(str)
-merged = gdf.merge(df, left_on='adm_cd', right_on='행정동코드')
+merged = gdf.merge(df, left_on='adm_cd', right_on='행정동_코드')
 
 # 4. KMeans 클러스터링 (매출 기준 5등급)
 kmeans = KMeans(n_clusters=5, random_state=42)
-merged['매출_클러스터'] = kmeans.fit_predict(merged[['당월_매출_금액']])
+merged['매출_클러스터'] = kmeans.fit_predict(merged[['당월_총_매출_금액']])
 
 # 5. 클러스터 → 등급 (1~5, 높은 매출일수록 높은 등급)
 merged['매출_등급'] = merged['매출_클러스터'].rank(method='dense').astype(int)
@@ -43,7 +43,7 @@ merged['color'] = merged['매출_등급'].map(colors)
 merged_wgs84 = merged.to_crs(epsg=4326)
 
 # 12. GeoJSON으로 저장
-merged_wgs84.to_file("서울_상권_등급.geojson", driver="GeoJSON", encoding="utf-8")
+merged_wgs84.to_file("seoul_area_level.geojson", driver="GeoJSON", encoding="utf-8")
 
 # 7. 정적 시각화
 merged.plot(column='매출_등급', cmap='OrRd', legend=True, edgecolor='black')
@@ -72,8 +72,8 @@ folium.GeoJson(
     name='행정동',
     style_function=style_function,
     tooltip=folium.GeoJsonTooltip(
-        fields=['adm_cd', '매출_등급', '당월_매출_금액', '총_유동인구_수'],
-        aliases=['행정동코드', '매출등급', '매출액', '유동인구'],
+        fields=['adm_cd', '매출_등급', '당월_총_매출_금액', '총_유동인구_수'],
+        aliases=['행정동_코드', '매출등급', '매출액', '유동인구'],
         localize=True
     )
 ).add_to(m)
@@ -86,7 +86,7 @@ for _, row in merged.iterrows():
         <b>행정동코드:</b> {row['adm_cd']}<br>
         <b>매출 등급:</b> {row['매출_등급']}<br>
         <b>총 유동인구:</b> {int(row['총_유동인구_수'])}<br>
-        <b>당월 매출액:</b> {int(row['당월_매출_금액'])}
+        <b>당월 매출액:</b> {int(row['당월_총_매출_금액'])}
         """
         folium.Marker(center_point, popup=popup_text).add_to(m)
 

@@ -1,5 +1,4 @@
 import os.path
-from os import close
 
 import pandas as pd
 
