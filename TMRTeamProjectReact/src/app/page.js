@@ -35,8 +35,8 @@ const Page = () => {
 
     return (
         <SimulationPage
-            character={selectedCharacter}
-            business={selectedBusiness}
+            character={character}
+            business={business}
         />
     );
 };

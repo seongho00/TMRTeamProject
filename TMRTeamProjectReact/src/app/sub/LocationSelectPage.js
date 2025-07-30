@@ -1,9 +1,9 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useRef, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 
-const LocationSelectPage = ({ onSelect }) => {
+const LocationSelectPage = ({onSelect}) => {
     const mapRef = useRef(null);
     const [scriptLoaded, setScriptLoaded] = useState(false);
     const [selectedInfo, setSelectedInfo] = useState(null);
@@ -24,85 +24,152 @@ const LocationSelectPage = ({ onSelect }) => {
             const map = new kakao.maps.Map(container, options);
             mapRef.current = map;
 
-            fetch("/seoul_emds.geojson")
-                .then((res) => res.json())
-                .then((geojson) => {
-                    geojson.features.forEach((feature) => {
-                        const name = feature.properties.ADSTRD_NM;
-                        const coords =
-                            feature.geometry.type === "Polygon"
-                                ? [feature.geometry.coordinates]
-                                : feature.geometry.coordinates;
+            clearPolygons();
+            loadAndDrawPolygons(map.getLevel(), map);
 
-                        coords.forEach((polygonCoords) => {
-                            const path = polygonCoords[0].map(
-                                (c) => new kakao.maps.LatLng(c[1], c[0])
-                            );
+            kakao.maps.event.addListener(map, "zoom_changed", () => {
+                const level = map.getLevel();
+                console.log("Zoom level changed:", level);
+                clearPolygons();
+                loadAndDrawPolygons(level, map);
+            });
 
-                            // 기본 guide polygon (dash, no fill)
-                            const polygon = new kakao.maps.Polygon({
-                                path,
-                                strokeWeight: 2,
-                                strokeColor: "#004c80",
-                                strokeOpacity: 0.8,
-                                strokeStyle: "dash",
-                                fillColor: "#00a0e9",
-                                fillOpacity: 0,
-                            });
-                            polygon.setMap(map);
 
-                            // 중심 좌표 계산
-                            const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
-                            const lngSum = path.reduce((sum, p) => sum + p.getLng(), 0);
-                            const center = new kakao.maps.LatLng(
-                                latSum / path.length,
-                                lngSum / path.length
-                            );
-
-                            // 라벨 오버레이
-                            const label = document.createElement("div");
-                            label.innerText = name;
-                            label.style.cssText = `
-                                background: white;
-                                border: 1px solid #444;
-                                padding: 2px 6px;
-                                font-size: 12px;
-                                border-radius: 4px;
-                              `;
-
-                            const overlay = new kakao.maps.CustomOverlay({
-                                content: label,
-                                position: center,
-                                yAnchor: 1,
-                                zIndex: 3,
-                            });
-                            overlay.setMap(map);
-                            overlayList.current.push(overlay);
-
-                            // 클릭 이벤트
-                            kakao.maps.event.addListener(polygon, "click", () => {
-                                if (currentPolygon.current) {
-                                    currentPolygon.current.setOptions({ fillOpacity: 0.01 });
-                                }
-
-                                polygon.setOptions({
-                                    strokeStyle: "solid",
-                                    fillOpacity: 0.3,
-                                });
-                                currentPolygon.current = polygon;
-
-                                setSelectedInfo({
-                                    address: name,
-                                    path,
-                                });
-                            });
-
-                            emdPolygons.current.push(polygon);
-                        });
-                    });
-                });
         });
     }, [scriptLoaded]);
+
+    function loadAndDrawPolygons(level, map) {
+        const isSggLevel = level >= 7;
+        const url = isSggLevel ? "/seoul_sggs.geojson" : "/seoul_emds.geojson";
+
+        fetch(url)
+            .then((res) => res.json())
+            .then((geojson) => {
+                geojson.features.forEach((feature) => {
+                    const name = isSggLevel
+                        ? feature.properties.SIGUNGU_NM
+                        : feature.properties.ADSTRD_NM;
+
+                    const coords =
+                        feature.geometry.type === "Polygon"
+                            ? [feature.geometry.coordinates]
+                            : feature.geometry.coordinates;
+
+                    coords.forEach((polygonCoords) => {
+                        const path = polygonCoords[0].map(
+                            (c) => new kakao.maps.LatLng(c[1], c[0])
+                        );
+
+                        const polygon = new kakao.maps.Polygon({
+                            path,
+                            strokeWeight: 2,
+                            strokeColor: "#004c80",
+                            strokeOpacity: 0.8,
+                            strokeStyle: "dash",
+                            fillColor: "#00a0e9",
+                            fillOpacity: 0.01,
+                        });
+
+                        polygon.setMap(map);
+                        emdPolygons.current.push(polygon);
+
+                        // 중심 좌표 계산
+                        const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
+                        const lngSum = path.reduce((sum, p) => sum + p.getLng(), 0);
+                        const center = new kakao.maps.LatLng(
+                            latSum / path.length,
+                            lngSum / path.length
+                        );
+
+                        // 라벨
+                        const label = document.createElement("div");
+                        label.innerText = name;
+                        label.style.cssText = `
+                        background: white;
+                        border: 1px solid #444;
+                        padding: 2px 6px;
+                        font-size: 12px;
+                        border-radius: 4px;
+                        pointer-events: none;
+                    `;
+
+                        const overlay = new kakao.maps.CustomOverlay({
+                            content: label,
+                            position: center,
+                            yAnchor: 1,
+                            zIndex: 3,
+                        });
+                        overlay.setMap(map);
+                        overlayList.current.push(overlay);
+
+                        // 클릭 이벤트 (only for 행정동)
+                        if (!isSggLevel) {
+                            kakao.maps.event.addListener(polygon, "click", () => {
+                                const isAlreadySelected = currentPolygon.current === polygon;
+                                console.log(isAlreadySelected);
+
+                                if (isAlreadySelected) {
+                                    console.log("다시 클릭함");
+                                    // 선택 해제
+                                    polygon.setOptions({
+                                        strokeStyle: "dash",
+                                        strokeColor: "#004c80",
+                                        fillColor: "#00a0e9",
+                                        fillOpacity: 0.01,
+                                    });
+                                    currentPolygon.current = null;
+                                    setSelectedInfo(null);
+
+                                } else {
+                                    // 새 polygon 선택
+                                    if (currentPolygon.current) {
+                                        currentPolygon.current.setOptions({
+                                            strokeStyle: "dash",
+                                            fillOpacity: 0.01,
+                                        });
+                                    }
+                                    polygon.setOptions({
+                                        strokeStyle: "solid",
+                                        fillOpacity: 0.3,
+                                    });
+                                    currentPolygon.current = polygon;
+
+                                    setSelectedInfo({
+                                        address: name,
+                                        path,
+                                        levelType: isSggLevel ? "sgg" : "emd",
+                                    });
+                                    if (currentPolygon.current) {
+                                        currentPolygon.current.setOptions({fillOpacity: 0.01});
+                                    }
+
+                                    polygon.setOptions({
+                                        strokeStyle: "solid",
+                                        fillOpacity: 0.3,
+                                    });
+                                    currentPolygon.current = polygon;
+
+                                    setSelectedInfo({
+                                        address: name,
+                                        path,
+                                    });
+                                }
+
+                            });
+                        }
+                    });
+                });
+            });
+    }
+
+    function clearPolygons() {
+        emdPolygons.current.forEach((p) => p.setMap(null));
+        emdPolygons.current = [];
+        overlayList.current.forEach((o) => o.setMap(null));
+        overlayList.current = [];
+        currentPolygon.current = null;
+    }
+
 
     return (
         <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
@@ -113,7 +180,7 @@ const LocationSelectPage = ({ onSelect }) => {
             />
 
             <h1 className="tw-text-3xl tw-font-bold tw-mb-4">📍 창업 지역 선택</h1>
-            <div id="map" className="tw-w-full tw-max-w-4xl tw-h-[500px] tw-mb-6 tw-border tw-rounded-lg" />
+            <div id="map" className="tw-w-full tw-max-w-4xl tw-h-[500px] tw-mb-6 tw-border tw-rounded-lg"/>
 
             {selectedInfo && (
                 <div className="tw-text-center tw-mb-6">
