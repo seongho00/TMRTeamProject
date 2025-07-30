@@ -14,15 +14,28 @@ const Page = () => {
     const [location, setLocation] = useState(null);
 
 
+    const goBack = () => {
+        if (costs) {
+            setCosts(null);
+        } else if (location) {
+            setLocation(null);
+        } else if (business) {
+            setBusiness(null);
+        } else if (character) {
+            setCharacter(null);
+        }
+    };
+
+
     if (!character) {
-        return <CharacterSelectPage onSelect={setCharacter}/>;
+        return <CharacterSelectPage onSelect={setCharacter} onBack={goBack}/>;
     }
 
     if (!business) {
-        return <BusinessSelectPage onSelect={setBusiness}/>;
+        return <BusinessSelectPage onSelect={setBusiness} onBack={goBack}/>;
     }
 
-    if (!location) return <LocationSelectPage onSelect={setLocation}/>;
+    if (!location) return <LocationSelectPage onSelect={setLocation} onBack={goBack}/>;
 
     if (!costs)
         return (
@@ -30,6 +43,7 @@ const Page = () => {
                 character={character}
                 business={business}
                 onSubmit={setCosts}
+                onBack={goBack}
             />
         );
 
@@ -38,6 +52,7 @@ const Page = () => {
             character={character}
             business={business}
             location={location}
+            onBack={goBack}
         />
     );
 };
