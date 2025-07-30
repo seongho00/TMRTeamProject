@@ -12,7 +12,7 @@ const businessTypes = [
     {name: "기타", description: "다른 업종 더보기", upjongCd: "etc"}
 ];
 
-const BusinessSelectPage = ({onSelect}) => {
+const BusinessSelectPage = ({onSelect , onBack}) => {
     const [selectedCode, setSelectedCode] = useState(null);
     const [customUpjongs, setCustomUpjongs] = useState([]);
     const [selectedCustom, setSelectedCustom] = useState(null);
@@ -99,6 +99,12 @@ const BusinessSelectPage = ({onSelect}) => {
                 className="tw-bg-blue-500 tw-text-white tw-px-6 tw-py-2 tw-rounded-xl hover:tw-bg-blue-600 tw-transition tw-mt-10"
             >
                 다음 단계 →
+            </button>
+            <button
+                onClick={onBack}
+                className="tw-absolute tw-top-6 tw-left-6 tw-bg-gray-200 tw-text-gray-800 tw-px-4 tw-py-2 tw-rounded-md hover:tw-bg-gray-300 tw-transition"
+            >
+                ← 이전 단계
             </button>
         </div>
     );

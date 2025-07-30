@@ -2,7 +2,7 @@
 
 import React from "react";
 
-const SimulationPage = ({character, business, location}) => {
+const SimulationPage = ({character, business, location, onBack}) => {
     return (
         <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
             <h1 className="tw-text-3xl tw-font-bold tw-mb-6">📊 시뮬레이션 시작</h1>
@@ -28,6 +28,12 @@ const SimulationPage = ({character, business, location}) => {
             <p className="tw-text-gray-500 tw-mt-8">
                 ※ 추후 여기에 시뮬레이션 로직이 들어갈 예정입니다.
             </p>
+            <button
+                onClick={onBack}
+                className="tw-absolute tw-top-6 tw-left-6 tw-bg-gray-200 tw-text-gray-800 tw-px-4 tw-py-2 tw-rounded-md hover:tw-bg-gray-300 tw-transition"
+            >
+                ← 이전 단계
+            </button>
         </div>
     );
 };

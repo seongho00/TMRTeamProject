@@ -54,7 +54,9 @@ const CharacterSelectPage = ({onSelect}) => {
                     >
                         다음 단계 →
                     </button>
+
                 </div>
+
             </div>
         </div>
     );
