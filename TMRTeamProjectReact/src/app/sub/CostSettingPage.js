@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect } from "react";
 const CostSettingPage = ({ onSubmit, onBack }) => {
     const [initialCost, setInitialCost] = useState("5000000");
     const inputRef = useRef(null);
-    const previousLength = useRef(0);
     const cursorOffset = useRef(0);
 
     const formatNumber = (value) => {
@@ -61,9 +60,7 @@ const CostSettingPage = ({ onSubmit, onBack }) => {
                 <button
                     onClick={() =>
                         onSubmit({
-                            initialCost: Number(initialCost),
-                            rent: 1000000,
-                            marketing: 300000,
+                            initialCost: Number(initialCost)
                         })
                     }
                     className="tw-w-full tw-bg-blue-500 tw-text-white tw-py-2 tw-rounded-lg hover:tw-bg-blue-600 tw-transition"
