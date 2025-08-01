@@ -1,6 +1,8 @@
 "use client";
 
 import {useState, useEffect} from "react";
+import WeeklyCalendar from "./WeeklyCalendar";
+
 
 const WeeklySimulationPage = ({character, business, location, initialCost, onFinish}) => {
     const [month, setMonth] = useState(1);
@@ -227,6 +229,8 @@ const WeeklySimulationPage = ({character, business, location, initialCost, onFin
                     ))}
                 </div>
             )}
+
+            <WeeklyCalendar year={year} month={month} weekInMonth={weekInMonth} />
         </div>
     );
 };
