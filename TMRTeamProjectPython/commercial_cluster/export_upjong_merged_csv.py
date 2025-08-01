@@ -3,8 +3,8 @@ import os
 import glob
 
 # 1. 데이터 폴더 설정
-DATA_DIR = 'C:/Users/admin/Desktop/서울 데이터 가공'
-SAVE_DIR = 'C:/Users/admin/Desktop/업종별_병합결과'
+DATA_DIR = 'C:/Users/admin/Desktop/서울 데이터 모음집 - 복사본'
+SAVE_DIR = 'C:/Users/admin/Desktop/업종별_병합결과 - 복사본'
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 # 2. CSV 불러오기
@@ -27,36 +27,36 @@ for file_path in csv_files:
 area_keys = ['기준_년분기_코드', '행정동_코드']
 upjong_keys = area_keys + ['서비스_업종_코드']
 
-
 # 4. 업종별 병합 시작
-base_df = data_dict.get('점포-행정동')
-if base_df is None or '서비스_업종_코드' not in base_df.columns:
-    print("❗ '점포-행정동' 파일이 없거나 '서비스_업종_코드'가 없습니다.")
+base_key = [k for k in data_dict.keys() if '점포-행정동' in k]
+if not base_key:
+    print("❗ '점포-행정동' 파일을 찾을 수 없습니다.")
     exit()
 
+base_df = data_dict[base_key[0]]
 
 for code in base_df['서비스_업종_코드'].dropna().unique():
     filtered_df = base_df[base_df['서비스_업종_코드'] == code].copy()
 
     # 업종 포함된 데이터 병합 (ex: 추정매출)
-    if '추정매출-행정동' in data_dict:
-        sales_df = data_dict['추정매출-행정동']
+    match = [k for k in data_dict if '추정매출' in k]
+    if match:
+        sales_df = data_dict[match[0]]
         filtered_sales = sales_df[sales_df['서비스_업종_코드'] == code]
         filtered_df = pd.merge(filtered_df, filtered_sales, on=upjong_keys, how='left')
 
     # 지역 기반 데이터 병합 (서비스_업종_코드 없음)
-    for name in [
-        '상주인구-행정동', '직장인구-행정동', '소득소비-행정동',
-        '아파트-행정동', '상권변화지표-행정동', '집객시설-행정동', '길단위인구-행정동'
+    for keyword in [
+        '상주인구', '직장인구', '소득소비',
+        '아파트', '상권변화지표', '집객시설', '길단위인구'
     ]:
-        if name in data_dict:
-            area_df = data_dict[name]
-            # ✅ 중복 컬럼 제거 (병합 충돌 방지)
+        match = [k for k in data_dict if keyword in k]
+        if match:
+            area_df = data_dict[match[0]]
             drop_cols = [col for col in area_df.columns if col not in area_keys and col in filtered_df.columns]
             if drop_cols:
-                print(f"⚠️ {name} 병합 전 중복 컬럼 제거: {drop_cols}")
+                print(f"⚠️ {match[0]} 병합 전 중복 컬럼 제거: {drop_cols}")
                 area_df.drop(columns=drop_cols, inplace=True)
-
             filtered_df = pd.merge(filtered_df, area_df, on=area_keys, how='left')
 
     # 파일명 구성
@@ -96,5 +96,3 @@ for code in base_df['서비스_업종_코드'].dropna().unique():
     save_path = os.path.join(SAVE_DIR, filename)
     filtered_df.to_csv(save_path, index=False, encoding='utf-8-sig')
     print(f"📁 저장 완료: {filename} → {filtered_df.shape[0]}행")
-
-
