@@ -1,7 +1,8 @@
 [
   {
     "condition": {
-      "month": 3
+      "month": 3,
+      "week": 2
     },
     "type": "decision",
     "description": "🌸 봄맞이 행사 시즌입니다. 마케팅을 진행할까요?",
@@ -33,7 +34,8 @@
       "month": 5,
       "businessCodes": [
         "CS100008"
-      ]
+      ],
+      "week": 4
     },
     "type": "decision",
     "description": "📚 중간고사 시즌! 분식 수요가 급증했습니다.",
@@ -65,7 +67,8 @@
       "monthRange": [
         7,
         8
-      ]
+      ],
+      "week": 4
     },
     "type": "decision",
     "description": "🔥 전력난! 냉방비 부담이 커졌습니다.",
@@ -96,7 +99,8 @@
   },
   {
     "condition": {
-      "month": 9
+      "month": 9,
+      "week": 1
     },
     "type": "decision",
     "description": "📓 개학 시즌입니다. 학생 대상 이벤트를 할까요?",
@@ -125,7 +129,8 @@
   },
   {
     "condition": {
-      "month": 12
+      "month": 12,
+      "week": 3
     },
     "type": "decision",
     "description": "🎄 크리스마스 시즌입니다. 연말 특수 대응 전략은?",
@@ -155,7 +160,8 @@
   },
   {
     "condition": {
-      "month": 2
+      "month": 2,
+      "week": 3
     },
     "type": "decision",
     "description": "💘 발렌타인데이 이벤트 기획 여부를 선택하세요.",
@@ -184,36 +190,8 @@
   },
   {
     "condition": {
-      "month": 10
-    },
-    "type": "decision",
-    "description": "🧥 환절기입니다. 유행하는 옷을 입고 고객을 끌어모을까요?",
-    "choices": [
-      {
-        "label": "👗 가을 신상품 입고 (비용 70만원, 수익 +15%)",
-        "effect": {
-          "additionalCost": 700000,
-          "multiplier": 1.15
-        },
-        "log": "패션에 민감한 고객이 몰렸습니다."
-      },
-      {
-        "label": "🧤 할인 위주로 재고 판매 (수익 +5%)",
-        "effect": {
-          "multiplier": 1.05
-        },
-        "log": "저가 정책으로도 어느 정도 성공했습니다."
-      },
-      {
-        "label": "🙅 기존 스타일 유지",
-        "effect": {},
-        "log": "새로운 고객을 끌기에는 부족했습니다."
-      }
-    ]
-  },
-  {
-    "condition": {
-      "month": 11
+      "month": 11,
+      "week": 5
     },
     "type": "decision",
     "description": "🛍 블랙프라이데이, 대대적인 할인전 참여 여부를 결정하세요.",
@@ -242,7 +220,8 @@
   },
   {
     "condition": {
-      "month": 1
+      "month": 1,
+      "week": 3
     },
     "type": "decision",
     "description": "🎉 새해맞이 이벤트를 할까요?",
@@ -271,10 +250,11 @@
   },
   {
     "condition": {
-      "month": 4,
+      "monthRange": [ 4, 5 ],
       "businessCodes": [
         "CS100001"
-      ]
+      ],
+      "week": 4
     },
     "type": "decision",
     "probability": 0.25,
@@ -305,10 +285,11 @@
   },
   {
     "condition": {
-      "month": 9,
+      "monthRange": [ 4, 8 ],
       "businessCodes": [
         "CS100001"
-      ]
+      ],
+      "week": 3
     },
     "type": "decision",
     "probability": 0.2,
@@ -339,7 +320,7 @@
   },
   {
     "condition": {
-      "month": 6,
+      "monthRange": [ 6, 8 ],
       "businessCodes": [
         "CS100001"
       ]
@@ -374,7 +355,7 @@
   },
   {
     "condition": {
-      "month": 11,
+      "monthRange": [ 9, 11 ],
       "businessCodes": [
         "CS100001"
       ]
@@ -414,7 +395,8 @@
       ],
       "businessCodes": [
         "CS100001"
-      ]
+      ],
+      "week": 2
     },
     "type": "decision",
     "probability": 0.1,
@@ -446,7 +428,8 @@
       "month": 5,
       "businessCodes": [
         "CS100001"
-      ]
+      ],
+      "week": 1
     },
     "type": "decision",
     "probability": 0.3,
@@ -485,7 +468,8 @@
       ],
       "businessCodes": [
         "CS100001"
-      ]
+      ],
+      "week": 4
     },
     "type": "decision",
     "probability": 0.25,
@@ -528,7 +512,8 @@
       "month": 8,
       "businessCodes": [
         "CS100001"
-      ]
+      ],
+      "week": 3
     },
     "type": "decision",
     "probability": 0.3,
@@ -561,10 +546,11 @@
   },
   {
     "condition": {
-      "month": 7,
+      "monthRange": [ 7, 8 ],
       "businessCodes": [
         "CS100001"
-      ]
+      ],
+      "week": 4
     },
     "type": "decision",
     "probability": 0.15,
@@ -599,7 +585,8 @@
       "month": 10,
       "businessCodes": [
         "CS100001"
-      ]
+      ],
+      "week": 2
     },
     "type": "decision",
     "probability": 0.2,
@@ -637,4 +624,3 @@
     ]
   }
 ]
-

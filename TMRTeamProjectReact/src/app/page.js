@@ -5,7 +5,7 @@ import CharacterSelectPage from "./sub/CharacterSelectPage";
 import BusinessSelectPage from "./sub/BusinessSelectPage";
 import CostSettingPage from "./sub/CostSettingPage";
 import LocationSelectPage from "./sub/LocationSelectPage";
-import MonthlySimulationPage from "./sub/MonthlySimulationPage";
+import WeeklySimulationPage from "./sub/WeeklySimulationPage";
 
 const Page = () => {
     const [character, setCharacter] = useState(null);
@@ -49,7 +49,7 @@ const Page = () => {
 
 
     return (
-        <MonthlySimulationPage
+        <WeeklySimulationPage
             character={character}
             business={business}
             location={location}
