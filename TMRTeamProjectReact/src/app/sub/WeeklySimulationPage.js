@@ -2,9 +2,10 @@
 
 import {useState, useEffect} from "react";
 
-const MonthlySimulationPage = ({character, business, location, initialCost, onFinish}) => {
+const WeeklySimulationPage = ({character, business, location, initialCost, onFinish}) => {
     const [month, setMonth] = useState(1);
     const [weekInMonth, setWeekInMonth] = useState(1); // ✅ 추가: 1~4
+    const [year, setYear] = useState(2025); // 기본 시작 연도
     const [balance, setBalance] = useState(initialCost);
     const [logs, setLogs] = useState([]);
     const [history, setHistory] = useState([]);
@@ -54,32 +55,48 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
 
         setBalance(newBalance);
         setLogs(prev => [
-            `🗓 ${month}월차 | 매출: ${revenue.toLocaleString()}원, 비용: ${cost.toLocaleString()}원, 순이익: ${profit.toLocaleString()}원, 잔고: ${newBalance.toLocaleString()}원`,
+            `🗓 ${month}월 ${weekInMonth}주차 | 매출: ${revenue.toLocaleString()}원, 비용: ${cost.toLocaleString()}원, 순이익: ${profit.toLocaleString()}원, 잔고: ${newBalance.toLocaleString()}원`,
             ...prev
         ]);
-        setHistory(prev => [...prev, { month, revenue, cost, profit, balance: newBalance }]);
-        
+        setHistory(prev => [...prev, {month, revenue, cost, profit, balance: newBalance}]);
+
+        const lastWeek = getLastWeekOfMonth(year, month);
+
         // 날짜 계산 로직
-        if (month === 12 && weekInMonth === 4 || newBalance <= 0) {
-            onFinish(history.concat({ month, weekInMonth, revenue, cost, profit, balance: newBalance }));
+        if ((month === 12 && weekInMonth === lastWeek) || newBalance <= 0) {
+            onFinish(history.concat({year, month, weekInMonth, revenue, cost, profit, balance: newBalance}));
         } else {
-            if (weekInMonth === 4) {
-                setMonth(month + 1);
+            if (weekInMonth === lastWeek) {
+                if (month === 12) {
+                    setYear(prev => prev + 1);
+                    setMonth(1);
+                } else {
+                    setMonth(prev => prev + 1);
+                }
                 setWeekInMonth(1);
             } else {
-                setWeekInMonth(weekInMonth + 1);
+                setWeekInMonth(prev => prev + 1);
             }
         }
 
     };
+    
+    // 해당되는 연도의 달월이 몇주차까지 있는지 계산
+    function getLastWeekOfMonth(year, month) {
+        const firstDay = new Date(year, month - 1, 1); // JS: month 0-indexed
+        const lastDay = new Date(year, month, 0); // 0일 = 전 달의 마지막 날 = 해당 월의 말일
+        const firstWeekday = firstDay.getDay(); // 일(0)~토(6)
+        const totalDays = lastDay.getDate();
 
+        return Math.ceil((totalDays + firstWeekday) / 7);
+    }
 
 
     const applyDecision = (choice) => {
         let revenue = getEstimatedRevenue();
         let cost = getEstimatedCost();
         let appliedLog = null;
-        let updatedStatus = { ...status };
+        let updatedStatus = {...status};
 
         if (choice.effect.multiplier) {
             revenue = Math.floor(revenue * choice.effect.multiplier);
@@ -125,7 +142,7 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
             `🗓 ${month}월차 | 매출: ${revenue.toLocaleString()}원, 비용: ${cost.toLocaleString()}원, 순이익: ${profit.toLocaleString()}원, 잔고: ${newBalance.toLocaleString()}원`,
             ...prev
         ]);
-        setHistory(prev => [...prev, { month, revenue, cost, profit, balance: newBalance }]);
+        setHistory(prev => [...prev, {month, revenue, cost, profit, balance: newBalance}]);
 
         // 다음 이벤트 처리 or 본체 실행
         if (remainingEvents.length > 0) {
@@ -158,7 +175,7 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
     const applyCostEvents = (baseCost) => {
         let updatedCost = baseCost;
         events.forEach((event) => {
-            const { condition, type, effect, description } = event;
+            const {condition, type, effect, description} = event;
             if (type !== "cost") return;
 
             const matches = condition.month === month;
@@ -214,4 +231,4 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
     );
 };
 
-export default MonthlySimulationPage;
+export default WeeklySimulationPage;
