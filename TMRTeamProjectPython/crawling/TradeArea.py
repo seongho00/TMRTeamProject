@@ -37,7 +37,7 @@ chrome_options.add_argument("--disable-gpu")  # GPU 비활성화 (윈도우에�
 conn = pymysql.connect(
     host="localhost",
     user="root",
-    password="",
+    password="1234",
     db="tmrteamproject",
     charset="utf8mb4"
 )
@@ -50,18 +50,18 @@ cursor.execute("SELECT * FROM upjong_code;")
 upjong_rows = cursor.fetchall()
 
 for dong in dong_rows:
-    sido_nm = dong[2]
+    sido_nm = dong[6]
     sgg_nm = dong[4]
-    emd_cd = dong[5]
-    emd_nm = dong[6]
+    emd_cd = dong[1]
+    emd_nm = dong[2]
 
     simple_loc = f"{sido_nm} {sgg_nm} {emd_nm}"
     print(f"[동 시작] {simple_loc} ({emd_cd})")
 
     for upjong in upjong_rows:
-        major_cd = upjong[0]
-        middle_cd = upjong[2]
-        minor_cd = upjong[4]
+        major_cd = upjong[1]
+        middle_cd = upjong[3]
+        minor_cd = upjong[0]
         minor_nm = upjong[5]
 
         try:
