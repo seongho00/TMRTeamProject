@@ -6,6 +6,7 @@ import BusinessSelectPage from "./sub/BusinessSelectPage";
 import CostSettingPage from "./sub/CostSettingPage";
 import LocationSelectPage from "./sub/LocationSelectPage";
 import SimulationPage from "./sub/SimulationPage";
+import MonthlySimulationPage from "./sub/MonthlySimulationPage";
 
 const Page = () => {
     const [character, setCharacter] = useState(null);
@@ -47,12 +48,14 @@ const Page = () => {
             />
         );
 
+    console.log(costs);
+
     return (
-        <SimulationPage
+        <MonthlySimulationPage
             character={character}
             business={business}
             location={location}
-            onBack={goBack}
+            initialCost={costs.initialCost}
         />
     );
 };
