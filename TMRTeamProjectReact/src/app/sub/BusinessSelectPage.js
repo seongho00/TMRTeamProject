@@ -20,8 +20,12 @@ const BusinessSelectPage = ({onSelect , onBack}) => {
     useEffect(() => {
         if (selectedCode === "etc") {
             axios.get("http://localhost:8080/usr/upjong/getAllUpjong")
-                .then((res) => setCustomUpjongs(res.data))
-                .catch((err) => console.error(err));
+                .then((res) => {
+                    setCustomUpjongs(res.data);
+                })
+                .catch((err) => {
+                    console.error("❌ 서버 에러:", err);
+                });
         }
     }, [selectedCode]);
 

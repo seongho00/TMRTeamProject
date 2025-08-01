@@ -5,7 +5,6 @@ import CharacterSelectPage from "./sub/CharacterSelectPage";
 import BusinessSelectPage from "./sub/BusinessSelectPage";
 import CostSettingPage from "./sub/CostSettingPage";
 import LocationSelectPage from "./sub/LocationSelectPage";
-import SimulationPage from "./sub/SimulationPage";
 import MonthlySimulationPage from "./sub/MonthlySimulationPage";
 
 const Page = () => {
@@ -48,7 +47,6 @@ const Page = () => {
             />
         );
 
-    console.log(costs);
 
     return (
         <MonthlySimulationPage
