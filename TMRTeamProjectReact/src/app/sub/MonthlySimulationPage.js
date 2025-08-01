@@ -4,6 +4,7 @@ import {useState, useEffect} from "react";
 
 const MonthlySimulationPage = ({character, business, location, initialCost, onFinish}) => {
     const [month, setMonth] = useState(1);
+    const [weekInMonth, setWeekInMonth] = useState(1); // ✅ 추가: 1~4
     const [balance, setBalance] = useState(initialCost);
     const [logs, setLogs] = useState([]);
     const [history, setHistory] = useState([]);
@@ -11,6 +12,11 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
     const [pendingEvent, setPendingEvent] = useState(null); // 선택형 이벤트 발생 시 저장
     const [isWaitingChoice, setIsWaitingChoice] = useState(false);
     const [remainingEvents, setRemainingEvents] = useState([]); // ✅ 이벤트 큐
+    const [status, setStatus] = useState({
+        fatigue: false,
+        popularity: 0,
+        trust: 0
+    });
 
     // 이벤트 JSON 가져오기
     useEffect(() => {
@@ -52,12 +58,19 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
             ...prev
         ]);
         setHistory(prev => [...prev, { month, revenue, cost, profit, balance: newBalance }]);
-
-        if (month >= 12 || newBalance <= 0) {
-            onFinish(history.concat({ month, revenue, cost, profit, balance: newBalance }));
+        
+        // 날짜 계산 로직
+        if (month === 12 && weekInMonth === 4 || newBalance <= 0) {
+            onFinish(history.concat({ month, weekInMonth, revenue, cost, profit, balance: newBalance }));
         } else {
-            setMonth(month + 1);
+            if (weekInMonth === 4) {
+                setMonth(month + 1);
+                setWeekInMonth(1);
+            } else {
+                setWeekInMonth(weekInMonth + 1);
+            }
         }
+
     };
 
 
@@ -65,12 +78,42 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
     const applyDecision = (choice) => {
         let revenue = getEstimatedRevenue();
         let cost = getEstimatedCost();
+        let appliedLog = null;
+        let updatedStatus = { ...status };
 
         if (choice.effect.multiplier) {
             revenue = Math.floor(revenue * choice.effect.multiplier);
         }
         if (choice.effect.additionalCost) {
             cost += choice.effect.additionalCost;
+        }
+
+        // ✅ 확률 기반 결과 처리 (randomOutcome)
+        if (choice.effect.randomOutcome) {
+            const rand = Math.random();
+            let acc = 0;
+            for (const outcome of choice.effect.randomOutcome) {
+                acc += outcome.probability;
+                if (rand < acc) {
+                    if (outcome.multiplier) {
+                        revenue = Math.floor(revenue * outcome.multiplier);
+                    }
+                    if (outcome.additionalCost) {
+                        cost += outcome.additionalCost;
+                    }
+                    if (outcome.penalty === "fatigue") {
+                        updatedStatus.fatigue = true;
+                    }
+                    if (outcome.penalty === "popularityDown") {
+                        updatedStatus.popularity = Math.max(0, updatedStatus.popularity - 1);
+                    }
+                    if (outcome.penalty === "trustDown") {
+                        updatedStatus.trust = Math.max(0, updatedStatus.trust - 1);
+                    }
+                    appliedLog = outcome.log;
+                    break;
+                }
+            }
         }
 
         const profit = revenue - cost;
@@ -97,24 +140,19 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
     };
 
     function matchCondition(condition, month, business) {
-        // 월 범위 검사 (예: [6, 8])
         if (condition.monthRange) {
             const [start, end] = condition.monthRange;
             if (month < start || month > end) return false;
         }
 
-        // 특정 월 검사 (예: { month: 12 })
-        if (condition.month !== undefined) {
-            if (month !== condition.month) return false;
-        }
+        if (condition.month !== undefined && month !== condition.month) return false;
+        if (condition.week !== undefined && condition.week !== weekInMonth) return false;
 
-        // 업종 코드 검사 (예: ["CS100001"])
         if (condition.businessCodes) {
             if (!condition.businessCodes.includes(business.upjongCd)) return false;
         }
 
-        // 여기에 캐릭터나 지역 조건도 확장 가능
-        return true; // 모두 통과한 경우
+        return true;
     }
 
     const applyCostEvents = (baseCost) => {
@@ -143,7 +181,7 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
 
     return (
         <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
-            <h1 className="tw-text-3xl tw-font-bold tw-mb-4">📊 {month}월차 시뮬레이션</h1>
+            <h1 className="tw-text-3xl tw-font-bold tw-mb-4">📊 {month}월 {weekInMonth}주차 시뮬레이션</h1>
             <p className="tw-mb-2 tw-text-lg">현재 잔고: {balance.toLocaleString()}원</p>
 
             <button
