@@ -1,0 +1,86 @@
+<header th:fragment="header" xmlns:th="http://www.thymeleaf.org">
+    <meta charset="UTF-8">
+
+    <div id="header-id" class="w-full h-[100px] box-border">
+        <div id="header-wrapper"
+             class="w-full h-[100px] flex items-start justify-between">
+
+            <div class="w-[240px] h-[100px] flex justify-start items-start">
+                <a href="../home/main" class="h-full flex items-center">
+                    <img src="/images/로고.png"
+                         class="object-contain cursor-pointer"/>
+                </a>
+            </div>
+
+            <nav class="w-[60%] text-center">
+                <ul class="flex justify-center items-center relative">
+                    <li>
+                        <div class="flex justify-center items-center w-[240px] h-[100px] relative">
+                            <p class="text-[22px] text-black">상권 분석</p>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="flex justify-center items-center w-[240px] h-[100px] relative">
+                            <p class="text-[22px] text-black">부동산 매물</p>
+                        </div>
+                    </li>
+                    <li id="menu-bar">
+                        <div class="flex justify-center items-center w-[240px] h-[100px] relative cursor-point">
+                            <p class="text-[22px] text-black">상가 청약</p>
+                        </div>
+
+                        <!-- 하단 텍스트 메뉴 -->
+                        <div id="sub-menubar"
+                             class="absolute hidden flex-col items-center top-full left-1/2 transform -translate-x-1/2 opacity-0 transition-opacity duration-300 text-center bg-gray-300">
+                            <a href="#" class="hover:underline">청약 알림</a>
+                            <a href="#" class="hover:underline">공고문</a>
+                            <a href="../member/usr/member/conditionalLogout" class="hover:underline">로그아웃</a>
+                        </div>
+                    </li>
+                    <li>
+                        <a href="../member/joinAndLogin"
+                           class="flex justify-center items-center w-[240px] h-[100px] relative cursor-pointer">
+                            <p class="text-[22px] text-black">로그인</p>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <script>
+        const headerId = document.getElementById('header-id');
+        const header = document.getElementById('header-wrapper');
+        const menuBar = document.getElementById('menu-bar');
+        const subMenu = document.getElementById('sub-menubar');
+
+        let hoverTimeout;
+
+        const expandHeader = () => {
+            clearTimeout(hoverTimeout);
+            headerId.classList.remove('h-[100px]');
+            headerId.classList.add('h-[250px]');
+            header.classList.remove('h-[100px]');
+            header.classList.add('h-[250px]');
+            subMenu.classList.remove('opacity-0', 'hidden');
+            subMenu.classList.add('opacity-100', 'flex');
+        };
+
+        const collapseHeader = () => {
+            hoverTimeout = setTimeout(() => {
+                headerId.classList.remove('h-[250px]');
+                headerId.classList.add('h-[100px]');
+                header.classList.remove('h-[250px]');
+                header.classList.add('h-[100px]');
+                subMenu.classList.remove('flex', 'opacity-100');
+                subMenu.classList.add('hidden', 'opacity-0');
+            }, 100); // 짧은 시간 주는 건 사용자의 빠른 이동 방지용
+        };
+
+        menuBar.addEventListener('mouseenter', expandHeader);
+        menuBar.addEventListener('mouseleave', collapseHeader);
+        subMenu.addEventListener('mouseenter', expandHeader);
+        subMenu.addEventListener('mouseleave', collapseHeader);
+    </script>
+
+</header>
