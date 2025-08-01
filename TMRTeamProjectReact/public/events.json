@@ -1,24 +1,447 @@
 [
   {
-    "condition": { "monthRange": [6, 8], "businessCodes": ["CS100001"] },
+    "condition": {
+      "month": 3
+    },
     "type": "decision",
-    "description": "🔥 폭염이 발생했습니다. 매출 감소 위기를 극복하세요!",
+    "description": "🌸 봄맞이 행사 시즌입니다. 마케팅을 진행할까요?",
     "choices": [
       {
-        "label": "💸 할인 행사 진행 (-10% 수익)",
-        "effect": { "multiplier": 0.9 },
-        "log": "할인 행사를 진행해 일부 고객을 붙잡았습니다."
+        "label": "📣 전단지 제작 (비용 30만원)",
+        "effect": {
+          "additionalCost": 300000
+        },
+        "log": "전단지로 근처 유동인구를 유치했습니다."
       },
       {
-        "label": "🚚 배달 서비스 시작 (+비용 50만원)",
-        "effect": { "additionalCost": 500000 },
-        "log": "배달 서비스를 시작했지만 초기비용이 발생했습니다."
+        "label": "📱 SNS 광고 진행 (비용 50만원, 수익 +10%)",
+        "effect": {
+          "additionalCost": 500000,
+          "multiplier": 1.1
+        },
+        "log": "SNS 광고 효과로 방문객이 늘었습니다."
       },
       {
-        "label": "🧍 아무것도 하지 않음 (-20% 매출)",
-        "effect": { "multiplier": 0.8 },
-        "log": "대응하지 않아 매출이 큰 타격을 입었습니다."
+        "label": "😶 아무것도 하지 않음",
+        "effect": {},
+        "log": "마케팅 없이 조용히 한 달을 보냈습니다."
+      }
+    ]
+  },
+  {
+    "condition": {
+      "month": 5,
+      "businessCodes": [
+        "CS100008"
+      ]
+    },
+    "type": "decision",
+    "description": "📚 중간고사 시즌! 분식 수요가 급증했습니다.",
+    "choices": [
+      {
+        "label": "⏱ 영업시간 연장 (비용 20만원, 수익 +15%)",
+        "effect": {
+          "additionalCost": 200000,
+          "multiplier": 1.15
+        },
+        "log": "늦은 밤까지 장사하여 학생 수요를 흡수했습니다."
+      },
+      {
+        "label": "🥡 포장 할인 이벤트 (수익 +10%)",
+        "effect": {
+          "multiplier": 1.1
+        },
+        "log": "포장 할인으로 회전율을 높였습니다."
+      },
+      {
+        "label": "🙅 특별히 준비하지 않음",
+        "effect": {},
+        "log": "그냥 평소대로 운영했습니다."
+      }
+    ]
+  },
+  {
+    "condition": {
+      "monthRange": [
+        7,
+        8
+      ]
+    },
+    "type": "decision",
+    "description": "🔥 전력난! 냉방비 부담이 커졌습니다.",
+    "choices": [
+      {
+        "label": "❄ 에어컨 풀가동 (비용 70만원)",
+        "effect": {
+          "additionalCost": 700000
+        },
+        "log": "시원한 환경으로 고객 만족도는 유지됐습니다."
+      },
+      {
+        "label": "💧 타협적 운영 (비용 40만원, 수익 -5%)",
+        "effect": {
+          "additionalCost": 400000,
+          "multiplier": 0.95
+        },
+        "log": "적당한 온도로 유지했습니다."
+      },
+      {
+        "label": "🧍 에어컨 최소 운영 (수익 -15%)",
+        "effect": {
+          "multiplier": 0.85
+        },
+        "log": "더위에 불만족한 고객이 이탈했습니다."
+      }
+    ]
+  },
+  {
+    "condition": {
+      "month": 9
+    },
+    "type": "decision",
+    "description": "📓 개학 시즌입니다. 학생 대상 이벤트를 할까요?",
+    "choices": [
+      {
+        "label": "🎁 학생 할인 (수익 +10%, 비용 30만원)",
+        "effect": {
+          "multiplier": 1.1,
+          "additionalCost": 300000
+        },
+        "log": "학생 손님이 몰렸지만 지출도 늘었습니다."
+      },
+      {
+        "label": "📦 세트메뉴 출시 (수익 +5%)",
+        "effect": {
+          "multiplier": 1.05
+        },
+        "log": "가성비 메뉴가 인기를 끌었습니다."
+      },
+      {
+        "label": "🙅 변화 없음",
+        "effect": {},
+        "log": "변화 없이 운영했습니다."
+      }
+    ]
+  },
+  {
+    "condition": {
+      "month": 12
+    },
+    "type": "decision",
+    "description": "🎄 크리스마스 시즌입니다. 연말 특수 대응 전략은?",
+    "choices": [
+      {
+        "label": "🎉 대형 이벤트 개최 (비용 100만원, 수익 +20%)",
+        "effect": {
+          "additionalCost": 1000000,
+          "multiplier": 1.2
+        },
+        "log": "이벤트 성공! 매출이 급증했습니다."
+      },
+      {
+        "label": "🎈 간단한 장식과 할인 (비용 30만원, 수익 +10%)",
+        "effect": {
+          "additionalCost": 300000,
+          "multiplier": 1.1
+        },
+        "log": "분위기 덕에 손님이 늘었습니다."
+      },
+      {
+        "label": "😐 평소대로 운영",
+        "effect": {},
+        "log": "연말 분위기를 놓쳤습니다."
+      }
+    ]
+  },
+  {
+    "condition": {
+      "month": 2
+    },
+    "type": "decision",
+    "description": "💘 발렌타인데이 이벤트 기획 여부를 선택하세요.",
+    "choices": [
+      {
+        "label": "🍫 초콜릿 사은품 제공 (비용 20만원, 수익 +10%)",
+        "effect": {
+          "additionalCost": 200000,
+          "multiplier": 1.1
+        },
+        "log": "고객 반응이 좋아 매출이 증가했습니다."
+      },
+      {
+        "label": "🎀 SNS 로맨틱 인증샷 이벤트 (비용 10만원)",
+        "effect": {
+          "additionalCost": 100000
+        },
+        "log": "온라인 홍보 효과로 신규 고객이 유입됐습니다."
+      },
+      {
+        "label": "🙅 아무것도 하지 않음",
+        "effect": {},
+        "log": "특별한 변화 없이 지나갔습니다."
+      }
+    ]
+  },
+  {
+    "condition": {
+      "month": 10
+    },
+    "type": "decision",
+    "description": "🧥 환절기입니다. 유행하는 옷을 입고 고객을 끌어모을까요?",
+    "choices": [
+      {
+        "label": "👗 가을 신상품 입고 (비용 70만원, 수익 +15%)",
+        "effect": {
+          "additionalCost": 700000,
+          "multiplier": 1.15
+        },
+        "log": "패션에 민감한 고객이 몰렸습니다."
+      },
+      {
+        "label": "🧤 할인 위주로 재고 판매 (수익 +5%)",
+        "effect": {
+          "multiplier": 1.05
+        },
+        "log": "저가 정책으로도 어느 정도 성공했습니다."
+      },
+      {
+        "label": "🙅 기존 스타일 유지",
+        "effect": {},
+        "log": "새로운 고객을 끌기에는 부족했습니다."
+      }
+    ]
+  },
+  {
+    "condition": {
+      "month": 11
+    },
+    "type": "decision",
+    "description": "🛍 블랙프라이데이, 대대적인 할인전 참여 여부를 결정하세요.",
+    "choices": [
+      {
+        "label": "💣 전 품목 50% 할인 (수익 +25%, 비용 80만원)",
+        "effect": {
+          "multiplier": 1.25,
+          "additionalCost": 800000
+        },
+        "log": "폭발적인 매출을 기록했지만 수익률은 낮았습니다."
+      },
+      {
+        "label": "🧾 인기 품목만 한정 할인 (수익 +10%)",
+        "effect": {
+          "multiplier": 1.1
+        },
+        "log": "적절한 균형으로 수익을 냈습니다."
+      },
+      {
+        "label": "🙅 할인 참여 안 함",
+        "effect": {},
+        "log": "할인전에서 소외되었습니다."
+      }
+    ]
+  },
+  {
+    "condition": {
+      "month": 1
+    },
+    "type": "decision",
+    "description": "🎉 새해맞이 이벤트를 할까요?",
+    "choices": [
+      {
+        "label": "🥳 사은품 증정 (비용 30만원, 수익 +10%)",
+        "effect": {
+          "additionalCost": 300000,
+          "multiplier": 1.1
+        },
+        "log": "새해 손님들이 호의적인 반응을 보였습니다."
+      },
+      {
+        "label": "📱 인스타그램 팔로우 이벤트 (비용 10만원)",
+        "effect": {
+          "additionalCost": 100000
+        },
+        "log": "SNS 활동으로 인지도가 올랐습니다."
+      },
+      {
+        "label": "🙅 특별 이벤트 없이 시작",
+        "effect": {},
+        "log": "조용한 새해를 맞이했습니다."
+      }
+    ]
+  },
+
+
+  {
+    "condition": {
+      "month": 4,
+      "businessCodes": [
+        "CS100001"
+      ]
+    },
+    "type": "decision",
+    "probability": 0.25,
+    "description": "🧼 위생 점검이 예고 없이 들어왔습니다!",
+    "choices": [
+      {
+        "label": "🧽 매장 전체 청소 및 리뉴얼 (비용 70만원)",
+        "effect": {
+          "additionalCost": 700000
+        },
+        "log": "점검을 무사히 통과했습니다."
+      },
+      {
+        "label": "🧻 대충 정리 (비용 10만원)",
+        "effect": {
+          "additionalCost": 100000
+        },
+        "log": "점검은 통과했지만 평점이 소폭 하락했습니다."
+      },
+      {
+        "label": "🙈 아무것도 하지 않음 (수익 -30%)",
+        "effect": {
+          "multiplier": 0.7
+        },
+        "log": "위생 지적을 받아 손님이 줄었습니다."
+      }
+    ]
+  },
+  {
+    "condition": {
+      "month": 9,
+      "businessCodes": [
+        "CS100001"
+      ]
+    },
+    "type": "decision",
+    "probability": 0.2,
+    "description": "🏢 인근에 대형 프랜차이즈 한식집이 입점했습니다!",
+    "choices": [
+      {
+        "label": "🧂 재료 차별화 강조 마케팅 (비용 40만원)",
+        "effect": {
+          "additionalCost": 400000
+        },
+        "log": "차별화로 일부 단골을 유지했습니다."
+      },
+      {
+        "label": "🤑 가격 할인 경쟁 (수익 -10%)",
+        "effect": {
+          "multiplier": 0.9
+        },
+        "log": "가격을 낮추며 경쟁했습니다."
+      },
+      {
+        "label": "🙅 아무 대응 안 함 (수익 -20%)",
+        "effect": {
+          "multiplier": 0.8
+        },
+        "log": "고객 상당수를 뺏겼습니다."
+      }
+    ]
+  },
+  {
+    "condition": {
+      "month": 6,
+      "businessCodes": [
+        "CS100001"
+      ]
+    },
+    "type": "decision",
+    "probability": 0.15,
+    "description": "☔ 장마철 누수로 주방 일부가 침수되었습니다!",
+    "choices": [
+      {
+        "label": "🚧 긴급 수리 (비용 60만원)",
+        "effect": {
+          "additionalCost": 600000
+        },
+        "log": "빠르게 복구하여 큰 피해는 없었습니다."
+      },
+      {
+        "label": "🧼 임시 배수 처리 (비용 20만원, 수익 -10%)",
+        "effect": {
+          "additionalCost": 200000,
+          "multiplier": 0.9
+        },
+        "log": "영업은 유지했지만 고객 불만이 있었습니다."
+      },
+      {
+        "label": "😬 무시하고 영업 지속 (수익 -25%)",
+        "effect": {
+          "multiplier": 0.75
+        },
+        "log": "불편한 환경으로 고객이 급감했습니다."
+      }
+    ]
+  },
+  {
+    "condition": {
+      "month": 11,
+      "businessCodes": [
+        "CS100001"
+      ]
+    },
+    "type": "decision",
+    "probability": 0.1,
+    "description": "🔧 건물 외벽 공사로 소음과 먼지가 심각합니다!",
+    "choices": [
+      {
+        "label": "🪟 방음/청소 강화 (비용 50만원)",
+        "effect": {
+          "additionalCost": 500000
+        },
+        "log": "쾌적한 환경을 유지했습니다."
+      },
+      {
+        "label": "🚪 반쪽만 영업 (수익 -10%)",
+        "effect": {
+          "multiplier": 0.9
+        },
+        "log": "좌석 제한으로 매출이 줄었습니다."
+      },
+      {
+        "label": "😷 무대응 (수익 -30%)",
+        "effect": {
+          "multiplier": 0.7
+        },
+        "log": "환경이 나빠 손님이 급감했습니다."
+      }
+    ]
+  },
+  {
+    "condition": {
+      "monthRange": [
+        1,
+        12
+      ],
+      "businessCodes": [
+        "CS100001"
+      ]
+    },
+    "type": "decision",
+    "probability": 0.1,
+    "description": "🤒 직원 중 한 명이 갑작스럽게 결근했습니다!",
+    "choices": [
+      {
+        "label": "🧑‍🍳 아르바이트 긴급 투입 (비용 30만원)",
+        "effect": {
+          "additionalCost": 300000
+        },
+        "log": "원활하게 운영을 이어갔습니다."
+      },
+      {
+        "label": "🙋 사장 직접 조리 (비용 없음)",
+        "effect": {},
+        "log": "힘들었지만 직접 조리로 버텼습니다."
+      },
+      {
+        "label": "🙅 인력 부족 상태 유지 (수익 -20%)",
+        "effect": {
+          "multiplier": 0.8
+        },
+        "log": "서비스 지연으로 불만족이 많았습니다."
       }
     ]
   }
 ]
+
