@@ -23,8 +23,12 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
 
     const runSimulation = () => {
         const decisionEvent = events.find(event =>
-            event.type === "decision" && matchCondition(event.condition, month, business)
+            event.type === "decision" &&
+            matchCondition(event.condition, month, business) &&
+            (event.probability === undefined || Math.random() < event.probability) // ✅ 확률 판정
         );
+
+
         if (decisionEvent) {
             setPendingEvent(decisionEvent);
             setIsWaitingChoice(true);
