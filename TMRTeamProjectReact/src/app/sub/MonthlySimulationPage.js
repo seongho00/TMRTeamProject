@@ -10,6 +10,7 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
     const [events, setEvents] = useState([]);
     const [pendingEvent, setPendingEvent] = useState(null); // 선택형 이벤트 발생 시 저장
     const [isWaitingChoice, setIsWaitingChoice] = useState(false);
+    const [remainingEvents, setRemainingEvents] = useState([]); // ✅ 이벤트 큐
 
     // 이벤트 JSON 가져오기
     useEffect(() => {
@@ -22,46 +23,49 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
     }, []);
 
     const runSimulation = () => {
-        const decisionEvent = events.find(event =>
+        const applicableEvents = events.filter(event =>
             event.type === "decision" &&
             matchCondition(event.condition, month, business) &&
-            (event.probability === undefined || Math.random() < event.probability) // ✅ 확률 판정
+            (event.probability === undefined || Math.random() < event.probability)
         );
 
-
-        if (decisionEvent) {
-            setPendingEvent(decisionEvent);
+        if (applicableEvents.length > 0) {
+            setPendingEvent(applicableEvents[0]);
+            setRemainingEvents(applicableEvents.slice(1)); // 다음 이벤트는 차례로 대기
             setIsWaitingChoice(true);
-            return; // → 사용자 선택 기다림
+            return;
         }
 
-        // 👉 매출 / 비용 계산 예시 (임의 값 사용)
+        runMainSimulation();
+
+    };
+
+    const runMainSimulation = () => {
         const revenue = getEstimatedRevenue();
         const cost = getEstimatedCost();
         const profit = revenue - cost;
-
-
         const newBalance = balance + profit;
-        setBalance(newBalance);
 
-        setLogs((prev) => [
+        setBalance(newBalance);
+        setLogs(prev => [
             `🗓 ${month}월차 | 매출: ${revenue.toLocaleString()}원, 비용: ${cost.toLocaleString()}원, 순이익: ${profit.toLocaleString()}원, 잔고: ${newBalance.toLocaleString()}원`,
             ...prev
         ]);
-
-        setHistory((prev) => [...prev, {month, revenue, cost, profit, balance: newBalance}]);
+        setHistory(prev => [...prev, { month, revenue, cost, profit, balance: newBalance }]);
 
         if (month >= 12 || newBalance <= 0) {
-            onFinish(history.concat({month, revenue, cost, profit, balance: newBalance}));
+            onFinish(history.concat({ month, revenue, cost, profit, balance: newBalance }));
         } else {
             setMonth(month + 1);
         }
     };
+
+
+
     const applyDecision = (choice) => {
         let revenue = getEstimatedRevenue();
         let cost = getEstimatedCost();
 
-        // 효과 적용
         if (choice.effect.multiplier) {
             revenue = Math.floor(revenue * choice.effect.multiplier);
         }
@@ -80,13 +84,15 @@ const MonthlySimulationPage = ({character, business, location, initialCost, onFi
         ]);
         setHistory(prev => [...prev, { month, revenue, cost, profit, balance: newBalance }]);
 
-        setPendingEvent(null);
-        setIsWaitingChoice(false);
-
-        if (month >= 12 || newBalance <= 0) {
-            onFinish(history.concat({ month, revenue, cost, profit, balance: newBalance }));
+        // 다음 이벤트 처리 or 본체 실행
+        if (remainingEvents.length > 0) {
+            const [next, ...rest] = remainingEvents;
+            setPendingEvent(next);
+            setRemainingEvents(rest);
         } else {
-            setMonth(month + 1);
+            setPendingEvent(null);
+            setIsWaitingChoice(false);
+            runMainSimulation(); // ✅ 다음 단계로
         }
     };
 
