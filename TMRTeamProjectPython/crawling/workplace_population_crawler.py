@@ -46,7 +46,7 @@ def clean_number(text):
 conn = pymysql.connect(
     host='localhost',
     user='root',
-    password='',  # 비밀번호 입력
+    password='1234',  # 비밀번호 입력
     database='TMRTeamProject',
     charset='utf8mb4'
 )
