@@ -1,0 +1,24 @@
+[
+  {
+    "condition": { "monthRange": [6, 8], "businessCodes": ["CS100001"] },
+    "type": "decision",
+    "description": "🔥 폭염이 발생했습니다. 매출 감소 위기를 극복하세요!",
+    "choices": [
+      {
+        "label": "💸 할인 행사 진행 (-10% 수익)",
+        "effect": { "multiplier": 0.9 },
+        "log": "할인 행사를 진행해 일부 고객을 붙잡았습니다."
+      },
+      {
+        "label": "🚚 배달 서비스 시작 (+비용 50만원)",
+        "effect": { "additionalCost": 500000 },
+        "log": "배달 서비스를 시작했지만 초기비용이 발생했습니다."
+      },
+      {
+        "label": "🧍 아무것도 하지 않음 (-20% 매출)",
+        "effect": { "multiplier": 0.8 },
+        "log": "대응하지 않아 매출이 큰 타격을 입었습니다."
+      }
+    ]
+  }
+]
