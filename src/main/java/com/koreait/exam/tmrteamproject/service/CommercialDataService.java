@@ -29,4 +29,11 @@ public class CommercialDataService {
     public CommercialData getFirstRow() {
         return csvData.get(0); // 예제용: 첫 행 반환
     }
+
+    public CommercialData findByEmdCode(String emdCode) {
+        return csvData.stream()
+                .filter(row -> row.getEmdCode().equals(emdCode))
+                .findFirst()
+                .orElse(null);
+    }
 }
