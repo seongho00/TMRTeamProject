@@ -7,6 +7,7 @@ import CostSettingPage from "./sub/CostSettingPage";
 import LocationSelectPage from "./sub/LocationSelectPage";
 import WeeklySimulationPage from "./sub/WeeklySimulationPage";
 import PopulationPieChart from './sub/PopulationPieChart';
+import './globals.css';  // 파일 경로에 맞게 수정
 
 const Page = () => {
     const [character, setCharacter] = useState(null);
@@ -35,9 +36,9 @@ const Page = () => {
     // if (!business) {
     //     return <BusinessSelectPage onSelect={setBusiness} onBack={goBack}/>;
     // }
-    //
+
     if (!location) return <LocationSelectPage onSelect={setLocation} onBack={goBack}/>;
-    //
+
     // if (!costs)
     //     return (
     //         <CostSettingPage
@@ -50,13 +51,12 @@ const Page = () => {
 
 
     return (
-        // <WeeklySimulationPage
-        //     character={character}
-        //     business={business}
-        //     location={location}
-        //     initialCost={costs.initialCost}
-        // />
-        <PopulationPieChart />
+        <WeeklySimulationPage
+            character={character}
+            business={business}
+            location={location}
+            initialCost={costs.initialCost}
+        />
     );
 };
 

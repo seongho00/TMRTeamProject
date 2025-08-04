@@ -101,3 +101,7 @@ video {
   border-style: solid;
   border-color: theme('borderColor.DEFAULT', currentColor);
 }
+
+.custom-overlay * {
+  pointer-events: none !important;
+}

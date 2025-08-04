@@ -2,6 +2,8 @@
 
 import Script from "next/script";
 import React, {useEffect, useRef, useState} from "react";
+import LocationDetailPanel from "./LocationDetailPanel";
+
 
 const LocationSelectPage = ({onSelect, onBack}) => {
     const mapRef = useRef(null);
@@ -11,6 +13,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
     const emdPolygons = useRef([]);
     const overlayList = useRef([]);
     const currentOverlay = useRef(null); // 오버레이 1개만 유지
+    const [detailInfo, setDetailInfo] = useState(null);
 
     useEffect(() => {
         if (!scriptLoaded || !window.kakao) return;
@@ -51,7 +54,6 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                         ? feature.properties.SIGUNGU_NM
                         : feature.properties.ADSTRD_NM;
 
-
                     const coords =
                         feature.geometry.type === "Polygon"
                             ? [feature.geometry.coordinates]
@@ -87,13 +89,15 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                         const label = document.createElement("div");
                         label.innerText = name;
                         label.style.cssText = `
-                        background: white;
-                        border: 1px solid #444;
-                        padding: 2px 6px;
-                        font-size: 12px;
-                        border-radius: 4px;
-                        pointer-events: none;
+                            background: white;
+                            border: 1px solid #444;
+                            padding: 2px 6px;
+                            font-size: 12px;
+                            border-radius: 4px;
+                            pointer-events: none;
                         `;
+
+                        label.className = "custom-overlay";
 
                         const overlay = new kakao.maps.CustomOverlay({
                             content: label,
@@ -125,7 +129,17 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                         // ✅ 정상 응답 처리
                                         const totalFloating = data.total;
                                         const totalWorkers = data.workingTotal;
-                                        const dominantAge = "30대";
+                                        const ageMap = {
+                                            "10대": data.age10,
+                                            "20대": data.age20,
+                                            "30대": data.age30,
+                                            "40대": data.age40,
+                                            "50대": data.age50,
+                                            "60대 이상": data.age60plus,
+                                        };
+
+                                        const dominantAge = Object.entries(ageMap)
+                                            .sort((a, b) => b[1] - a[1])[0][0];  // 수치가 가장 큰 연령대 키 추출
 
                                         // 오버레이 content DOM 생성
                                         const content = document.createElement("div");
@@ -142,7 +156,17 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                               <strong>${name}</strong><br/>
                                               👥 유동인구: ${totalFloating.toLocaleString()}<br/>
                                               🧑‍💼 직장인구: ${totalWorkers.toLocaleString()}<br/>
-                                              🎯 연령대: ${dominantAge}
+                                              🎯 연령대: ${dominantAge}<br/>
+                                              <button id="detail-button" style="
+                                                  margin-top: 6px;
+                                                  background: #3182ce;
+                                                  color: white;
+                                                  border: none;
+                                                  padding: 4px 8px;
+                                                  font-size: 12px;
+                                                  border-radius: 4px;
+                                                  cursor: pointer;
+                                                ">상세보기</button>
                                             </div>
                                         `;
 
@@ -155,6 +179,14 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                         });
                                         overlay.setMap(map);
                                         currentOverlay.current = overlay;
+
+                                        // 상세보기 버튼 활성화
+                                        document.getElementById("detail-button").addEventListener("click", () => {
+                                            console.log("detail")
+                                            setDetailInfo({
+                                                address: emdCode,
+                                            });
+                                        });
 
                                     })
                                     .catch(err => {
@@ -225,6 +257,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
 
 
     return (
+
         <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
             <Script
                 src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=819000337dba5ebac1dbf7847f383c66&autoload=false&libraries=services`}
@@ -256,6 +289,12 @@ const LocationSelectPage = ({onSelect, onBack}) => {
             >
                 ← 이전 단계
             </button>
+            {detailInfo && (
+                <LocationDetailPanel
+                    info={detailInfo}
+                    onClose={() => setDetailInfo(null)}
+                />
+            )}
         </div>
     );
 };
