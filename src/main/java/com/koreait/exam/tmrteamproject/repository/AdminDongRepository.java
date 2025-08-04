@@ -19,9 +19,9 @@ public interface AdminDongRepository extends JpaRepository<AdminDong, String> {
     List<AdminDong> getAdminDongsBySggNm(String sggNm);
 
     @Query(value = """
-                SELECT *
+                SELECT * 
                 FROM admin_dong
-                GROUP BY sgg_nm
+                GROUP BY sgg_nm;
             """, nativeQuery = true)
     List<AdminDong> getAdminDongGroupBySggCd();
 }
