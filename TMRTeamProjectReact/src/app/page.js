@@ -36,7 +36,7 @@ const Page = () => {
     //     return <BusinessSelectPage onSelect={setBusiness} onBack={goBack}/>;
     // }
     //
-    // if (!location) return <LocationSelectPage onSelect={setLocation} onBack={goBack}/>;
+    if (!location) return <LocationSelectPage onSelect={setLocation} onBack={goBack}/>;
     //
     // if (!costs)
     //     return (
@@ -56,7 +56,6 @@ const Page = () => {
         //     location={location}
         //     initialCost={costs.initialCost}
         // />
-
         <PopulationPieChart />
     );
 };

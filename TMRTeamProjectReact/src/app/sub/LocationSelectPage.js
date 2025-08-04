@@ -10,6 +10,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
     const currentPolygon = useRef(null);
     const emdPolygons = useRef([]);
     const overlayList = useRef([]);
+    const currentOverlay = useRef(null); // 오버레이 1개만 유지
 
     useEffect(() => {
         if (!scriptLoaded || !window.kakao) return;
@@ -91,7 +92,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                         font-size: 12px;
                         border-radius: 4px;
                         pointer-events: none;
-                    `;
+                        `;
 
                         const overlay = new kakao.maps.CustomOverlay({
                             content: label,
@@ -106,10 +107,44 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                         if (!isSggLevel) {
                             kakao.maps.event.addListener(polygon, "click", () => {
                                 const isAlreadySelected = currentPolygon.current === polygon;
-                                console.log(isAlreadySelected);
+                                if (currentOverlay.current) {
+                                    currentOverlay.current.setMap(null);
+                                }
+
+                                const totalFloating = 24000;
+                                const totalWorkers = 12000;
+                                const dominantAge = "30대";
+
+                                // 오버레이 content DOM 생성
+                                const content = document.createElement("div");
+                                content.innerHTML = `
+                                    <div style="
+                                      background: white;
+                                      border: 1px solid #333;
+                                      border-radius: 8px;
+                                      padding: 8px 12px;
+                                      font-size: 13px;
+                                      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                                      max-width: 240px;
+                                    ">
+                                      <strong>${name}</strong><br/>
+                                      👥 유동인구: ${totalFloating.toLocaleString()}<br/>
+                                      🧑‍💼 직장인구: ${totalWorkers.toLocaleString()}<br/>
+                                      🎯 연령대: ${dominantAge}
+                                    </div>
+                                `;
+
+                                // 오버레이 생성 및 표시
+                                const overlay = new kakao.maps.CustomOverlay({
+                                    content,
+                                    position: center,
+                                    yAnchor: 1.2,
+                                    zIndex: 10,
+                                });
+                                overlay.setMap(map);
+                                currentOverlay.current = overlay;
 
                                 if (isAlreadySelected) {
-                                    console.log("다시 클릭함");
                                     // 선택 해제
                                     polygon.setOptions({
                                         strokeStyle: "dash",
