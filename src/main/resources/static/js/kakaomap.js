@@ -59,3 +59,7 @@ function drawPolygon(coordArray, fillColor, properties) {
         infowindow.open(map);
     });
 }
+
+function findCenteroid (points) {
+
+}
