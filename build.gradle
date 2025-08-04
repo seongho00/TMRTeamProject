@@ -24,6 +24,8 @@ dependencies {
 
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
 
+    implementation 'com.opencsv:opencsv:5.7.1' // CSV 파싱용
+
     // firebase 의존성
     implementation 'com.google.firebase:firebase-admin:9.2.0'
 

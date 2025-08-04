@@ -6,6 +6,7 @@ import BusinessSelectPage from "./sub/BusinessSelectPage";
 import CostSettingPage from "./sub/CostSettingPage";
 import LocationSelectPage from "./sub/LocationSelectPage";
 import WeeklySimulationPage from "./sub/WeeklySimulationPage";
+import PopulationPieChart from './sub/PopulationPieChart';
 
 const Page = () => {
     const [character, setCharacter] = useState(null);
@@ -27,34 +28,36 @@ const Page = () => {
     };
 
 
-    if (!character) {
-        return <CharacterSelectPage onSelect={setCharacter} onBack={goBack}/>;
-    }
-
-    if (!business) {
-        return <BusinessSelectPage onSelect={setBusiness} onBack={goBack}/>;
-    }
-
-    if (!location) return <LocationSelectPage onSelect={setLocation} onBack={goBack}/>;
-
-    if (!costs)
-        return (
-            <CostSettingPage
-                character={character}
-                business={business}
-                onSubmit={setCosts}
-                onBack={goBack}
-            />
-        );
+    // if (!character) {
+    //     return <CharacterSelectPage onSelect={setCharacter} onBack={goBack}/>;
+    // }
+    //
+    // if (!business) {
+    //     return <BusinessSelectPage onSelect={setBusiness} onBack={goBack}/>;
+    // }
+    //
+    // if (!location) return <LocationSelectPage onSelect={setLocation} onBack={goBack}/>;
+    //
+    // if (!costs)
+    //     return (
+    //         <CostSettingPage
+    //             character={character}
+    //             business={business}
+    //             onSubmit={setCosts}
+    //             onBack={goBack}
+    //         />
+    //     );
 
 
     return (
-        <WeeklySimulationPage
-            character={character}
-            business={business}
-            location={location}
-            initialCost={costs.initialCost}
-        />
+        // <WeeklySimulationPage
+        //     character={character}
+        //     business={business}
+        //     location={location}
+        //     initialCost={costs.initialCost}
+        // />
+
+        <PopulationPieChart />
     );
 };
 
