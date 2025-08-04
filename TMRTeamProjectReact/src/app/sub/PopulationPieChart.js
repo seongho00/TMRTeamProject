@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Pie } from 'react-chartjs-2';
+import {useEffect, useState} from 'react';
+import {Pie} from 'react-chartjs-2';
 import {
     Chart as ChartJS,
     ArcElement,
@@ -31,7 +31,7 @@ const PopulationPieChart = () => {
         data.age60plus
     ];
 
-    const chartData = {
+    const ageChartData = {
         labels: ageLabels,
         datasets: [
             {
@@ -44,10 +44,37 @@ const PopulationPieChart = () => {
         ]
     };
 
+    // ✅ 직장인구 차트
+    const workingLabels = ['10대', '20대', '30대', '40대', '50대', '60대 이상'];
+    const workingValues = [
+        data.workingAge10,
+        data.workingAge20,
+        data.workingAge30,
+        data.workingAge40,
+        data.workingAge50,
+        data.workingAge60Plus
+    ];
+
+    const workingChartData = {
+        labels: workingLabels,
+        datasets: [
+            {
+                data: workingValues,
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56',
+                    '#4BC0C0', '#9966FF', '#FF9F40'
+                ]
+            }
+        ]
+    };
+
+
     const options = {
         responsive: true,
+        maintainAspectRatio: true,   // ✅ 비율 유지
+        aspectRatio: 5.0,            // ✅ 가로:세로 비율 설정 (1.5 = 넓고 얇게)
         plugins: {
-            legend: { position: 'bottom' },
+            legend: {position: 'bottom'},
             tooltip: {
                 callbacks: {
                     label: context => {
@@ -62,9 +89,16 @@ const PopulationPieChart = () => {
     };
 
     return (
-        <div className="w-[400px] mx-auto">
-            <h3 className="text-center font-bold text-lg mb-4">연령대별 유동인구 비율</h3>
-            <Pie data={chartData} options={options} />
+        <div className="w-full flex flex-col gap-10 items-center">
+            <div className="w-[400px] mx-auto">
+                <h3 className="text-center font-bold text-lg mb-4">연령대별 유동인구 비율</h3>
+                <Pie data={ageChartData} options={options}/>
+            </div>
+            <div className="w-[400px] mx-auto">
+                <h3 className="text-center font-bold text-lg mb-4">연령대별 직장인구 비율</h3>
+                <Pie data={workingChartData} options={options}/>
+            </div>
+
         </div>
     );
 };
