@@ -1,10 +1,11 @@
-import pandas as pd
-import os
 import glob
+import os
+
+import pandas as pd
 
 # 1. 데이터 폴더 설정
-DATA_DIR = 'C:/Users/admin/Desktop/서울 데이터 가공'
-SAVE_DIR = 'C:/Users/admin/Desktop/업종별_병합결과'
+DATA_DIR = 'C:/Users/user/Downloads/서울 데이터 가공'
+SAVE_DIR = 'C:/Users/user/Downloads/업종별_병합결과'
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 # 2. CSV 불러오기
@@ -96,5 +97,3 @@ for code in base_df['서비스_업종_코드'].dropna().unique():
     save_path = os.path.join(SAVE_DIR, filename)
     filtered_df.to_csv(save_path, index=False, encoding='utf-8-sig')
     print(f"📁 저장 완료: {filename} → {filtered_df.shape[0]}행")
-
-

@@ -1,19 +1,20 @@
-import os
 import glob
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
+import os
+
 import matplotlib
+import pandas as pd
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
+os.environ["OMP_NUM_THREADS"] = "2"
 
 # ✅ 한글 폰트 설정 (Windows 기준)
 matplotlib.rcParams['font.family'] = 'Malgun Gothic'
 matplotlib.rcParams['axes.unicode_minus'] = False
 
 # ✅ 폴더 설정
-DATA_DIR = 'C:/Users/admin/Desktop/업종별_병합결과'
-SAVE_DIR = 'C:/Users/admin/Desktop/업종별_병합결과_클로스터링'
+DATA_DIR = 'C:/Users/user/Downloads/업종별_병합결과'
+SAVE_DIR = 'C:/Users/user/Downloads/업종별_병합결과_클로스터링'
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 # ✅ 사용할 feature
@@ -61,4 +62,3 @@ for file_path in glob.glob(os.path.join(DATA_DIR, '*.csv')):
     result_path = os.path.join(SAVE_DIR, f'{name_without_ext}_클러스터링.csv')
     df.to_csv(result_path, index=False, encoding='utf-8-sig')
     print(f"📁 저장 완료: {result_path}")
-
