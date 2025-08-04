@@ -30,4 +30,10 @@ public class CommercialDataController {
         return commercialDataService.getFirstRow();
     }
 
+    @GetMapping("/findByEmdCode")
+    @ResponseBody
+    public CommercialData findByEmdCode(String emdCode) {
+        return commercialDataService.findByEmdCode(emdCode);
+    }
+
 }

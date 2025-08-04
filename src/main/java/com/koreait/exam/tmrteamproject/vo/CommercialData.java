@@ -13,6 +13,10 @@ import javax.persistence.Entity;
 @ToString(callSuper = true)
 public class CommercialData {
 
+
+    @CsvBindByName(column = "행정동_코드")
+    private String emdCode;
+
     // 유동 인구수
     @CsvBindByName(column = "총_유동인구_수")
     private int total;

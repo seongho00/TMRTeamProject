@@ -51,6 +51,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                         ? feature.properties.SIGUNGU_NM
                         : feature.properties.ADSTRD_NM;
 
+
                     const coords =
                         feature.geometry.type === "Polygon"
                             ? [feature.geometry.coordinates]
@@ -111,38 +112,55 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                     currentOverlay.current.setMap(null);
                                 }
 
-                                const totalFloating = 24000;
-                                const totalWorkers = 12000;
-                                const dominantAge = "30대";
+                                const emdCode = feature.properties.ADSTRD_CD;
 
-                                // 오버레이 content DOM 생성
-                                const content = document.createElement("div");
-                                content.innerHTML = `
-                                    <div style="
-                                      background: white;
-                                      border: 1px solid #333;
-                                      border-radius: 8px;
-                                      padding: 8px 12px;
-                                      font-size: 13px;
-                                      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                                      max-width: 240px;
-                                    ">
-                                      <strong>${name}</strong><br/>
-                                      👥 유동인구: ${totalFloating.toLocaleString()}<br/>
-                                      🧑‍💼 직장인구: ${totalWorkers.toLocaleString()}<br/>
-                                      🎯 연령대: ${dominantAge}
-                                    </div>
-                                `;
+                                fetch(`http://localhost:8080/usr/commercialData/findByEmdCode?emdCode=${emdCode}`)
+                                    .then(res => {
+                                        if (!res.ok) {
+                                            throw new Error("데이터 없음");
+                                        }
+                                        return res.json();
+                                    })
+                                    .then(data => {
+                                        // ✅ 정상 응답 처리
+                                        const totalFloating = data.total;
+                                        const totalWorkers = data.workingTotal;
+                                        const dominantAge = "30대";
 
-                                // 오버레이 생성 및 표시
-                                const overlay = new kakao.maps.CustomOverlay({
-                                    content,
-                                    position: center,
-                                    yAnchor: 1.2,
-                                    zIndex: 10,
-                                });
-                                overlay.setMap(map);
-                                currentOverlay.current = overlay;
+                                        // 오버레이 content DOM 생성
+                                        const content = document.createElement("div");
+                                        content.innerHTML = `
+                                            <div style="
+                                              background: white;
+                                              border: 1px solid #333;
+                                              border-radius: 8px;
+                                              padding: 8px 12px;
+                                              font-size: 13px;
+                                              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                                              max-width: 240px;
+                                            ">
+                                              <strong>${name}</strong><br/>
+                                              👥 유동인구: ${totalFloating.toLocaleString()}<br/>
+                                              🧑‍💼 직장인구: ${totalWorkers.toLocaleString()}<br/>
+                                              🎯 연령대: ${dominantAge}
+                                            </div>
+                                        `;
+
+                                        // 오버레이 생성 및 표시
+                                        const overlay = new kakao.maps.CustomOverlay({
+                                            content,
+                                            position: center,
+                                            yAnchor: 1.2,
+                                            zIndex: 10,
+                                        });
+                                        overlay.setMap(map);
+                                        currentOverlay.current = overlay;
+
+                                    })
+                                    .catch(err => {
+                                        console.error("에러 발생:", err);
+                                    });
+
 
                                 if (isAlreadySelected) {
                                     // 선택 해제
