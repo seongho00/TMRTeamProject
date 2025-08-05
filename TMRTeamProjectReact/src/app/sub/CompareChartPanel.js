@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {Bar, Line} from "react-chartjs-2";
+import {Bar, Line, Radar} from "react-chartjs-2";
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -18,6 +18,31 @@ ChartJS.register(
     Tooltip,
     Legend
 );
+
+import {
+    RadialLinearScale,
+    PointElement,
+    LineElement,
+    Filler,
+} from "chart.js";
+
+ChartJS.register(
+    RadialLinearScale,
+    PointElement,
+    LineElement,
+    Filler
+);
+
+const colorList = [
+    "#4e79a7", // 파랑
+    "#f28e2b", // 주황
+    "#e15759", // 빨강
+    "#76b7b2", // 청록
+    "#59a14f", // 초록
+    "#edc949", // 노랑
+    "#af7aa1", // 보라
+    "#ff9da7", // 핑크
+];
 
 const CompareChartPanel = ({infos}) => {
     const [fetchedData, setFetchedData] = useState([]);
@@ -42,6 +67,22 @@ const CompareChartPanel = ({infos}) => {
                                 "50대": data.age50,
                                 "60대 이상": data.age60plus,
                             }).sort((a, b) => b[1] - a[1])[0][0],
+
+                            // ✅ 연령대별 유동인구
+                            age10: data.age10,
+                            age20: data.age20,
+                            age30: data.age30,
+                            age40: data.age40,
+                            age50: data.age50,
+                            age60plus: data.age60plus,
+
+                            totalAge:
+                                data.age10 +
+                                data.age20 +
+                                data.age30 +
+                                data.age40 +
+                                data.age50 +
+                                data.age60plus,
 
                             // ✅ 요일별 유동인구
                             mondayFloatingPopulation: data.mondayFloatingPopulation,
@@ -78,23 +119,178 @@ const CompareChartPanel = ({infos}) => {
 
     if (!fetchedData || fetchedData.length === 0) return null;
 
-    const labels = fetchedData.map((item) => item.name);
-    const totalFloating = fetchedData.map((item) => item.totalFloating);
-    const totalWorkers = fetchedData.map((item) => item.totalWorkers);
-    const dominantAges = fetchedData.map((item) => item.dominantAge);
 
+    /* 연령대별 유동인구 */
+    const ageLabels = ["10대", "20대", "30대", "40대", "50대", "60대 이상"];
+
+    const ageChartData = {
+        labels: ageLabels,
+        datasets: fetchedData.map((data, idx) => {
+            const total =
+                data.age10 +
+                data.age20 +
+                data.age30 +
+                data.age40 +
+                data.age50 +
+                data.age60plus;
+
+            return {
+                label: data.name,
+                data: [
+                    ((data.age10 / total) * 100).toFixed(2),
+                    ((data.age20 / total) * 100).toFixed(2),
+                    ((data.age30 / total) * 100).toFixed(2),
+                    ((data.age40 / total) * 100).toFixed(2),
+                    ((data.age50 / total) * 100).toFixed(2),
+                    ((data.age60plus / total) * 100).toFixed(2),
+                ],
+                backgroundColor: colorList[idx % colorList.length],
+            };
+        }),
+    };
+
+    const ageChartOptions = {
+        responsive: true,
+        plugins: {
+            title: {display: true, text: "연령대별 유동인구 비교"},
+            legend: {position: "top"},
+            tooltip: {
+                callbacks: {
+                    label: (ctx) => `${ctx.dataset.label}: ${ctx.formattedValue}%`,
+                },
+            },
+        },
+        scales: {
+            y: {beginAtZero: true},
+            x: {stacked: false},
+        },
+    };
+
+    /* 연령대별 유동인구 - Radar 차트 (비율 기반) */
+    const ageRadarChartData = {
+        labels: ageLabels,
+        datasets: fetchedData.map((data, idx) => {
+            const total =
+                data.age10 +
+                data.age20 +
+                data.age30 +
+                data.age40 +
+                data.age50 +
+                data.age60plus;
+
+            const ratioData = [
+                ((data.age10 / total) * 100).toFixed(2),
+                ((data.age20 / total) * 100).toFixed(2),
+                ((data.age30 / total) * 100).toFixed(2),
+                ((data.age40 / total) * 100).toFixed(2),
+                ((data.age50 / total) * 100).toFixed(2),
+                ((data.age60plus / total) * 100).toFixed(2),
+            ];
+
+            return {
+                label: data.name,
+                data: ratioData,
+                fill: true,
+                backgroundColor: colorList[idx % colorList.length] + "33",
+                borderColor: colorList[idx % colorList.length],
+                pointBackgroundColor: colorList[idx % colorList.length],
+            };
+        }),
+    };
+
+    const ageRadarChartOptions = {
+        responsive: true,
+        plugins: {
+            title: {display: true, text: "연령대별 유동인구 비율 비교 (Radar)"},
+            legend: {position: "top"},
+            tooltip: {
+                callbacks: {
+                    label: (ctx) => `${ctx.dataset.label}: ${ctx.formattedValue}%`,
+                },
+            },
+        },
+        scales: {
+            r: {
+                suggestedMin: 0,
+                suggestedMax: 40,
+                ticks: {
+                    callback: (val) => `${val}%`,
+                },
+            },
+        },
+    };
+
+    /* 연령대별 유동인구 - Stacked Bar Chart 코드 */
+    const ageStackedBarLabels = infos.map((info) => info.name); // 지역 이름 목록
+
+    const ageStackedBarData = {
+        labels: ageStackedBarLabels,
+        datasets: [
+            {
+                label: "10대",
+                data: fetchedData.map((d) => ((d.age10 / d.totalAge) * 100).toFixed(2)),
+                backgroundColor: "#FF6384",
+            },
+            {
+                label: "20대",
+                data: fetchedData.map((d) => ((d.age20 / d.totalAge) * 100).toFixed(2)),
+                backgroundColor: "#36A2EB",
+            },
+            {
+                label: "30대",
+                data: fetchedData.map((d) => ((d.age30 / d.totalAge) * 100).toFixed(2)),
+                backgroundColor: "#FFCE56",
+            },
+            {
+                label: "40대",
+                data: fetchedData.map((d) => ((d.age40 / d.totalAge) * 100).toFixed(2)),
+                backgroundColor: "#4BC0C0",
+            },
+            {
+                label: "50대",
+                data: fetchedData.map((d) => ((d.age50 / d.totalAge) * 100).toFixed(2)),
+                backgroundColor: "#9966FF",
+            },
+            {
+                label: "60대 이상",
+                data: fetchedData.map((d) => ((d.age60plus / d.totalAge) * 100).toFixed(2)),
+                backgroundColor: "#FF9F40",
+            },
+        ],
+    };
+
+    const ageStackedBarOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: "연령대별 유동인구 비율 (Stacked Bar)",
+            },
+            tooltip: {
+                callbacks: {
+                    label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}%`,
+                },
+            },
+        },
+        scales: {
+            x: {
+                stacked: true,
+            },
+            y: {
+                stacked: true,
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: (value) => `${value}%`,
+                },
+            },
+        },
+    };
+
+
+    /* 요일별 유동인구 */
     const dayLabels = ["월", "화", "수", "목", "금", "토", "일"];
-
-    const colorList = [
-        "#4e79a7", // 파랑
-        "#f28e2b", // 주황
-        "#e15759", // 빨강
-        "#76b7b2", // 청록
-        "#59a14f", // 초록
-        "#edc949", // 노랑
-        "#af7aa1", // 보라
-        "#ff9da7", // 핑크
-    ];
 
     const dayChartData = {
         labels: dayLabels,
@@ -121,20 +317,13 @@ const CompareChartPanel = ({infos}) => {
                 display: true,
                 text: "지역 간 유동 인구 비교",
             },
-            tooltip: {
-                callbacks: {
-                    afterBody: (tooltipItems) => {
-                        const index = tooltipItems[0].dataIndex;
-                        return `🎯 주 연령대: ${dominantAges[index]}`;
-                    },
-                },
-            },
         },
         scales: {
             y: {beginAtZero: true},
         },
     };
 
+    /* 시간별 유동인구 */
     const timeLabels = ["00~06시", "06~11시", "11~14시", "14~17시", "17~21시", "21~24시"];
 
     const timeChartData = {
@@ -150,9 +339,8 @@ const CompareChartPanel = ({infos}) => {
                 data.floating21to24,
             ],
             borderColor: colorList[idx % colorList.length],
-            backgroundColor: colorList[idx % colorList.length] + "AA", // ✅ 66~80% 불투명 추천
             tension: 0.3,
-            fill: true,
+            fill: false,
         })),
     };
 
@@ -173,11 +361,25 @@ const CompareChartPanel = ({infos}) => {
     return (
         <div className="tw-w-full tw-max-w-4xl tw-mx-auto tw-mt-12">
             <h2 className="tw-text-xl tw-font-bold tw-mb-4 tw-text-center">📊 다중 지역 비교</h2>
-            <Bar data={dayChartData} options={dayChartOptions} />
+            <Bar data={dayChartData} options={dayChartOptions}/>
 
             <div className="tw-mt-12">
                 <h2 className="tw-text-xl tw-font-bold tw-mb-4 tw-text-center">⏰ 시간대별 유동인구</h2>
-                <Line data={timeChartData} options={timeChartOptions} />
+                <Line data={timeChartData} options={timeChartOptions}/>
+            </div>
+            <div className="tw-mt-12">
+                <h2 className="tw-text-xl tw-font-bold tw-mb-4 tw-text-center">⏰ 연령대별 유동인구</h2>
+                <Bar data={ageChartData} options={ageChartOptions}/>
+
+            </div>
+            <div className="tw-mt-12">
+                <h2 className="tw-text-xl tw-font-bold tw-mb-4 tw-text-center">📈 연령대별 유동인구 비율 (Radar)</h2>
+                <Radar data={ageRadarChartData} options={ageRadarChartOptions}/>
+            </div>
+            <div className="tw-mt-12 tw-h-[500px]">
+                <h2 className="tw-text-xl tw-font-bold tw-mb-4 tw-text-center ">📈 연령대별 유동인구 비율 (Radar)</h2>
+                <Bar data={ageStackedBarData} options={ageStackedBarOptions} />
+
             </div>
         </div>
     );
