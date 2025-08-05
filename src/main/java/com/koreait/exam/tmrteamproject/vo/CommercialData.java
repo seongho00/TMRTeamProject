@@ -67,6 +67,27 @@ public class CommercialData {
     @CsvBindByName(column = "시간대_21_24_유동인구_수")
     private double floating21to24;
 
+    @CsvBindByName(column = "총_상주인구_수")
+    private double totalResidentPopulation;
+
+    @CsvBindByName(column = "연령대_10_상주인구_수")
+    private double residentPopulationAge10;
+
+    @CsvBindByName(column = "연령대_20_상주인구_수")
+    private double residentPopulationAge20;
+
+    @CsvBindByName(column = "연령대_30_상주인구_수")
+    private double residentPopulationAge30;
+
+    @CsvBindByName(column = "연령대_40_상주인구_수")
+    private double residentPopulationAge40;
+
+    @CsvBindByName(column = "연령대_50_상주인구_수")
+    private double residentPopulationAge50;
+
+    @CsvBindByName(column = "연령대_60_이상_상주인구_수")
+    private double residentPopulationAge60Plus;
+
     // 🔹 요일별 유동인구 수
     @CsvBindByName(column = "월요일_유동인구_수")
     private double mondayFloatingPopulation;

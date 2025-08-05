@@ -154,7 +154,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                               max-width: 240px;
                                             ">
                                               <strong>${name}</strong><br/>
-                                              👥 유동인구: ${totalFloating.toLocaleString()}<br/>
+                                              👥 총 유동인구: ${totalFloating.toLocaleString()}<br/>
                                               🧑‍💼 직장인구: ${totalWorkers.toLocaleString()}<br/>
                                               🎯 연령대: ${dominantAge}<br/>
                                               <button id="detail-button" style="
