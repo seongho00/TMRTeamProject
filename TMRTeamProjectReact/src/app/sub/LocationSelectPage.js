@@ -240,7 +240,6 @@ const LocationSelectPage = ({onSelect, onBack}) => {
 
                                             // 상세보기 버튼 활성화
                                             document.getElementById("detail-button").addEventListener("click", () => {
-                                                console.log("detail")
                                                 setDetailInfo({
                                                     address: emdCode,
                                                 });
@@ -398,7 +397,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                         transition={{type: "tween", duration: 0.5}}
                         className="tw-fixed tw-top-0 tw-right-0 tw-h-full tw-w-[500px] tw-bg-white tw-shadow-lg tw-border-l tw-z-50 tw-overflow-auto"
                     >
-                        <CompareChartPanel data={compareList}/>
+                        <CompareChartPanel infos={compareList}/>
                     </motion.div>
                 )}
             </AnimatePresence>
