@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head::head">
+    <meta charset="UTF-8">
+    <title>위험도 분석 지도</title>
+</head>
+<body class="h-screen w-screen overflow-hidden flex">
+
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=69544617df3febfc879cd18eed451ba3"></script>
+<!-- 지도 영역 -->
+<div id="map" class="flex-1 h-full"></div>
+
+<!-- 정보 패널 -->
+<div id="info-panel" class="w-[300px] h-full p-4 border-l border-gray-300 bg-gray-100 overflow-y-auto">
+    <h2 class="text-lg font-bold mb-2">행정동 정보</h2>
+    <div id="info-content" class="text-sm text-gray-700">
+        지도를 클릭하면 이곳에 정보가 표시됩니다.
+    </div>
+</div>
+
+<script>
+    const mapContainer = document.getElementById('map');
+    const mapOption = {
+        center: new kakao.maps.LatLng(37.566826, 126.9786567),
+        level: 6
+    };
+    const map = new kakao.maps.Map(mapContainer, mapOption);
+
+    function getColor(riskLevel) {
+        if (riskLevel === '위험') return '#d73027';
+        if (riskLevel === '주의') return '#fc8d59';
+        if (riskLevel === '양호') return '#91cf60';
+        return '#cccccc';
+    }
+
+    const geojsonPath = "/merged_seoul_area.geojson";
+
+    fetch(geojsonPath)
+        .then(res => res.json())
+        .then(geojson => {
+            geojson.features.forEach(feature => {
+                const geom = feature.geometry;
+                const props = feature.properties;
+                const name = props.ADSTRD_NM;
+                const risk = props.위험도;
+
+                if (!geom || !geom.coordinates) return;
+
+                let paths = [];
+
+                if (geom.type === "Polygon") {
+                    paths = [geom.coordinates[0].map(coord => new kakao.maps.LatLng(coord[1], coord[0]))];
+                } else if (geom.type === "MultiPolygon") {
+                    paths = geom.coordinates.map(polygon =>
+                        polygon[0].map(coord => new kakao.maps.LatLng(coord[1], coord[0]))
+                    );
+                }
+
+                const polygon = new kakao.maps.Polygon({
+                    map: map,
+                    path: paths,
+                    strokeWeight: 1,
+                    strokeColor: '#000000',
+                    strokeOpacity: 0.8,
+                    fillColor: getColor(risk),
+                    fillOpacity: 0.6
+                });
+
+                const content = `
+                        <div class="space-y-1">
+                            <div><span class="font-semibold">행정동:</span> ${props.ADSTRD_NM}</div>
+                            <div><span class="font-semibold">위험도:</span> ${props.위험도 ?? "정보 없음"}</div>
+                            <div><span class="font-semibold">상관계수:</span> ${Number(props.상관계수 ?? 0).toLocaleString()}</div>
+                            <div><span class="font-semibold">상관 위험도 점수:</span> ${Number(props.상관_위험도점수 ?? 0).toLocaleString()}</div>
+                        </div>
+                    `;
+
+                kakao.maps.event.addListener(polygon, 'click', function () {
+                    document.getElementById("info-content").innerHTML = content;
+                });
+
+                kakao.maps.event.addListener(polygon, 'mouseover', function () {
+                    polygon.setOptions({ fillOpacity: 0.85 });
+                });
+                kakao.maps.event.addListener(polygon, 'mouseout', function () {
+                    polygon.setOptions({ fillOpacity: 0.6 });
+                });
+            });
+        })
+        .catch(err => console.error("GeoJSON 불러오기 실패:", err));
+</script>
+
+</body>
+</html>
