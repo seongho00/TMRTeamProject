@@ -321,7 +321,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
         <div className="tw-relative tw-h-screen tw-w-screen tw-overflow-hidden">
             {/* motion.div로 중앙 콘텐츠를 살짝 왼쪽 이동 */}
             <motion.div
-                animate={{x: detailInfo || (isCompareMode && compareList.length > 0) ? -250 : 0 }}
+                animate={{x: detailInfo || (isCompareMode && compareList.length > 0) ? -250 : 0}}
                 transition={{type: "tween", duration: 0.5}}
                 className="tw-absolute tw-top-0 tw-left-0 tw-w-full"
             >
@@ -379,7 +379,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                         animate={{x: 0}}
                         exit={{x: "100%"}}
                         transition={{type: "tween", duration: 0.5}}
-                        className="tw-fixed tw-top-0 tw-right-0 tw-h-full tw-w-[500px] tw-bg-white tw-shadow-lg tw-border-l tw-z-50 tw-overflow-auto"
+                        className="tw-fixed tw-top-0 tw-right-0 tw-h-full tw-w-[500px] tw-bg-white tw-shadow-lg tw-border-l tw-z-50 tw-overflow-x-hidden tw-overflow-y-auto"
                     >
                         <LocationDetailPanel
                             info={detailInfo}
@@ -395,9 +395,13 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                         animate={{x: 0}}
                         exit={{x: "100%"}}
                         transition={{type: "tween", duration: 0.5}}
-                        className="tw-fixed tw-top-0 tw-right-0 tw-h-full tw-w-[500px] tw-bg-white tw-shadow-lg tw-border-l tw-z-50 tw-overflow-auto"
+                        className="tw-fixed tw-top-0 tw-right-0 tw-h-full tw-w-[500px] tw-bg-white tw-shadow-lg tw-border-l tw-z-50 tw-overflow-x-hidden tw-overflow-y-auto"
                     >
-                        <CompareChartPanel infos={compareList}/>
+                        <CompareChartPanel
+                            infos={compareList}
+                            onClose={() => {
+                                setCompareList([]);           // 비교 리스트 초기화
+                            }}/>
                     </motion.div>
                 )}
             </AnimatePresence>
