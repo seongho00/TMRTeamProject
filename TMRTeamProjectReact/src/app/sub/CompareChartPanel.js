@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import { Bar } from "react-chartjs-2";
+import {Bar, Line} from "react-chartjs-2";
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -19,7 +19,7 @@ ChartJS.register(
     Legend
 );
 
-const CompareChartPanel = ({ infos }) => {
+const CompareChartPanel = ({infos}) => {
     const [fetchedData, setFetchedData] = useState([]);
 
     useEffect(() => {
@@ -43,6 +43,7 @@ const CompareChartPanel = ({ infos }) => {
                                 "60대 이상": data.age60plus,
                             }).sort((a, b) => b[1] - a[1])[0][0],
 
+                            // ✅ 요일별 유동인구
                             mondayFloatingPopulation: data.mondayFloatingPopulation,
                             tuesdayFloatingPopulation: data.tuesdayFloatingPopulation,
                             wednesdayFloatingPopulation: data.wednesdayFloatingPopulation,
@@ -50,6 +51,14 @@ const CompareChartPanel = ({ infos }) => {
                             fridayFloatingPopulation: data.fridayFloatingPopulation,
                             saturdayFloatingPopulation: data.saturdayFloatingPopulation,
                             sundayFloatingPopulation: data.sundayFloatingPopulation,
+
+                            // ✅ 시간대별 유동인구
+                            floating00to06: data.floating00to06,
+                            floating06to11: data.floating06to11,
+                            floating11to14: data.floating11to14,
+                            floating14to17: data.floating14to17,
+                            floating17to21: data.floating17to21,
+                            floating21to24: data.floating21to24,
 
                         }))
                         .catch((err) => {
@@ -87,7 +96,7 @@ const CompareChartPanel = ({ infos }) => {
         "#ff9da7", // 핑크
     ];
 
-    const chartData = {
+    const dayChartData = {
         labels: dayLabels,
         datasets: fetchedData.map((data, idx) => ({
             label: data.name,
@@ -104,10 +113,10 @@ const CompareChartPanel = ({ infos }) => {
         })),
     };
 
-    const options = {
+    const dayChartOptions = {
         responsive: true,
         plugins: {
-            legend: { position: "top" },
+            legend: {position: "top"},
             title: {
                 display: true,
                 text: "지역 간 유동 인구 비교",
@@ -122,14 +131,54 @@ const CompareChartPanel = ({ infos }) => {
             },
         },
         scales: {
-            y: { beginAtZero: true },
+            y: {beginAtZero: true},
+        },
+    };
+
+    const timeLabels = ["00~06시", "06~11시", "11~14시", "14~17시", "17~21시", "21~24시"];
+
+    const timeChartData = {
+        labels: timeLabels,
+        datasets: fetchedData.map((data, idx) => ({
+            label: data.name,
+            data: [
+                data.floating00to06,
+                data.floating06to11,
+                data.floating11to14,
+                data.floating14to17,
+                data.floating17to21,
+                data.floating21to24,
+            ],
+            borderColor: colorList[idx % colorList.length],
+            backgroundColor: colorList[idx % colorList.length] + "AA", // ✅ 66~80% 불투명 추천
+            tension: 0.3,
+            fill: true,
+        })),
+    };
+
+    const timeChartOptions = {
+        responsive: true,
+        plugins: {
+            legend: {position: "top"},
+            title: {
+                display: true,
+                text: "시간대별 유동인구 비교",
+            },
+        },
+        scales: {
+            y: {beginAtZero: true},
         },
     };
 
     return (
-        <div className="tw-absolute tw-top-0 tw-right-0 tw-w-full tw-max-w-4xl tw-mx-auto tw-mt-12">
+        <div className="tw-w-full tw-max-w-4xl tw-mx-auto tw-mt-12">
             <h2 className="tw-text-xl tw-font-bold tw-mb-4 tw-text-center">📊 다중 지역 비교</h2>
-            <Bar data={chartData} options={options} />
+            <Bar data={dayChartData} options={dayChartOptions} />
+
+            <div className="tw-mt-12">
+                <h2 className="tw-text-xl tw-font-bold tw-mb-4 tw-text-center">⏰ 시간대별 유동인구</h2>
+                <Line data={timeChartData} options={timeChartOptions} />
+            </div>
         </div>
     );
 };
