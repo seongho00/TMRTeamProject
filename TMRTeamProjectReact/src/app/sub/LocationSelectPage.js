@@ -3,6 +3,7 @@
 import Script from "next/script";
 import React, {useEffect, useRef, useState} from "react";
 import LocationDetailPanel from "./LocationDetailPanel";
+import {motion, AnimatePresence} from "framer-motion";
 
 
 const LocationSelectPage = ({onSelect, onBack}) => {
@@ -137,7 +138,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                             kakao.maps.event.addListener(polygon, "click", () => {
                                 const isAlreadySelected = currentPolygon.current === polygon;
                                 if (currentOverlay.current) {
-                                    currentOverlay.current.setMap(null);
+                                    currentOverlay.current.setMap(null)
                                 }
 
                                 const emdCode = feature.properties.ADSTRD_CD;
@@ -246,6 +247,8 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                                 });
                                                 currentPolygon.current = null;
                                                 setSelectedInfo(null);
+                                                currentOverlay.current.setMap(null);
+
 
                                             } else {
                                                 // 새 polygon 선택
@@ -307,65 +310,89 @@ const LocationSelectPage = ({onSelect, onBack}) => {
 
     return (
 
-        <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
-            <Script
-                src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=819000337dba5ebac1dbf7847f383c66&autoload=false&libraries=services`}
-                strategy="afterInteractive"
-                onLoad={() => setScriptLoaded(true)}
-            />
-
-            <h1 className="tw-text-3xl tw-font-bold tw-mb-4">📍 창업 지역 선택</h1>
-            <div id="map" className="tw-w-full tw-max-w-4xl tw-h-[500px] tw-mb-6 tw-border tw-rounded-lg"/>
-
-            <div className="tw-text-center tw-mb-6 tw-min-h-[24px]">
-                {selectedInfo ? (
-                    <p className="tw-text-lg">선택된 행정동: {selectedInfo.address}</p>
-                ) : (
-                    <p className="tw-text-lg tw-text-transparent">placeholder</p>
-                )}
-            </div>
-
-            <button
-                onClick={() => {
-                    if (selectedInfo) onSelect(selectedInfo);
-                }}
-                disabled={!selectedInfo}
-                className="tw-bg-blue-500 tw-text-white tw-px-6 tw-py-2 tw-rounded-xl hover:tw-bg-blue-600 tw-transition disabled:tw-bg-gray-400"
+        <div className="tw-relative tw-h-screen tw-w-screen tw-overflow-hidden">
+            {/* motion.div로 중앙 콘텐츠를 살짝 왼쪽 이동 */}
+            <motion.div
+                animate={{ x: detailInfo ? -250 : 0 }}
+                transition={{ type: "tween", duration: 0.5 }}
+                className="tw-absolute tw-top-0 tw-left-0 tw-w-full"
             >
-                이 위치 선택 →
-            </button>
+                <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
+                    <Script
+                        src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=819000337dba5ebac1dbf7847f383c66&autoload=false&libraries=services`}
+                        strategy="afterInteractive"
+                        onLoad={() => setScriptLoaded(true)}
+                    />
+
+                    <h1 className="tw-text-3xl tw-font-bold tw-mb-4">📍 창업 지역 선택</h1>
+
+                    <div id="map" className="tw-w-full tw-max-w-4xl tw-h-[500px] tw-mb-6 tw-border tw-rounded-lg" />
+
+                    <div className="tw-text-center tw-mb-6 tw-min-h-[24px]">
+                        {selectedInfo ? (
+                            <p className="tw-text-lg">선택된 행정동: {selectedInfo.address}</p>
+                        ) : (
+                            <p className="tw-text-lg tw-text-transparent">placeholder</p>
+                        )}
+                    </div>
+
+                    <button
+                        onClick={() => selectedInfo && onSelect(selectedInfo)}
+                        disabled={!selectedInfo}
+                        className="tw-bg-blue-500 tw-text-white tw-px-6 tw-py-2 tw-rounded-xl hover:tw-bg-blue-600 tw-transition disabled:tw-bg-gray-400"
+                    >
+                        이 위치 선택 →
+                    </button>
+
+
+
+                    <button
+                        onClick={() => {
+                            setIsCompareMode((prev) => {
+                                const next = !prev;
+                                if (!next) setCompareList([]);
+                                return next;
+                            });
+                        }}
+                        className={`tw-fixed tw-top-6 tw-right-6 tw-px-4 tw-py-2 tw-rounded-md tw-font-semibold tw-transition ${
+                            isCompareMode ? "tw-bg-yellow-400 tw-text-black" : "tw-bg-gray-200 tw-text-gray-800"
+                        }`}
+                    >
+                        {isCompareMode ? "⛔ 비교모드 종료" : "📊 비교모드 시작"}
+                    </button>
+                </div>
+            </motion.div>
+
+            {/* 상세보기 */}
+            <AnimatePresence>
+                {detailInfo && (
+                    <motion.div
+                        key={detailInfo.address}
+                        initial={{ x: "100%" }}
+                        animate={{ x: 0 }}
+                        exit={{ x: "100%" }}
+                        transition={{ type: "tween", duration: 0.5 }}
+                        className="tw-fixed tw-top-0 tw-right-0 tw-h-full tw-w-[500px] tw-bg-white tw-shadow-lg tw-border-l tw-z-50 tw-overflow-auto"
+                    >
+                        <LocationDetailPanel
+                            info={detailInfo}
+                            onClose={() => setDetailInfo(null)}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* 이전 버튼 */}
             <button
                 onClick={onBack}
-                className="tw-absolute tw-top-6 tw-left-6 tw-bg-gray-200 tw-text-gray-800 tw-px-4 tw-py-2 tw-rounded-md hover:tw-bg-gray-300 tw-transition"
+                className="tw-fixed tw-top-6 tw-left-6 tw-bg-gray-200 tw-text-gray-800 tw-px-4 tw-py-2 tw-rounded-md hover:tw-bg-gray-300 tw-transition"
             >
                 ← 이전 단계
             </button>
-            {detailInfo && (
-                <LocationDetailPanel
-                    key={detailInfo.address}
-                    info={detailInfo}
-                    onClose={() => setDetailInfo(null)}
-                />
-            )}
-
-            <button
-                onClick={() => {
-                    setIsCompareMode((prev) => {
-                        const next = !prev;
-                        if (!next) {
-                            setCompareList([]); // 비교모드 종료할 때 초기화
-                        }
-                        return next;
-                    });
-                }}
-                className={`tw-fixed tw-top-6 tw-right-6 tw-px-4 tw-py-2 tw-rounded-md tw-font-semibold tw-transition ${
-                    isCompareMode ? "tw-bg-yellow-400 tw-text-black" : "tw-bg-gray-200 tw-text-gray-800"
-                }`}
-            >
-                {isCompareMode ? "⛔ 비교모드 종료" : "📊 비교모드 시작"}
-            </button>
-
         </div>
+
+
+
     );
 };
 
