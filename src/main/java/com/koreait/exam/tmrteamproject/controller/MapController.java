@@ -39,12 +39,6 @@ public class MapController {
         return "map/commercialZoneMap";
     }
 
-    // 상관분석 페이지
-    @GetMapping("/correlationMap")
-    public String correlationMap() {
-        return "map/correlationMap";
-    }
-
     @GetMapping("/getEmdsBySggNm")
     @ResponseBody
     public List<AdminDong> getEmdsBySggNm(String sgg) {
@@ -53,6 +47,7 @@ public class MapController {
 
         return adminDong;
     }
+
     @GetMapping("/getSggByEmd")
     @ResponseBody
     public List<AdminDong> getSggByEmd(String sgg) {
@@ -61,7 +56,6 @@ public class MapController {
 
         return adminDong;
     }
-
 
     @GetMapping("/getMiddleCategories")
     @ResponseBody
@@ -81,7 +75,6 @@ public class MapController {
         return upjongCode;
     }
 
-
     @GetMapping("/getUpjongCodeByMinorCd")
     @ResponseBody
     public UpjongCode getUpjongCodeByMinorCd(String minorCd) {
@@ -99,7 +92,6 @@ public class MapController {
         return upjongCode;
     }
 
-
     @GetMapping("/searchInfoByRegionAndUpjong")
     @ResponseBody
     public String searchInfoByRegionAndUpjong(String sgg, String emd, String upjong) {
@@ -109,5 +101,16 @@ public class MapController {
         System.out.println(upjong);
 
         return "";
+    }
+
+    // 상관분석 페이지
+    @GetMapping("/correlationMap")
+    public String correlationMap() {
+        return "map/correlationMap";
+    }
+
+    @GetMapping("/diskmap")
+    public String diskmap() {
+        return "map/dis";
     }
 }
