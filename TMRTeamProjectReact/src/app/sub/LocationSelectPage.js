@@ -322,8 +322,8 @@ const LocationSelectPage = ({onSelect, onBack}) => {
         <div className="tw-relative tw-h-screen tw-w-screen tw-overflow-hidden">
             {/* motion.div로 중앙 콘텐츠를 살짝 왼쪽 이동 */}
             <motion.div
-                animate={{ x: detailInfo ? -250 : 0 }}
-                transition={{ type: "tween", duration: 0.5 }}
+                animate={{x: detailInfo || (isCompareMode && compareList.length > 0) ? -250 : 0 }}
+                transition={{type: "tween", duration: 0.5}}
                 className="tw-absolute tw-top-0 tw-left-0 tw-w-full"
             >
                 <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
@@ -335,7 +335,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
 
                     <h1 className="tw-text-3xl tw-font-bold tw-mb-4">📍 창업 지역 선택</h1>
 
-                    <div id="map" className="tw-w-full tw-max-w-4xl tw-h-[500px] tw-mb-6 tw-border tw-rounded-lg" />
+                    <div id="map" className="tw-w-full tw-max-w-4xl tw-h-[500px] tw-mb-6 tw-border tw-rounded-lg"/>
 
                     <div className="tw-text-center tw-mb-6 tw-min-h-[24px]">
                         {selectedInfo ? (
@@ -352,7 +352,6 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                     >
                         이 위치 선택 →
                     </button>
-
 
 
                     <button
@@ -377,16 +376,29 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                 {detailInfo && (
                     <motion.div
                         key={detailInfo.address}
-                        initial={{ x: "100%" }}
-                        animate={{ x: 0 }}
-                        exit={{ x: "100%" }}
-                        transition={{ type: "tween", duration: 0.5 }}
+                        initial={{x: "100%"}}
+                        animate={{x: 0}}
+                        exit={{x: "100%"}}
+                        transition={{type: "tween", duration: 0.5}}
                         className="tw-fixed tw-top-0 tw-right-0 tw-h-full tw-w-[500px] tw-bg-white tw-shadow-lg tw-border-l tw-z-50 tw-overflow-auto"
                     >
                         <LocationDetailPanel
                             info={detailInfo}
                             onClose={() => setDetailInfo(null)}
                         />
+                    </motion.div>
+                )}
+
+                {isCompareMode && compareList.length > 0 && (
+                    <motion.div
+                        key="compare-panel"
+                        initial={{x: "100%"}}
+                        animate={{x: 0}}
+                        exit={{x: "100%"}}
+                        transition={{type: "tween", duration: 0.5}}
+                        className="tw-fixed tw-top-0 tw-right-0 tw-h-full tw-w-[500px] tw-bg-white tw-shadow-lg tw-border-l tw-z-50 tw-overflow-auto"
+                    >
+                        <CompareChartPanel data={compareList}/>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -399,12 +411,8 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                 ← 이전 단계
             </button>
 
-            {isCompareMode && compareList.length > 0 && (
-                <CompareChartPanel data={compareList} />
-            )}
 
         </div>
-
 
 
     );
