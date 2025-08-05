@@ -6,7 +6,6 @@ import BusinessSelectPage from "./sub/BusinessSelectPage";
 import CostSettingPage from "./sub/CostSettingPage";
 import LocationSelectPage from "./sub/LocationSelectPage";
 import WeeklySimulationPage from "./sub/WeeklySimulationPage";
-import PopulationPieChart from './sub/PopulationPieChart';
 import './globals.css';  // 파일 경로에 맞게 수정
 
 const Page = () => {

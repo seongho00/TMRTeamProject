@@ -45,6 +45,47 @@ public class CommercialData {
     @CsvBindByName(column = "연령대_60_이상_유동인구_수")
     private int age60plus;
 
+    // 🔹 시간대별 유동인구 수
+    @CsvBindByName(column = "시간대_00_06_유동인구_수")
+    private double floating00to06;
+
+    @CsvBindByName(column = "시간대_06_11_유동인구_수")
+    private double floating06to11;
+
+    @CsvBindByName(column = "시간대_11_14_유동인구_수")
+    private double floating11to14;
+
+    @CsvBindByName(column = "시간대_14_17_유동인구_수")
+    private double floating14to17;
+
+    @CsvBindByName(column = "시간대_17_21_유동인구_수")
+    private double floating17to21;
+
+    @CsvBindByName(column = "시간대_21_24_유동인구_수")
+    private double floating21to24;
+
+    // 🔹 요일별 유동인구 수
+    @CsvBindByName(column = "월요일_유동인구_수")
+    private double mondayFloatingPopulation;
+
+    @CsvBindByName(column = "화요일_유동인구_수")
+    private double tuesdayFloatingPopulation;
+
+    @CsvBindByName(column = "수요일_유동인구_수")
+    private double wednesdayFloatingPopulation;
+
+    @CsvBindByName(column = "목요일_유동인구_수")
+    private double thursdayFloatingPopulation;
+
+    @CsvBindByName(column = "금요일_유동인구_수")
+    private double fridayFloatingPopulation;
+
+    @CsvBindByName(column = "토요일_유동인구_수")
+    private double saturdayFloatingPopulation;
+
+    @CsvBindByName(column = "일요일_유동인구_수")
+    private double sundayFloatingPopulation;
+
     // 직장 인구수
     @CsvBindByName(column = "총_직장_인구_수")
     private double workingTotal;
