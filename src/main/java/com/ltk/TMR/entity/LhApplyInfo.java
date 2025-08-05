@@ -2,7 +2,7 @@ package com.ltk.TMR.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.ltk.TMR.entity.AttachmentDtoListConverter;
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;

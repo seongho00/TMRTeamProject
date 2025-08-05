@@ -15,14 +15,14 @@ import java.util.TreeMap;
 
 @Service
 public class RegionService {
-    
+
     private final Map<String, Map<String, List<Dong>>> regionData;
 
     public RegionService() throws IOException {
         this.regionData = new TreeMap<>();
 
-        // 10자리(실제 8자리) 코드가 포함된 CSV파일 리딩
-        BufferedReader reader = new BufferedReader(new FileReader(ResourceUtils.getFile("classpath:hangjeongdong_full_codes_with_id.csv")));
+        // 10자리 코드가 포함된 CSV파일 리딩 (파일 이름 수정)
+        BufferedReader reader = new BufferedReader(new FileReader(ResourceUtils.getFile("classpath:hangjeongdong_code_final.csv")));
 
         String line;
         reader.readLine(); // 헤더 건너뛰기
@@ -44,12 +44,12 @@ public class RegionService {
         reader.close();
     }
 
-    // 전체 지역 데이터를 반환
+    // 지역 데이터 반환
     public Map<String, Map<String, List<Dong>>> getRegionData() {
         return this.regionData;
     }
 
-    // 동 이름, 동 코드를 클래스로 같이 관리
+    // 동 이름, 코드를 클래스로
     @Getter
     @RequiredArgsConstructor
     public static class Dong {

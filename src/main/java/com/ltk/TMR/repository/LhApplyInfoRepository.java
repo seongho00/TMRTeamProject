@@ -16,6 +16,5 @@ public interface LhApplyInfoRepository extends JpaRepository<LhApplyInfo, Long> 
 
     List<LhApplyInfo> findByMarkdownStatusAndProcessingStatus(MarkdownStatus markdownStatus, LhProcessingStatus processingStatus);
 
-    // [수정] 아래 메서드 선언을 추가하세요.
     List<LhApplyInfo> findAllByOrderBySiteNoDesc();
 }

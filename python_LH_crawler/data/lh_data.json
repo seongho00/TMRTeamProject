@@ -2,12 +2,33 @@
   {
     "siteNo": 65,
     "type": "임대상가(추첨)",
+    "title": "인천연수1단지 임대상가 입점자 모집공고",
+    "address": "인천광역시",
+    "postDate": "2025-08-01",
+    "deadlineDate": "2025-08-08",
+    "status": "공고중",
+    "views": 335,
+    "callNumber": null,
+    "attachments": [
+      {
+        "name": "2025.8.1영구임대상가_표준_입점자_모집공고문(추첨).hwp",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62899281"
+      },
+      {
+        "name": "2025.8.1영구임대상가_표준_입점자_모집공고문(추첨).pdf",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62899284"
+      }
+    ]
+  },
+  {
+    "siteNo": 64,
+    "type": "임대상가(추첨)",
     "title": "천안쌍용1 임대상가 입점자 모집공고",
     "address": "충청남도",
     "postDate": "2025-08-01",
     "deadlineDate": "2025-08-07",
     "status": "공고중",
-    "views": 59,
+    "views": 313,
     "callNumber": null,
     "attachments": [
       {
@@ -21,14 +42,14 @@
     ]
   },
   {
-    "siteNo": 64,
+    "siteNo": 63,
     "type": "임대상가(추첨)",
     "title": "전주팔복, 군산내흥3 LH희망상가(공공지원형) 입점자 모집공고",
     "address": "전북특별자치도",
     "postDate": "2025-07-31",
     "deadlineDate": "2025-08-20",
     "status": "공고중",
-    "views": 98,
+    "views": 267,
     "callNumber": null,
     "attachments": [
       {
@@ -42,14 +63,14 @@
     ]
   },
   {
-    "siteNo": 63,
+    "siteNo": 62,
     "type": "분양ㆍ(구)임대상가(입찰)",
     "title": "[정정공고] 수서역세권 A3블록 단지 내 상가 재분양 공고",
     "address": "전국",
     "postDate": "2025-07-31",
     "deadlineDate": "2025-08-05",
-    "status": "공고중",
-    "views": 142,
+    "status": "접수중",
+    "views": 766,
     "callNumber": null,
     "attachments": [
       {
@@ -63,14 +84,14 @@
     ]
   },
   {
-    "siteNo": 62,
+    "siteNo": 61,
     "type": "임대상가(추첨)",
     "title": "부산금곡2단지 임대상가 입점자 모집공고",
     "address": "부산광역시",
     "postDate": "2025-07-29",
     "deadlineDate": "2025-08-13",
     "status": "공고중",
-    "views": 219,
+    "views": 284,
     "callNumber": null,
     "attachments": [
       {
@@ -84,14 +105,14 @@
     ]
   },
   {
-    "siteNo": 61,
+    "siteNo": 60,
     "type": "분양ㆍ(구)임대상가(입찰)",
     "title": "부산범천2 1BL 단지내상가 수의계약 공고(3년무이자할부조건)",
     "address": "전국",
     "postDate": "2025-07-28",
     "deadlineDate": null,
     "status": "상담요청",
-    "views": 92,
+    "views": 121,
     "callNumber": null,
     "attachments": [
       {
@@ -105,14 +126,14 @@
     ]
   },
   {
-    "siteNo": 60,
+    "siteNo": 59,
     "type": "임대상가(공모ㆍ심사)",
     "title": "화성동탄2 인큐베이팅센터 및 스마트주차장 상가·업무시설 임대공급 재공고(정착·창업)",
     "address": "경기도",
     "postDate": "2025-07-25",
     "deadlineDate": "2025-08-13",
-    "status": "공고중",
-    "views": 997,
+    "status": "접수중",
+    "views": 1655,
     "callNumber": null,
     "attachments": [
       {
@@ -126,27 +147,6 @@
     ]
   },
   {
-    "siteNo": 59,
-    "type": "임대상가(입찰)",
-    "title": "서울양원 S1BL 희망상가 입점자 모집공고(일반형)",
-    "address": "서울특별시",
-    "postDate": "2025-07-23",
-    "deadlineDate": "2025-07-31",
-    "status": "접수마감",
-    "views": 879,
-    "callNumber": null,
-    "attachments": [
-      {
-        "name": "서울양원S1BL희망상가입점자모집공고문(일반형).hwp",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62755329"
-      },
-      {
-        "name": "서울양원S1BL희망상가입점자모집공고문(일반형).pdf",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62755330"
-      }
-    ]
-  },
-  {
     "siteNo": 58,
     "type": "임대상가(입찰)",
     "title": "서울가좌 행복주택 희망상가 입점자 모집공고(일반형)",
@@ -154,7 +154,7 @@
     "postDate": "2025-07-23",
     "deadlineDate": "2025-07-31",
     "status": "접수마감",
-    "views": 1848,
+    "views": 1906,
     "callNumber": null,
     "attachments": [
       {
@@ -170,33 +170,12 @@
   {
     "siteNo": 57,
     "type": "임대상가(입찰)",
-    "title": "수서역세권 A1BL 희망상가 입접자 모집공고(일반형)",
-    "address": "서울특별시",
-    "postDate": "2025-07-23",
-    "deadlineDate": "2025-07-31",
-    "status": "접수마감",
-    "views": 1770,
-    "callNumber": null,
-    "attachments": [
-      {
-        "name": "수서역세권A1BL희망상가입점자모집공고문(일반형).hwp",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62755046"
-      },
-      {
-        "name": "수서역세권A1BL희망상가입점자모집공고문(일반형).pdf",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62755050"
-      }
-    ]
-  },
-  {
-    "siteNo": 56,
-    "type": "임대상가(입찰)",
     "title": "서울금천 행복주택 희망상가 입점자 모집공고(일반형)",
     "address": "서울특별시",
     "postDate": "2025-07-23",
     "deadlineDate": "2025-07-31",
     "status": "접수마감",
-    "views": 2096,
+    "views": 2151,
     "callNumber": null,
     "attachments": [
       {
@@ -210,44 +189,65 @@
     ]
   },
   {
-    "siteNo": 55,
-    "type": "임대상가(추첨)",
-    "title": "시흥장현 A-6블록(LH 23단지)_LH 희망상가 입점자 추가모집공고 (공공지원형)",
-    "address": "경기도",
-    "postDate": "2025-07-22",
-    "deadlineDate": "2025-08-01",
-    "status": "접수중",
-    "views": 1845,
+    "siteNo": 56,
+    "type": "임대상가(입찰)",
+    "title": "서울양원 S1BL 희망상가 입점자 모집공고(일반형)",
+    "address": "서울특별시",
+    "postDate": "2025-07-23",
+    "deadlineDate": "2025-07-31",
+    "status": "접수마감",
+    "views": 920,
     "callNumber": null,
     "attachments": [
       {
-        "name": "250722_시흥장현A-6블록(LH23단지)_공공지원형_입점자추가모집공고.hwp",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682098"
+        "name": "서울양원S1BL희망상가입점자모집공고문(일반형).hwp",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62755329"
       },
       {
-        "name": "250722_시흥장현A-6블록(LH23단지)_공공지원형_입점자추가모집공고.pdf",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682099"
+        "name": "서울양원S1BL희망상가입점자모집공고문(일반형).pdf",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62755330"
+      }
+    ]
+  },
+  {
+    "siteNo": 55,
+    "type": "임대상가(입찰)",
+    "title": "수서역세권 A1BL 희망상가 입접자 모집공고(일반형)",
+    "address": "서울특별시",
+    "postDate": "2025-07-23",
+    "deadlineDate": "2025-07-31",
+    "status": "접수마감",
+    "views": 1847,
+    "callNumber": null,
+    "attachments": [
+      {
+        "name": "수서역세권A1BL희망상가입점자모집공고문(일반형).hwp",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62755046"
+      },
+      {
+        "name": "수서역세권A1BL희망상가입점자모집공고문(일반형).pdf",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62755050"
       }
     ]
   },
   {
     "siteNo": 54,
     "type": "임대상가(추첨)",
-    "title": "평택고덕 Ca1블록(LH 17단지)_LH 희망상가 입점자 추가모집공고 (공공지원형)",
+    "title": "평택소사벌 A-7블록(LH 배꽃마을 1단지)_LH 희망상가 입점자 추가모집공고 (공공지원형)",
     "address": "경기도",
     "postDate": "2025-07-22",
     "deadlineDate": "2025-08-01",
-    "status": "접수중",
-    "views": 930,
+    "status": "접수마감",
+    "views": 1203,
     "callNumber": null,
     "attachments": [
       {
-        "name": "250722_평택고덕국제화계획Ca1블록(평택고덕17단지)_공공지원형_입점자추가모집공고.hwp",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682130"
+        "name": "250722_평택소사벌A7블록(배꽃마을1단지)_공공지원형_입점자추가모집공고.hwp",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682218"
       },
       {
-        "name": "250722_평택고덕국제화계획Ca1블록(평택고덕17단지)_공공지원형_입점자추가모집공고.pdf",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682131"
+        "name": "250722_평택소사벌A7블록(배꽃마을1단지)_공공지원형_입점자추가모집공고.pdf",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682219"
       }
     ]
   },
@@ -258,8 +258,8 @@
     "address": "경기도",
     "postDate": "2025-07-22",
     "deadlineDate": "2025-08-01",
-    "status": "접수중",
-    "views": 1144,
+    "status": "접수마감",
+    "views": 1312,
     "callNumber": null,
     "attachments": [
       {
@@ -275,42 +275,42 @@
   {
     "siteNo": 52,
     "type": "임대상가(추첨)",
-    "title": "평택소사벌 A-7블록(LH 배꽃마을 1단지)_LH 희망상가 입점자 추가모집공고 (공공지원형)",
+    "title": "평택고덕 Ca1블록(LH 17단지)_LH 희망상가 입점자 추가모집공고 (공공지원형)",
     "address": "경기도",
     "postDate": "2025-07-22",
     "deadlineDate": "2025-08-01",
-    "status": "접수중",
-    "views": 1063,
+    "status": "접수마감",
+    "views": 1093,
     "callNumber": null,
     "attachments": [
       {
-        "name": "250722_평택소사벌A7블록(배꽃마을1단지)_공공지원형_입점자추가모집공고.hwp",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682218"
+        "name": "250722_평택고덕국제화계획Ca1블록(평택고덕17단지)_공공지원형_입점자추가모집공고.hwp",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682130"
       },
       {
-        "name": "250722_평택소사벌A7블록(배꽃마을1단지)_공공지원형_입점자추가모집공고.pdf",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682219"
+        "name": "250722_평택고덕국제화계획Ca1블록(평택고덕17단지)_공공지원형_입점자추가모집공고.pdf",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682131"
       }
     ]
   },
   {
     "siteNo": 51,
     "type": "임대상가(추첨)",
-    "title": "화성향남2 A-21블록(LH 21단지)_LH 희망상가 입점자 추가모집공고 (공공지원형)",
+    "title": "시흥장현 A-6블록(LH 23단지)_LH 희망상가 입점자 추가모집공고 (공공지원형)",
     "address": "경기도",
     "postDate": "2025-07-22",
     "deadlineDate": "2025-08-01",
-    "status": "접수중",
-    "views": 1883,
+    "status": "접수마감",
+    "views": 2132,
     "callNumber": null,
     "attachments": [
       {
-        "name": "250722_화성향남2A-21블록(LH21단지)_공공지원형_입점자추가모집공고.hwp",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682254"
+        "name": "250722_시흥장현A-6블록(LH23단지)_공공지원형_입점자추가모집공고.hwp",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682098"
       },
       {
-        "name": "250722_화성향남2A-21블록(LH21단지)_공공지원형_입점자추가모집공고.pdf",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682255"
+        "name": "250722_시흥장현A-6블록(LH23단지)_공공지원형_입점자추가모집공고.pdf",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682099"
       }
     ]
   },
@@ -321,8 +321,8 @@
     "address": "경상남도",
     "postDate": "2025-07-22",
     "deadlineDate": "2025-08-05",
-    "status": "공고중",
-    "views": 485,
+    "status": "접수중",
+    "views": 723,
     "callNumber": null,
     "attachments": [
       {
@@ -338,12 +338,33 @@
   {
     "siteNo": 49,
     "type": "임대상가(추첨)",
+    "title": "화성향남2 A-21블록(LH 21단지)_LH 희망상가 입점자 추가모집공고 (공공지원형)",
+    "address": "경기도",
+    "postDate": "2025-07-22",
+    "deadlineDate": "2025-08-01",
+    "status": "접수마감",
+    "views": 2088,
+    "callNumber": null,
+    "attachments": [
+      {
+        "name": "250722_화성향남2A-21블록(LH21단지)_공공지원형_입점자추가모집공고.hwp",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682254"
+      },
+      {
+        "name": "250722_화성향남2A-21블록(LH21단지)_공공지원형_입점자추가모집공고.pdf",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62682255"
+      }
+    ]
+  },
+  {
+    "siteNo": 48,
+    "type": "임대상가(추첨)",
     "title": "인천만수주공7단지 임대상가 입점자 모집공고",
     "address": "인천광역시",
     "postDate": "2025-07-21",
     "deadlineDate": "2025-07-28",
     "status": "접수마감",
-    "views": 641,
+    "views": 665,
     "callNumber": null,
     "attachments": [
       {
@@ -357,14 +378,14 @@
     ]
   },
   {
-    "siteNo": 48,
+    "siteNo": 47,
     "type": "분양ㆍ(구)임대상가(입찰)",
     "title": "수서역세권 A3블록 단지 내 상가 재분양 공고",
     "address": "서울특별시",
     "postDate": "2025-07-17",
     "deadlineDate": "2025-08-05",
-    "status": "공고중",
-    "views": 1472,
+    "status": "접수중",
+    "views": 1632,
     "callNumber": null,
     "attachments": [
       {
@@ -378,14 +399,14 @@
     ]
   },
   {
-    "siteNo": 47,
+    "siteNo": 46,
     "type": "분양ㆍ(구)임대상가(입찰)",
     "title": "익산역 하늘채 더 퍼스트 단지내상가 선착순 수의계약 공고",
     "address": "전국",
     "postDate": "2025-07-16",
     "deadlineDate": null,
     "status": "상담요청",
-    "views": 241,
+    "views": 258,
     "callNumber": null,
     "attachments": [
       {
@@ -399,14 +420,14 @@
     ]
   },
   {
-    "siteNo": 46,
+    "siteNo": 45,
     "type": "임대상가(추첨)",
     "title": "대전도안1단지 내 어린이집 임차인 운영자 모집공고",
     "address": "대전광역시",
     "postDate": "2025-07-16",
     "deadlineDate": "2025-07-30",
     "status": "접수마감",
-    "views": 405,
+    "views": 430,
     "callNumber": null,
     "attachments": [
       {
@@ -420,14 +441,14 @@
     ]
   },
   {
-    "siteNo": 45,
+    "siteNo": 44,
     "type": "임대상가(추첨)",
     "title": "포항학산 임대상가 입점자 모집공고",
     "address": "경상북도",
     "postDate": "2025-07-16",
     "deadlineDate": "2025-07-31",
     "status": "접수마감",
-    "views": 244,
+    "views": 271,
     "callNumber": null,
     "attachments": [
       {
@@ -441,14 +462,14 @@
     ]
   },
   {
-    "siteNo": 44,
+    "siteNo": 43,
     "type": "분양ㆍ(구)임대상가(입찰)",
     "title": "[수의계약 및 분양유치금 지급 중단공고] 수서역세권 A3블록 단지내상가 수의계약 및 분양유치금 지급 중단 공고",
     "address": "전국",
     "postDate": "2025-07-15",
     "deadlineDate": "2025-07-17",
     "status": "접수마감",
-    "views": 188,
+    "views": 201,
     "callNumber": null,
     "attachments": [
       {
@@ -458,14 +479,14 @@
     ]
   },
   {
-    "siteNo": 43,
+    "siteNo": 42,
     "type": "임대상가(추첨)",
     "title": "대구황금3 임대상가 입점자 모집공고",
     "address": "대구광역시",
     "postDate": "2025-07-15",
     "deadlineDate": "2025-08-05",
-    "status": "공고중",
-    "views": 417,
+    "status": "접수중",
+    "views": 533,
     "callNumber": null,
     "attachments": [
       {
@@ -479,14 +500,14 @@
     ]
   },
   {
-    "siteNo": 42,
+    "siteNo": 41,
     "type": "임대상가(추첨)",
     "title": "음성삼성 단지내 어린이집 임차운영자 모집공고",
     "address": "충청북도",
     "postDate": "2025-07-15",
     "deadlineDate": "2025-07-22",
     "status": "접수마감",
-    "views": 249,
+    "views": 265,
     "callNumber": null,
     "attachments": [
       {
@@ -500,14 +521,14 @@
     ]
   },
   {
-    "siteNo": 41,
+    "siteNo": 40,
     "type": "임대상가(추첨)",
     "title": "서울등촌1단지 영구임대상가 입점자 모집공고(204호,207호)",
     "address": "서울특별시",
     "postDate": "2025-07-14",
     "deadlineDate": "2025-07-28",
     "status": "접수마감",
-    "views": 2200,
+    "views": 2235,
     "callNumber": null,
     "attachments": [
       {
@@ -521,119 +542,14 @@
     ]
   },
   {
-    "siteNo": 40,
-    "type": "임대상가(추첨)",
-    "title": "공주옥룡1 임대상가 입점자 모집공고(장기미임대)",
-    "address": "충청남도",
-    "postDate": "2025-07-14",
-    "deadlineDate": "2025-07-24",
-    "status": "접수마감",
-    "views": 235,
-    "callNumber": null,
-    "attachments": [
-      {
-        "name": "공주옥룡1_영구임대상가입점자모집공고문(2025.07.14.장기미임대).hwp",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62540516"
-      },
-      {
-        "name": "공주옥룡1_영구임대상가입점자모집공고문(2025.07.14.장기미임대).pdf",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62540526"
-      }
-    ]
-  },
-  {
     "siteNo": 39,
-    "type": "임대상가(추첨)",
-    "title": "천안쌍용1 임대상가 입점자 모집공고",
-    "address": "충청남도",
-    "postDate": "2025-07-14",
-    "deadlineDate": "2025-07-24",
-    "status": "접수마감",
-    "views": 421,
-    "callNumber": null,
-    "attachments": [
-      {
-        "name": "천안쌍용1_영구임대상가입점자모집공고문(2025.07.14.).hwp",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62539941"
-      },
-      {
-        "name": "천안쌍용1_영구임대상가입점자모집공고문(2025.07.14.).pdf",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62539957"
-      }
-    ]
-  },
-  {
-    "siteNo": 38,
-    "type": "임대상가(추첨)",
-    "title": "보령명천2 임대상가 입점자 모집공고",
-    "address": "대전광역시",
-    "postDate": "2025-07-14",
-    "deadlineDate": "2025-07-24",
-    "status": "접수마감",
-    "views": 250,
-    "callNumber": null,
-    "attachments": [
-      {
-        "name": "보령명천2_영구임대상가입점자모집공고문(2025.07.14).hwp",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62539734"
-      },
-      {
-        "name": "보령명천2_영구임대상가입점자모집공고문(2025.07.14).pdf",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62539875"
-      }
-    ]
-  },
-  {
-    "siteNo": 37,
-    "type": "임대상가(추첨)",
-    "title": "대전중촌2 임대상가 입점자 모집공고",
-    "address": "대전광역시",
-    "postDate": "2025-07-14",
-    "deadlineDate": "2025-07-24",
-    "status": "접수마감",
-    "views": 377,
-    "callNumber": null,
-    "attachments": [
-      {
-        "name": "대전중촌2_영구임대상가입점자모집공고문(2025.07.14.).pdf",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62538909"
-      },
-      {
-        "name": "대전중촌2_영구임대상가입점자모집공고문(2025.07.14.).hwp",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62538916"
-      }
-    ]
-  },
-  {
-    "siteNo": 36,
-    "type": "임대상가(추첨)",
-    "title": "대전법동3 임대상가 입점자 모집공고",
-    "address": "대전광역시",
-    "postDate": "2025-07-14",
-    "deadlineDate": "2025-07-24",
-    "status": "접수마감",
-    "views": 271,
-    "callNumber": null,
-    "attachments": [
-      {
-        "name": "대전법동3_영구임대상가입점자모집공고문(2025.07.14.).hwp",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62538721"
-      },
-      {
-        "name": "대전법동3_영구임대상가입점자모집공고문(2025.07.14.).pdf",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62538725"
-      }
-    ]
-  },
-  {
-    "siteNo": 35,
     "type": "임대상가(추첨)",
     "title": "공주옥룡1 임대상가 입점자 모집공고",
     "address": "충청남도",
     "postDate": "2025-07-14",
     "deadlineDate": "2025-07-24",
     "status": "접수마감",
-    "views": 211,
+    "views": 221,
     "callNumber": null,
     "attachments": [
       {
@@ -647,14 +563,119 @@
     ]
   },
   {
+    "siteNo": 38,
+    "type": "임대상가(추첨)",
+    "title": "공주옥룡1 임대상가 입점자 모집공고(장기미임대)",
+    "address": "충청남도",
+    "postDate": "2025-07-14",
+    "deadlineDate": "2025-07-24",
+    "status": "접수마감",
+    "views": 244,
+    "callNumber": null,
+    "attachments": [
+      {
+        "name": "공주옥룡1_영구임대상가입점자모집공고문(2025.07.14.장기미임대).hwp",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62540516"
+      },
+      {
+        "name": "공주옥룡1_영구임대상가입점자모집공고문(2025.07.14.장기미임대).pdf",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62540526"
+      }
+    ]
+  },
+  {
+    "siteNo": 37,
+    "type": "임대상가(추첨)",
+    "title": "천안쌍용1 임대상가 입점자 모집공고",
+    "address": "충청남도",
+    "postDate": "2025-07-14",
+    "deadlineDate": "2025-07-24",
+    "status": "접수마감",
+    "views": 430,
+    "callNumber": null,
+    "attachments": [
+      {
+        "name": "천안쌍용1_영구임대상가입점자모집공고문(2025.07.14.).hwp",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62539941"
+      },
+      {
+        "name": "천안쌍용1_영구임대상가입점자모집공고문(2025.07.14.).pdf",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62539957"
+      }
+    ]
+  },
+  {
+    "siteNo": 36,
+    "type": "임대상가(추첨)",
+    "title": "보령명천2 임대상가 입점자 모집공고",
+    "address": "대전광역시",
+    "postDate": "2025-07-14",
+    "deadlineDate": "2025-07-24",
+    "status": "접수마감",
+    "views": 261,
+    "callNumber": null,
+    "attachments": [
+      {
+        "name": "보령명천2_영구임대상가입점자모집공고문(2025.07.14).hwp",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62539734"
+      },
+      {
+        "name": "보령명천2_영구임대상가입점자모집공고문(2025.07.14).pdf",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62539875"
+      }
+    ]
+  },
+  {
+    "siteNo": 35,
+    "type": "임대상가(추첨)",
+    "title": "대전중촌2 임대상가 입점자 모집공고",
+    "address": "대전광역시",
+    "postDate": "2025-07-14",
+    "deadlineDate": "2025-07-24",
+    "status": "접수마감",
+    "views": 390,
+    "callNumber": null,
+    "attachments": [
+      {
+        "name": "대전중촌2_영구임대상가입점자모집공고문(2025.07.14.).pdf",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62538909"
+      },
+      {
+        "name": "대전중촌2_영구임대상가입점자모집공고문(2025.07.14.).hwp",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62538916"
+      }
+    ]
+  },
+  {
     "siteNo": 34,
+    "type": "임대상가(추첨)",
+    "title": "대전법동3 임대상가 입점자 모집공고",
+    "address": "대전광역시",
+    "postDate": "2025-07-14",
+    "deadlineDate": "2025-07-24",
+    "status": "접수마감",
+    "views": 289,
+    "callNumber": null,
+    "attachments": [
+      {
+        "name": "대전법동3_영구임대상가입점자모집공고문(2025.07.14.).hwp",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62538721"
+      },
+      {
+        "name": "대전법동3_영구임대상가입점자모집공고문(2025.07.14.).pdf",
+        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62538725"
+      }
+    ]
+  },
+  {
+    "siteNo": 33,
     "type": "임대상가(추첨)",
     "title": "부산반송단지 임대상가 입점자 모집공고",
     "address": "부산광역시",
     "postDate": "2025-07-11",
     "deadlineDate": "2025-07-25",
     "status": "접수마감",
-    "views": 1320,
+    "views": 1337,
     "callNumber": null,
     "attachments": [
       {
@@ -668,14 +689,14 @@
     ]
   },
   {
-    "siteNo": 33,
+    "siteNo": 32,
     "type": "임대상가(추첨)",
     "title": "광명하안13단지 영구임대상가 입점자 모집공고",
     "address": "경기도",
     "postDate": "2025-07-03",
     "deadlineDate": "2025-07-17",
     "status": "접수마감",
-    "views": 1498,
+    "views": 1524,
     "callNumber": null,
     "attachments": [
       {
@@ -689,14 +710,14 @@
     ]
   },
   {
-    "siteNo": 32,
+    "siteNo": 31,
     "type": "임대상가(공모ㆍ심사)",
     "title": "[정정공고]한남대학교 캠퍼스혁신파크 산학연혁신허브 입점자 모집 공고",
     "address": "대전광역시",
     "postDate": "2025-06-26",
     "deadlineDate": "2025-08-07",
     "status": "공고중",
-    "views": 201,
+    "views": 251,
     "callNumber": null,
     "attachments": [
       {
@@ -710,14 +731,14 @@
     ]
   },
   {
-    "siteNo": 31,
+    "siteNo": 30,
     "type": "임대상가(공모ㆍ심사)",
     "title": "한남대학교 캠퍼스혁신파크 산학연혁신허브 입점자 모집 공고",
     "address": "대전광역시",
     "postDate": "2025-06-26",
     "deadlineDate": "2025-08-07",
     "status": "정정공고중",
-    "views": 1556,
+    "views": 1608,
     "callNumber": null,
     "attachments": [
       {
@@ -735,14 +756,14 @@
     ]
   },
   {
-    "siteNo": 30,
+    "siteNo": 29,
     "type": "임대상가(추첨)",
     "title": "부산동삼1단지 임대상가 입점자 모집공고",
     "address": "부산광역시",
     "postDate": "2025-06-26",
     "deadlineDate": "2025-07-09",
     "status": "접수마감",
-    "views": 592,
+    "views": 608,
     "callNumber": null,
     "attachments": [
       {
@@ -756,14 +777,14 @@
     ]
   },
   {
-    "siteNo": 29,
+    "siteNo": 28,
     "type": "분양ㆍ(구)임대상가(입찰)",
     "title": "부산범천2 1BL 단지내상가 3년 무이자할부 분양공고",
     "address": "부산광역시",
     "postDate": "2025-06-25",
     "deadlineDate": "2025-07-23",
     "status": "접수마감",
-    "views": 1330,
+    "views": 1357,
     "callNumber": null,
     "attachments": [
       {
@@ -777,14 +798,14 @@
     ]
   },
   {
-    "siteNo": 28,
+    "siteNo": 27,
     "type": "임대상가(추첨)",
     "title": "광주두암2 임대상가 입점자 모집공고",
     "address": "광주광역시",
     "postDate": "2025-06-25",
     "deadlineDate": "2025-07-09",
     "status": "접수마감",
-    "views": 439,
+    "views": 452,
     "callNumber": null,
     "attachments": [
       {
@@ -798,14 +819,14 @@
     ]
   },
   {
-    "siteNo": 27,
+    "siteNo": 26,
     "type": "임대상가(추첨)",
     "title": "광주선운1단지 내 어린이집 임차운영자 모집공고",
     "address": "광주광역시",
     "postDate": "2025-06-23",
     "deadlineDate": "2025-07-01",
     "status": "접수마감",
-    "views": 699,
+    "views": 715,
     "callNumber": null,
     "attachments": [
       {
@@ -819,14 +840,14 @@
     ]
   },
   {
-    "siteNo": 26,
+    "siteNo": 25,
     "type": "임대상가(추첨)",
     "title": "구미인의주공 단지내 관리동 어린이집 임차운영자 선정공고 [1차]",
     "address": "경상북도",
     "postDate": "2025-06-23",
     "deadlineDate": "2025-07-07",
     "status": "접수마감",
-    "views": 579,
+    "views": 594,
     "callNumber": null,
     "attachments": [
       {
@@ -844,14 +865,14 @@
     ]
   },
   {
-    "siteNo": 25,
+    "siteNo": 24,
     "type": "임대상가(추첨)",
     "title": "원주 푸른숨9 단지내 보육시설(어린이집) 임차운영자 모집공고(2차)",
     "address": "강원특별자치도",
     "postDate": "2025-06-23",
     "deadlineDate": "2025-06-30",
     "status": "접수마감",
-    "views": 505,
+    "views": 522,
     "callNumber": null,
     "attachments": [
       {
@@ -865,14 +886,14 @@
     ]
   },
   {
-    "siteNo": 24,
+    "siteNo": 23,
     "type": "임대상가(추첨)",
     "title": "광주동림2 단지내 관리동 어린이집 임차운영자 선정공고(1차)",
     "address": "광주광역시",
     "postDate": "2025-06-19",
     "deadlineDate": "2025-07-04",
     "status": "접수마감",
-    "views": 554,
+    "views": 568,
     "callNumber": null,
     "attachments": [
       {
@@ -886,14 +907,14 @@
     ]
   },
   {
-    "siteNo": 23,
+    "siteNo": 22,
     "type": "임대상가(추첨)",
     "title": "[정정공고]대전충남 LH희망상가 입점자 모집공고(공공지원형)",
     "address": "충청남도",
     "postDate": "2025-06-19",
     "deadlineDate": "2025-07-31",
     "status": "접수마감",
-    "views": 1853,
+    "views": 1953,
     "callNumber": null,
     "attachments": [
       {
@@ -911,14 +932,14 @@
     ]
   },
   {
-    "siteNo": 22,
+    "siteNo": 21,
     "type": "임대상가(입찰)",
     "title": "대전충남 LH희망상가 입점자 모집공고(일반형)",
     "address": "충청남도",
     "postDate": "2025-06-19",
     "deadlineDate": "2025-07-08",
     "status": "접수마감",
-    "views": 2274,
+    "views": 2295,
     "callNumber": null,
     "attachments": [
       {
@@ -936,14 +957,14 @@
     ]
   },
   {
-    "siteNo": 21,
+    "siteNo": 20,
     "type": "임대상가(추첨)",
     "title": "대전충남 LH희망상가 입점자 모집공고(공공지원형)",
     "address": "충청남도",
     "postDate": "2025-06-19",
     "deadlineDate": "2025-07-31",
     "status": "접수마감",
-    "views": 1261,
+    "views": 1289,
     "callNumber": null,
     "attachments": [
       {
@@ -961,14 +982,14 @@
     ]
   },
   {
-    "siteNo": 20,
+    "siteNo": 19,
     "type": "임대상가(입찰)",
     "title": "광주첨단H-3 LH희망상가 입점자 모집 공고(일반형)",
     "address": "광주광역시",
     "postDate": "2025-06-16",
     "deadlineDate": "2025-06-26",
     "status": "접수마감",
-    "views": 1013,
+    "views": 1037,
     "callNumber": null,
     "attachments": [
       {
@@ -982,14 +1003,14 @@
     ]
   },
   {
-    "siteNo": 19,
+    "siteNo": 18,
     "type": "임대상가(추첨)",
     "title": "울산송정 행복주택 LH희망상가 입점자 모집 공고(공공지원형)",
     "address": "울산광역시",
     "postDate": "2025-06-13",
     "deadlineDate": "2025-06-20",
     "status": "접수마감",
-    "views": 1067,
+    "views": 1090,
     "callNumber": null,
     "attachments": [
       {
@@ -1003,14 +1024,14 @@
     ]
   },
   {
-    "siteNo": 18,
+    "siteNo": 17,
     "type": "임대상가(추첨)",
     "title": "대구산격 임대상가 입점자 모집공고",
     "address": "대구광역시",
     "postDate": "2025-06-12",
     "deadlineDate": "2025-06-26",
     "status": "접수마감",
-    "views": 482,
+    "views": 500,
     "callNumber": null,
     "attachments": [
       {
@@ -1024,14 +1045,14 @@
     ]
   },
   {
-    "siteNo": 17,
+    "siteNo": 16,
     "type": "임대상가(입찰)",
     "title": "관악봉천 행복주택 H-1,3BL 희망상가 입점자 모집(일반형)",
     "address": "서울특별시",
     "postDate": "2025-06-11",
     "deadlineDate": "2025-06-24",
     "status": "접수마감",
-    "views": 4045,
+    "views": 4067,
     "callNumber": null,
     "attachments": [
       {
@@ -1041,27 +1062,6 @@
       {
         "name": "관악봉천행복주택H-1,3BL희망상가입점자모집공고문(일반형).pdf",
         "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62138188"
-      }
-    ]
-  },
-  {
-    "siteNo": 16,
-    "type": "임대상가(추첨)",
-    "title": "순천조례5 임대상가 입점자 모집공고",
-    "address": "전라남도",
-    "postDate": "2025-06-11",
-    "deadlineDate": "2025-06-26",
-    "status": "접수마감",
-    "views": 370,
-    "callNumber": null,
-    "attachments": [
-      {
-        "name": "순천조례5영구임대상가표준입점자모집공고문(25.06.11.).hwp",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62099647"
-      },
-      {
-        "name": "순천조례5영구임대상가표준입점자모집공고문(25.06.11.).pdf",
-        "url": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=62099651"
       }
     ]
   }

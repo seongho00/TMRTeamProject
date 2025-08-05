@@ -1,10 +1,6 @@
 HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
-
-*.properties
-*.yml
-
 !**/src/main/**/target/
 !**/src/test/**/target/
 
@@ -18,10 +14,11 @@ target/
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
+out/
 
 ### NetBeans ###
 /nbproject/private/
@@ -29,9 +26,16 @@ target/
 /dist/
 /nbdist/
 /.nb-gradle/
+
+### Gradle ###
+.gradle/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
 ### VS Code ###
 .vscode/
+
+# Firebase service account key (DO NOT COMMIT)
+src/main/resources/firebase-adminsdk.json
+src/main/resources/*.json

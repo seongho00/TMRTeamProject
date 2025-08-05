@@ -36,7 +36,7 @@ ATTACHMENT_ITEM_SELECTOR = "div.bbsV_atchmnfl dl.col_red li"
 OUT_FILE: Path = Path(__file__).parent / "data" / "lh_data.json"
 OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-# 유틸 함수 
+# 유틸 함수
 def to_std_date(txt: str) -> Optional[str]:
     txt = txt.strip()
     if not txt: return None
@@ -57,7 +57,7 @@ def safe_click(page: Page, selectors: List[str]) -> bool:
         except PlaywrightTimeout: pass
     return False
 
-# 메인 크롤링 
+# 메인 크롤링
 def crawl() -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)

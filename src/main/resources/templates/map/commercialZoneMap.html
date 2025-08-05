@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head::head"></head>
+
+<!-- 카카오맵 -->
+<script type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=69544617df3febfc879cd18eed451ba3&libraries=services&autoload=false"></script>
+
+<script>
+    let map;
+    let currentPolygon = null;
+    let emdPolygons = [], emdOverlayList = [];
+    let sggPolygons = [], sggOverlayList = [];
+    let currentLevel = 6;
+    let isProgrammatic = false;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        kakao.maps.load(function () {
+            const mapContainer = document.getElementById('map');
+            const mapOption = {
+                center: new kakao.maps.LatLng(37.5665, 126.9780),
+                level: 6
+            };
+            map = new kakao.maps.Map(mapContainer, mapOption);
+
+            // GeoJSON 불러오기
+            Promise.all([
+                loadPolygons("/Seoul_emds.geojson", emdPolygons, emdOverlayList, "#004c80", "ADSTRD_NM"),
+                loadPolygons("/Seoul_sggs.geojson", sggPolygons, sggOverlayList, "#e45c2f", "SIGUNGU_NM")
+            ]).then(() => {
+                updatePolygonsByZoom();
+            });
+
+            // 줌 변경 시 표시 항목 변경
+            kakao.maps.event.addListener(map, 'zoom_changed', function () {
+                currentLevel = map.getLevel();
+                updatePolygonsByZoom();
+            });
+
+            // 클릭 시 강조 polygon 표시
+            kakao.maps.event.addListener(map, 'click', function (mouseEvent) {
+                const clickedLatLng = mouseEvent.latLng;
+                const targets = currentLevel >= 7 ? sggPolygons : emdPolygons;
+                for (let i = 0; i < targets.length; i++) {
+                    const {path, properties} = targets[i];
+                    if (!isPointInPolygon(clickedLatLng, path)) continue;
+
+                    // 시군구 이름 가져오기
+                    const sggName = properties.SIGUNGU_NM;
+
+                    // 시군구 이름 가져오기
+                    const emdName = properties.ADSTRD_NM;
+
+                    // 🔍 행정동 클릭 시 시군구 polygon 찾기
+                    let matchedSggName = null;
+
+                    if (sggName != null) {
+                        isProgrammatic = true;
+                        $('#sggSelect').val(sggName).trigger('change');
+                        isProgrammatic = false;
+                    }
+
+                    if (emdName != null) {
+                        for (let i = 0; i < sggPolygons.length; i++) {
+                            const sgg = sggPolygons[i];
+                            if (isPointInPolygon(clickedLatLng, sgg.path)) {
+                                matchedSggName = sgg.properties.SIGUNGU_NM;
+                                break;
+                            }
+                        }
+
+                        if (matchedSggName) {
+                            console.log("📍 행정동:", emdName, "/ 시군구:", matchedSggName);
+                            window.autoSelectedEmd = emdName;
+                            isProgrammatic = true;
+                            $('#sggSelect').val(matchedSggName).trigger('change');
+
+                        } else {
+                            console.warn("시군구를 찾을 수 없습니다");
+                        }
+                    }
+
+                    if (currentPolygon && isSamePath(currentPolygon.getPath(), path)) {
+                        currentPolygon.setMap(null);
+                        currentPolygon = null;
+                        return;
+                    }
+
+                    if (currentPolygon) currentPolygon.setMap(null);
+
+                    const polygon = new kakao.maps.Polygon({
+                        map: map,
+                        path: path,
+                        strokeWeight: 2,
+                        strokeColor: '#004c80',
+                        strokeOpacity: 0.8,
+                        fillColor: '#00a0e9',
+                        fillOpacity: 0.3
+                    });
+
+                    currentPolygon = polygon;
+                    break;
+                }
+            });
+        });
+    });
+
+    function loadPolygons(url, container, overlayList, color, nameKey) {
+        return fetch(url)
+            .then(res => res.json())
+            .then(geojson => {
+                geojson.features.forEach(feature => {
+                    const geometry = feature.geometry;
+                    const properties = feature.properties;
+
+                    const multiCoords = (geometry.type === "Polygon")
+                        ? [geometry.coordinates]
+                        : geometry.coordinates;
+
+                    multiCoords.forEach(polygonCoords => {
+                        const coords = polygonCoords[0];
+                        const path = coords.map(c => new kakao.maps.LatLng(c[1], c[0]));
+
+                        const guide = new kakao.maps.Polygon({
+                            path: path,
+                            strokeWeight: 2,
+                            strokeColor: color,
+                            strokeOpacity: 0.5,
+                            strokeStyle: "dash",
+                            fillOpacity: 0
+                        });
+
+                        const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
+                        const lngSum = path.reduce((sum, p) => sum + p.getLng(), 0);
+                        const center = new kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
+
+                        const overlayContent = document.createElement('div');
+                        overlayContent.innerText = properties[nameKey];
+                        overlayContent.style.cssText = `
+                        background: white;
+                        border: 1px solid #444;
+                        padding: 3px 6px;
+                        font-size: 13px;
+                        position: relative;
+                    `;
+
+                        const overlay = new kakao.maps.CustomOverlay({
+                            content: overlayContent,
+                            position: center,
+                            yAnchor: 1,
+                            zIndex: 3
+                        });
+
+                        container.push({path, properties, guide, overlay});
+                        overlayList.push(overlay);
+                    });
+                });
+            });
+    }
+
+
+    function updatePolygonsByZoom() {
+        const isSGG = currentLevel >= 7;
+
+        const show = isSGG ? sggPolygons : emdPolygons;
+        const hide = isSGG ? emdPolygons : sggPolygons;
+        const showOverlay = isSGG ? sggOverlayList : emdOverlayList;
+        const hideOverlay = isSGG ? emdOverlayList : sggOverlayList;
+
+        // ✅ 기존 강조된 polygon 제거
+        if (currentPolygon) {
+            currentPolygon.setMap(null);
+            currentPolygon = null;
+        }
+
+        // polygon 보이기/숨기기
+        hide.forEach(p => p.guide.setMap(null));
+        show.forEach(p => p.guide.setMap(map));
+
+        // overlay 보이기/숨기기
+        hideOverlay.forEach(o => o.setMap(null));
+        showOverlay.forEach(o => o.setMap(map));
+    }
+
+    function isSamePath(path1, path2) {
+        if (!path1 || !path2 || path1.length !== path2.length) return false;
+        for (let i = 0; i < path1.length; i++) {
+            if (path1[i].getLat().toFixed(6) !== path2[i].getLat().toFixed(6) ||
+                path1[i].getLng().toFixed(6) !== path2[i].getLng().toFixed(6)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function isPointInPolygon(latLng, path) {
+        let x = latLng.getLng(), y = latLng.getLat();
+        let inside = false;
+        for (let i = 0, j = path.length - 1; i < path.length; j = i++) {
+            let xi = path[i].getLng(), yi = path[i].getLat();
+            let xj = path[j].getLng(), yj = path[j].getLat();
+            let intersect = ((yi > y) !== (yj > y)) &&
+                (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-10) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    }
+
+
+</script>
+
+
+<script>
+    $(document).ready(function () {
+
+        // 지역 선택 UI 시군구 선택 시 그에 해당되는 행정동 나오게끔
+        $('#sggSelect').on('change', function () {
+            const sgg = $(this).val();
+            // 행정동 초기화
+            $('#emdSelect').empty().append('<option value="">행정동</option>');
+
+            if (!isProgrammatic) {
+                // 선택된 시군구 이름에 해당하는 polygon 찾기
+                for (let i = 0; i < sggPolygons.length; i++) {
+                    const {properties, path} = sggPolygons[i];
+
+                    if (properties.SIGUNGU_NM === sgg) {
+
+
+                        // 중심 좌표 계산
+                        const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
+                        const lngSum = path.reduce((sum, p) => sum + p.getLng(), 0);
+                        const center = new kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
+
+                        // 지도 중심 이동
+                        map.setLevel(7);
+                        map.panTo(center); // 좀 더 부드러운 이동
+
+                        // ✅ 이전 강조된 polygon 제거
+                        if (currentPolygon) {
+                            currentPolygon.setMap(null);
+                            currentPolygon = null;
+                        }
+
+                        // ✅ 새 polygon 강조 (선택 효과)
+                        currentPolygon = new kakao.maps.Polygon({
+                            map: map,
+                            path: path,
+                            strokeWeight: 2,
+                            strokeColor: '#004c80',
+                            strokeOpacity: 0.8,
+                            fillColor: '#00a0e9',
+                            fillOpacity: 0.3
+                        });
+
+                        break;
+                    }
+                }
+            }
+
+            if (sgg) {
+                $.ajax({
+                    url: 'getEmdsBySggNm',
+                    method: 'GET',
+                    data: {sgg: sgg},
+                    success: function (adminDongs) {
+
+                        $.each(adminDongs, function (index, adminDong) {
+                            $('#emdSelect').append(
+                                $('<option>', {value: adminDong.emdNm, text: adminDong.emdNm})
+                            );
+                        });
+
+                        // ✅ 이 시점에서 emdNm 설정하면 확실히 작동
+                        if (window.autoSelectedEmd) {
+                            $('#emdSelect').val(window.autoSelectedEmd).trigger('change');
+                            window.autoSelectedEmd = null;
+                            isProgrammatic = false;
+                        }
+
+                    },
+                    error: function () {
+                        alert('행정동 정보를 가져오는데 실패했습니다.');
+                    }
+                });
+            }
+        });
+
+        $('#emdSelect').on('change', function () {
+
+            const emd = $(this).val();
+
+            if (!emd) return;
+
+            for (let i = 0; i < emdPolygons.length; i++) {
+                const {properties, path} = emdPolygons[i];
+
+                if (properties.ADSTRD_NM === emd) {
+
+                    // ✅ 지도 중심 이동은 사용자 선택일 때만
+                    if (!isProgrammatic) {
+                        const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
+                        const lngSum = path.reduce((sum, p) => sum + p.getLng(), 0);
+                        const center = new kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
+
+                        map.setLevel(5); // 필요 시 확대
+                        map.panTo(center); // 좀 더 부드러운 이동
+
+                        // ✅ 이전 강조된 polygon 제거
+                        if (currentPolygon) {
+                            currentPolygon.setMap(null);
+                        }
+
+                        currentPolygon = null;
+
+                        // ✅ polygon 강조
+                        const polygon = new kakao.maps.Polygon({
+                            map: map,
+                            path: path,
+                            strokeWeight: 2,
+                            strokeColor: '#004c80',
+                            strokeOpacity: 0.8,
+                            fillColor: '#00a0e9',
+                            fillOpacity: 0.3
+                        });
+
+                        currentPolygon = polygon;
+
+                    }
+
+                    break;
+                }
+            }
+        });
+
+        // 대분류 클릭 시 그에 해당하는 중분류 나오는 코드
+        $(".major-item").click(function () {
+            const majorCd = $(this).data("majorcd");
+
+            $.ajax({
+                url: "getMiddleCategories",   // 🔁 실제 서버 엔드포인트로 수정
+                method: "GET",                  // 또는 "POST"
+                data: {majorCd: majorCd},
+                success: function (upjongCodes) {
+                    // li 항목만 생성
+                    let liHTML = "";
+
+                    upjongCodes.forEach(item => {
+                        liHTML += `
+                          <li class="middle-item h-12 w-full text-xl font-medium text-center text-black cursor-pointer hover:bg-gray-100"
+                              data-middleCd="${item.middleCd}">
+                            ${item.middleNm}
+                          </li>
+                        `;
+                    });
+
+                    // 기존 ul 안에 li 추가 (ul은 유지)
+                    $(".middleSelector ul").html(liHTML);
+                    $(".middleSelector").removeClass('hidden');
+                },
+                error: function () {
+                    alert("중분류 데이터를 불러오는 데 실패했습니다.");
+                }
+            });
+
+        });
+
+
+        // 중분류 클릭 시 그에 해당하는 소분류 나오는 코드
+        $(document).on("click", ".middle-item", function () {
+            const middleCd = $(this).data("middlecd");
+
+            $.ajax({
+                url: "getMinorCategories",   // 🔁 실제 서버 엔드포인트로 수정
+                method: "GET",                  // 또는 "POST"
+                data: {middleCd: middleCd},
+                success: function (upjongCodes) {
+                    // li 항목만 생성
+                    let liHTML = "";
+
+                    upjongCodes.forEach(item => {
+                        liHTML += `
+                          <li class="minor-item h-12 w-full text-xl font-medium text-center text-black cursor-pointer hover:bg-gray-100"
+                              data-minorCd="${item.minorCd}">
+                            ${item.minorNm}
+                          </li>
+                        `;
+                    });
+
+                    // 기존 ul 안에 li 추가 (ul은 유지)
+                    $(".minorSelector ul").html(liHTML);
+                    $(".minorSelector").removeClass('hidden');
+                },
+                error: function () {
+                    alert("소분류 데이터를 불러오는 데 실패했습니다.");
+                }
+            });
+        });
+
+        // 소분류 클릭 시
+        $(document).on("click", ".minor-item", function () {
+            const minorCd = $(this).data("minorcd");
+
+            $.ajax({
+                url: "getUpjongCodeByMinorCd",   // 🔁 실제 서버 엔드포인트로 수정
+                method: "GET",                  // 또는 "POST"
+                data: {minorCd: minorCd},
+                success: function (upjongCode) {
+
+                    $('.upjongInput').val(upjongCode.majorNm + " > " + upjongCode.middleNm + " > " + upjongCode.minorNm);
+
+                    $('.middleSelector').addClass('hidden');
+                    $('.minorSelector').addClass('hidden');
+                },
+                error: function () {
+                    alert("데이터를 불러오는 데 실패했습니다.");
+                }
+            });
+        });
+
+        // 업종 입력 시 자동완성 코드
+        $('.upjongInput').on('compositionend', function () {
+            const keyword = $(this).val().trim();
+
+            // ✅ 여기서도 검색 호출 가능
+            handleSearch(keyword);
+
+
+        }).on('keydown', function (e) {
+            // keyCode 8 = Backspace, 46 = Delete
+            if (e.keyCode === 8 || e.keyCode === 46) {
+                setTimeout(() => {
+                    const keyword = $(this).val().trim();
+                    handleSearch(keyword);
+                }, 10);
+            }
+        });
+
+        // 리스트 클릭 시 input에 값 설정
+        $('#autocompleteList').on('click', 'div', function () {
+            const selected = $(this).data('value');
+            $('.upjongInput').val(selected);
+            $('#autocompleteList').empty().addClass('hidden');
+        });
+    });
+
+    function handleSearch(keyword) {
+        if (keyword.length === 0) {
+            $('#autocompleteList').empty().addClass('hidden');
+            return;
+        }
+
+        $.ajax({
+            url: 'searchUpjong', // 백엔드 엔드포인트에 맞게 수정
+            method: 'GET',
+            data: {keyword: keyword},
+            success: function (upjongCodeList) {
+                console.log(upjongCodeList);
+                // if (upjongCodeList.length === 0) {
+                //     $('#autocompleteList').empty().addClass('hidden');
+                //     return;
+                // }
+                //
+                // let html = '';
+                // upjongCodeList.forEach(item => {
+                //     html += `<div class="p-2 hover:bg-gray-100 cursor-pointer" data-value="${item}">
+                //             ${item}
+                //          </div>`;
+                // });
+                //
+                // $('#autocompleteList').html(html).removeClass('hidden');
+            },
+            error: function () {
+                console.log('업종 검색 실패');
+            }
+        });
+    }
+
+    // 지역, 업종 데이터를 통해 정보 얻기 (위험도, 청약 데이터 등등..)
+    function searchInfoByRegionAndUpjong() {
+        const sgg = $('#sggSelect').val();
+        const emd = $('#emdSelect').val();
+        const upjong = $('.upjongInput').val().trim();
+
+        if (!sgg || !emd) {
+            alert('지역을 선택해주세요.');
+            return;
+        }
+
+        if (!upjong) {
+            alert('업종을 선택해주세요.');
+            return;
+        }
+
+        $.ajax({
+            url: 'searchInfoByRegionAndUpjong', // ✅ 실제 백엔드 URL로 바꿔야 함
+            method: 'GET',
+            data: {
+                sgg: sgg,
+                emd: emd,
+                upjong: upjong
+            },
+            success: function (response) {
+                console.log('서버 응답:', response);
+                // ✅ 여기에 데이터 렌더링 로직 작성
+                // 예: $('#resultArea').html(response.data);
+            },
+            error: function (xhr, status, error) {
+                console.error('에러 발생:', error);
+                alert('데이터를 불러오는 데 실패했습니다.');
+            }
+        });
+
+
+    }
+</script>
+
+<style>
+    .majorSelector li {
+        cursor: pointer;
+    }
+
+    .middelSelector li {
+        cursor: pointer;
+    }
+
+</style>
+
+<header th:replace="common/mapHeader::header" class="z-10 relative"></header>
+
+<!-- 카카오맵 -->
+<div id="map" class="absolute inset-0 z-0"></div>
+
+<!-- 지역 선택 UI -->
+<ul class="flex justify-between items-center w-[450px] h-[47px] overflow-hidden px-[10px] py-[15px] rounded-[10px] bg-white border border-black absolute left-1/2 -translate-x-1/2 top-[110px] z-10">
+    <li class="flex justify-center items-center h-[41px] cursor-pointer">
+
+        <select class="flex justify-center items-center text-[22px] text-center text-black cursor-pointer focus:outline-none focus:ring-0 focus:border-transparent"
+                name="sidoSelect"
+                id="sidoSelect">
+            <option>서울특별시</option>
+        </select>
+
+    </li>
+    <li class="flex justify-center items-center h-[41px]  ">
+        <select class="flex justify-center items-center text-[22px] text-center text-black cursor-pointer focus:outline-none focus:ring-0 focus:border-transparent"
+                name="sggSelect"
+                id="sggSelect">
+            <option value="">시/군/구</option>
+            <th:block th:each="adminDong : ${adminDongsGroupBySggCd}">
+                <option th:value="${adminDong.sggNm}" th:text="${adminDong.sggNm}"></option>
+            </th:block>
+        </select>
+    </li>
+    <li class="flex justify-center items-center h-[41px] ">
+        <select class="flex justify-center items-center text-[22px] text-center text-black cursor-pointer focus:outline-none focus:ring-0 focus:border-transparent"
+                name="emdSelect"
+                id="emdSelect">
+            <option>행정동</option>
+        </select>
+    </li>
+</ul>
+
+<!-- 업종 선택 UI -->
+<div class="flex absolute top-[180px] left-[150px] justify-start items-start overflow-hidden gap-2.5 px-[7px] py-1 z-10">
+    <div
+            class="flex flex-col justify-start items-center flex-grow-0 flex-shrink-0 h-[615px] w-[445px] overflow-hidden gap-[31px] pt-[30px] pb-[99px] rounded-[15px] bg-white border border-black"
+    >
+        <div
+                class="flex justify-start items-center self-stretch flex-grow-0 flex-shrink-0 h-[46px] relative overflow-hidden gap-2.5 pl-[30px] pr-[83px]"
+        >
+            <p
+                    class="flex-grow-0 flex-shrink-0 w-[165px] h-[46px] text-xl font-medium text-left text-black"
+            >
+                점수 확인
+            </p>
+        </div>
+        <div
+                class="flex flex-col justify-start items-start flex-grow-0 flex-shrink-0 overflow-hidden gap-5"
+        >
+            <div
+                    class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-2.5 px-[104px] py-2.5"
+            >
+                <div
+                        class="flex justify-between items-center flex-grow-0 flex-shrink-0 w-[381px] h-[41px] relative gap-2.5 px-2.5 py-[7px] rounded-[15px] bg-white border border-black relative"
+                >
+                    <input placeholder="업종을 입력해주세요"
+                           class="upjongInput flex-grow flex-shrink-0  text-xl font-medium text-left focus:outline-none focus:border-none"
+                    />
+
+                    <svg
+                            width="22"
+                            height="22"
+                            viewBox="0 0 22 22"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="flex-grow-0 flex-shrink-0 w-[21px] h-[21.5px]"
+                            preserveAspectRatio="none"
+                    >
+                        <circle cx="9" cy="9" r="8.5" transform="matrix(-1 0 0 1 18 0)" stroke="black"></circle>
+                        <path d="M15 15.5L21 21.5" stroke="black" stroke-linecap="round"></path>
+                    </svg>
+                    <div id="autocompleteList"
+                         class="border border-gray-300 bg-white absolute z-10 hidden w-full max-h-48 overflow-auto">
+                        <!-- 자동완성 결과가 여기에 들어감 -->
+                    </div>
+                </div>
+            </div>
+            <div
+                    class="majorSelector flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-[19px]"
+            >
+                <ul class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden px-[5px]">
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black border border-black cursor-pointer"
+                        data-majorCd="L1">
+                        부동산
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="I1">
+                        숙박
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="M1">
+                        과학/기술
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        +
+                        data-majorCd="Q1">
+                        보건/의료
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="N1">
+                        관리/임대
+                    </li>
+                </ul>
+
+                <ul class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden">
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="G2">
+                        소매
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="I2">
+                        음식
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="S2">
+                        수리
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="R1">
+                        예체능
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="P1">
+                        교육
+                    </li>
+                </ul>
+
+            </div>
+        </div>
+        <div onclick="searchInfoByRegionAndUpjong();"
+             class="flex justify-center items-center flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5 px-[115px] py-2.5 rounded-[10px] bg-[#10f] cursor-pointer"
+        >
+            <p class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-36 h-[38px] text-xl font-medium text-center text-white ">
+                확인
+            </p>
+        </div>
+
+        <div
+                class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 h-[181px] relative overflow-hidden gap-[35px] px-[53px]"
+        >
+            <p
+                    class="flex-grow-0 flex-shrink-0 w-[150px] h-[88px] text-xl font-medium text-center text-black"
+            >
+        <span
+                class="flex-grow-0 flex-shrink-0 w-[150px] h-[88px] text-xl font-medium text-center text-black"
+        >확인 입력 시 </span
+        ><br/><span
+                    class="flex-grow-0 flex-shrink-0 w-[150px] h-[88px] text-xl font-medium text-center text-black"
+            >점수 뜨는 곳</span
+            >
+            </p>
+            <div
+                    class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[205px] h-12 relative overflow-hidden gap-2.5 px-[58px] rounded-[5px] bg-[#10f]"
+            >
+                <p
+                        class="flex-grow-0 flex-shrink-0 w-[102px] h-8 text-xl font-medium text-center text-white cursor-pointer"
+                >
+                    상세보기
+                </p>
+            </div>
+        </div>
+    </div>
+    <div
+            class="middleSelector hidden flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[10px] rounded-[15px] bg-white border border-black"
+    >
+        <ul
+                class="flex flex-col justify-start items-center w-full self-stretch flex-grow-0 flex-shrink-0 relative overflow-auto gap-2.5 p-2.5"
+        >
+
+        </ul>
+    </div>
+    <div
+            class="minorSelector hidden flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[23px] py-[13px] rounded-[15px] bg-white border border-black"
+    >
+        <ul
+                class="flex flex-col justify-start w-full items-center self-stretch flex-grow-0 flex-shrink-0 relative overflow-auto gap-2.5 p-2.5"
+        >
+        </ul>
+    </div>
+</div>
