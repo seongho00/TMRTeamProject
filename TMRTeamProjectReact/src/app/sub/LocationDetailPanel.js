@@ -46,6 +46,7 @@ const LocationDetailPanel = ({info, onClose}) => {
     const ageLabels = ['10대', '20대', '30대', '40대', '50대', '60대 이상'];
     const ageValues = [data.age10, data.age20, data.age30, data.age40, data.age50, data.age60plus];
     const workingValues = [data.workingAge10, data.workingAge20, data.workingAge30, data.workingAge40, data.workingAge50, data.workingAge60Plus];
+    const residentPopulationValues = [data.residentPopulationAge10, data.residentPopulationAge20, data.residentPopulationAge30, data.residentPopulationAge40, data.residentPopulationAge50, data.residentPopulationAge60Plus];
 
     const commonColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
 
@@ -154,17 +155,24 @@ const LocationDetailPanel = ({info, onClose}) => {
                     <X className="tw-w-4 tw-h-4"/>
                 </button>
 
-                <h2 className="text-xl font-bold mb-2">{data.emdName}</h2>
+                <h2 className="tw-flex tw-justify-center tw-items-center tw-text-xl tw-font-bold tw-mb-2">{data.emdName}</h2>
 
-                {/* 연령대 차트 */}
+
                 <div className="tw-w-full tw-flex tw-flex-col tw-gap-8 tw-items-center">
+                    {/* 유동인구 pie 차트 */}
                     <div className="tw-w-[280px]">
                         <h3 className="tw-text-center tw-font-semibold tw-text-base tw-mb-2">연령대별 유동인구</h3>
                         <Pie data={makeChartData(ageValues)} options={pieOptions(ageValues)}/>
                     </div>
+                    {/* 직장인구 pie 차트 */}
                     <div className="tw-w-[280px]">
                         <h3 className="tw-text-center tw-font-semibold tw-text-base tw-mb-2">연령대별 직장인구</h3>
                         <Pie data={makeChartData(workingValues)} options={pieOptions(workingValues)}/>
+                    </div>
+                    {/* 상주인구 pie 차트 */}
+                    <div className="tw-w-[280px]">
+                        <h3 className="tw-text-center tw-font-semibold tw-text-base tw-mb-2">연령대별 상주인구</h3>
+                        <Pie data={makeChartData(residentPopulationValues)} options={pieOptions(residentPopulationValues)}/>
                     </div>
                 </div>
 
