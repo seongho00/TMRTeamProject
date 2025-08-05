@@ -25,6 +25,7 @@ import {
     LineElement,
     Filler,
 } from "chart.js";
+import {X} from "lucide-react";
 
 ChartJS.register(
     RadialLinearScale,
@@ -44,7 +45,7 @@ const colorList = [
     "#ff9da7", // 핑크
 ];
 
-const CompareChartPanel = ({infos}) => {
+const CompareChartPanel = ({infos, onClose}) => {
     const [fetchedData, setFetchedData] = useState([]);
 
     useEffect(() => {
@@ -360,6 +361,14 @@ const CompareChartPanel = ({infos}) => {
 
     return (
         <div className="tw-w-full tw-max-w-4xl tw-mx-auto tw-mt-12">
+            <button
+                onClick={onClose}
+                className="tw-absolute tw-top-3 tw-right-3 tw-w-8 tw-h-8 tw-rounded-full tw-bg-gray-200 hover:tw-bg-gray-300 tw-text-gray-700 hover:tw-text-black tw-flex tw-items-center tw-justify-center tw-transition"
+                aria-label="닫기"
+            >
+                <X className="tw-w-4 tw-h-4"/>
+            </button>
+
             <h2 className="tw-text-xl tw-font-bold tw-mb-4 tw-text-center">📊 다중 지역 비교</h2>
             <Bar data={dayChartData} options={dayChartOptions}/>
 

@@ -116,9 +116,8 @@ const LocationDetailPanel = ({info, onClose}) => {
                 label: "시간대별 유동인구 수",
                 data: timeData,
                 borderColor: "#f28e2b",
-                backgroundColor: "#f28e2b66",
                 tension: 0.3,
-                fill: true,
+                fill: false,
             },
         ],
     };
