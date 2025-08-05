@@ -16,7 +16,7 @@ public class CommercialDataService {
         try {
             csvData = new CsvToBeanBuilder<CommercialData>(
                     new InputStreamReader(
-                            new FileInputStream("C:\\Users\\admin\\Desktop\\업종별_전처리결과\\CS100001_한식음식점.csv"), "UTF-8"))
+                            new FileInputStream("C:\\Users\\qjvpd\\OneDrive\\바탕 화면\\업종별_병합결과_클로스터링\\CS100001_한식음식점_클러스터링.csv"), "UTF-8"))
                     .withType(CommercialData.class)
                     .withIgnoreLeadingWhiteSpace(true)
                     .build()
