@@ -20,7 +20,24 @@ const LocationSelectPage = ({onSelect, onBack}) => {
 
     useEffect(() => {
         isCompareModeRef.current = isCompareMode;
+
+        // 비교모드 진입 시 오버레이 제거
+        if (currentOverlay.current) {
+            currentOverlay.current.setMap(null);
+            currentOverlay.current = null;
+
+            // 2. 현재 선택된 polygon 색상 초기화
+            currentPolygon.current.setOptions({
+                strokeStyle: "dash",
+                strokeColor: "#004c80",
+                fillColor: "#00a0e9",
+                fillOpacity: 0.01,
+            });
+            currentPolygon.current = null;
+        }
+
     }, [isCompareMode]);
+
 
     useEffect(() => {
         if (!scriptLoaded || !window.kakao) return;
@@ -148,10 +165,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                         const dominantAge = Object.entries(ageMap)
                                             .sort((a, b) => b[1] - a[1])[0][0];  // 수치가 가장 큰 연령대 키 추출
 
-                                        console.log("클릭됨");
-                                        console.log(isCompareModeRef.current);
                                         if (isCompareModeRef.current) {
-                                            console.log("비교모드 활성화");
                                             // ✅ 비교 모드일 경우 오버레이 없이 compareList에만 추가
                                             setCompareList(prev => {
                                                 const already = prev.find(p => p.address === emdCode);
@@ -178,31 +192,31 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                             // 오버레이 content DOM 생성
                                             const content = document.createElement("div");
                                             content.innerHTML = `
-                                            <div style="
-                                              background: white;
-                                              border: 1px solid #333;
-                                              border-radius: 8px;
-                                              padding: 8px 12px;
-                                              font-size: 13px;
-                                              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                                              max-width: 240px;
-                                            ">
-                                              <strong>${name}</strong><br/>
-                                              👥 총 유동인구: ${totalFloating.toLocaleString()}<br/>
-                                              🧑‍💼 직장인구: ${totalWorkers.toLocaleString()}<br/>
-                                              🎯 주 연령대: ${dominantAge}<br/>
-                                              <button id="detail-button" style="
-                                                  margin-top: 6px;
-                                                  background: #3182ce;
-                                                  color: white;
-                                                  border: none;
-                                                  padding: 4px 8px;
-                                                  font-size: 12px;
-                                                  border-radius: 4px;
-                                                  cursor: pointer;
-                                                ">상세보기</button>
-                                            </div>
-                                        `;
+                                                <div style="
+                                                  background: white;
+                                                  border: 1px solid #333;
+                                                  border-radius: 8px;
+                                                  padding: 8px 12px;
+                                                  font-size: 13px;
+                                                  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                                                  max-width: 240px;
+                                                ">
+                                                  <strong>${name}</strong><br/>
+                                                  👥 총 유동인구: ${totalFloating.toLocaleString()}<br/>
+                                                  🧑‍💼 직장인구: ${totalWorkers.toLocaleString()}<br/>
+                                                  🎯 주 연령대: ${dominantAge}<br/>
+                                                  <button id="detail-button" style="
+                                                          margin-top: 6px;
+                                                          background: #3182ce;
+                                                          color: white;
+                                                          border: none;
+                                                          padding: 4px 8px;
+                                                          font-size: 12px;
+                                                          border-radius: 4px;
+                                                          cursor: pointer;
+                                                        ">상세보기</button>
+                                                </div>
+                                              `;
 
                                             // 오버레이 생성 및 표시
                                             const overlay = new kakao.maps.CustomOverlay({
@@ -221,6 +235,52 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                                     address: emdCode,
                                                 });
                                             });
+
+                                            if (isAlreadySelected) {
+                                                // 선택 해제
+                                                polygon.setOptions({
+                                                    strokeStyle: "dash",
+                                                    strokeColor: "#004c80",
+                                                    fillColor: "#00a0e9",
+                                                    fillOpacity: 0.01,
+                                                });
+                                                currentPolygon.current = null;
+                                                setSelectedInfo(null);
+
+                                            } else {
+                                                // 새 polygon 선택
+                                                if (currentPolygon.current) {
+                                                    currentPolygon.current.setOptions({
+                                                        strokeStyle: "dash",
+                                                        fillOpacity: 0.01,
+                                                    });
+                                                }
+                                                polygon.setOptions({
+                                                    strokeStyle: "solid",
+                                                    fillOpacity: 0.3,
+                                                });
+                                                currentPolygon.current = polygon;
+
+                                                setSelectedInfo({
+                                                    address: name,
+                                                    path,
+                                                    levelType: isSggLevel ? "sgg" : "emd",
+                                                });
+                                                if (currentPolygon.current) {
+                                                    currentPolygon.current.setOptions({fillOpacity: 0.01});
+                                                }
+
+                                                polygon.setOptions({
+                                                    strokeStyle: "solid",
+                                                    fillOpacity: 0.3,
+                                                });
+                                                currentPolygon.current = polygon;
+
+                                                setSelectedInfo({
+                                                    address: name,
+                                                    path,
+                                                });
+                                            }
                                         }
 
                                     })
@@ -228,52 +288,6 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                         console.error("에러 발생:", err);
                                     });
 
-
-                                if (isAlreadySelected) {
-                                    // 선택 해제
-                                    polygon.setOptions({
-                                        strokeStyle: "dash",
-                                        strokeColor: "#004c80",
-                                        fillColor: "#00a0e9",
-                                        fillOpacity: 0.01,
-                                    });
-                                    currentPolygon.current = null;
-                                    setSelectedInfo(null);
-
-                                } else {
-                                    // 새 polygon 선택
-                                    if (currentPolygon.current) {
-                                        currentPolygon.current.setOptions({
-                                            strokeStyle: "dash",
-                                            fillOpacity: 0.01,
-                                        });
-                                    }
-                                    polygon.setOptions({
-                                        strokeStyle: "solid",
-                                        fillOpacity: 0.3,
-                                    });
-                                    currentPolygon.current = polygon;
-
-                                    setSelectedInfo({
-                                        address: name,
-                                        path,
-                                        levelType: isSggLevel ? "sgg" : "emd",
-                                    });
-                                    if (currentPolygon.current) {
-                                        currentPolygon.current.setOptions({fillOpacity: 0.01});
-                                    }
-
-                                    polygon.setOptions({
-                                        strokeStyle: "solid",
-                                        fillOpacity: 0.3,
-                                    });
-                                    currentPolygon.current = polygon;
-
-                                    setSelectedInfo({
-                                        address: name,
-                                        path,
-                                    });
-                                }
 
                             });
                         }
