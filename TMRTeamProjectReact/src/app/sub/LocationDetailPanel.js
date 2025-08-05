@@ -2,6 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {X} from "lucide-react";
 import {Pie} from 'react-chartjs-2';
 import {Bar, Line} from "react-chartjs-2";
+import {motion, AnimatePresence} from "framer-motion";
 
 import {
     Chart as ChartJS,
@@ -89,6 +90,7 @@ const LocationDetailPanel = ({info, onClose}) => {
 
     const dayChartOptions = {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {display: false},
             title: {
@@ -134,41 +136,50 @@ const LocationDetailPanel = ({info, onClose}) => {
         },
     };
     return (
-        <div
-            className="tw-fixed tw-right-0 tw-overflow-auto tw-top-0 tw-h-full tw-w-[300px] tw-bg-white tw-shadow-lg tw-p-4 tw-z-50 tw-border tw-border-black">
-            <button
-                onClick={onClose}
-                className="tw-absolute tw-top-3 tw-right-3 tw-w-8 tw-h-8 tw-rounded-full tw-bg-gray-200 hover:tw-bg-gray-300 tw-text-gray-700 hover:tw-text-black tw-flex tw-items-center tw-justify-center tw-transition"
-                aria-label="닫기"
+        <AnimatePresence>
+            <motion.div
+                key={info.address}
+                initial={{x: "100%"}}
+                animate={{x: 0}}
+                exit={{x: "100%"}}
+                transition={{type: "tween", duration: 0.5}}
+                className="tw-fixed tw-top-0 tw-right-0 tw-h-full tw-w-[500px] tw-bg-white tw-shadow-lg tw-z-50 tw-border tw-border-black tw-overflow-auto"
             >
-                <X className="tw-w-4 tw-h-4"/>
-            </button>
 
-            <h2 className="text-xl font-bold mb-2">{info.address}</h2>
+                <button
+                    onClick={onClose}
+                    className="tw-absolute tw-top-3 tw-right-3 tw-w-8 tw-h-8 tw-rounded-full tw-bg-gray-200 hover:tw-bg-gray-300 tw-text-gray-700 hover:tw-text-black tw-flex tw-items-center tw-justify-center tw-transition"
+                    aria-label="닫기"
+                >
+                    <X className="tw-w-4 tw-h-4"/>
+                </button>
 
-            {/* 연령대 차트 */}
-            <div className="tw-w-full tw-flex tw-flex-col tw-gap-8 tw-items-center">
-                <div className="tw-w-[280px]">
-                    <h3 className="tw-text-center tw-font-semibold tw-text-base tw-mb-2">연령대별 유동인구</h3>
-                    <Pie data={makeChartData(ageValues)} options={pieOptions(ageValues)}/>
-                </div>
-                <div className="tw-w-[280px]">
-                    <h3 className="tw-text-center tw-font-semibold tw-text-base tw-mb-2">연령대별 직장인구</h3>
-                    <Pie data={makeChartData(workingValues)} options={pieOptions(workingValues)}/>
-                </div>
-            </div>
+                <h2 className="text-xl font-bold mb-2">{data.emdName}</h2>
 
-            {/* 요일, 시간별 유동인구 차트 */}
-            <div className="tw-p-6 tw-space-y-12">
-                <div className="tw-w-full tw-max-w-[600px] tw-mx-auto">
-                    <Bar data={dayChartData} options={dayChartOptions}/>
+                {/* 연령대 차트 */}
+                <div className="tw-w-full tw-flex tw-flex-col tw-gap-8 tw-items-center">
+                    <div className="tw-w-[280px]">
+                        <h3 className="tw-text-center tw-font-semibold tw-text-base tw-mb-2">연령대별 유동인구</h3>
+                        <Pie data={makeChartData(ageValues)} options={pieOptions(ageValues)}/>
+                    </div>
+                    <div className="tw-w-[280px]">
+                        <h3 className="tw-text-center tw-font-semibold tw-text-base tw-mb-2">연령대별 직장인구</h3>
+                        <Pie data={makeChartData(workingValues)} options={pieOptions(workingValues)}/>
+                    </div>
                 </div>
-                <div className="tw-w-full tw-max-w-[600px] tw-mx-auto">
-                    <Line data={timeChartData} options={timeChartOptions}/>
-                </div>
-            </div>
 
-        </div>
+                {/* 요일, 시간별 유동인구 차트 */}
+                <div className="tw-p-6 tw-space-y-12">
+                    <div className="tw-w-full tw-h-[200px] tw-mx-auto">
+                        <Bar data={dayChartData} options={dayChartOptions}/>
+                    </div>
+                    <div className="tw-w-full tw-h-[200px] tw-mx-auto">
+                        <Line data={timeChartData} options={timeChartOptions}/>
+                    </div>
+
+                </div>
+            </motion.div>
+        </AnimatePresence>
     );
 };
 

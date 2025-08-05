@@ -291,6 +291,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
             </button>
             {detailInfo && (
                 <LocationDetailPanel
+                    key={detailInfo.address}
                     info={detailInfo}
                     onClose={() => setDetailInfo(null)}
                 />
