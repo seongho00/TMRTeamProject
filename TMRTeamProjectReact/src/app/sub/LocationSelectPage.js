@@ -14,6 +14,13 @@ const LocationSelectPage = ({onSelect, onBack}) => {
     const overlayList = useRef([]);
     const currentOverlay = useRef(null); // 오버레이 1개만 유지
     const [detailInfo, setDetailInfo] = useState(null);
+    const [isCompareMode, setIsCompareMode] = useState(false);
+    const [compareList, setCompareList] = useState([]);
+    const isCompareModeRef = useRef(false);
+
+    useEffect(() => {
+        isCompareModeRef.current = isCompareMode;
+    }, [isCompareMode]);
 
     useEffect(() => {
         if (!scriptLoaded || !window.kakao) return;
@@ -141,9 +148,36 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                         const dominantAge = Object.entries(ageMap)
                                             .sort((a, b) => b[1] - a[1])[0][0];  // 수치가 가장 큰 연령대 키 추출
 
-                                        // 오버레이 content DOM 생성
-                                        const content = document.createElement("div");
-                                        content.innerHTML = `
+                                        console.log("클릭됨");
+                                        console.log(isCompareModeRef.current);
+                                        if (isCompareModeRef.current) {
+                                            console.log("비교모드 활성화");
+                                            // ✅ 비교 모드일 경우 오버레이 없이 compareList에만 추가
+                                            setCompareList(prev => {
+                                                const already = prev.find(p => p.address === emdCode);
+                                                if (already) return prev;
+                                                return [...prev, {
+                                                    address: emdCode,
+                                                    name,
+                                                    totalFloating,
+                                                    totalWorkers,
+                                                    ageMap,
+                                                    dominantAge,
+                                                }];
+                                            });
+
+                                            // ✅ Polygon 색 강조
+                                            polygon.setOptions({
+                                                strokeStyle: "solid",
+                                                strokeColor: "#f28e2b",
+                                                fillColor: "#fcd34d",
+                                                fillOpacity: 0.5,
+                                            });
+
+                                        } else {
+                                            // 오버레이 content DOM 생성
+                                            const content = document.createElement("div");
+                                            content.innerHTML = `
                                             <div style="
                                               background: white;
                                               border: 1px solid #333;
@@ -156,7 +190,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                               <strong>${name}</strong><br/>
                                               👥 총 유동인구: ${totalFloating.toLocaleString()}<br/>
                                               🧑‍💼 직장인구: ${totalWorkers.toLocaleString()}<br/>
-                                              🎯 연령대: ${dominantAge}<br/>
+                                              🎯 주 연령대: ${dominantAge}<br/>
                                               <button id="detail-button" style="
                                                   margin-top: 6px;
                                                   background: #3182ce;
@@ -170,23 +204,24 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                             </div>
                                         `;
 
-                                        // 오버레이 생성 및 표시
-                                        const overlay = new kakao.maps.CustomOverlay({
-                                            content,
-                                            position: center,
-                                            yAnchor: 1.2,
-                                            zIndex: 10,
-                                        });
-                                        overlay.setMap(map);
-                                        currentOverlay.current = overlay;
-
-                                        // 상세보기 버튼 활성화
-                                        document.getElementById("detail-button").addEventListener("click", () => {
-                                            console.log("detail")
-                                            setDetailInfo({
-                                                address: emdCode,
+                                            // 오버레이 생성 및 표시
+                                            const overlay = new kakao.maps.CustomOverlay({
+                                                content,
+                                                position: center,
+                                                yAnchor: 1.2,
+                                                zIndex: 10,
                                             });
-                                        });
+                                            overlay.setMap(map);
+                                            currentOverlay.current = overlay;
+
+                                            // 상세보기 버튼 활성화
+                                            document.getElementById("detail-button").addEventListener("click", () => {
+                                                console.log("detail")
+                                                setDetailInfo({
+                                                    address: emdCode,
+                                                });
+                                            });
+                                        }
 
                                     })
                                     .catch(err => {
@@ -268,11 +303,13 @@ const LocationSelectPage = ({onSelect, onBack}) => {
             <h1 className="tw-text-3xl tw-font-bold tw-mb-4">📍 창업 지역 선택</h1>
             <div id="map" className="tw-w-full tw-max-w-4xl tw-h-[500px] tw-mb-6 tw-border tw-rounded-lg"/>
 
-            {selectedInfo && (
-                <div className="tw-text-center tw-mb-6">
+            <div className="tw-text-center tw-mb-6 tw-min-h-[24px]">
+                {selectedInfo ? (
                     <p className="tw-text-lg">선택된 행정동: {selectedInfo.address}</p>
-                </div>
-            )}
+                ) : (
+                    <p className="tw-text-lg tw-text-transparent">placeholder</p>
+                )}
+            </div>
 
             <button
                 onClick={() => {
@@ -296,6 +333,24 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                     onClose={() => setDetailInfo(null)}
                 />
             )}
+
+            <button
+                onClick={() => {
+                    setIsCompareMode((prev) => {
+                        const next = !prev;
+                        if (!next) {
+                            setCompareList([]); // 비교모드 종료할 때 초기화
+                        }
+                        return next;
+                    });
+                }}
+                className={`tw-fixed tw-top-6 tw-right-6 tw-px-4 tw-py-2 tw-rounded-md tw-font-semibold tw-transition ${
+                    isCompareMode ? "tw-bg-yellow-400 tw-text-black" : "tw-bg-gray-200 tw-text-gray-800"
+                }`}
+            >
+                {isCompareMode ? "⛔ 비교모드 종료" : "📊 비교모드 시작"}
+            </button>
+
         </div>
     );
 };
