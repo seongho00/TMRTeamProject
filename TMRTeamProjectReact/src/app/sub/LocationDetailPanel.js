@@ -1,12 +1,30 @@
 import React, {useEffect, useState} from 'react';
 import {X} from "lucide-react";
 import {Pie} from 'react-chartjs-2';
+import {Bar, Line} from "react-chartjs-2";
+
 import {
     Chart as ChartJS,
-    ArcElement,
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    PointElement,
+    LineElement,
+    Title,
     Tooltip,
-    Legend,
-} from 'chart.js';
+    Legend, ArcElement
+} from "chart.js";
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend
+);
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -32,15 +50,15 @@ const LocationDetailPanel = ({info, onClose}) => {
 
     const makeChartData = values => ({
         labels: ageLabels,
-        datasets: [{ data: values, backgroundColor: commonColors }]
+        datasets: [{data: values, backgroundColor: commonColors}]
     });
 
-    const options = (values) => ({
+    const pieOptions = (values) => ({
         responsive: true,
         maintainAspectRatio: true,
         aspectRatio: 1.3,
         plugins: {
-            legend: { position: 'bottom' },
+            legend: {position: 'bottom'},
             tooltip: {
                 callbacks: {
                     label: context => {
@@ -54,9 +72,70 @@ const LocationDetailPanel = ({info, onClose}) => {
         }
     });
 
+    // ✅ 요일별 라벨
+    const dayLabels = ["월", "화", "수", "목", "금", "토", "일"];
+    const dayData = [data.mondayFloatingPopulation, data.tuesdayFloatingPopulation, data.wednesdayFloatingPopulation, data.thursdayFloatingPopulation, data.fridayFloatingPopulation, data.saturdayFloatingPopulation, data.sundayFloatingPopulation];
+
+    const dayChartData = {
+        labels: dayLabels,
+        datasets: [
+            {
+                label: "요일별 유동인구 수",
+                data: dayData,
+                backgroundColor: "#4e79a7",
+            },
+        ],
+    };
+
+    const dayChartOptions = {
+        responsive: true,
+        plugins: {
+            legend: {display: false},
+            title: {
+                display: true,
+                text: "요일별 유동인구",
+            },
+        },
+        scales: {
+            y: {beginAtZero: true},
+        },
+    };
+
+
+    // ✅ 시간대별 유동인구 데이터
+    const timeLabels = ["00~06시", "06~11시", "11~14시", "14~17시", "17~21시", "21~24시"];
+    const timeData = [data.floating00to06, data.floating06to11, data.floating11to14, data.floating14to17, data.floating17to21, data.floating21to24];
+
+    const timeChartData = {
+        labels: timeLabels,
+        datasets: [
+            {
+                label: "시간대별 유동인구 수",
+                data: timeData,
+                borderColor: "#f28e2b",
+                backgroundColor: "#f28e2b66",
+                tension: 0.3,
+                fill: true,
+            },
+        ],
+    };
+
+    const timeChartOptions = {
+        responsive: true,
+        plugins: {
+            legend: {position: "top"},
+            title: {
+                display: true,
+                text: "시간대별 유동인구",
+            },
+        },
+        scales: {
+            y: {beginAtZero: true},
+        },
+    };
     return (
         <div
-            className="tw-fixed tw-right-0 tw-top-0 tw-h-full tw-w-[300px] tw-bg-white tw-shadow-lg tw-p-4 tw-z-50 tw-border tw-border-black">
+            className="tw-fixed tw-right-0 tw-overflow-auto tw-top-0 tw-h-full tw-w-[300px] tw-bg-white tw-shadow-lg tw-p-4 tw-z-50 tw-border tw-border-black">
             <button
                 onClick={onClose}
                 className="tw-absolute tw-top-3 tw-right-3 tw-w-8 tw-h-8 tw-rounded-full tw-bg-gray-200 hover:tw-bg-gray-300 tw-text-gray-700 hover:tw-text-black tw-flex tw-items-center tw-justify-center tw-transition"
@@ -71,14 +150,24 @@ const LocationDetailPanel = ({info, onClose}) => {
             <div className="tw-w-full tw-flex tw-flex-col tw-gap-8 tw-items-center">
                 <div className="tw-w-[280px]">
                     <h3 className="tw-text-center tw-font-semibold tw-text-base tw-mb-2">연령대별 유동인구</h3>
-                    <Pie data={makeChartData(ageValues)} options={options(ageValues)} />
+                    <Pie data={makeChartData(ageValues)} options={pieOptions(ageValues)}/>
                 </div>
                 <div className="tw-w-[280px]">
                     <h3 className="tw-text-center tw-font-semibold tw-text-base tw-mb-2">연령대별 직장인구</h3>
-                    <Pie data={makeChartData(workingValues)} options={options(workingValues)} />
+                    <Pie data={makeChartData(workingValues)} options={pieOptions(workingValues)}/>
                 </div>
             </div>
-            {/* 추가로 차트, 링크, 등등도 삽입 가능 */}
+
+            {/* 요일, 시간별 유동인구 차트 */}
+            <div className="tw-p-6 tw-space-y-12">
+                <div className="tw-w-full tw-max-w-[600px] tw-mx-auto">
+                    <Bar data={dayChartData} options={dayChartOptions}/>
+                </div>
+                <div className="tw-w-full tw-max-w-[600px] tw-mx-auto">
+                    <Line data={timeChartData} options={timeChartOptions}/>
+                </div>
+            </div>
+
         </div>
     );
 };
