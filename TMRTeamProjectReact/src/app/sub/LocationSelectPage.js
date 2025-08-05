@@ -4,6 +4,7 @@ import Script from "next/script";
 import React, {useEffect, useRef, useState} from "react";
 import LocationDetailPanel from "./LocationDetailPanel";
 import {motion, AnimatePresence} from "framer-motion";
+import CompareChartPanel from "./CompareChartPanel";
 
 
 const LocationSelectPage = ({onSelect, onBack}) => {
@@ -58,7 +59,6 @@ const LocationSelectPage = ({onSelect, onBack}) => {
 
             kakao.maps.event.addListener(map, "zoom_changed", () => {
                 const level = map.getLevel();
-                console.log("Zoom level changed:", level);
                 clearPolygons();
                 loadAndDrawPolygons(level, map);
             });
@@ -170,7 +170,16 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                             // ✅ 비교 모드일 경우 오버레이 없이 compareList에만 추가
                                             setCompareList(prev => {
                                                 const already = prev.find(p => p.address === emdCode);
-                                                if (already) return prev;
+                                                if (already) {
+                                                    // 이미 있으면 제거
+                                                    polygon.setOptions({
+                                                        strokeStyle: "dash",
+                                                        strokeColor: "#004c80",
+                                                        fillColor: "#00a0e9",
+                                                        fillOpacity: 0.01,
+                                                    });
+                                                    return prev.filter(p => p.address !== emdCode);
+                                                }
                                                 return [...prev, {
                                                     address: emdCode,
                                                     name,
@@ -389,6 +398,11 @@ const LocationSelectPage = ({onSelect, onBack}) => {
             >
                 ← 이전 단계
             </button>
+
+            {isCompareMode && compareList.length > 0 && (
+                <CompareChartPanel data={compareList} />
+            )}
+
         </div>
 
 
