@@ -7,7 +7,6 @@ from playwright.sync_api import sync_playwright
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 def scrape_properties(dong_code: str):
-    """주어진 동 코드를 사용하여 네이버 부동산 매물을 스크래핑합니다."""
     results = []
     url = f"https://new.land.naver.com/offices?cortarNo={dong_code}"
 

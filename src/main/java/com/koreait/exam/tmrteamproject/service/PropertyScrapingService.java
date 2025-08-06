@@ -2,6 +2,7 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.koreait.exam.tmrteamproject.vo.PropertyListingDto;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +15,7 @@ import java.util.List;
 public class PropertyScrapingService {
 
     public List<PropertyListingDto> getProperties(String dongCode) {
-        String pythonScriptPath = "C:/Users/tk758/Desktop/TMR/naver_crawler/naver_property_scraper.py";
+        String pythonScriptPath = "C:/Users/tk758/Desktop/TMRTeamProject/TMRTeamProjectPython/naver_crawler/naver_property_scraper.py";
         String pythonExecutable = "python";
 
         ProcessBuilder processBuilder = new ProcessBuilder(pythonExecutable, pythonScriptPath, dongCode);
