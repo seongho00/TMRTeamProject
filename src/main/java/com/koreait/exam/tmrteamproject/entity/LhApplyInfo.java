@@ -60,14 +60,6 @@ public class LhApplyInfo {
     @Column(name = "markdown_text", columnDefinition = "LONGTEXT")
     private String markdownText;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "markdown_status", nullable = false)
-    private MarkdownStatus markdownStatus = MarkdownStatus.PENDING;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "processing_status", nullable = false)
-    private LhProcessingStatus processingStatus = LhProcessingStatus.PENDING;
-
     @OneToMany(mappedBy = "lhApplyInfo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LhShopDetail> details = new ArrayList<>();
 
