@@ -28,25 +28,25 @@ const Page = () => {
     };
 
 
-    // if (!character) {
-    //     return <CharacterSelectPage onSelect={setCharacter} onBack={goBack}/>;
-    // }
-    //
-    // if (!business) {
-    //     return <BusinessSelectPage onSelect={setBusiness} onBack={goBack}/>;
-    // }
+    if (!character) {
+        return <CharacterSelectPage onSelect={setCharacter} onBack={goBack}/>;
+    }
+
+    if (!business) {
+        return <BusinessSelectPage onSelect={setBusiness} onBack={goBack}/>;
+    }
 
     if (!location) return <LocationSelectPage onSelect={setLocation} onBack={goBack}/>;
 
-    // if (!costs)
-    //     return (
-    //         <CostSettingPage
-    //             character={character}
-    //             business={business}
-    //             onSubmit={setCosts}
-    //             onBack={goBack}
-    //         />
-    //     );
+    if (!costs)
+        return (
+            <CostSettingPage
+                character={character}
+                business={business}
+                onSubmit={setCosts}
+                onBack={goBack}
+            />
+        );
 
 
     return (

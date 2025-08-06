@@ -82,7 +82,7 @@ const WeeklySimulationPage = ({character, business, location, initialCost, onFin
         }
 
     };
-    
+
     // 해당되는 연도의 달월이 몇주차까지 있는지 계산
     function getLastWeekOfMonth(year, month) {
         const firstDay = new Date(year, month - 1, 1); // JS: month 0-indexed
@@ -229,8 +229,9 @@ const WeeklySimulationPage = ({character, business, location, initialCost, onFin
                     ))}
                 </div>
             )}
-
-            <WeeklyCalendar year={year} month={month} weekInMonth={weekInMonth} />
+            <div className="tw-absolute tw-top-1/2 tw-left-6 tw-transform tw--translate-y-1/2">
+                <WeeklyCalendar year={year} month={month} weekInMonth={weekInMonth}/>
+            </div>
         </div>
     );
 };
