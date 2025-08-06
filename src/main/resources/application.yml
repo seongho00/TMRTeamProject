@@ -23,7 +23,7 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect  # ← 요게 핵심!!
+        dialect: org.hibernate.dialect.MySQL8Dialect
 
 logging:
   level:

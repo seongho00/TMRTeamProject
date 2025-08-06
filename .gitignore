@@ -4,8 +4,6 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-.yml
-
 ### STS ###
 .apt_generated
 .classpath
@@ -16,11 +14,10 @@ target/
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea/
+.idea
 *.iws
 *.iml
 *.ipr
-out/
 
 ### NetBeans ###
 /nbproject/private/
@@ -28,15 +25,9 @@ out/
 /dist/
 /nbdist/
 /.nb-gradle/
-
-### Gradle ###
-.gradle/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
 ### VS Code ###
 .vscode/
-
-# Firebase service account key (DO NOT COMMIT)
-src/main/resources/firebase-adminsdk.json
