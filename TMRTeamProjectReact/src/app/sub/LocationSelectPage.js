@@ -19,6 +19,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
     const [isCompareMode, setIsCompareMode] = useState(false);
     const [compareList, setCompareList] = useState([]);
     const isCompareModeRef = useRef(false);
+    const compareListRef = useRef([]);
 
     useEffect(() => {
         isCompareModeRef.current = isCompareMode;
@@ -180,14 +181,19 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                                     });
                                                     return prev.filter(p => p.address !== emdCode);
                                                 }
-                                                return [...prev, {
+
+                                                const newList = [...prev, {
                                                     address: emdCode,
                                                     name,
                                                     totalFloating,
                                                     totalWorkers,
                                                     ageMap,
                                                     dominantAge,
+                                                    polygon,
                                                 }];
+
+                                                compareListRef.current = newList;
+                                                return newList;
                                             });
 
                                             // ✅ Polygon 색 강조
@@ -357,7 +363,18 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                         onClick={() => {
                             setIsCompareMode((prev) => {
                                 const next = !prev;
-                                if (!next) setCompareList([]);
+                                if (!next) {
+                                    compareListRef.current.forEach(item => {
+                                        item.polygon.setOptions({
+                                            strokeStyle: "dash",
+                                            strokeColor: "#004c80",
+                                            fillColor: "#00a0e9",
+                                            fillOpacity: 0.01,
+                                        });
+                                    });
+
+                                    setCompareList([]);
+                                }
                                 return next;
                             });
                         }}
