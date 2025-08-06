@@ -47,9 +47,9 @@ function drawPolygon(coordArray, fillColor, properties) {
         const content = `
             <div style="padding: 2px;">
                 <b>행정동:</b> ${properties.ADSTRD_NM}<br>
-                <b>매출 등급:</b> ${properties.매출_등급}<br>
-                <b>총 유동인구:</b> ${Number(properties.총_유동인구_수).toLocaleString()}명<br>
-                <b>당월 매출액:</b> ${Number(properties.당월_총_매출_금액).toLocaleString()}원
+                <b>위험등급:</b> ${properties.위험등급}<br>
+                <b>상관계수:</b> ${Number(properties.상관계수).toLocaleString()}<br>
+                <b>상관_위험도점수:</b> ${Number(properties.상관_위험도점수).toLocaleString()}
             </div>
         `;
 
@@ -58,8 +58,4 @@ function drawPolygon(coordArray, fillColor, properties) {
         infowindow.setPosition(path[0]);
         infowindow.open(map);
     });
-}
-
-function findCenteroid (points) {
-
 }

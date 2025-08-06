@@ -9,7 +9,7 @@ matplotlib.rcParams['font.family'] = 'Malgun Gothic'
 matplotlib.rcParams['axes.unicode_minus'] = False
 
 # ✅ 클러스터링된 결과 불러오기
-file_path = 'C:/Users/admin/Desktop/업종별_병합결과_클로스터링/CS100001_한식음식점_클러스터링.csv'
+file_path = 'C:/Users/user/Downloads/업종별_병합결과_클로스터링/CS100001_한식음식점_클러스터링.csv'
 df = pd.read_csv(file_path, encoding='utf-8')
 
 # ✅ 사용할 feature만 추출 (cluster 컬럼 제외)
