@@ -1,7 +1,7 @@
-package com.ltk.TMR.runner;
+package com.koreait.exam.tmrteamproject.runner;
 /* 앱 실행시 저장된 JSON을 읽어 DB에 저장 */
 
-import com.ltk.TMR.service.LhApplyInfoService;
+import com.koreait.exam.tmrteamproject.service.LhApplyInfoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;

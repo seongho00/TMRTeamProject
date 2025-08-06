@@ -1,4 +1,4 @@
-package com.ltk.TMR.config;
+package com.koreait.exam.tmrteamproject.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

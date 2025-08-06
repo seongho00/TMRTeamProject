@@ -1,7 +1,7 @@
-package com.ltk.TMR.controller;
+package com.koreait.exam.tmrteamproject.controller;
 
-import com.ltk.TMR.vo.PropertyListingDto;
-import com.ltk.TMR.service.PropertyScrapingService;
+import com.koreait.exam.tmrteamproject.service.PropertyScrapingService;
+import com.koreait.exam.tmrteamproject.vo.PropertyListingDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

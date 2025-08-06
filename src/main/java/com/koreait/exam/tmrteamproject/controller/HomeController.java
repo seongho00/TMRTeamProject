@@ -1,4 +1,4 @@
-package com.ltk.TMR.controller;
+package com.koreait.exam.tmrteamproject.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

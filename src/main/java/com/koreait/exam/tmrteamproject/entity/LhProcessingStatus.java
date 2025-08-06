@@ -1,4 +1,4 @@
-package com.ltk.TMR.entity;
+package com.koreait.exam.tmrteamproject.entity;
 
 public enum LhProcessingStatus {
     PENDING,    // 처리 대기 중 (마크다운 추출 완료)

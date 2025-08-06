@@ -1,8 +1,9 @@
-package com.ltk.TMR.service;
+package com.koreait.exam.tmrteamproject.service;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,6 @@ import technology.tabula.extractors.SpreadsheetExtractionAlgorithm;
 
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,7 +26,9 @@ public class PdfProcessingService {
         log.info("  > Extracting entire PDF as Markdown from URL: {}", fileUrl);
         try (InputStream is = new URL(fileUrl).openStream()) {
 
-            PDDocument document = PDDocument.load(is);
+            byte[] pdfBytes = IOUtils.toByteArray(is);
+
+            PDDocument document = Loader.loadPDF(pdfBytes);
 
             PDFTextStripper stripper = new PDFTextStripper();
             StringBuilder fullMarkdown = new StringBuilder();

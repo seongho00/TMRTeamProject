@@ -1,7 +1,7 @@
-package com.ltk.TMR.entity;
+package com.koreait.exam.tmrteamproject.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.ltk.TMR.entity.AttachmentDtoListConverter;
+
 import javax.persistence.*;
 import lombok.*;
 

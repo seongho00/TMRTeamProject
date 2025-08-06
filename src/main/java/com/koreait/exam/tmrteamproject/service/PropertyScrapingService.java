@@ -1,8 +1,8 @@
-package com.ltk.TMR.service;
+package com.koreait.exam.tmrteamproject.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ltk.TMR.vo.PropertyListingDto;
+import com.koreait.exam.tmrteamproject.vo.PropertyListingDto;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;

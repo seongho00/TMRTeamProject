@@ -1,4 +1,4 @@
-package com.ltk.TMR.entity;
+package com.koreait.exam.tmrteamproject.entity;
 
 public enum MarkdownStatus {
     PENDING,    // 처리 대기 중

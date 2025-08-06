@@ -1,8 +1,8 @@
-package com.ltk.TMR.repository;
+package com.koreait.exam.tmrteamproject.repository;
 
-import com.ltk.TMR.entity.LhApplyInfo;
-import com.ltk.TMR.entity.LhProcessingStatus;
-import com.ltk.TMR.entity.MarkdownStatus;
+import com.koreait.exam.tmrteamproject.entity.LhApplyInfo;
+import com.koreait.exam.tmrteamproject.entity.LhProcessingStatus;
+import com.koreait.exam.tmrteamproject.entity.MarkdownStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

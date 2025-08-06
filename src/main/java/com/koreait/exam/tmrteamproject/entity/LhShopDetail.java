@@ -1,4 +1,4 @@
-package com.ltk.TMR.entity;
+package com.koreait.exam.tmrteamproject.entity;
 
 import javax.persistence.*;
 import lombok.Getter;

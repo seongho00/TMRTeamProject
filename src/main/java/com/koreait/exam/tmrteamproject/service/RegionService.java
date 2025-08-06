@@ -1,4 +1,4 @@
-package com.ltk.TMR.service;
+package com.koreait.exam.tmrteamproject.service;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

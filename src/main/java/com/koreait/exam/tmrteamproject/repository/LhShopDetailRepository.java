@@ -1,6 +1,6 @@
-package com.ltk.TMR.repository;
+package com.koreait.exam.tmrteamproject.repository;
 
-import com.ltk.TMR.entity.LhShopDetail;
+import com.koreait.exam.tmrteamproject.entity.LhShopDetail;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface LhShopDetailRepository extends JpaRepository<LhShopDetail, Long> {

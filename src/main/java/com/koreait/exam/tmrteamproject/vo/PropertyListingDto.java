@@ -1,4 +1,4 @@
-package com.ltk.TMR.vo;
+package com.koreait.exam.tmrteamproject.vo;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

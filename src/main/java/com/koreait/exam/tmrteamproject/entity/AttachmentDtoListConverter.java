@@ -1,4 +1,4 @@
-package com.ltk.TMR.entity;
+package com.koreait.exam.tmrteamproject.entity;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;

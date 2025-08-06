@@ -1,7 +1,7 @@
-package com.ltk.TMR.controller;
+package com.koreait.exam.tmrteamproject.controller;
 
-import com.ltk.TMR.entity.LhApplyInfo;
-import com.ltk.TMR.service.LhApplyInfoService;
+import com.koreait.exam.tmrteamproject.entity.LhApplyInfo;
+import com.koreait.exam.tmrteamproject.service.LhApplyInfoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;

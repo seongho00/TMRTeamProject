@@ -1,6 +1,6 @@
-package com.ltk.TMR.controller;
+package com.koreait.exam.tmrteamproject.controller;
 
-import com.ltk.TMR.service.RegionService;
+import com.koreait.exam.tmrteamproject.service.RegionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
