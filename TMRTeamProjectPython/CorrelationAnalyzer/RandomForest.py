@@ -1,69 +1,89 @@
 import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
 
-# CSV 병합 (1~4분기)
-csv_paths = [
-    "C:/Users/user/Downloads/서울_유동인구_매출_20241.csv",
-    "C:/Users/user/Downloads/서울_유동인구_매출_20242.csv",
-    "C:/Users/user/Downloads/서울_유동인구_매출_20243.csv",
-    "C:/Users/user/Downloads/서울_유동인구_매출_20244.csv"
+# 한글 폰트 설정
+plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['axes.unicode_minus'] = False
+
+# 데이터 불러오기
+df = pd.read_csv("C:/Users/user/Downloads/서울_데이터_병합_20244.csv", encoding='utf-8')
+
+# 아파트 컬럼 제거
+df = df[[col for col in df.columns if '아파트' not in col]]
+
+# 예측 대상
+target_col = '당월_매출_금액'
+
+# 예측에 사용할 feature
+features = [
+    '점포_수', '개업_점포_수', '폐업_점포_수', '프랜차이즈_점포_수', '유사_업종_점포_수',
+    '총_유동인구_수', '남성_유동인구_수', '여성_유동인구_수',
+    '총_직장_인구_수', '총_상주인구_수',
+    '월_평균_소득_금액', '지출_총금액', '음식_지출_총금액'
 ]
 
-dfs = []
-for path in csv_paths:
-    df = pd.read_csv(path)
-    df['기준_년분기_코드'] = df['기준_년분기_코드']
-    df['행정동_코드'] = df['행정동_코드'].astype(str)
-    dfs.append(df)
+# 결측치 처리
+df = df[features + [target_col]].dropna()
 
-full_df = pd.concat(dfs, ignore_index=True)
+X = df[features]
+y = df[target_col]
 
-# 상관계수 기반 위험도 계산 (레이블 생성)
-risk_labels = []
-grouped = full_df.groupby(['행정동_코드', '행정동_코드_명'])
+# 표준화
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
 
-for (code, name), group in grouped:
-    if len(group) >= 2 and group['총_유동인구_수'].std() != 0 and group['당월_매출_금액'].std() != 0:
-        corr = group['총_유동인구_수'].corr(group['당월_매출_금액'])
-        score = 1 - corr if pd.notnull(corr) else None
-        if score is not None:
-            risk_labels.append({
-                '행정동_코드': code,
-                '상관_위험도점수': score
-            })
+# 학습/테스트 분할
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-risk_df = pd.DataFrame(risk_labels)
-
-# 최신 분기 기준 입력 데이터 사용
-latest_quarter_df = full_df[full_df['기준_년분기_코드'] == full_df['기준_년분기_코드'].max()]
-
-# 병합
-train_df = latest_quarter_df.merge(risk_df, on='행정동_코드')
-
-# 모델 입력 변수 선택
-features = ['총_유동인구_수', '남성_유동인구_수', '여성_유동인구_수', '연령대_10_유동인구_수', '연령대_20_유동인구_수',
-            '연령대_30_유동인구_수', '연령대_40_유동인구_수', '연령대_50_유동인구_수', '연령대_60_이상_유동인구_수',
-            '당월_매출_금액', '남성_매출_금액', '여성_매출_금액']
-
-X = train_df[features]
-y = train_df['상관_위험도점수']
-
-# 학습/테스트 분리
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# 모델 학습
+# 랜덤포레스트 회귀 모델
 model = RandomForestRegressor(n_estimators=100, random_state=42)
 model.fit(X_train, y_train)
 
-# 예측 및 평가
+# 예측
 y_pred = model.predict(X_test)
-print("MSE:", mean_squared_error(y_test, y_pred))
-print("R2:", r2_score(y_test, y_pred))
 
-# 전체 데이터 예측
-train_df['예측_위험도'] = model.predict(X)
+# 평가 지표
+print("RMSE:", np.sqrt(mean_squared_error(y_test, y_pred)))
+print("R²:", r2_score(y_test, y_pred))
 
-# 결과 저장
-train_df[['행정동_코드', '상관_위험도점수', '예측_위험도']].to_csv("rf_predicted_risk.csv", index=False, encoding='utf-8-sig')
+result_df = pd.DataFrame({
+    '실제값': y_test,
+    '예측값': y_pred
+})
+result_df.to_csv("C:/Users/user/Downloads/매출_예측_결과.csv", index=False, encoding='utf-8-sig')
+
+# 중요도 시각화
+importances = pd.Series(model.feature_importances_, index=features).sort_values(ascending=True)
+plt.figure(figsize=(10, 7))
+importances.plot(kind='barh')
+plt.title('매출 예측 변수 중요도')
+plt.tight_layout()
+plt.show()
+
+# 매출 예측??
+plt.figure(figsize=(10, 5))
+plt.plot(y_test.values[:50], label='실제값')
+plt.plot(y_pred[:50], label='예측값')
+plt.legend()
+plt.title("실제 매출 vs 예측 매출")
+plt.xlabel("샘플")
+plt.ylabel("당월 매출 금액")
+plt.tight_layout()
+plt.show()
+
+# 원본 df에서 테스트셋에 해당하는 index 정보 가져오기
+test_index = X_test.index
+df_test = df.loc[test_index, ['행정동_코드', '행정동_코드_명']].copy()
+
+# 예측값과 실제값 DataFrame 구성
+df_test['예측_매출'] = y_pred
+df_test['실제_매출'] = y_test.values
+
+# 저장
+df_test.to_csv("C:/Users/user/Downloads/지도용_예측결과.csv", index=False, encoding='utf-8-sig')
+print("지도용 예측 결과 저장 완료")
