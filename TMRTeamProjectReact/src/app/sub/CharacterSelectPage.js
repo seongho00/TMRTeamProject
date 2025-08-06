@@ -3,9 +3,9 @@
 import React, {useState} from 'react';
 
 const characters = [
-    {id: 1, name: '청년 창업가', description: '열정 넘치는 20대 창업가', img: '/images/young.png'},
-    {id: 2, name: '중년 사장님', description: '노하우 가득한 베테랑', img: '/images/middle.png'},
-    {id: 3, name: '은퇴한 투자자', description: '자본은 많지만 체력은 부족', img: '/images/retired.png'},
+    {id: 1, name: '청년 창업가', description: '열정 넘치는 20대 창업가', img: '/images/young.png', stamina: 90},
+    {id: 2, name: '중년 사장님', description: '노하우 가득한 베테랑', img: '/images/middle.png', stamina: 70},
+    {id: 3, name: '은퇴한 투자자', description: '자본은 많지만 체력은 부족', img: '/images/retired.png', stamina: 50},
 ];
 
 const CharacterSelectPage = ({onSelect}) => {
@@ -43,6 +43,7 @@ const CharacterSelectPage = ({onSelect}) => {
                             />
                             <h2 className="tw-text-xl tw-font-semibold">{char.name}</h2>
                             <p className="tw-text-sm tw-text-gray-600">{char.description}</p>
+                            <p className="tw-text-sm tw-text-gray-600">체력: {char.stamina}</p>
                         </div>
                     ))}
                 </div>
