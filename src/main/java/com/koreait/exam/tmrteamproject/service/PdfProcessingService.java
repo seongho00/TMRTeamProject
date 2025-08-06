@@ -1,8 +1,7 @@
-package com.koreait.exam.tmrteamproject.service;
+package com.ltk.TMR.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -12,6 +11,8 @@ import technology.tabula.Page;
 import technology.tabula.Table;
 import technology.tabula.extractors.SpreadsheetExtractionAlgorithm;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
@@ -24,11 +25,21 @@ public class PdfProcessingService {
 
     public String extractAllTextAsMarkdown(String fileUrl) {
         log.info("  > Extracting entire PDF as Markdown from URL: {}", fileUrl);
-        try (InputStream is = new URL(fileUrl).openStream()) {
+        File tempFile = null;
+        try {
+            tempFile = File.createTempFile("temp_pdf_", ".pdf");
+            tempFile.deleteOnExit();
 
-            byte[] pdfBytes = IOUtils.toByteArray(is);
+            try (InputStream in = new URL(fileUrl).openStream();
+                 FileOutputStream out = new FileOutputStream(tempFile)) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                }
+            }
 
-            PDDocument document = Loader.loadPDF(pdfBytes);
+            PDDocument document = Loader.loadPDF(tempFile);
 
             PDFTextStripper stripper = new PDFTextStripper();
             StringBuilder fullMarkdown = new StringBuilder();
