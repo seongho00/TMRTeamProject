@@ -281,6 +281,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                                 setSelectedInfo({
                                                     address: name,
                                                     path,
+                                                    emdCode,
                                                     levelType: isSggLevel ? "sgg" : "emd",
                                                 });
                                                 if (currentPolygon.current) {
@@ -296,6 +297,7 @@ const LocationSelectPage = ({onSelect, onBack}) => {
                                                 setSelectedInfo({
                                                     address: name,
                                                     path,
+                                                    emdCode
                                                 });
                                             }
                                         }

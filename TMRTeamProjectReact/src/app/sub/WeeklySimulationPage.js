@@ -15,11 +15,31 @@ const WeeklySimulationPage = ({character, business, location, initialCost, onFin
     const [pendingEvent, setPendingEvent] = useState(null); // 선택형 이벤트 발생 시 저장
     const [isWaitingChoice, setIsWaitingChoice] = useState(false);
     const [remainingEvents, setRemainingEvents] = useState([]); // ✅ 이벤트 큐
+    const [commercialData, setCommercialData] = useState(null);
+
     const [status, setStatus] = useState({
         fatigue: false,
         popularity: 0,
         trust: 0
     });
+
+    useEffect(() => {
+        if (!location?.emdCode) return;
+
+        fetch(`http://localhost:8080/usr/commercialProperty/getAverageDepositAndMonthlyRent?emdCode=${location.emdCode}`)
+            .then(res => {
+                if (!res.ok) throw new Error("데이터를 불러올 수 없습니다");
+                return res.json();
+            })
+            .then(data => {
+                console.log(data)
+                setCommercialData(data); // ✅ 저장
+            })
+            .catch(err => {
+                console.error("데이터 조회 실패:", err);
+            });
+    }, [location]);
+
 
     // 이벤트 JSON 가져오기
     useEffect(() => {
