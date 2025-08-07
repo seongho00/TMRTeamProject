@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("usr/commercialProperty")
@@ -26,7 +27,10 @@ public class CommercialPropertyController {
     @GetMapping("/getCommercialProperty")
     @ResponseBody
     public List<CommercialProperty> getCommercialProperty() {
-        return commercialPropertyService.getCommercialProperty();
+        Map<String, Double> commercialProperties = commercialPropertyService.getAverageDepositAndMonthlyRent();
+        System.out.println(commercialProperties.toString());
+
+        return null;
     }
 
 
