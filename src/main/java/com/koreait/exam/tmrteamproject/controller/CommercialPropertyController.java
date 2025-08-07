@@ -24,13 +24,13 @@ import java.util.Map;
 public class CommercialPropertyController {
     private final CommercialPropertyService commercialPropertyService;
 
-    @GetMapping("/getCommercialProperty")
+    @GetMapping("/getAverageDepositAndMonthlyRent")
     @ResponseBody
-    public List<CommercialProperty> getCommercialProperty() {
-        Map<String, Double> commercialProperties = commercialPropertyService.getAverageDepositAndMonthlyRent();
-        System.out.println(commercialProperties.toString());
+    public Map<String, Double> getAverageDepositAndMonthlyRent(String emdCode) {
+        Map<String, Double> data = commercialPropertyService.getAverageDepositAndMonthlyRent();
+        System.out.println(data.toString());
 
-        return null;
+        return data;
     }
 
 
