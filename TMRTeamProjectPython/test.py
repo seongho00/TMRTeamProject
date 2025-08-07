@@ -1,61 +1,104 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 
-# 요소가 로드될 때까지 기다리는 함수
+# ⛳ 유틸 함수
 def wait_for_element(driver, by, value, timeout=10):
     return WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((by, value))
     )
 
-
-# 요소들이 일정 개수 이상 로드될 때까지 기다리는 함수
 def wait_for_elements(driver, by, value, min_count=1, timeout=10):
     WebDriverWait(driver, timeout).until(
         lambda d: len(d.find_elements(by, value)) >= min_count
     )
     return driver.find_elements(by, value)
 
-
-# 부모 요소 안에서 자식 요소를 기다리는 함수
 def wait_for_child_element(parent_element, by, value, timeout=10):
     return WebDriverWait(parent_element, timeout).until(
         lambda el: el.find_element(by, value)
     )
 
-
-def wait_for_child_elements(parent_element, by, value, min_count=1, timeout=10):
-    WebDriverWait(parent_element, timeout).until(
-        lambda el: len(el.find_elements(by, value)) >= min_count
-    )
-    return parent_element.find_elements(by, value)
-
+# ✅ 크롬 드라이버 설정
 driver = webdriver.Chrome()
 driver.get("https://new.land.naver.com/offices?ms=37.52139,126.931083,16&a=SG&e=RETAIL")
-time.sleep(5)
+time.sleep(3)
 
-# 🧩 매물 아이템 div 리스트
-item_divs = wait_for_elements(driver, By.CSS_SELECTOR, "div.item")
+# ✅ 스크롤 대상 지정
+scroll_target = driver.find_element(By.CSS_SELECTOR, "div.item_list.item_list--article")
+scroll_pause = 1
 
-for i in range(len(item_divs)):
-    try:
-        # ❗ 매번 새로 가져오기 (클릭 후 DOM이 갱신되므로)
-        item_divs = wait_for_elements(driver, By.CSS_SELECTOR, "div.item")
-        item_divs[i].click()
+# ✅ 중복 방지용 집합
+seen_items = set()
 
-        # 우측 상세 패널 로딩 대기
-        price_line = wait_for_element(driver, By.CSS_SELECTOR, "div.price_line")
-        price_type = wait_for_child_element(price_line, By.CLASS_NAME, "type").text
-        price_text = wait_for_child_element(price_line, By.CLASS_NAME, "price").text.strip()
+# ✅ 매물 처리 루프
+while True:
+    # 현재 화면에 보이는 매물들
+    item_divs = driver.find_elements(By.CSS_SELECTOR, "div.item")
+    new_items_found = False
 
-        print(f"{i+1}번 매물")
-        print(f"  💰 {price_type}: {price_text}")
-        print("-" * 40)
+    for item in item_divs:
+        try:
+            identifier = item.text.strip()
+            if identifier in seen_items:
+                continue
 
-    except Exception as e:
-        print(f"[❌ 실패] {i+1}번 매물: {e}")
-        continue
+            new_items_found = True
+            seen_items.add(identifier)
 
+            # 스크롤 이동 후 클릭
+            driver.execute_script("arguments[0].scrollIntoView(true);", item)
+            time.sleep(0.2)
+            item.click()
+
+            # 상세 정보 대기 및 추출
+            price_box = wait_for_element(driver, By.CSS_SELECTOR, "div.info_article_price")
+            price_type = price_box.find_element(By.CLASS_NAME, "type").text  # ex) 월세
+            price_value = price_box.find_element(By.CLASS_NAME, "price").text  # ex) 4,000/230
+
+            # 상세 패널 내 테이블 요소
+            detail_table = wait_for_element(driver, By.CSS_SELECTOR, "table.info_table_wrap")
+            rows = detail_table.find_elements(By.CSS_SELECTOR, "tr.info_table_item")
+
+            # 원하는 정보 저장용 dict
+            detail_info = {}
+
+            for row in rows:
+                try:
+                    ths = row.find_elements(By.TAG_NAME, "th")
+                    tds = row.find_elements(By.TAG_NAME, "td")
+
+                    # ⛔ '매물설명' 행은 건너뛰기
+                    if any("매물설명" in th.text for th in ths):
+                        continue
+
+                    for th, td in zip(ths, tds):
+                        key = th.text.strip()
+                        val = td.text.strip()
+                        detail_info[key] = val
+                except:
+                    continue
+
+            print("📋 상세 정보:")
+            for k, v in detail_info.items():
+                print(f" - {k}: {v}")
+
+            print(f"📌 매물: {price_type} / {price_value}")
+
+        except Exception as e:
+            print(f"[❌ 오류] 매물 클릭 또는 추출 실패: {e}")
+            continue
+
+    if not new_items_found:
+        print("✅ 더 이상 새 매물 없음. 종료.")
+        break
+
+    # 스크롤을 조금씩 내려 추가 매물 유도
+    driver.execute_script("arguments[0].scrollTop += 800", scroll_target)
+    time.sleep(scroll_pause)
+
+print(f"🎉 총 크롤링한 매물 수: {len(seen_items)}")
 driver.quit()
