@@ -1,60 +1,61 @@
-import json
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import time
-from seleniumwire import webdriver
+
+# 요소가 로드될 때까지 기다리는 함수
+def wait_for_element(driver, by, value, timeout=10):
+    return WebDriverWait(driver, timeout).until(
+        EC.presence_of_element_located((by, value))
+    )
+
+
+# 요소들이 일정 개수 이상 로드될 때까지 기다리는 함수
+def wait_for_elements(driver, by, value, min_count=1, timeout=10):
+    WebDriverWait(driver, timeout).until(
+        lambda d: len(d.find_elements(by, value)) >= min_count
+    )
+    return driver.find_elements(by, value)
+
+
+# 부모 요소 안에서 자식 요소를 기다리는 함수
+def wait_for_child_element(parent_element, by, value, timeout=10):
+    return WebDriverWait(parent_element, timeout).until(
+        lambda el: el.find_element(by, value)
+    )
+
+
+def wait_for_child_elements(parent_element, by, value, min_count=1, timeout=10):
+    WebDriverWait(parent_element, timeout).until(
+        lambda el: len(el.find_elements(by, value)) >= min_count
+    )
+    return parent_element.find_elements(by, value)
 
 driver = webdriver.Chrome()
-driver.get("https://new.land.naver.com/offices?ms=37.5205561,126.9267056,16&a=SG&e=RETAIL&v=NOLOAN")
-driver.implicitly_wait(5)
+driver.get("https://new.land.naver.com/offices?ms=37.52139,126.931083,16&a=SG&e=RETAIL")
+time.sleep(5)
 
-# 매물번호 수집
-article_nos = []
-for request in driver.requests:
-    if request.response and "api/articles?" in request.url:
-        try:
-            data = json.loads(request.response.body.decode('utf-8'))
-            article_nos = [a.get("articleNo") for a in data.get("articleList", [])]
-        except:
-            pass
-        break
+# 🧩 매물 아이템 div 리스트
+item_divs = wait_for_elements(driver, By.CSS_SELECTOR, "div.item")
 
-# ✅ 브라우저에서 fetch로 상세 정보 요청 (Selenium JS 실행)
-for article_no in article_nos:
-    url = f"https://new.land.naver.com/api/articles/{article_no}?complexNo=&realEstateType=SG"
-
-    js_code = f"""
-        return fetch("{url}", {{
-            method: "GET",
-            headers: {{
-                "Referer": "https://new.land.naver.com/"
-            }}
-        }}).then(res => res.json())
-        .catch(e => {{ return {{error: e.toString()}} }});
-    """
-
+for i in range(len(item_divs)):
     try:
-        detail = driver.execute_script(js_code)
-        print(f"\n📦 Raw Response for {article_no}:")
-        print(json.dumps(detail, indent=2, ensure_ascii=False))
+        # ❗ 매번 새로 가져오기 (클릭 후 DOM이 갱신되므로)
+        item_divs = wait_for_elements(driver, By.CSS_SELECTOR, "div.item")
+        item_divs[i].click()
 
-        article_data = detail.get("article", {})  # ✨ 중첩 구조
+        # 우측 상세 패널 로딩 대기
+        price_line = wait_for_element(driver, By.CSS_SELECTOR, "div.price_line")
+        price_type = wait_for_child_element(price_line, By.CLASS_NAME, "type").text
+        price_text = wait_for_child_element(price_line, By.CLASS_NAME, "price").text.strip()
 
-        lat = article_data.get("latitude")
-        lng = article_data.get("longitude")
-        deposit = article_data.get("price", {}).get("deposit")
-        rent_price = article_data.get("price", {}).get("rentPrice")
-        area = article_data.get("areaInfo", {}).get("supplySpace")
-        area1 = article_data.get("areaInfo", {}).get("exclusiveSpace")
-
-        print(f"📌 매물번호: {article_no}")
-        print(f"📍 위치: ({lat}, {lng})")
-        print(f"🏠 공급면적: {area}㎡ / 전용면적: {area1}㎡")
-        print(f"💰 보증금: {deposit} / 월세: {rent_price}")
+        print(f"{i+1}번 매물")
+        print(f"  💰 {price_type}: {price_text}")
         print("-" * 40)
 
     except Exception as e:
-        print(f"[❌ JS 요청 실패] 매물번호 {article_no}: {e}")
-
-
-    time.sleep(0.3)
+        print(f"[❌ 실패] {i+1}번 매물: {e}")
+        continue
 
 driver.quit()
