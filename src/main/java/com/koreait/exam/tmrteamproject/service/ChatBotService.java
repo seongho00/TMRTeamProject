@@ -31,7 +31,7 @@ public class ChatBotService {
             JSONObject json = new JSONObject(response);
 
             // ✅ 전체 파싱해서 원하는 항목 꺼내기
-            String intent = json.getString("intent");
+            int intent = json.getInt("intent");
             double confidence = json.getDouble("confidence");
             String sido = json.optString("sido");
             String sigungu = json.optString("sigungu");
