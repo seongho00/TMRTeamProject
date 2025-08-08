@@ -24,6 +24,8 @@ public class AdminDong {
     private String sidoCd;
     @Column(name = "sido_nm")
     private String sidoNm;
+    @Column(name = "sido_cd")
+    private String sidoCd;
     @Column(name = "sgg_cd")
     private String sggCd;
     @Column(name = "sgg_nm")

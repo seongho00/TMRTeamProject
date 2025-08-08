@@ -9,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -18,17 +19,15 @@ import javax.persistence.Id;
 @ToString(callSuper = true)
 public class UpjongCode {
     @Id
-    @Column(name = "minor_cd")
-    private String minorCd;
+    @Column(name = "upjong_cd")
+    private String upjongCd;
 
-    @Column(name = "major_cd")
-    private String majorCd;
-    @Column(name = "major_nm")
-    private String majorNm;
-    @Column(name = "middle_cd")
-    private String middleCd;
-    @Column(name = "middle_nm")
-    private String middleNm;
-    @Column(name = "minor_nm")
-    private String minorNm;
+    @Column(name = "upjong_nm")
+    private String upjongNm;
+    @Column(name = "reg_date")
+    private LocalDateTime regDate;
+    @Column(name = "update_date")
+    private LocalDateTime updateDate;
+
+
 }
