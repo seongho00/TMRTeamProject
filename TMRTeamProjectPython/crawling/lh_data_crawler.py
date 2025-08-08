@@ -53,11 +53,22 @@ while True:
 
         print("✅ 상세페이지 진입 완료")
 
-        data_lis = wait_for_elements(driver, By.CSS_SELECTOR, ".subCntBody .indent .list_st1")
+        # h3.tit1 중에서 "공급일정"인 요소 찾기
+        h3_elements = driver.find_elements(By.CSS_SELECTOR, ".subCntBody h3.tit1")
+        target_h3 = None
+        for h3 in h3_elements:
+            if "공급일정" in h3.text:
+                target_h3 = h3
+                break
 
-        for li in data_lis:
-            text = li.text.strip()
-            print(text)
+        if target_h3:
+            # 공급일정 h3 다음 형제 요소에서 li 항목 찾기
+            lis = target_h3.find_element(By.XPATH, "following-sibling::div").find_elements(By.TAG_NAME, "li")
+
+            for li in lis:
+                print(li.text.strip())
+        else:
+            print("공급일정 섹션을 찾을 수 없습니다.")
 
 
         # 상세 페이지에서 데이터 추출 예시
