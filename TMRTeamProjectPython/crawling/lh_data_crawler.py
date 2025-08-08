@@ -13,6 +13,19 @@ def wait_for_elements(driver, by, value, min_count=1, timeout=10):
     )
     return driver.find_elements(by, value)
 
+# 부모 요소 안에서 자식 요소를 기다리는 함수
+def wait_for_child_element(parent_element, by, value, timeout=10):
+    return WebDriverWait(parent_element, timeout).until(
+        lambda el: el.find_element(by, value)
+    )
+
+
+def wait_for_child_elements(parent_element, by, value, min_count=1, timeout=10):
+    WebDriverWait(parent_element, timeout).until(
+        lambda el: len(el.find_elements(by, value)) >= min_count
+    )
+    return parent_element.find_elements(by, value)
+
 
 # ====== 크롤링 시작 ======
 driver = webdriver.Chrome(service=Service("chromedriver.exe"))
@@ -37,9 +50,20 @@ while True:
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "table, .view, .detail"))
         )
+
         print("✅ 상세페이지 진입 완료")
 
+        data_lis = wait_for_elements(driver, By.CSS_SELECTOR, ".subCntBody .indent .list_st1")
+
+        for li in data_lis:
+            text = li.text.strip()
+            print(text)
+
+
         # 상세 페이지에서 데이터 추출 예시
+
+
+
         WebDriverWait(driver, 10).until(lambda d: d.current_url != old)
 
         # 뒤로 가기
