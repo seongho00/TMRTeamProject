@@ -15,7 +15,7 @@ const WeeklySimulationPage = ({character, business, location, initialCost, onFin
     const [pendingEvent, setPendingEvent] = useState(null); // 선택형 이벤트 발생 시 저장
     const [isWaitingChoice, setIsWaitingChoice] = useState(false);
     const [remainingEvents, setRemainingEvents] = useState([]); // ✅ 이벤트 큐
-    const [commercialData, setCommercialData] = useState(null);
+    const [averageRentData, setAverageRentData] = useState(null);
 
     const [status, setStatus] = useState({
         fatigue: false,
@@ -33,7 +33,7 @@ const WeeklySimulationPage = ({character, business, location, initialCost, onFin
             })
             .then(data => {
                 console.log(data)
-                setCommercialData(data); // ✅ 저장
+                setAverageRentData(data); // ✅ 저장
             })
             .catch(err => {
                 console.error("데이터 조회 실패:", err);
