@@ -1,10 +1,14 @@
-import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
+# 윈도우에서 기본 한글 폰트 설정
+plt.rcParams['font.family'] = 'Malgun Gothic'
+plt.rcParams['axes.unicode_minus'] = False
+
 # ✅ 클러스터링된 데이터 불러오기
-df = pd.read_csv('C:/Users/admin/Desktop/업종별_병합결과_클로스터링/CS100001_한식음식점_클러스터링.csv')
+df = pd.read_csv('C:/Users/user/Downloads/업종별_병합결과_클로스터링/CS100001_한식음식점_클러스터링.csv')
 
 # ✅ 사용한 피처 목록 (클러스터링에 쓰인 변수)
 features = [
