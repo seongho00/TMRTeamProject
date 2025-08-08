@@ -7,17 +7,12 @@ import com.koreait.exam.tmrteamproject.vo.TradeArea;
 import lombok.RequiredArgsConstructor;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Service;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +21,7 @@ public class TradeAreaService {
     private final PdfFileRepository pdfFileRepository;
     private final TradeAreaRepository tradeAreaRepository;
 
+    // PDF 텍스트 추출
     public String getPdfTextFromDb(String fileName) {
         Optional<PdfFile> optionalPdf = pdfFileRepository.findByFileName(fileName);
         if (optionalPdf.isEmpty()) return "";
@@ -39,24 +35,12 @@ public class TradeAreaService {
         }
     }
 
-    public void parseRecentTradeAreas() {
-        List<PdfFile> recentPdfs = pdfFileRepository.findTop10ByOrderByIdDesc();
-
-        for (PdfFile pdf : recentPdfs) {
-            try (PDDocument document = Loader.loadPDF(pdf.getFileData())) {
-                PDFTextStripper stripper = new PDFTextStripper();
-                String text = stripper.getText(document);
-                parseAndSaveTradeArea(text, pdf.getFileName());
-            } catch (Exception e) {
-                System.err.println("PDF 파싱 실패: " + pdf.getFileName());
-                e.printStackTrace();
-            }
-        }
-    }
-
+    // PDF 분석 및 저장
     public TradeArea parseAndSaveTradeArea(String pdfText, String fileName) {
         // 데이터 부족 안내 문구가 포함된 경우 저장하지 않음
-        if (pdfText.contains("선택하신 행정동에는 해당 업종의 업소 수가 3개 이하이거나")) {
+        if (pdfText.contains("선택하신 행정동에는 해당 업종의 업소 수가 3개 이하이거나") ||
+            pdfText.contains("선택하신 행정동 또는 시군구에는 해당 업종의 업소 수가 3개 이하이므로") ||
+            pdfText.contains("선택하신 행정동 또는 시군구에는 매출 데이터가 없어 제공이 어렵습니다.")) {
             System.out.println("데이터 부족으로 저장 제외: " + fileName);
             return null;
         }
@@ -104,26 +88,6 @@ public class TradeAreaService {
         return tradeAreaRepository.save(tradeArea);
     }
 
-    public List<String> extractImagesFromDbPdf(String fileName) {
-        List<String> images = new ArrayList<>();
-        Optional<PdfFile> optionalPdf = pdfFileRepository.findByFileName(fileName);
-        if (optionalPdf.isEmpty()) return images;
-
-        try (PDDocument document = Loader.loadPDF(optionalPdf.get().getFileData())) {
-            PDFRenderer renderer = new PDFRenderer(document);
-            for (int i = 0; i < document.getNumberOfPages(); i++) {
-                BufferedImage image = renderer.renderImageWithDPI(i, 200);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ImageIO.write(image, "png", baos);
-                String base64 = Base64.getEncoder().encodeToString(baos.toByteArray());
-                images.add("data:image/png;base64," + base64);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return images;
-    }
-
     private int extractInt(String text, String pattern) {
         Pattern p = Pattern.compile(pattern);
         Matcher m = p.matcher(text);
@@ -154,10 +118,7 @@ public class TradeAreaService {
     }
 
     public List<String> getRecentFileName() {
-        return pdfFileRepository.findTop10ByOrderByIdDesc()
-                .stream()
-                .map(PdfFile::getFileName)
-                .collect(Collectors.toList());
+        return pdfFileRepository.findAllFileNames();
     }
 
     //각각 전년동월대비 / 전월대비 분리
@@ -167,13 +128,13 @@ public class TradeAreaService {
 
         if (blockMatcher.find()) {
             String block = blockMatcher.group(0);
-            Pattern valuePattern = Pattern.compile(targetKeyword + "\\s*([\\d.]+)%\\s*(많고|낮고|증가|감소)?");
+            Pattern valuePattern = Pattern.compile(targetKeyword + "\\s*([\\d.]+)%\\s*(많고|낮고|적고|증가|감소)?");
             Matcher valueMatcher = valuePattern.matcher(block);
             if (valueMatcher.find()) {
                 double value = Double.parseDouble(valueMatcher.group(1));
                 String direction = valueMatcher.group(2);
 
-                if ("낮고".equals(direction) || "감소".equals(direction)) {
+                if ("낮고".equals(direction) || "감소".equals(direction) || "적고".equals(direction)) {
                     return -value;
                 }
 
@@ -181,5 +142,42 @@ public class TradeAreaService {
             }
         }
         return 0.0;
+    }
+
+    // 전체 파일 분석 및 저장 (246개 * 2배치)
+    public void processAndSaveAllTradeAreas() {
+        List<String> allFileNames = pdfFileRepository.findAllFileNames(); // 파일 이름 전체 조회
+
+        int batchSize = 246;
+        int total = allFileNames.size();
+        int currentIndex = 0;
+
+        for (int batch = 1; batch <= 2; batch++) {
+            int endIndex = Math.min(currentIndex + batchSize, total);
+            List<String> subList = allFileNames.subList(currentIndex, endIndex);
+
+            for (String fileName : subList) {
+                String regionName = extractRegionName(fileName);
+                String industry = extractIndustry(fileName);
+
+                if (tradeAreaRepository.existsByRegionNameAndIndustry(regionName, industry)) {
+                    System.out.println("이미 저장되었습니다 : " + fileName);
+                    continue;
+                }
+
+                String pdfText = getPdfTextFromDb(fileName);
+                TradeArea tradeArea = parseAndSaveTradeArea(pdfText, fileName);
+
+                if (tradeArea != null) {
+                    System.out.println("저장 완료: " + fileName);
+                } else {
+                    System.out.println("저장 생략됨: " + fileName);
+                }
+            }
+
+            currentIndex += batchSize;
+
+            if (currentIndex >= total) break;
+        }
     }
 }

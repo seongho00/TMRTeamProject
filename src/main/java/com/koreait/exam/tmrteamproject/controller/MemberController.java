@@ -1,8 +1,5 @@
 package com.koreait.exam.tmrteamproject.controller;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseToken;
 import com.koreait.exam.tmrteamproject.security.MemberContext;
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.MemberService;
@@ -16,8 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,11 +26,7 @@ import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-
-import org.springframework.security.core.userdetails.User;
 
 @Controller
 @RequestMapping("usr/member")

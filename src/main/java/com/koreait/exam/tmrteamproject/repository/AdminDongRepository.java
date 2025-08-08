@@ -1,8 +1,6 @@
 package com.koreait.exam.tmrteamproject.repository;
 
 import com.koreait.exam.tmrteamproject.vo.AdminDong;
-import com.koreait.exam.tmrteamproject.vo.PopulationStat;
-import com.koreait.exam.tmrteamproject.vo.PopulationSummary;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,9 +19,9 @@ public interface AdminDongRepository extends JpaRepository<AdminDong, String> {
     List<AdminDong> getAdminDongsBySggNm(String sggNm);
 
     @Query(value = """
-                SELECT *
+                SELECT * 
                 FROM admin_dong
-                GROUP BY sgg_nm
+                GROUP BY sgg_nm;
             """, nativeQuery = true)
     List<AdminDong> getAdminDongGroupBySggCd();
 }

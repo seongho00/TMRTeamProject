@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>상가 매물 바로가기 및 목록</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; padding: 20px; background-color: #f9f9f9; text-align: center; }
+        h1 { margin-bottom: 30px; }
+        .selection-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; padding: 20px; border-radius: 8px; }
+        select { padding: 8px 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+        #link-section { margin-top: 30px; display: none; }
+        .site-link { display: inline-block; padding: 12px 24px; border-radius: 5px; text-decoration: none; font-weight: bold; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); background-color: #03C75A; color: white; }
+        .site-link:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+
+        #listing-results { margin-top: 40px; text-align: left; max-width: 800px; margin-left: auto; margin-right: auto; }
+        .listing-item { display: flex; align-items: center; background: white; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .listing-item img { width: 150px; height: 120px; object-fit: cover; border-radius: 4px; margin-right: 20px; flex-shrink: 0; }
+        .listing-item .details { display: flex; flex-direction: column; }
+        .listing-item h3 { margin: 0 0 5px 0; font-size: 1.1rem; }
+        .listing-item p { margin: 5px 0; color: #555; font-size: 0.95rem; }
+        .listing-item .price { font-size: 1.2rem; font-weight: bold; color: #d9534f; }
+        .listing-item .tags { margin-top: 10px; font-size: 0.85rem; color: #777; }
+        .loader { font-size: 1.2rem; color: #666; padding: 40px; }
+
+        /* 이미지 없을 때 */
+        .no-image-box {
+            width: 150px;
+            height: 120px;
+            flex-shrink: 0;
+            margin-right: 20px;
+            background-color: #f0f0f0;
+            color: #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<h1>상가 매물 바로가기</h1>
+<p style="color: #666; margin-top:-20px; margin-bottom: 30px;">확인하고 싶은 지역을 선택하세요.</p>
+
+<div class="selection-container">
+    <select id="sido">
+        <option value="">-- 시/도 선택 --</option>
+        <option th:each="sido : ${regionData.keySet()}" th:text="${sido}"></option>
+    </select>
+    <select id="sigungu">
+        <option value="">-- 시/군/구 선택 --</option>
+    </select>
+    <select id="dong">
+        <option value="">-- 읍/면/동 선택 --</option>
+    </select>
+</div>
+
+<div id="link-section">
+    <a id="naver-link" class="site-link" href="#" target="_blank">네이버 부동산에서 전체보기</a>
+</div>
+
+<div id="listing-results"></div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const regionData = /*[[${regionData}]]*/ {};
+
+    const sidoSelect = document.getElementById('sido');
+    const sigunguSelect = document.getElementById('sigungu');
+    const dongSelect = document.getElementById('dong');
+
+    const linkSection = document.getElementById('link-section');
+    const naverLink = document.getElementById('naver-link');
+    const resultsContainer = document.getElementById('listing-results');
+
+    sidoSelect.addEventListener('change', function() {
+        const selectedSido = this.value;
+        sigunguSelect.innerHTML = '<option value="">-- 시/군/구 선택 --</option>';
+        dongSelect.innerHTML = '<option value="">-- 읍/면/동 선택 --</option>';
+        linkSection.style.display = 'none';
+        resultsContainer.innerHTML = '';
+
+        if (selectedSido && regionData[selectedSido]) {
+            Object.keys(regionData[selectedSido]).forEach(function(sigungu) {
+                const option = document.createElement('option');
+                option.value = sigungu;
+                option.textContent = sigungu;
+                sigunguSelect.appendChild(option);
+            });
+        }
+    });
+
+    sigunguSelect.addEventListener('change', function() {
+        const selectedSido = sidoSelect.value;
+        const selectedSigungu = this.value;
+        dongSelect.innerHTML = '<option value="">-- 읍/면/동 선택 --</option>';
+        linkSection.style.display = 'none';
+        resultsContainer.innerHTML = '';
+
+        if (selectedSido && selectedSigungu && regionData[selectedSido][selectedSigungu]) {
+            regionData[selectedSido][selectedSigungu].forEach(function(dong) {
+                const option = document.createElement('option');
+                option.value = dong.code;
+                option.textContent = dong.name;
+                dongSelect.appendChild(option);
+            });
+        }
+    });
+
+    dongSelect.addEventListener('change', async function() {
+        const dongCode = this.value;
+        resultsContainer.innerHTML = '';
+
+        if (dongCode) {
+            naverLink.href = `https://new.land.naver.com/offices?cortarNo=${dongCode}`;
+            const dongText = this.options[this.selectedIndex].text;
+            naverLink.textContent = `'${dongText}' 매물 전체보기`;
+            linkSection.style.display = 'block';
+
+            resultsContainer.innerHTML = '<div class="loader">매물 목록을 불러오는 중입니다... 잠시만 기다려주세요.</div>';
+
+            try {
+                const response = await fetch(`/api/properties?dongCode=${dongCode}`);
+                if (!response.ok) throw new Error('서버 응답 오류');
+                const listings = await response.json();
+
+                resultsContainer.innerHTML = '';
+                if (listings.length === 0) {
+                    resultsContainer.innerHTML = '<div class="loader">해당 지역에 매물이 없습니다.</div>';
+                    return;
+                }
+
+                listings.forEach(item => {
+                    const placeholderUrl = "https://via.placeholder.com/";
+                    let imageElementHtml = '';
+
+                    // 이미지 유무
+                    if (item.imageUrl && item.imageUrl.includes(placeholderUrl)) {
+                        imageElementHtml = '<div class="no-image-box">이미지 없음</div>';
+                    } else {
+                        imageElementHtml = `<img src="${item.imageUrl}" alt="${item.title}">`;
+                    }
+
+                    const itemHtml = `
+                        <div class="listing-item">
+                            ${imageElementHtml}
+                            <div class="details">
+                                <h3>${item.title} - <span class="price">${item.tradeType} ${item.price}</span></h3>
+                                <p><strong>종류:</strong> ${item.type} | <strong>사양:</strong> ${item.spec}</p>
+                                <p><strong>설명:</strong> ${item.description}</p>
+                                <p class="tags"><strong>태그:</strong> ${item.tags}</p>
+                            </div>
+                        </div>
+                    `;
+                    resultsContainer.innerHTML += itemHtml;
+                });
+
+            } catch (error) {
+                console.error('크롤링 에러:', error);
+                resultsContainer.innerHTML = '<div class="loader" style="color: red;">매물 정보를 불러오는 중 오류가 발생했습니다.</div>';
+            }
+        } else {
+            linkSection.style.display = 'none';
+        }
+    });
+    /*]]>*/
+</script>
+</body>
+</html>
