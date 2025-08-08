@@ -2,7 +2,6 @@ package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.service.AdminDongService;
 import com.koreait.exam.tmrteamproject.service.MapService;
-import com.koreait.exam.tmrteamproject.service.MemberService;
 import com.koreait.exam.tmrteamproject.service.UpjongCodeService;
 import com.koreait.exam.tmrteamproject.vo.AdminDong;
 import com.koreait.exam.tmrteamproject.vo.UpjongCode;
@@ -30,7 +29,6 @@ public class MapController {
     @Autowired
     private UpjongCodeService upjongCodeService;
 
-
     @GetMapping("/commercialZoneMap")
     public String commercialZoneMap(Model model) {
 
@@ -49,6 +47,7 @@ public class MapController {
 
         return adminDong;
     }
+
     @GetMapping("/getSggByEmd")
     @ResponseBody
     public List<AdminDong> getSggByEmd(String sgg) {
@@ -57,7 +56,6 @@ public class MapController {
 
         return adminDong;
     }
-
 
     @GetMapping("/getMiddleCategories")
     @ResponseBody
@@ -77,7 +75,6 @@ public class MapController {
         return upjongCode;
     }
 
-
     @GetMapping("/getUpjongCodeByMinorCd")
     @ResponseBody
     public UpjongCode getUpjongCodeByMinorCd(String minorCd) {
@@ -95,7 +92,6 @@ public class MapController {
         return upjongCode;
     }
 
-
     @GetMapping("/searchInfoByRegionAndUpjong")
     @ResponseBody
     public String searchInfoByRegionAndUpjong(String sgg, String emd, String upjong) {
@@ -107,4 +103,14 @@ public class MapController {
         return "";
     }
 
+    // 상관분석 페이지
+    @GetMapping("/correlationMap")
+    public String correlationMap() {
+        return "map/correlationMap";
+    }
+
+    @GetMapping("/diskmap")
+    public String diskmap() {
+        return "map/dis";
+    }
 }

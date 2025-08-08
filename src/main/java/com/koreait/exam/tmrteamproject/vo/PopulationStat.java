@@ -33,5 +33,4 @@ public class PopulationStat extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "emd_cd", referencedColumnName = "emd_cd", insertable = false, updatable = false)
     private AdminDong adminDong;
-
 }
