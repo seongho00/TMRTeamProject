@@ -70,8 +70,8 @@ public class ChatBotService {
         String sigungu = flaskResult.getSigungu();
         String emd = flaskResult.getEmd();
 
-        if (sido.equals("대전")) {
-            sido = "대전광역시";
+        if (sido.equals("서울")) {
+            sido = "서울특별시";
         }
 
         System.out.println("sido: " + sido);

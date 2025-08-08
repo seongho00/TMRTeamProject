@@ -321,22 +321,11 @@ def predict():
             "message": " / ".join(parts) + " 정보를 알려주세요."
         }), 200
 
-    # 4) 의도별 분기
-    region = entities["emd_nm"] or entities["sigungu"] or entities["sido"]
-
-    print(region)
-    print(intent_id)
-    print(confidence)
-    print(entities)
-
     if intent_id == 0:  # 매출
-        upjong_cd = entities["upjong_cd"]  # 필수
-        # TODO: 실제 DB 조회 호출 (region, upjong_cd)
         return jsonify({
             "intent": 0,
             "confidence": round(confidence, 4),
-            "region": region,
-            "upjong_cd": upjong_cd,
+            "entities": entities,   # ← 지역, 업종, 성별, 연령 등 전체 전달
             "data": "...매출조회결과..."
         }), 200
 
@@ -344,27 +333,24 @@ def predict():
         return jsonify({
             "intent": 1,
             "confidence": round(confidence, 4),
-            "region": region,
-            "gender": entities["gender"],
-            "age_group": entities["age_group"],
-            "data": "...유동인구조회결과..."
+            "entities": entities,   # ← 지역, 업종, 성별, 연령 등 전체 전달
+            "data": "...매출조회결과..."
         }), 200
 
     elif intent_id == 2:  # 위험도
         return jsonify({
             "intent": 2,
             "confidence": round(confidence, 4),
-            "region": region,
-            "upjong_cd": entities["upjong_cd"],
-            "data": "...위험도분석결과..."
+            "entities": entities,   # ← 지역, 업종, 성별, 연령 등 전체 전달
+            "data": "...매출조회결과..."
         }), 200
 
     else:  # intent_id == 3 등
         return jsonify({
             "intent": int(intent_id),
             "confidence": round(confidence, 4),
-            "region": region,
-            "data": "...의도별 처리 결과..."
+            "entities": entities,   # ← 지역, 업종, 성별, 연령 등 전체 전달
+            "data": "...매출조회결과..."
         }), 200
 
 

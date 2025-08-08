@@ -45,14 +45,20 @@ public class ChatbotController {
         int intent = flaskResult.getIntent();
 
         if (flaskResult.getSido() == null && flaskResult.getSigungu() == null && flaskResult.getEmd() == null) {
-            return ResultData.from("F-2", "지역을 입력하지 않으셨어요. 예: '대전 유성구 궁동' 처럼 말해 주세요.");
+            return ResultData.from("F-2", "지역을 입력하지 않으셨어요. 예: '서울 종로구 사직동' 처럼 말해 주세요.");
         }
 
 
         switch (intent) {
             case 0:
                 // 매출 관련 조회 로직
+
                 System.out.println("매출 분석 요청");
+
+                // 지역 분류 + 업종별 데이터 가져오기
+                // DB에 넣어놔야하긴 해 + 과거 데이터도 넣을건가?
+
+
                 break;
 
             case 1:
@@ -76,10 +82,6 @@ public class ChatbotController {
                 System.out.println("청약 조회 요청");
                 break;
 
-            default:
-                // 알 수 없는 intent
-                System.out.println("알 수 없는 요청");
-                break;
         }
 
 
