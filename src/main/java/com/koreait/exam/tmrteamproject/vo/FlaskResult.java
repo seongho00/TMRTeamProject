@@ -15,7 +15,7 @@ import javax.persistence.Entity;
 @ToString(callSuper = true)
 public class FlaskResult{
 
-    private String intent;
+    private int intent;
     private double confidence;
     private String sido;
     private String sigungu;

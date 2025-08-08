@@ -42,7 +42,7 @@ public class ChatbotController {
         }
         FlaskResult flaskResult = (FlaskResult) result.getData1();
 
-        String intent = flaskResult.getIntent();
+        int intent = flaskResult.getIntent();
 
         if (flaskResult.getSido() == null && flaskResult.getSigungu() == null && flaskResult.getEmd() == null) {
             return ResultData.from("F-2", "지역을 입력하지 않으셨어요. 예: '대전 유성구 궁동' 처럼 말해 주세요.");
@@ -50,12 +50,12 @@ public class ChatbotController {
 
 
         switch (intent) {
-            case "0":
+            case 0:
                 // 매출 관련 조회 로직
                 System.out.println("매출 분석 요청");
                 break;
 
-            case "1":
+            case 1:
                 // 지역 분류
                 PopulationSummary populationSummary = chatBotService.getPopulationSummary(flaskResult);
 
@@ -66,12 +66,12 @@ public class ChatbotController {
 
                 return ResultData.from("S-2", "유동인구 데이터 출력", "유동인구", populationSummary, "flaskResult", flaskResult);
 
-            case "2":
+            case 2:
                 // 상권 위험도 예측 로직
                 System.out.println("위험도 예측 요청");
                 break;
 
-            case "3":
+            case 3:
                 // 청약 관련 로직
                 System.out.println("청약 조회 요청");
                 break;

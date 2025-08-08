@@ -6,6 +6,7 @@ import pickle
 import re
 import mecab_ko
 import pymysql
+import pymysql.cursors
 
 
 # ✅ 예측 함수
@@ -19,13 +20,12 @@ def predict_intent(text, threshold=0.1):
         confidence, predicted_class_id = torch.max(probs, dim=0)
 
     confidence = confidence.item()
-    class_idx = predicted_class_id.item()
+    class_idx = int(predicted_class_id.item())
 
     if confidence < threshold:
         return "지원하지 않는 서비스입니다.", confidence
 
-    predicted_label = label_encoder.inverse_transform([class_idx])[0]
-    return predicted_label, confidence
+    return class_idx, confidence
 
 
 def extract_location(text):
@@ -88,59 +88,6 @@ def extract_nouns(text):
 
     return nouns
 
-# ✅ 의미 분석 함수
-def analyze_input(user_input, valid_emd_list):
-    # 시도 목록 (단일 단어 기준)
-    valid_sido = {'대전'}
-
-    # 시군구 목록
-    valid_sigungu = {'서구', '유성구', '대덕구', '동구', '중구'}
-
-    gender_keywords = {
-        "남자": "male", "남성": "male",
-        "여자": "female", "여성": "female"
-    }
-
-    age_keywords = {
-        "10대": "age_10",
-        "20대": "age_20",
-        "30대": "age_30",
-        "40대": "age_40",
-        "50대": "age_50",
-        "60대": "age_60"
-    }
-
-    nouns = extract_nouns_with_age_merge(user_input)
-    print("추출된 명사:", nouns)
-    gender = None
-    age_group = None
-    sido = None
-    sigungu = None
-    emd_nm = None
-
-    for token in nouns:
-        # 시도 설정
-        if token in valid_sido:
-            sido = token
-        
-        # 시군구 설정
-        if token in valid_sigungu:
-            sigungu = token
-            
-        # 성별 설정
-        if token in gender_keywords:
-            gender = gender_keywords[token]
-            
-        # 나이대 설정
-        if token in age_keywords:
-            age_group = age_keywords[token]
-            
-        # 행정동 설정
-        if token in valid_emd_list:
-            emd_nm = token  # ✅ 행정동 이름 저장
-
-    return gender, age_group, sido, sigungu, emd_nm
-
 
 # 앱 시작 시 한 번만 실행 (DB에서 행정동 데이터 가져오기)
 def extract_emd_nm_list():
@@ -164,6 +111,91 @@ def extract_emd_nm_list():
         return []  # ✅ 예외 발생 시에도 빈 리스트
     finally:
         conn.close()
+
+
+# 앱 시작 시 한 번만 실행 (DB에서 업종 데이터 가져오기)
+def extract_upjong_code_map():
+    conn = pymysql.connect(
+        host='localhost',
+        user='root',
+        password='',
+        db='TMRTeamProject',
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+    try:
+        with conn.cursor() as cursor:
+            sql = """
+                SELECT DISTINCT upjong_cd, upjong_nm
+                FROM upjong_code
+                WHERE upjong_cd IS NOT NULL AND upjong_nm IS NOT NULL
+                ORDER BY upjong_nm
+            """
+            cursor.execute(sql)
+            rows = cursor.fetchall()
+            name_to_code = {r['upjong_nm']: r['upjong_cd'] for r in rows}
+            return name_to_code
+    except Exception as e:
+        print("❌ 업종 코드 로딩 실패:", e)
+        return {}
+    finally:
+        conn.close()
+
+
+# ✅ 의미 분석 함수
+def analyze_input(user_input, intent, valid_emd_list):
+    tokens = extract_nouns_with_age_merge(user_input)
+    print("추출된 명사:", tokens)
+
+    entities = {
+        "sido": None,
+        "sigungu": None,
+        "emd_nm": None,
+        "gender": None,
+        "age_group": None,
+        "upjong_cd": None,
+        "raw_upjong": None,  # 매칭 안 되면 원문 보관
+    }
+
+    for t in tokens:
+        # 시/도
+        if t in valid_sido:
+            entities["sido"] = t
+        # 시/군/구
+        if t in valid_sigungu:
+            entities["sigungu"] = t
+        # 행정동
+        if t in valid_emd_list:
+            entities["emd_nm"] = t
+        # 성별
+        if t in gender_keywords:
+            entities["gender"] = gender_keywords[t]
+        # 연령
+        if t in age_keywords:
+            entities["age_group"] = age_keywords[t]
+        # 업종
+        if t in upjong_keywords:
+            entities["upjong_cd"] = upjong_keywords[t]
+            entities["raw_upjong"] = t
+        else:
+            # 매칭 안 되어도 업종 단어 같으면 원문만 기록(간단 예시)
+            if t in ("카페","편의점","분식","패스트푸드","의류"):
+                entities["raw_upjong"] = t
+
+    # 지역 최소 단위 판정(하나라도 있으면 OK)
+    has_region = bool(entities["emd_nm"] or entities["sigungu"] or entities["sido"])
+
+    # 누락 항목 계산
+    required = INTENT_REQUIRED.get(intent, {"need": [], "optional": []})
+    missing = []
+
+    if "sido_or_sigungu_or_emd" in required["need"] and not has_region:
+        missing.append("region")  # 지역(시/구/동 중 하나)
+
+    # 다른 의무 파라미터가 필요하면 여기에 조건 추가(예: intent별 필수 성별 등)
+
+    return entities, missing
+
 
 # 숫자 포함 분석
 def extract_nouns_with_age_merge(text):
@@ -205,6 +237,7 @@ def extract_nouns_with_age_merge(text):
 
     return result
 
+
 # 서버 시작
 tagger = mecab_ko.Tagger()
 
@@ -222,7 +255,42 @@ model = BertForSequenceClassification.from_pretrained(MODEL_PATH)
 model.eval()
 
 # 앱 전체에서 사용할 전역 리스트
+valid_sido = {'서울'}
+
+# 시군구 목록
+valid_sigungu = {
+    '종로구', '중구', '용산구', '성동구', '광진구', '동대문구', '중랑구',
+    '성북구', '강북구', '도봉구', '노원구', '은평구', '서대문구', '마포구',
+    '양천구', '강서구', '구로구', '금천구', '영등포구', '동작구', '관악구',
+    '서초구', '강남구', '송파구', '강동구'
+}
+
+gender_keywords = {
+    "남자": "male", "남성": "male",
+    "여자": "female", "여성": "female"
+}
+
+age_keywords = {
+    "10대": "age_10",
+    "20대": "age_20",
+    "30대": "age_30",
+    "40대": "age_40",
+    "50대": "age_50",
+    "60대": "age_60"
+}
+
 valid_emd_list = extract_emd_nm_list()
+upjong_keywords = extract_upjong_code_map()
+
+# 의도별 요구 파라미터 정의
+# intent: 0=매출, 1=유동인구, 2=위험도, 3=청약(예시)
+INTENT_REQUIRED = {
+    0: {"need": ["sido_or_sigungu_or_emd", "upjong_cd"], "optional": []},  # 매출 조회: 지역은 최소 1단계, 업종은 선택
+    1: {"need": ["sido_or_sigungu_or_emd"], "optional": ["gender", "age_group"]},  # 유동인구: 지역 필수, 성별/연령 선택
+    2: {"need": ["sido_or_sigungu_or_emd"], "optional": ["upjong_cd"]},  # 위험도: 지역 필수
+    3: {"need": ["sido_or_sigungu_or_emd"], "optional": []},  # 청약: 지역 필수(필요에 맞게 수정)
+}
+
 
 # ✅ API 라우팅
 @app.route("/predict", methods=["GET"])
@@ -233,31 +301,71 @@ def predict():
         return jsonify({"error": "text 파라미터가 비어있습니다."}), 400
 
     # 예측
-    intent, confidence = predict_intent(question)
+    intent_id, confidence = predict_intent(question)
 
-    # 기본 응답
-    response_data = {
-        "intent": str(intent),
-        "confidence": float(round(confidence, 4)),
-        "message": generate_response(question)
-    }
+    # 2) 파라미터 분석
+    entities, missing = analyze_input(question, intent_id, valid_emd_list)
 
-    # intent가 1(유동인구 조회)일 때만 의미 분석 실행
-    if intent == 1:
-        gender, age_group, sido, sigungu, emd_nm = analyze_input(question, valid_emd_list)
-        response_data.update({
-            "sido": str(sido),
-            "sigungu": str(sigungu),
-            "emd_nm": str(emd_nm),
-            "gender": str(gender),
-            "age_group": str(age_group)
-        })
+    # 3) 누락 안내
+    if missing:
+        parts = []
+        if "region" in missing: parts.append("지역(시/구/동)")
+        if "upjong_cd" in missing:
+            hint = f" (인식: {entities['raw_upjong']})" if entities.get("raw_upjong") else " (예: 카페, 편의점)"
+            parts.append("업종" + hint)
+        return jsonify({
+            "intent": intent_id,
+            "confidence": round(confidence, 4),
+            "need_more": missing,
+            "entities": entities,
+            "message": " / ".join(parts) + " 정보를 알려주세요."
+        }), 200
 
-    return Response(
-        json.dumps(response_data, ensure_ascii=False),
-        content_type="application/json; charset=utf-8"
-    )
+    # 4) 의도별 분기
+    region = entities["emd_nm"] or entities["sigungu"] or entities["sido"]
 
+    print(region)
+    print(intent_id)
+    print(confidence)
+    print(entities)
+
+    if intent_id == 0:  # 매출
+        upjong_cd = entities["upjong_cd"]  # 필수
+        # TODO: 실제 DB 조회 호출 (region, upjong_cd)
+        return jsonify({
+            "intent": 0,
+            "confidence": round(confidence, 4),
+            "region": region,
+            "upjong_cd": upjong_cd,
+            "data": "...매출조회결과..."
+        }), 200
+
+    elif intent_id == 1:  # 유동인구
+        return jsonify({
+            "intent": 1,
+            "confidence": round(confidence, 4),
+            "region": region,
+            "gender": entities["gender"],
+            "age_group": entities["age_group"],
+            "data": "...유동인구조회결과..."
+        }), 200
+
+    elif intent_id == 2:  # 위험도
+        return jsonify({
+            "intent": 2,
+            "confidence": round(confidence, 4),
+            "region": region,
+            "upjong_cd": entities["upjong_cd"],
+            "data": "...위험도분석결과..."
+        }), 200
+
+    else:  # intent_id == 3 등
+        return jsonify({
+            "intent": int(intent_id),
+            "confidence": round(confidence, 4),
+            "region": region,
+            "data": "...의도별 처리 결과..."
+        }), 200
 
 
 if __name__ == "__main__":
