@@ -16,23 +16,27 @@ public class UpjongCodeService {
     private final UpjongCodeRepository upjongCodeRepository;
 
     public List<UpjongCode> getUpjongCodesByMajorNm(String majorNm) {
-        return upjongCodeRepository.getUpjongCodesByMajorNm(majorNm);
+        return null;
     }
 
     public List<UpjongCode> getGroupedUpjongCodesByMajorCd(String majorCd) {
-        return upjongCodeRepository.getGroupedUpjongCodesByMajorCd(majorCd);
+        return null;
     }
 
     public List<UpjongCode> getUpjongCodesByMiddleCd(String middleCd) {
-        return upjongCodeRepository.getUpjongCodesByMiddleCd(middleCd);
+        return null;
     }
 
     public UpjongCode getUpjongCodeByMinorCd(String minorCd) {
-        return upjongCodeRepository.getUpjongCodeByMinorCd(minorCd);
+        return null;
     }
 
     public List<UpjongCode> getUpjongCodeByKeyword(String keyword) {
 
-        return upjongCodeRepository.getUpjongCodeByKeyword(keyword);
+        return null;
+    }
+
+    public List<UpjongCode> findAll() {
+        return upjongCodeRepository.findAll();
     }
 }
