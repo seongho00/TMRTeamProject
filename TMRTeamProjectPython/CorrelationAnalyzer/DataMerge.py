@@ -1,69 +1,117 @@
-import glob
 import os
-
+import glob
 import pandas as pd
 
-df_dir = "C:/Users/user/Downloads/Seoul_data"
-file_list = glob.glob(os.path.join(df_dir, "*.csv"))
+# 데이터 폴더 리스트
+df_dirs = {
+    2023: "C:/Users/user/Downloads/Seoul_data_2023",
+    2024: "C:/Users/user/Downloads/Seoul_data_2024",
+    2025: "C:/Users/user/Downloads/Seoul_data_2025",
+}
 
+# 병합 키
 base_merge_key = ['기준_년분기_코드', '행정동_코드', '행정동_코드_명']
 skip_columns = ['서비스_업종_코드', '서비스_업종_코드_명']
 service_merge_key = base_merge_key + skip_columns
 
-for quarter in [20241, 20242, 20243, 20244]:
-    base_df = None
-    service_df = None
+# 저장 폴더
+save_dir = "C:/Users/user/Downloads/Seoul_Merge_Data"
+save_dir2 = "C:/Users/user/Downloads/Seoul_Data_Special"
+os.makedirs(save_dir, exist_ok=True)
+os.makedirs(save_dir2, exist_ok=True)
 
-    for file_path in file_list:
-        try:
-            df = pd.read_csv(file_path, encoding='utf-8')
-            df['기준_년분기_코드'] = df['기준_년분기_코드'].astype(str)
+def read_csv_safely(path: str) -> pd.DataFrame:
+    try:
+        return pd.read_csv(path, encoding='utf-8')
+    except UnicodeDecodeError:
+        return pd.read_csv(path, encoding='cp949')
 
-            df_q = df[df['기준_년분기_코드'] == str(quarter)].copy()
-            df_q = df_q[df_q['행정동_코드_명'] != '둔촌1동']
+for year, year_dir in df_dirs.items():
+    if year == 2023:
+        quarters = [20231, 20232, 20233, 20234]
+    elif year == 2024:
+        quarters = [20241, 20242, 20243, 20244]
+    elif year == 2025:
+        quarters = [20251]
 
-            has_service_cols = all(col in df_q.columns for col in skip_columns)
+    csv_files = glob.glob(os.path.join(year_dir, "*.csv"))
 
-            # 서비스 업종 코드 없는 파일 → 일반 병합
-            if not has_service_cols:
-                if base_df is None:
-                    base_df = df_q
+    for quarter in quarters:
+        base_df = None
+        service_df = None
+
+        for file_path in csv_files:
+            try:
+                df = read_csv_safely(file_path)
+
+                if '기준_년분기_코드' not in df.columns:
+                    print(f"[스킵] {os.path.basename(file_path)} → 기준_년분기_코드 없음")
+                    continue
+
+                # 키 컬럼 형 변환
+                df['기준_년분기_코드'] = df['기준_년분기_코드'].astype(str)
+                if '행정동_코드' in df.columns:
+                    df['행정동_코드'] = df['행정동_코드'].astype(str)
+
+                df_q = df[df['기준_년분기_코드'] == str(quarter)].copy()
+                if df_q.empty:
+                    print(f"[스킵] {os.path.basename(file_path)} → 분기 {quarter} 데이터 없음")
+                    continue
+
+                if '행정동_코드_명' not in df_q.columns:
+                    print(f"[스킵] {os.path.basename(file_path)} → 행정동_코드_명 없음")
+                    continue
+
+                # 특정 동 제외
+                df_q = df_q[df_q['행정동_코드_명'] != '둔촌1동']
+
+                has_service_cols = all(col in df_q.columns for col in skip_columns)
+
+                # -------- 일반 병합 --------
+                if not has_service_cols:
+                    if base_df is None:
+                        base_df = df_q
+                        print(f"[초기화-일반] {os.path.basename(file_path)} | rows: {len(df_q)}")
+                    else:
+                        merge_keys = [k for k in base_merge_key if k in base_df.columns and k in df_q.columns]
+                        if not merge_keys:
+                            print(f"[스킵-일반] {os.path.basename(file_path)} → 병합 키 없음")
+                            continue
+
+                        # 중복 컬럼 제거(키 제외)
+                        drop_cols = [col for col in df_q.columns if col in base_df.columns and col not in merge_keys]
+                        if drop_cols:
+                            df_q = df_q.drop(columns=drop_cols)
+
+                        base_df = pd.merge(base_df, df_q, on=merge_keys, how='outer')
+
+                # -------- 서비스 병합 --------
                 else:
-                    merge_keys = [k for k in base_merge_key if k in base_df.columns and k in df_q.columns]
-                    if not merge_keys:
-                        print(f"일반 병합 스킵: {file_path} (병합 키 없음)")
-                        continue
-                    base_df = pd.merge(base_df, df_q, on=merge_keys, how='inner')
+                    if service_df is None:
+                        service_df = df_q
+                        print(f"[초기화-서비스] {os.path.basename(file_path)} | rows: {len(df_q)}")
+                    else:
+                        merge_keys = [k for k in service_merge_key if k in service_df.columns and k in df_q.columns]
+                        if not merge_keys:
+                            print(f"[스킵-서비스] {os.path.basename(file_path)} → 병합 키 없음")
+                            continue
 
-            # 서비스 업종 코드 있는 파일 → 따로 병합
-            else:
-                if service_df is None:
-                    service_df = df_q
-                else:
-                    merge_keys = [k for k in service_merge_key if k in service_df.columns and k in df_q.columns]
-                    if not merge_keys:
-                        print(f"서비스 병합 스킵: {file_path} (병합 키 없음)")
-                        continue
-                    service_df = pd.merge(service_df, df_q, on=merge_keys, how='inner')
+                        drop_cols = [col for col in df_q.columns if col in service_df.columns and col not in merge_keys]
+                        if drop_cols:
+                            df_q = df_q.drop(columns=drop_cols)
 
-        except Exception as e:
-            print(f"병합 실패: {file_path} | 오류: {e}")
+                        service_df = pd.merge(service_df, df_q, on=merge_keys, how='outer')
 
-    # 저장 폴더 생성
-    save_dir = "C:/Users/user/Downloads/Seoul_Merge_Data"
-    os.makedirs(save_dir, exist_ok=True)
+            except Exception as e:
+                print(f"[에러] 병합 실패: {os.path.basename(file_path)} | {e}")
 
-    save_dir2 = "C:/Users/user/Downloads/Seoul_Data_Special"
-    os.makedirs(save_dir2, exist_ok=True)
+        # 저장
+        if base_df is not None:
+            out1 = os.path.join(save_dir, f"서울_상권분석_행정동_{quarter}.csv")
+            base_df.to_csv(out1, index=False, encoding='utf-8-sig')
+            print(f"[완료] {quarter}분기 일반 병합 → {out1}")
 
-    # 일반 데이터 저장
-    if base_df is not None:
-        save_path = os.path.join(save_dir, f"서울_상권분석_행정동_{quarter}.csv")
-        base_df.to_csv(save_path, index=False, encoding='utf-8-sig')
-        print(f"{quarter}분기 일반 병합 완료: {save_path}")
-
-    # 서비스 업종 포함 데이터 저장
-    if service_df is not None:
-        save_path = os.path.join(save_dir2, f"서울_상권분석_서비스업종포함_행정동_{quarter}.csv")
-        service_df.to_csv(save_path, index=False, encoding='utf-8-sig')
-        print(f"{quarter}분기 서비스 병합 완료: {save_path}")
+        if service_df is not None:
+            out2 = os.path.join(save_dir2, f"서울_상권분석_서비스업종포함_행정동_{quarter}.csv")
+            service_df.to_csv(out2, index=False, encoding='utf-8-sig')
+            print(f"[완료] {quarter}분기 서비스 병합 → {out2}")
