@@ -62,4 +62,17 @@ CREATE TABLE upjong_code (
                              upjong_nm VARCHAR(50)      -- 업종명
 );
 
+CREATE TABLE risk_score (
+                            emd_cd        VARCHAR(20)  NOT NULL PRIMARY KEY,
+                            reg_date DATETIME NOT NULL,
+                            update_date DATETIME NOT NULL,
+                            upjong_cd       VARCHAR(20)  NOT NULL,
+                            risk_raw        DOUBLE       NOT NULL,   -- 위험도_점수 원본 (-0.4 ~ 0.2 등)
+                            risk_label      INT          NULL,       -- '위험도' (정수 레이블)
+                            risk7_label     VARCHAR(10)  NULL,       -- '위험도7' (예: '7단계')
+                            risk_pred       INT          NULL,       -- '예측_위험도'
+                            risk100_all     DECIMAL(5,1) NOT NULL,   -- 전체 기준 0~100
+                            risk100_by_biz  DECIMAL(5,1) NOT NULL   -- 업종 기준 0~100
+)
+
 SELECT * FROM upjong_code;
