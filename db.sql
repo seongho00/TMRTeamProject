@@ -120,3 +120,13 @@ CREATE TABLE lh_supply_schedule (
                                     scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 )
+
+CREATE TABLE schedule_interest (
+                                   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                   reg_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                   update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                   member_id BIGINT NOT NULL,
+                                   schedule_id BIGINT NOT NULL,
+                                   is_active TINYINT(1) NOT NULL DEFAULT 1
+
+)
