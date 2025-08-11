@@ -80,4 +80,6 @@ public class ChatbotController {
 
         return ResultData.from("F-1", "데이터 요청 실패");
     }
+
+
 }
