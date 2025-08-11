@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.common import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
@@ -13,6 +14,7 @@ def wait_for_elements(driver, by, value, min_count=1, timeout=10):
     )
     return driver.find_elements(by, value)
 
+
 # 부모 요소 안에서 자식 요소를 기다리는 함수
 def wait_for_child_element(parent_element, by, value, timeout=10):
     return WebDriverWait(parent_element, timeout).until(
@@ -26,6 +28,7 @@ def wait_for_child_elements(parent_element, by, value, min_count=1, timeout=10):
     )
     return parent_element.find_elements(by, value)
 
+missing_supply_schedule = []  # 공급일정 없는 공고 번호 저장 리스트
 
 # ====== 크롤링 시작 ======
 driver = webdriver.Chrome(service=Service("chromedriver.exe"))
@@ -50,16 +53,35 @@ while True:
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "table, .view, .detail"))
         )
+        print("디테일 진입 완료")
 
-        print("✅ 상세페이지 진입 완료")
+        try:
+            h3_elements = WebDriverWait(driver, 10).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "#sub_container h3.tit1"))
+            )
+        except TimeoutException:
+            print(f"⚠ {idx + 1}번째 공고 - #sub_container h3.tit1 없음, 건너뜀")
+            missing_supply_schedule.append(idx + 1)
+            driver.back()
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table tbody tr"))
+            )
+            continue
 
-        # h3.tit1 중에서 "공급일정"인 요소 찾기
-        h3_elements = driver.find_elements(By.CSS_SELECTOR, ".subCntBody h3.tit1")
         target_h3 = None
-        for h3 in h3_elements:
-            if "공급일정" in h3.text:
-                target_h3 = h3
+        for h in h3_elements:
+            if "공급일정" in (h.text or ""):
+                target_h3 = h
                 break
+
+        if not target_h3:
+            print(f"⚠ {idx + 1}번째 공고 - 공급일정 제목 없음, 건너뜀")
+            missing_supply_schedule.append(idx + 1)
+            driver.back()
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table tbody tr"))
+            )
+            continue
 
         if target_h3:
             # 공급일정 h3 다음 형제 요소에서 li 항목 찾기
@@ -70,10 +92,7 @@ while True:
         else:
             print("공급일정 섹션을 찾을 수 없습니다.")
 
-
         # 상세 페이지에서 데이터 추출 예시
-
-
 
         WebDriverWait(driver, 10).until(lambda d: d.current_url != old)
 
