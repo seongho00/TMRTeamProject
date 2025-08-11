@@ -4,9 +4,9 @@ import pandas as pd
 
 # 데이터 폴더 리스트
 df_dirs = {
-    2023: "C:/Users/user/Downloads/Seoul_data_2023",
-    2024: "C:/Users/user/Downloads/Seoul_data_2024",
-    2025: "C:/Users/user/Downloads/Seoul_data_2025",
+    2023: "C:/Users/admin/Downloads/Seoul_data_2023",
+    2024: "C:/Users/admin/Downloads/Seoul_data_2024",
+    2025: "C:/Users/admin/Downloads/Seoul_data_2025",
 }
 
 # 병합 키
@@ -15,8 +15,8 @@ skip_columns = ['서비스_업종_코드', '서비스_업종_코드_명']
 service_merge_key = base_merge_key + skip_columns
 
 # 저장 폴더
-save_dir = "C:/Users/user/Downloads/Seoul_Merge_Data"
-save_dir2 = "C:/Users/user/Downloads/Seoul_Data_Special"
+save_dir = "C:/Users/admin/Downloads/Seoul_Merge_Data"
+save_dir2 = "C:/Users/admin/Downloads/Seoul_Data_Special"
 os.makedirs(save_dir, exist_ok=True)
 os.makedirs(save_dir2, exist_ok=True)
 

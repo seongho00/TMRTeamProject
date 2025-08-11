@@ -14,7 +14,7 @@ from tqdm import tqdm
 plt.rcParams['font.family'] = 'Malgun Gothic'
 plt.rcParams['axes.unicode_minus'] = False
 
-df_dir = "C:/Users/user/Downloads/seoul_data_merge"
+df_dir = "C:/Users/admin/Downloads/seoul_data_merge"
 
 # df_dir 폴더에 있는 모든 데이터 불러오기
 csv_files = glob.glob(os.path.join(df_dir, "*.csv"))

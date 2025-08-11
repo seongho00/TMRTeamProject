@@ -2,10 +2,10 @@ import os
 
 import pandas as pd
 
-save_dir = "C:/Users/user/Downloads/seoul_data_merge"
+save_dir = "C:/Users/admin/Downloads/seoul_data_merge"
 os.makedirs(save_dir, exist_ok=True)
-df_dir = "C:/Users/user/Downloads/Seoul_Merge_Data"
-sp_dir = "C:/Users/user/Downloads/Seoul_Data_Special"
+df_dir = "C:/Users/admin/Downloads/Seoul_Merge_Data"
+sp_dir = "C:/Users/admin/Downloads/Seoul_Data_Special"
 
 # 연도별 분기 리스트 정의
 quarters_by_year = {
