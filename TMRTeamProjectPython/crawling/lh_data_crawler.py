@@ -5,7 +5,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, NoSuchElementException
 from selenium.webdriver.common.by import By
 import time
-
+import re
+from datetime import datetime
+import pymysql
 
 # ====== 대기 함수 ======
 def wait_for_elements(driver, by, value, min_count=1, timeout=10):
@@ -134,36 +136,200 @@ def find_supply_schedule(driver, idx, timeout=10, attempts=3):
 
     return None, (last_reason or "unknown")
 
-
 def extract_schedule_items(target_h3):
-    results = []
-
-    # 2) table 형태 (다음 h3 전까지 모든 table 검색)
-    try:
-        tables = target_h3.find_elements(
-            By.XPATH,
-            "following-sibling::*[not(self::h3)]//table"
-        )
-    except:
-        tables = []
-
+    """
+    return: {"type": "table"|"li"|"none", "lines": [str, ...]}
+    """
+    # table 우선
+    tables = target_h3.find_elements(By.XPATH, "following-sibling::*[not(self::h3)]//table")
+    table_lines = []
     for table in tables:
         rows = table.find_elements(By.XPATH, ".//tbody/tr")
         for row in rows:
-            tds = row.find_elements(By.TAG_NAME, "td")
-            vals = [td.text.strip() for td in tds if td.text.strip()]
-            if vals:
-                results.append(" | ".join(vals))
+            tds = [td.text.strip() for td in row.find_elements(By.TAG_NAME, "td")]
+            tds = [t for t in tds if t]
+            if tds:
+                table_lines.append(" | ".join(tds))
+    if table_lines:
+        return {"type": "table", "lines": table_lines}
 
-    # 1) li 형태
+    # li fallback
     lis = target_h3.find_elements(By.XPATH, "following-sibling::*//li")
-    results.extend([li.text.strip() for li in lis if li.text.strip()])
-    if results:
-        return results
+    li_lines = [li.text.strip() for li in lis if li.text.strip()]
+    if li_lines:
+        return {"type": "li", "lines": li_lines}
+
+    return {"type": "none", "lines": []}
 
 
+DT = "%Y.%m.%d %H:%M"
+D  = "%Y.%m.%d"
 
-    return results
+def _clean(s: str) -> str:
+    s = s.strip()
+    s = re.sub(r"\([^)]+\)", "", s)   # (월) 같은 요일 제거
+    s = s.replace("이후", "")
+    s = re.sub(r"\s+", " ", s)
+    return s
+
+def _dt(s: str) -> datetime:
+    s = _clean(s)
+    if re.search(r"\d{1,2}:\d{2}", s):
+        return datetime.strptime(s, DT)
+    return datetime.strptime(s, D)
+
+# --- table 전용 파서 ---
+def parse_table_lines(lines):
+    """
+    lines 예:
+      '최초입찰 | 2025.08.04 (10:00~16:00) | 2025.08.04 (16:00) | 2025.08.04 (17:00) | 2025.08.04 (18:00)'
+      '재입찰   | 2025.08.05 (10:00~16:00) | ...'
+      '계약체결일정 : 2025.08.11 ~ 2025.08.12'
+    """
+    parsed = {
+        "rows": [],                 # [{label, apply_start, apply_end, result_time}]
+        "contract_start": None,
+        "contract_end": None,
+    }
+
+    for raw in lines:
+        line = raw.strip()
+        if not line or "입찰일정" in line:
+            continue
+
+        # 계약체결일정
+        if line.replace(" ", "").startswith("계약체결일정:"):
+            m = re.search(r"계약체결일정\s*:\s*(\d{4}\.\d{1,2}\.\d{1,2})\s*[~\-]\s*(\d{4}\.\d{1,2}\.\d{1,2})", line)
+            if m:
+                parsed["contract_start"] = _dt(m.group(1)).date()
+                parsed["contract_end"]   = _dt(m.group(2)).date()
+            continue
+
+        if "|" not in line:
+            continue
+        parts = [p.strip() for p in line.split("|")]
+        if len(parts) < 2:
+            continue
+
+        label = parts[0]
+
+        # 2번째 칼럼: YYYY.MM.DD (HH:MM~HH:MM)
+        apply_col = _clean(parts[1])
+        m1 = re.search(r"(\d{4}\.\d{1,2}\.\d{1,2}).*?(\d{1,2}:\d{2})\s*[~\-]\s*(\d{1,2}:\d{2})", apply_col)
+        apply_start = apply_end = None
+        if m1:
+            d = m1.group(1); t1 = m1.group(2); t2 = m1.group(3)
+            apply_start = _dt(f"{d} {t1}")
+            apply_end   = _dt(f"{d} {t2}")
+
+        # 마지막 칼럼을 result_time으로 사용
+        last_col = _clean(parts[-1])
+        m2 = re.search(r"(\d{4}\.\d{1,2}\.\d{1,2})(?:\s+(\d{1,2}:\d{2}))?", last_col)
+        result_time = None
+        if m2:
+            d2 = m2.group(1); t = m2.group(2) or "00:00"
+            result_time = _dt(f"{d2} {t}")
+
+        parsed["rows"].append({
+            "label": label,
+            "apply_start": apply_start,
+            "apply_end": apply_end,
+            "result_time": result_time
+        })
+
+    return parsed
+
+def choose_primary(parsed_table):
+    """
+    정책:
+      - 신청구간: '최초' 라벨 우선, 없으면 가장 이른 시작
+      - 결과시간: 같은 라벨 행 우선, 없으면 가장 이른 결과시간
+    """
+    rows = [r for r in parsed_table["rows"] if r["apply_start"] and r["apply_end"]]
+    result = {"apply_start": None, "apply_end": None, "result_time": None,
+              "contract_start": parsed_table["contract_start"], "contract_end": parsed_table["contract_end"]}
+
+    chosen = None
+    if rows:
+        firsts = [r for r in rows if str(r["label"]).startswith("최초")]
+        chosen = firsts[0] if firsts else sorted(rows, key=lambda x: x["apply_start"])[0]
+        result["apply_start"] = chosen["apply_start"]
+        result["apply_end"]   = chosen["apply_end"]
+
+    # result_time 선택
+    rts = [r for r in parsed_table["rows"] if r["result_time"]]
+    if rts:
+        if chosen:
+            same = [r for r in rts if r["label"] == chosen["label"]]
+            result["result_time"] = (same[0]["result_time"] if same
+                                     else sorted(rts, key=lambda x: x["result_time"])[0]["result_time"])
+        else:
+            result["result_time"] = sorted(rts, key=lambda x: x["result_time"])[0]["result_time"]
+
+    return result
+
+# --- li 전용 파서 ---
+def parse_li_texts(texts):
+    data = {"apply_start":None,"apply_end":None,"result_time":None,"contract_start":None,"contract_end":None}
+
+    for raw in texts:
+        line = raw.replace(" ", "")
+        if line.startswith("신청일시:"):
+            m = re.search(r"신청일시:(\d{4}\.\d{1,2}\.\d{1,2})(\d{1,2}:\d{2})?[~\-](\d{4}\.\d{1,2}\.\d{1,2})?(\d{1,2}:\d{2})?", _clean(raw))
+            if m:
+                d1, t1, d2, t2 = m.group(1), m.group(2), m.group(3) or m.group(1), m.group(4)  # 끝 날짜 생략 시 시작과 동일
+                t1 = t1 or "00:00"; t2 = t2 or "23:59"
+                data["apply_start"] = _dt(f"{d1} {t1}")
+                data["apply_end"]   = _dt(f"{d2} {t2}")
+
+        elif line.startswith("결과발표일시:") or line.startswith("개찰결과게시일시:"):
+            m = re.search(r"(?:결과발표일시|개찰결과게시일시)\s*:\s*(\d{4}\.\d{1,2}\.\d{1,2})(?:\s*(\d{1,2}:\d{2}))?", _clean(raw))
+            if m:
+                dt = f"{m.group(1)} {m.group(2) or '00:00'}"
+                data["result_time"] = _dt(dt)
+
+        elif line.startswith("계약체결일정:"):
+            m = re.search(r"계약체결일정\s*:\s*(\d{4}\.\d{1,2}\.\d{1,2})\s*[~\-]\s*(\d{4}\.\d{1,2}\.\d{1,2})", _clean(raw))
+            if m:
+                data["contract_start"] = _dt(m.group(1)).date()
+                data["contract_end"]   = _dt(m.group(2)).date()
+
+    return data
+
+
+# ====== DB 연결 ======
+conn = pymysql.connect(
+    host="localhost",
+    user="root",
+    password="",
+    database="TMRTeamProject",
+    charset="utf8mb4"
+)
+cursor = conn.cursor()
+
+UPSERT_SQL = """
+INSERT INTO lh_supply_schedule
+  (name, apply_start, apply_end, result_time, contract_start, contract_end)
+VALUES (%s, %s, %s, %s, %s, %s)
+ON DUPLICATE KEY UPDATE
+  apply_end=VALUES(apply_end),
+  result_time=VALUES(result_time),
+  contract_start=VALUES(contract_start),
+  contract_end=VALUES(contract_end),
+  update_date=CURRENT_TIMESTAMP
+"""
+
+# ====== 데이터 저장 함수 ======
+def save_schedule(name, parsed):
+    cursor.execute(UPSERT_SQL, (
+        name,
+        parsed.get("apply_start"),
+        parsed.get("apply_end"),
+        parsed.get("result_time"),
+        parsed.get("contract_start"),
+        parsed.get("contract_end"),
+    ))
+    conn.commit()  # 바로 반영 (원하면 페이지 끝나고 한 번만 커밋 가능)
 
 
 missing_supply_schedule = []  # 공급일정 없는 공고 번호 저장 리스트
@@ -228,12 +394,17 @@ while True:
             )
             continue
 
-        items = extract_schedule_items(target_h3)
-        if items:
-            for item in items:
-                print(item)
+        data = extract_schedule_items(target_h3)
+        if data["type"] == "table":
+            parsed = choose_primary(parse_table_lines(data["lines"]))
+            save_schedule(name, parsed)
+            print("DB saved (table):", name, parsed)
+        elif data["type"] == "li":
+            parsed = parse_li_texts(data["lines"])
+            save_schedule(name, parsed)
+            print("DB saved (li):", name, parsed)
         else:
-            print(f"⚠ {idx + 1}번째 공고 - 공급일정 데이터 없음")
+            print(f"⚠ {idx+1} - 공급일정 데이터 없음")
 
         # 상세 페이지에서 데이터 추출 예시
 
@@ -259,4 +430,6 @@ while True:
         print("📌 다음 버튼 없음, 종료")
         break
 
+cursor.close()
+conn.close()
 driver.quit()
