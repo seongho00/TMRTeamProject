@@ -138,12 +138,6 @@ def find_supply_schedule(driver, idx, timeout=10, attempts=3):
 def extract_schedule_items(target_h3):
     results = []
 
-    # 1) li 형태
-    lis = target_h3.find_elements(By.XPATH, "following-sibling::div//li")
-    results.extend([li.text.strip() for li in lis if li.text.strip()])
-    if results:
-        return results
-
     # 2) table 형태 (다음 h3 전까지 모든 table 검색)
     try:
         tables = target_h3.find_elements(
@@ -160,6 +154,14 @@ def extract_schedule_items(target_h3):
             vals = [td.text.strip() for td in tds if td.text.strip()]
             if vals:
                 results.append(" | ".join(vals))
+
+    # 1) li 형태
+    lis = target_h3.find_elements(By.XPATH, "following-sibling::*//li")
+    results.extend([li.text.strip() for li in lis if li.text.strip()])
+    if results:
+        return results
+
+
 
     return results
 
@@ -181,7 +183,10 @@ while True:
         # 매 클릭 전에 다시 목록 요소 새로 가져오기 (stale 방지)
         rows = driver.find_elements(By.CSS_SELECTOR, "table tbody tr")
         link = rows[idx].find_element(By.CSS_SELECTOR, "a")
-        print(f"▶ {idx + 1}번째 공고 클릭")
+        span = link.find_element(By.CSS_SELECTOR, "span")
+        name = span.text.strip()
+
+        print(f"{idx+1}번째 공고 이름: {name}")
         old = driver.current_url
         link.click()
 
@@ -189,7 +194,6 @@ while True:
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "table, .view, .detail"))
         )
-        print("디테일 진입 완료")
 
         texts, reason = find_supply_schedule(driver, idx, timeout=10, attempts=3)
         if not texts:
@@ -240,6 +244,7 @@ while True:
 
         # 다시 목록 로드 대기
         wait_for_elements(driver, By.CSS_SELECTOR, "table tbody tr", min_count=1, timeout=10)
+        print("-----------------------------")
         time.sleep(0.5)  # 서버 부하 방지
 
     # 페이지네이션: 다음 버튼 클릭
