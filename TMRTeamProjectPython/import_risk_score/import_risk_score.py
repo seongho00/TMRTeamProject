@@ -17,11 +17,19 @@ df = pd.read_csv(CSV_PATH)
 # 컬럼 명 매핑(실제 CSV에 맞춰 확인)
 # ['행정동_코드','행정동_코드_명','서비스_업종_코드','서비스_업종_코드_명','위험도_점수','위험도','위험도7','예측_위험도']
 
-# ====== 2) 정규화 (0~100) ======
-min_v = df["위험도_점수"].min()
-max_v = df["위험도_점수"].max()
+# ====== 정규화 (0~100, 18 이상은 계산에서만 제외) ======
+mask = df["위험도_점수"] < 9  # 18 이상 제외
+
+# min/max는 18 미만 데이터만 사용
+min_v = df.loc[mask, "위험도_점수"].min()
+max_v = df.loc[mask, "위험도_점수"].max()
 denom = (max_v - min_v) if max_v != min_v else 1
-df["risk100_all"] = ((df["위험도_점수"] - min_v) / denom * 100).round(1)
+
+# 18 미만인 데이터만 계산
+df.loc[mask, "risk100_all"] = ((df.loc[mask, "위험도_점수"] - min_v) / denom * 100).round(1)
+
+df.loc[df["위험도_점수"] >= 9, "risk100_all"] = 100
+
 
 def norm_group(g):
     gmin, gmax = g.min(), g.max()

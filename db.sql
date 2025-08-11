@@ -71,8 +71,7 @@ CREATE TABLE risk_score (
                             risk_label      INT          NULL,       -- '위험도' (정수 레이블)
                             risk7_label     VARCHAR(10)  NULL,       -- '위험도7' (예: '7단계')
                             risk_pred       INT          NULL,       -- '예측_위험도'
-                            risk100_all     DECIMAL(5,1) NOT NULL,   -- 전체 기준 0~100
-                            risk100_by_biz  DECIMAL(5,1) NOT NULL   -- 업종 기준 0~100
+                            risk100_all     DECIMAL(5,1) NULL,   -- 전체 기준 0~100
+                            risk100_by_biz  DECIMAL(5,1) NULL   -- 업종 기준 0~100
 )
-
 SELECT * FROM upjong_code;
