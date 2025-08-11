@@ -42,6 +42,7 @@ public class SmsScheduler {
             // 멤버 가져오기
             Member member = memberRepository.findById(si.getMemberId()).orElse(null);
             String phoneNum = member.getPhoneNum();
+
             LocalDate applyDate = lhSupplySchedule.getApplyStart().toLocalDate();
             long daysUntil = ChronoUnit.DAYS.between(today, applyDate);
 
@@ -56,8 +57,7 @@ public class SmsScheduler {
                         lhSupplySchedule.getApplyStart().toString());
             }
 
-            if (msg != null) {
-
+            if (msg != null && si.getIsActive() == 1 && phoneNum != null) {
                 smsService.sendSms(phoneNum, msg);
             }
         }
