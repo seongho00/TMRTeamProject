@@ -28,4 +28,8 @@ public class AdminDongService {
     public List<AdminDong> getAdminDongsByEmdNm(String emdNm) {
         return adminDongRepository.findAdminDongByEmdNm(emdNm);
     }
+
+    public AdminDong findAdminDongBySggNmAndEmdNm(String sggNm, String emdNm) {
+        return adminDongRepository.findAdminDongBySggNmAndEmdNm(sggNm, emdNm);
+    }
 }

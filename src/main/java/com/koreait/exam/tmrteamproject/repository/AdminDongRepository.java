@@ -28,4 +28,6 @@ public interface AdminDongRepository extends JpaRepository<AdminDong, String> {
     List<AdminDong> getAdminDongGroupBySggCd();
 
     List<AdminDong> findAdminDongByEmdNm(String emdNm);
+
+    AdminDong findAdminDongBySggNmAndEmdNm(String sggNm, String emdNm);
 }

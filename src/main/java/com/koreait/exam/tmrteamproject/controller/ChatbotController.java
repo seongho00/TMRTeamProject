@@ -3,10 +3,8 @@ package com.koreait.exam.tmrteamproject.controller;
 import com.koreait.exam.tmrteamproject.service.AdminDongService;
 import com.koreait.exam.tmrteamproject.service.ChatBotService;
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
-import com.koreait.exam.tmrteamproject.vo.AdminDong;
-import com.koreait.exam.tmrteamproject.vo.FlaskResult;
-import com.koreait.exam.tmrteamproject.vo.PopulationSummary;
-import com.koreait.exam.tmrteamproject.vo.ResultData;
+import com.koreait.exam.tmrteamproject.service.RiskScoreService;
+import com.koreait.exam.tmrteamproject.vo.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +29,8 @@ public class ChatbotController {
     private ChatBotService chatBotService;
     @Autowired
     private AdminDongService adminDongService;
-
+    @Autowired
+    private RiskScoreService riskScoreService;
 
     @GetMapping("/chat")
     public String chat() {
@@ -67,6 +66,10 @@ public class ChatbotController {
         // 서울만 하니까 서울로 고정
         flaskResult.setSido("서울특별시");
 
+        // 행정동 코드 가져오기
+        AdminDong adminDong = adminDongService.findAdminDongBySggNmAndEmdNm(flaskResult.getSigungu(), flaskResult.getEmd());
+        String emdCd = adminDong.getEmdCd();
+
         switch (intent) {
             case 0:
                 // 매출 관련 조회 로직
@@ -92,7 +95,7 @@ public class ChatbotController {
 
             case 2:
                 // 상권 위험도 예측 로직
-
+                RiskScore riskScore = riskScoreService.findAllByEmdCd(emdCd);
 
                 System.out.println("위험도 예측 요청");
                 break;
