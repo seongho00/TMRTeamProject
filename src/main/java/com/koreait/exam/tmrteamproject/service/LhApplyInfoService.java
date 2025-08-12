@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,8 +34,6 @@ public class LhApplyInfoService {
             .setDateFormat(new SimpleDateFormat("yyyy-MM-dd"))
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     
-    @Value("C:\\Users\\tk758\\Desktop\\TMRTeamProject\\TMRTeamProjectPython\\python_LH_crawler\\data\\lh_data.json")
-    private String jsonPath;
 
     public boolean isLoading() {
         return loading.get();
@@ -43,9 +43,14 @@ public class LhApplyInfoService {
     public void refreshFromCrawler() {
         if (loading.compareAndSet(false, true)) {
             try {
+                Path json = Paths.get( "TMRTeamProjectPython", "python_LH_crawler", "data", "lh_data.json")
+                        .normalize().toAbsolutePath();
+
+                log.info("[LH] user.dir={} / json={}", System.getProperty("user.dir"), json);
+
                 List<LhApplyInfo> crawledList = mapper.readValue(
-                        new File(jsonPath),
-                        new TypeReference<>() {}
+                        json.toFile(),
+                        new com.fasterxml.jackson.core.type.TypeReference<List<LhApplyInfo>>() {}
                 );
                 log.info("[LH] {}건의 크롤링 데이터를 읽었습니다.", crawledList.size());
 
