@@ -55,11 +55,11 @@ driver.get("https://bigdata.sbiz.or.kr/#/sbiz/sttus/dynpplSttus")
 region_wrapper = wait_for_element(driver, By.CLASS_NAME, "region")
 region_wrapper.click()
 
-# region_wrapper 내부에서 '대전광역시' 버튼 찾기
-daejeon_btn = wait_for_child_element(region_wrapper, By.XPATH, ".//button[text()='대전광역시']")
-daejeon_btn.click()
+# region_wrapper 내부에서 '서울특별시' 버튼 찾기
+btn = wait_for_child_element(region_wrapper, By.XPATH, ".//button[text()='서울특별시']")
+btn.click()
 
-All_btn = wait_for_child_element(region_wrapper, By.XPATH, ".//dd/ul[2]//button[text()='대덕구']")
+All_btn = wait_for_child_element(region_wrapper, By.XPATH, ".//dd/ul[2]//button[text()='강남구']")
 All_btn.click()
 
 # 여기서부터 다시 시작해야함
