@@ -13,17 +13,17 @@ spring:
     restart:
       enabled: true
   datasource:
-    url: jdbc:mysql://localhost:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
+    url: jdbc:mysql://database-1.c72qauo6szew.ap-northeast-2.rds.amazonaws.com:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password:
+    username: admin
+    password: tk123412345!!
   jpa:
     show-sql: true
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect  # ← 요게 핵심!!
+        dialect: org.hibernate.dialect.MySQL8Dialect
 
 logging:
   level:

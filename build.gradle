@@ -12,12 +12,9 @@ repositories {
     mavenCentral()
 }
 
-springBoot {
-    mainClass = 'com.koreait.exam.tmrteamproject.TmrTeamProjectApplication'
-}
-
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'com.mysql:mysql-connector-j:9.0.0'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'net.nurigo:sdk:4.1.3'
@@ -25,20 +22,25 @@ dependencies {
     implementation 'org.json:json:20240303'  // JSON 파싱용
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+
+    implementation 'com.opencsv:opencsv:5.7.1' // CSV 파싱용
+
     // firebase 의존성
     implementation 'com.google.firebase:firebase-admin:9.2.0'
+
+    // spring security 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-security'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    implementation("com.mysql:mysql-connector-j:9.4.0")
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
-    // pdf / csv 읽기 의존성
+    // pdf 읽기 의존성
     implementation("org.apache.pdfbox:pdfbox:3.0.5")
-    implementation("com.opencsv:opencsv:5.12.0")
 
     // Excel 읽기 의존성
     implementation("org.apache.poi:poi:5.4.1")
