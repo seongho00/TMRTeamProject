@@ -42,6 +42,7 @@ public class ChatbotController {
     @ResponseBody
     public ResultData sendMessage(String message) {
         // 메세지 분석 로직
+        System.out.println(message);
         ResultData result = chatBotService.analyzeMessage(message);
 
         if (result.isFail()) {

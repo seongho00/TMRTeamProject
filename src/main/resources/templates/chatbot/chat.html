@@ -8,7 +8,7 @@
     }
 
     function sendMessage() {
-        const message = $("#chatbotText").val();
+        let message = $("#chatbotText").val();
         const $chatBox = $("#chat-box");
         $.ajax({
             type: "POST",
@@ -17,8 +17,6 @@
             success: function (data) {
                 if (data.resultCode === "F-3") {
                     const candidates = data.data1;
-
-                    console.log(candidates);
 
                     // 기존 표시 영역 비우기
                     $("#candidateContainer").empty();
@@ -30,29 +28,26 @@
 
                     // 후보 버튼 생성
                     candidates.forEach(function (c) {
-                        const btn = $("<button>")
-                            .text(`${c.sidoNm} ${c.sggNm} ${c.emdNm}`)
+                        const label = [c.sidoNm, c.sggNm, c.emdNm ?? c.emd]
+                            .filter(Boolean)
+                            .join(" ");
+
+                        $("<button>")
+                            .text(label)
                             .addClass("candidate-btn")
                             .on("click", function () {
-                                // 클릭 시 다시 AJAX 호출 (emdCd를 넘기면 정확한 조회 가능)
+                                message = message + " " + c.sggNm
                                 $.ajax({
                                     type: "POST",
                                     url: "sendMessage",
-                                    data: {
-                                        message: message,
-                                        emdCd: c.emdCd
-                                    },
+                                    data: {message: message},
                                     success: function (res) {
-                                        // 여기서 확정된 결과 처리
-                                        console.log(res);
-                                        $("#candidateContainer").empty().append(
-                                            `<pre>${JSON.stringify(res, null, 2)}</pre>`
-                                        );
+                                        $("#candidateContainer").empty()
+                                            .append(`<pre>${JSON.stringify(res, null, 2)}</pre>`);
                                     }
                                 });
-                            });
-
-                        $("#candidateContainer").append(btn);
+                            })
+                            .appendTo("#candidateContainer");
                     });
                     return;
                 }
@@ -139,6 +134,27 @@
         });
     }
 </script>
+<style>
+    .candidate-btn {
+        display: block;
+        width: 500px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        text-align: left;
+        border: 1px solid #d1d5db; /* 회색 테두리 */
+        border-radius: 8px;
+        background-color: white;
+        color: #374151; /* 진한 회색 글씨 */
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .candidate-btn:hover {
+        background-color: #eff6ff; /* 연한 파란 배경 */
+        border-color: #60a5fa; /* 파란 테두리 */
+    }
+</style>
 
 <h1> 챗봇 테스트 </h1>
 
