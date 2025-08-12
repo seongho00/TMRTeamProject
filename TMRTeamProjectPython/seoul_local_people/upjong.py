@@ -14,7 +14,7 @@ df.columns = ["major_cd", "major_nm", "middle_cd", "middle_nm", "minor_cd", "min
 conn = pymysql.connect(
     host="localhost",
     user="root",
-    password="1234",
+    password="",
     database="TMRTeamProject",
     charset="utf8mb4"
 )

@@ -28,6 +28,7 @@ public class LearningService {
                 .riskLabel7(d.getRiskLabel7())
                 .build()
         ).collect(Collectors.toList());
-        return learningRepository.saveAll(entities).size();
+        learningRepository.saveAll(entities);
+        return entities.size();
     }
 }

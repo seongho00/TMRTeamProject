@@ -12,6 +12,8 @@ from sklearn.metrics import classification_report, confusion_matrix
 
 import matplotlib.pyplot as plt
 
+from PythonJPA.Send import send_to_server
+
 # ========= 기본 설정 =========
 DATA_DIR = r"C:/Users/admin/Downloads/seoul_data_merge"
 OUT_DIR = r"C:/Users/admin/Downloads"
@@ -364,12 +366,14 @@ def train_and_eval(df_train, df_test):
     if code_cols:
         out = df_test[exist_cols].copy()
         out['예측_위험도'] = y_pred
-        out_path = os.path.join(OUT_DIR, f"위험도_예측결과_{TEST_QUARTER}.csv")
-        out.to_csv(out_path, index=False, encoding='utf-8-sig')
-        print("저장 완료:", out_path)
-        print("저장 컬럼:", out.columns.tolist())
         print(out.head(3))
 
+        try:
+            print(out.columns)
+            send_to_server(out)
+
+        except Exception as e:
+            print(e)
 
 def main():
     # 로드
@@ -388,7 +392,6 @@ def main():
 
     # 학습/평가/저장
     train_and_eval(df_train, df_test)
-
 
 if __name__ == "__main__":
     main()
