@@ -234,24 +234,26 @@ def predict():
     # 예측
     intent, confidence = predict_intent(question)
 
-    # 메세지
-    message = generate_response(question)
+    # 기본 응답
+    response_data = {
+        "intent": str(intent),
+        "confidence": float(round(confidence, 4)),
+        "message": generate_response(question)
+    }
 
-    # ✅ 의미 분석 수행
-    gender, age_group, sido, sigungu, emd_nm = analyze_input(question, valid_emd_list)
-
-
-    return Response(
-        json.dumps({
-            "intent": str(intent),
-            "confidence": float(round(confidence, 4)),
+    # intent가 1(유동인구 조회)일 때만 의미 분석 실행
+    if intent == 1:
+        gender, age_group, sido, sigungu, emd_nm = analyze_input(question, valid_emd_list)
+        response_data.update({
             "sido": str(sido),
             "sigungu": str(sigungu),
-            "emd_nm": str(emd_nm),  # ✅ 추가된 행정동
+            "emd_nm": str(emd_nm),
             "gender": str(gender),
-            "age_group": str(age_group),
-            "message": str(message)
-        }, ensure_ascii=False),
+            "age_group": str(age_group)
+        })
+
+    return Response(
+        json.dumps(response_data, ensure_ascii=False),
         content_type="application/json; charset=utf-8"
     )
 
