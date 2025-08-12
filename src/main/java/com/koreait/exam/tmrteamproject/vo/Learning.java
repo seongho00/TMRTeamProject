@@ -26,10 +26,10 @@ public class Learning {
     private String serviceTypeCode;       // 서비스_업종_코드
     private String serviceTypeName;       // 서비스_업종_코드_명
 
-    private Double riskScore;             // 위험도_점수
+    private float riskScore;             // 위험도_점수
 
-    private Integer riskLabel;            // 위험도
-    private Integer predictedRiskLabel;   // 예측_위험도
+    private int riskLabel;            // 위험도
+    private int predictedRiskLabel;   // 예측_위험도
 
     private String riskLabel7;            // 위험도7
 }

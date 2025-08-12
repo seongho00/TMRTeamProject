@@ -13,8 +13,7 @@ def df_to_json(df):
             "riskScore": None if pd.isna(r.get("위험도_점수")) else float(r["위험도_점수"]),
             "risk3": None if pd.isna(r.get("위험도")) else int(r["위험도"]),
             "risk7": None if pd.isna(r.get("위험도7")) else str(r["위험도7"]),
-            "predictedRisk": None if pd.isna(r.get("예측_위험도")) else int(r["예측_위험도"]),
-            "cluster": None if pd.isna(r.get("cluster")) else int(r["cluster"]),
+            "predictedRisk": None if pd.isna(r.get("예측_위험도")) else int(r["예측_위험도"])
         }
         for _, r in df.iterrows()
     ]
