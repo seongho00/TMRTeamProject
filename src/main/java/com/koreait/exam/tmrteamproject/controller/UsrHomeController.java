@@ -1,10 +1,25 @@
 package com.koreait.exam.tmrteamproject.controller;
 
+import com.koreait.exam.tmrteamproject.repository.LhApplyInfoRepository;
+import com.koreait.exam.tmrteamproject.repository.LhSupplyScheduleRepository;
+import com.koreait.exam.tmrteamproject.repository.ScheduleInterestRepository;
+import com.koreait.exam.tmrteamproject.security.MemberContext;
+import com.koreait.exam.tmrteamproject.service.LhApplyInfoService;
+import com.koreait.exam.tmrteamproject.service.LhSupplyScheduleService;
+import com.koreait.exam.tmrteamproject.service.ScheduleInterestService;
+import com.koreait.exam.tmrteamproject.vo.LhSupplySchedule;
+import com.koreait.exam.tmrteamproject.vo.Member;
+import com.koreait.exam.tmrteamproject.vo.ScheduleInterest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 @RequestMapping("usr/home")
@@ -12,8 +27,28 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequiredArgsConstructor
 public class UsrHomeController {
 
+    private final ScheduleInterestService scheduleInterestService;
+    private final LhSupplyScheduleService lhSupplyScheduleService;
+
     @GetMapping("/main")
-    public String homeMain() {
+    public String homeMain(@AuthenticationPrincipal MemberContext memberContext, Model model) {
+        Member loginMember = null;
+        List<LhSupplySchedule> lhSupplySchedules = new ArrayList<>();
+        if (memberContext != null) {
+            loginMember = memberContext.getMember();
+        }
+
+        if (loginMember != null) {
+            List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginMember.getId());
+
+            for (ScheduleInterest scheduleInterest : scheduleInterests) {
+                lhSupplySchedules.add(lhSupplyScheduleService.findById(scheduleInterest.getScheduleId()));
+
+            }
+
+        }
+        System.out.println(lhSupplySchedules);
+        model.addAttribute("lhSupplySchedules", lhSupplySchedules);
         return "home/main";
     }
 
