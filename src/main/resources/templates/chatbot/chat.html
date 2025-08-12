@@ -15,10 +15,49 @@
             url: "sendMessage",
             data: {message: message},
             success: function (data) {
+                if (data.resultCode === "F-3") {
+                    const candidates = data.data1;
 
+                    console.log(candidates);
 
-                const populationSummary = data.data1;
-                const flaskResult = data.data2;
+                    // 기존 표시 영역 비우기
+                    $("#candidateContainer").empty();
+
+                    // 안내 메시지 표시
+                    $("#candidateContainer").append(
+                        `<p>${data.msg || "동 이름이 여러 구에 있어요. 정확한 위치를 선택하세요."}</p>`
+                    );
+
+                    // 후보 버튼 생성
+                    candidates.forEach(function (c) {
+                        const btn = $("<button>")
+                            .text(`${c.sidoNm} ${c.sggNm} ${c.emdNm}`)
+                            .addClass("candidate-btn")
+                            .on("click", function () {
+                                // 클릭 시 다시 AJAX 호출 (emdCd를 넘기면 정확한 조회 가능)
+                                $.ajax({
+                                    type: "POST",
+                                    url: "sendMessage",
+                                    data: {
+                                        message: message,
+                                        emdCd: c.emdCd
+                                    },
+                                    success: function (res) {
+                                        // 여기서 확정된 결과 처리
+                                        console.log(res);
+                                        $("#candidateContainer").empty().append(
+                                            `<pre>${JSON.stringify(res, null, 2)}</pre>`
+                                        );
+                                    }
+                                });
+                            });
+
+                        $("#candidateContainer").append(btn);
+                    });
+                    return;
+                }
+                const flaskResult = data.data1;
+                const populationSummary = data.data2;
                 const sido = flaskResult.sido;
                 const sigungu = flaskResult.sigungu;
                 const emd = flaskResult.emd;
@@ -105,6 +144,7 @@
 
 <input type="text" id="chatbotText">
 <div id="chat-box"></div>
+<div id="candidateContainer"></div>
 <button onClick="sendMessage();">보내기</button>
 
 

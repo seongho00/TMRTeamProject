@@ -3,7 +3,7 @@ import pymysql
 from pymysql.cursors import DictCursor
 
 # ====== 설정 ======
-CSV_PATH = "C:\\Users\\qjvpd\\OneDrive\\바탕 화면\\위험도_예측결과_20251.csv"
+CSV_PATH = "./위험도_예측결과_20251.csv"
 
 DB_HOST = "localhost"
 DB_PORT = 3306
@@ -84,6 +84,9 @@ try:
         cur.executemany(upsert_sql, rows)
     conn.commit()
     print(f"Upsert 완료: {len(rows)} rows")
+    print("총 행:", len(df))
+    print("고유 emd_cd 수:", df["행정동_코드"].nunique())
+    print("고유 (emd_cd, upjong_cd) 수:", df[["행정동_코드","서비스_업종_코드"]].drop_duplicates().shape[0])
 except Exception as e:
     conn.rollback()
     raise

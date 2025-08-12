@@ -63,15 +63,17 @@ CREATE TABLE upjong_code (
 );
 
 CREATE TABLE risk_score (
-                            emd_cd        VARCHAR(20)  NOT NULL PRIMARY KEY,
-                            reg_date DATETIME NOT NULL,
-                            update_date DATETIME NOT NULL,
-                            upjong_cd       VARCHAR(20)  NOT NULL,
-                            risk_raw        DOUBLE       NOT NULL,   -- 위험도_점수 원본 (-0.4 ~ 0.2 등)
-                            risk_label      INT          NULL,       -- '위험도' (정수 레이블)
-                            risk7_label     VARCHAR(10)  NULL,       -- '위험도7' (예: '7단계')
-                            risk_pred       INT          NULL,       -- '예측_위험도'
-                            risk100_all     DECIMAL(5,1) NULL,   -- 전체 기준 0~100
-                            risk100_by_biz  DECIMAL(5,1) NULL   -- 업종 기준 0~100
+                            emd_cd         VARCHAR(20)  NOT NULL,
+                            upjong_cd      VARCHAR(20)  NOT NULL,
+                            reg_date       DATETIME     NOT NULL,
+                            update_date    DATETIME     NOT NULL,
+                            risk_raw       DECIMAL(6,4) NOT NULL,   -- 소수 정밀도 확보(예: -0.4000 ~ 0.2000)
+                            risk_label     INT          NULL,
+                            risk7_label    VARCHAR(10)  NULL,
+                            risk_pred      INT          NULL,
+                            risk100_all    DECIMAL(5,1) NULL,
+                            risk100_by_biz DECIMAL(5,1) NULL,
+                            PRIMARY KEY (emd_cd, upjong_cd),
+                            KEY idx_risk_score_upjong (upjong_cd)
 )
 SELECT * FROM upjong_code;
