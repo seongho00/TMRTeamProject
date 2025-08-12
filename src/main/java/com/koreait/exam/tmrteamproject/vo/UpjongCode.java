@@ -29,5 +29,4 @@ public class UpjongCode {
     @Column(name = "update_date")
     private LocalDateTime updateDate;
 
-
 }

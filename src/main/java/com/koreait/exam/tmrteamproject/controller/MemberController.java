@@ -4,7 +4,6 @@ import com.koreait.exam.tmrteamproject.security.MemberContext;
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.MemberService;
 import com.koreait.exam.tmrteamproject.service.NaverOAuthService;
-import com.koreait.exam.tmrteamproject.service.SolapiSmsService;
 import com.koreait.exam.tmrteamproject.util.Ut;
 import com.koreait.exam.tmrteamproject.vo.Member;
 import com.koreait.exam.tmrteamproject.vo.ResultData;
@@ -215,6 +214,4 @@ public class MemberController {
         return ResultData.from("S-1", "구글 로그인 성공", "구글 멤버", member);
 
     }
-
-
 }

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 
 @Controller
 @RequiredArgsConstructor
@@ -46,5 +47,12 @@ public class DataSaveController {
         }
 
         return "dataset/excel";
+    }
+
+    @GetMapping("/savedDB")
+    public String savedDB() {
+        String csvDir = Paths.get("src/main/resources/seoul_data_merge").toString();
+        int savedCount = dataSaveService.saveAllFromDir(csvDir);
+        return savedCount + "개의 데이터 저장 완료";
     }
 }
