@@ -4,6 +4,7 @@ import pandas as pd
 
 # 데이터 폴더 리스트
 df_dirs = {
+    2022: "C:/Users/admin/Downloads/Seoul_data_2022",
     2023: "C:/Users/admin/Downloads/Seoul_data_2023",
     2024: "C:/Users/admin/Downloads/Seoul_data_2024",
     2025: "C:/Users/admin/Downloads/Seoul_data_2025",
@@ -27,7 +28,9 @@ def read_csv_safely(path: str) -> pd.DataFrame:
         return pd.read_csv(path, encoding='cp949')
 
 for year, year_dir in df_dirs.items():
-    if year == 2023:
+    if year == 2022:
+        quarters = [20221, 20222, 20223, 20224]
+    elif year == 2023:
         quarters = [20231, 20232, 20233, 20234]
     elif year == 2024:
         quarters = [20241, 20242, 20243, 20244]
