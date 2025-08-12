@@ -109,23 +109,7 @@ public class ChatBotService {
     }
 
 
-    public FlaskResult setFlaskResult(FlaskResult flaskResult) {
-        String sigungu = flaskResult.getSigungu();
-        String emd = flaskResult.getEmd();
 
-        if (sigungu.equals("None")) {
-            flaskResult.setSido("서울특별시");
-        }
-
-        if (!emd.equals("None")) {
-            AdminDong adminDong = adminDongRepository.findRegionByEmdNm(emd);
-            flaskResult.setSido(adminDong.getSidoNm());
-            flaskResult.setSigungu(adminDong.getSggNm());
-            flaskResult.setEmd(adminDong.getEmdNm());
-        }
-
-        return flaskResult;
-    }
 
     public FlaskResult analyzeRegion(FlaskResult flaskResult) {
 

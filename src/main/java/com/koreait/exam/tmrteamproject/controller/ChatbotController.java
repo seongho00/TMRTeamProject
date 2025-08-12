@@ -63,10 +63,9 @@ public class ChatbotController {
                 return ResultData.from("F-3", "동 이름이 여러 구에 있어요. 정확한 위치를 선택하세요.", "adminDong 데이터", adminDongs);
             }
         }
-
-        // 지역 검색 로직
-
-        chatBotService.analyzeRegion(flaskResult);
+        
+        // 서울만 하니까 서울로 고정
+        flaskResult.setSido("서울특별시");
 
         switch (intent) {
             case 0:
@@ -82,11 +81,11 @@ public class ChatbotController {
 
             case 1:
                 // 지역 분류
+                System.out.println(flaskResult);
                 PopulationSummary populationSummary = chatBotService.getPopulationSummary(flaskResult);
 
                 // 지역 검색
 
-                flaskResult = chatBotService.setFlaskResult(flaskResult);
                 System.out.println("유동인구 조회 요청");
 
                 return ResultData.from("S-2", "유동인구 데이터 출력", "flaskResult", flaskResult, "유동인구", populationSummary);
