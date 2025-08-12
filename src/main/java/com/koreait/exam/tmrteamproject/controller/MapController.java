@@ -1,7 +1,6 @@
 package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.service.AdminDongService;
-import com.koreait.exam.tmrteamproject.service.MapService;
 import com.koreait.exam.tmrteamproject.service.UpjongCodeService;
 import com.koreait.exam.tmrteamproject.vo.AdminDong;
 import com.koreait.exam.tmrteamproject.vo.UpjongCode;
@@ -22,8 +21,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MapController {
 
-    @Autowired
-    private MapService mapService;
     @Autowired
     private AdminDongService adminDongService;
     @Autowired

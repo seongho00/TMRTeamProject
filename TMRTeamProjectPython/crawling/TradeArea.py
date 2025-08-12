@@ -43,25 +43,28 @@ conn = pymysql.connect(
 )
 cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '동구' AND emd_nm = '대동';")
+cursor.execute("SELECT * FROM admin_dong;")
 dong_rows = cursor.fetchall()
 
 cursor.execute("SELECT * FROM upjong_code;")
 upjong_rows = cursor.fetchall()
 
 for dong in dong_rows:
-    sido_nm = dong[6]
-    sgg_nm = dong[4]
+    admi_nm = dong[0]
     emd_cd = dong[1]
     emd_nm = dong[2]
+    sgg_cd = dong[3]
+    sgg_nm = dong[4]
+    sido_nm = dong[6]
 
     simple_loc = f"{sido_nm} {sgg_nm} {emd_nm}"
     print(f"[동 시작] {simple_loc} ({emd_cd})")
 
     for upjong in upjong_rows:
+        minor_cd = upjong[0]
         major_cd = upjong[1]
         middle_cd = upjong[3]
-        minor_cd = upjong[0]
+        middle_nm = upjong[4]
         minor_nm = upjong[5]
 
         try:
