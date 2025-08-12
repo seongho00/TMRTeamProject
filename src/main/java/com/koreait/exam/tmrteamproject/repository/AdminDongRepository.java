@@ -26,4 +26,6 @@ public interface AdminDongRepository extends JpaRepository<AdminDong, String> {
                 GROUP BY sgg_nm
             """, nativeQuery = true)
     List<AdminDong> getAdminDongGroupBySggCd();
+
+    List<AdminDong> findAdminDongByEmdNm(String emdNm);
 }
