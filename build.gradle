@@ -41,6 +41,12 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
+    // 좌표 변환
+    implementation 'org.locationtech.proj4j:proj4j:1.4.1'
+    // EPSG:5179 같은 코드 정의가 필요하면 함께 추가 (권장)
+    testImplementation 'junit:junit:4.13.2'
+    implementation 'org.locationtech.proj4j:proj4j-epsg:1.4.1'
+
     // pdf 읽기 의존성
     implementation("org.apache.pdfbox:pdfbox:3.0.5")
 
