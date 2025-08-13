@@ -13,8 +13,11 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import lombok.extern.slf4j.Slf4j;
+
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @Service
@@ -25,6 +28,9 @@ public class AddressService {
 
     @Value("${address.confmKey}")
     private String confmKey;
+
+    @Value("${vworld.key}")
+    private String vworldKey;
 
     private final RestTemplate rest = new RestTemplate();
 
@@ -161,54 +167,27 @@ public class AddressService {
         }
     }
 
-    public NormalizedAddress geocode(NormalizedAddress n) {
-        if (n == null) throw new IllegalArgumentException("주소 없음");
-        if (n.getLawdCd()==null || n.getRnMgtSn()==null || n.getBuldMnnm()==null) {
-            throw new IllegalArgumentException("지오코딩에 필요한 필드(lawdCd, rnMgtSn, buldMnnm)는 필수");
-        }
+    public NormalizedAddress geocodeByVWorld(NormalizedAddress n){
+        if (n.getRoadAddr()==null || n.getRoadAddr().isBlank())
+            throw new IllegalArgumentException("roadAddr가 비었습니다.");
 
-        // 기본값: 지상(0), 부번 없으면 0
-        String udrtYn = "0";
-        String buldSlno = String.valueOf(n.getBuldSlno()==null?0:n.getBuldSlno());
+        String q = URLEncoder.encode(n.getRoadAddr(), StandardCharsets.UTF_8);
+        String url = "https://api.vworld.kr/req/address?service=address&request=getCoord"
+                + "&format=json&type=ROAD&address=" + q + "&key=" + vworldKey;
 
-        var form = new LinkedMultiValueMap<String,String>();
-        form.add("confmKey", confmKey);
-        form.add("admCd", n.getLawdCd());                 // 10자리 법정동코드
-        form.add("rnMgtSn", n.getRnMgtSn());              // 12자리 도로명코드
-        form.add("udrtYn", udrtYn);                       // 0:지상, 1:지하
-        form.add("buldMnnm", String.valueOf(n.getBuldMnnm())); // 본번
-        form.add("buldSlno", buldSlno);                   // 부번
-        form.add("resultType", "json");
+        Map<?,?> m = rest.getForObject(url, Map.class);
+        Map<?,?> resp = (Map<?,?>) m.get("response");
+        if (resp==null || !"OK".equals(resp.get("status")))
+            throw new IllegalStateException("VWorld 응답 비정상: " + resp);
 
-        var headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        Map<?,?> result = (Map<?,?>) resp.get("result");
+        Map<?,?> pt = (Map<?,?>) result.get("point");
+        double lon = Double.parseDouble(String.valueOf(pt.get("x")));
+        double lat = Double.parseDouble(String.valueOf(pt.get("y")));
 
-        var resp = rest.postForObject(
-                "https://business.juso.go.kr/addrlink/addrCoordApi.do",
-                new HttpEntity<>(form, headers),
-                AddressCoordResponse.class
-        );
-
-        if (resp==null || resp.getResults()==null || resp.getResults().getCommon()==null)
-            throw new IllegalStateException("좌표 API 응답 비정상");
-        var common = resp.getResults().getCommon();
-        if (!"0".equals(common.getErrorCode())) {
-            throw new IllegalArgumentException("좌표 API 오류: " + common.getErrorMessage());
-        }
-        var list = resp.getResults().getJuso();
-        if (list==null || list.isEmpty()) {
-            throw new IllegalStateException("좌표 결과 없음");
-        }
-        System.out.println(list);
-        var item = list.get(0);
-
-        try {
-            n.setX(Double.parseDouble(item.getEntX()));
-            n.setY(Double.parseDouble(item.getEntY()));
-            n.setCrs("EPSG:5179"); // GRS80/UTM-K 권장 표기
-        } catch (Exception e) {
-            throw new IllegalStateException("좌표 파싱 실패: entX/entY=" + item.getEntX()+"/"+item.getEntY());
-        }
+        System.out.println();
+        System.out.println(n);
+        n.setX(lon); n.setY(lat); n.setCrs("EPSG:4326"); // 경위도 저장
         return n;
     }
 
@@ -216,7 +195,7 @@ public class AddressService {
         NormalizedAddress n = confirm(req); // ← 이미 만들었던 메서드 재사용
         // 2) 지오코딩까지 붙이기 (실패해도 전체 실패는 막고 경고만)
         try {
-            n = geocode(n);  // ← 앞서 구현한 Juso 좌표 API 호출
+            n = geocodeByVWorld(n);  // ← 앞서 구현한 Juso 좌표 API 호출
         } catch (Exception e) {
             log.warn("Geocoding failed for {}: {}", n.getAddressKey(), e.getMessage());
             // 필요시 n.setX(null); n.setY(null);

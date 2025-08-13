@@ -22,9 +22,15 @@ public class AddressCoordResponse {
         private String totalCount;
     }
     @Getter @Setter public static class Item {
-        private String entX;  // 문자열로 옴
-        private String entY;
-        private String roadAddr; // (옵션) 디버깅용
-        private String bdMgtSn;  // (옵션)
+        private String admCd;
+        private String rnMgtSn;
+        private String bdMgtSn;
+        private String udrtYn;
+        private String buldMnnm;
+        private String buldSlno;
+        private String entX;     // ✅ 좌표
+        private String entY;     // ✅ 좌표
+        private String bdNm;     // (옵션)
+        private String roadAddr; // (옵션)
     }
 }

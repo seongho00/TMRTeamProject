@@ -52,5 +52,10 @@ solapi:
   apiSecret: OPMRNQJAWXRAEDUGNAOPOI8AZNRTTSCO
   sender: 01030417745
 
+# 주소 검색 API
 address:
   confmKey: devU01TX0FVVEgyMDI1MDgxMzA5MzU0NzExNjA2NTE=  # 발급받은 승인키
+
+# 지오코딩 API
+vworld:
+  key: 0D1E185A-F71A-3D74-AE65-579E01CC79CD
