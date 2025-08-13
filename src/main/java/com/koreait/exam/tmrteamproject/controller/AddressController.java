@@ -26,6 +26,8 @@ public class AddressController {
 
     @PostMapping("/confirm")
     public NormalizedAddress confirm(@RequestBody AddressPickReq req){
-        return addressService.confirm(req); // 동/호 파싱 + addressKey 생성 + (선택) DB 저장
+        return addressService.confirmAndGeocode(req); // 동/호 파싱 + addressKey 생성 + (선택) DB 저장
     }
+
+
 }

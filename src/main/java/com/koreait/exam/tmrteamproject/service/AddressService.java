@@ -1,5 +1,6 @@
 package com.koreait.exam.tmrteamproject.service;
 
+import com.koreait.exam.tmrteamproject.vo.AddressCoordResponse;
 import com.koreait.exam.tmrteamproject.vo.AddressPickReq;
 import com.koreait.exam.tmrteamproject.vo.AddressApiResponse;
 import com.koreait.exam.tmrteamproject.vo.NormalizedAddress;
@@ -11,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-
+import lombok.extern.slf4j.Slf4j;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -19,6 +20,7 @@ import java.util.regex.Pattern;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class AddressService {
 
     @Value("${address.confmKey}")
@@ -143,7 +145,7 @@ public class AddressService {
 
         n.setAddressKey(finalKey);
         // (선택) 여기서 n을 DB 저장
-
+        System.out.println(n);
 
         return n;
     }
@@ -157,5 +159,71 @@ public class AddressService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public NormalizedAddress geocode(NormalizedAddress n) {
+        if (n == null) throw new IllegalArgumentException("주소 없음");
+        if (n.getLawdCd()==null || n.getRnMgtSn()==null || n.getBuldMnnm()==null) {
+            throw new IllegalArgumentException("지오코딩에 필요한 필드(lawdCd, rnMgtSn, buldMnnm)는 필수");
+        }
+
+        // 기본값: 지상(0), 부번 없으면 0
+        String udrtYn = "0";
+        String buldSlno = String.valueOf(n.getBuldSlno()==null?0:n.getBuldSlno());
+
+        var form = new LinkedMultiValueMap<String,String>();
+        form.add("confmKey", confmKey);
+        form.add("admCd", n.getLawdCd());                 // 10자리 법정동코드
+        form.add("rnMgtSn", n.getRnMgtSn());              // 12자리 도로명코드
+        form.add("udrtYn", udrtYn);                       // 0:지상, 1:지하
+        form.add("buldMnnm", String.valueOf(n.getBuldMnnm())); // 본번
+        form.add("buldSlno", buldSlno);                   // 부번
+        form.add("resultType", "json");
+
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        var resp = rest.postForObject(
+                "https://business.juso.go.kr/addrlink/addrCoordApi.do",
+                new HttpEntity<>(form, headers),
+                AddressCoordResponse.class
+        );
+
+        if (resp==null || resp.getResults()==null || resp.getResults().getCommon()==null)
+            throw new IllegalStateException("좌표 API 응답 비정상");
+        var common = resp.getResults().getCommon();
+        if (!"0".equals(common.getErrorCode())) {
+            throw new IllegalArgumentException("좌표 API 오류: " + common.getErrorMessage());
+        }
+        var list = resp.getResults().getJuso();
+        if (list==null || list.isEmpty()) {
+            throw new IllegalStateException("좌표 결과 없음");
+        }
+        System.out.println(list);
+        var item = list.get(0);
+
+        try {
+            n.setX(Double.parseDouble(item.getEntX()));
+            n.setY(Double.parseDouble(item.getEntY()));
+            n.setCrs("EPSG:5179"); // GRS80/UTM-K 권장 표기
+        } catch (Exception e) {
+            throw new IllegalStateException("좌표 파싱 실패: entX/entY=" + item.getEntX()+"/"+item.getEntY());
+        }
+        return n;
+    }
+
+    public NormalizedAddress confirmAndGeocode(AddressPickReq req) {
+        NormalizedAddress n = confirm(req); // ← 이미 만들었던 메서드 재사용
+        // 2) 지오코딩까지 붙이기 (실패해도 전체 실패는 막고 경고만)
+        try {
+            n = geocode(n);  // ← 앞서 구현한 Juso 좌표 API 호출
+        } catch (Exception e) {
+            log.warn("Geocoding failed for {}: {}", n.getAddressKey(), e.getMessage());
+            // 필요시 n.setX(null); n.setY(null);
+        }
+        // 3) (선택) DB 저장까지 원샷
+        // return repository.save(n);
+        return n;
+
     }
 }

@@ -32,7 +32,7 @@ public class AddressApiResponse {
     public static class Juso {        // ✅ 클래스명 대문자 + public
         private String roadAddr;      // 표준 도로명주소
         private String jibunAddr;     // 표준 지번주소
-        private String zipNo;
+        private String zipNo;         // 우편번호
         private String admCd;         // 법정동코드(10)
         private String rnMgtSn;       // 도로명코드
         private String bdMgtSn;       // 건물관리번호
