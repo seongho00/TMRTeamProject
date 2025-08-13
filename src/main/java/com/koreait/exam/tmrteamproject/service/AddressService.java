@@ -4,11 +4,14 @@ import com.koreait.exam.tmrteamproject.vo.AddressApiResponse;
 import com.koreait.exam.tmrteamproject.vo.NormalizedAddress;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -17,50 +20,60 @@ import java.util.regex.Pattern;
 @Transactional(readOnly = true)
 public class AddressService {
 
-    @Value("${address.confmKey}")     // ✅ application.yml 키와 일치해야 함
+    @Value("${address.confmKey}")
     private String confmKey;
 
     private final RestTemplate rest = new RestTemplate();
 
-    // 금지 문자/키워드 패턴
+    // 금지 특수문자 / 제어문자 / 보이지 않는 공백(NBSP, ZWSP, FEFF)
     private static final Pattern BLOCK_CHARS =
             Pattern.compile("[%=><\\[\\]\"'`^|{}\\\\]");
     private static final Pattern CONTROL_CHARS =
-            Pattern.compile("\\p{Cntrl}"); // 개행/탭 등
+            Pattern.compile("\\p{Cntrl}");
     private static final Pattern INVISIBLE =
-            Pattern.compile("[\\u00A0\\u200B\\u200C\\uFEFF]"); // NBSP/제로폭/FEFF
+            Pattern.compile("[\\u00A0\\u200B\\u200C\\uFEFF]");
 
     public List<NormalizedAddress> search(String keyword, int page, int size) {
-        System.out.println(keyword);
         String cleaned = sanitizeKeyword(keyword);
         if (cleaned.length() < 2) {
             throw new IllegalArgumentException("검색어를 두 글자 이상, 특수문자 없이 입력하세요.");
         }
 
-        String url = UriComponentsBuilder
-                .fromHttpUrl("https://business.juso.go.kr/addrlink/addrLinkApi.do")
-                .queryParam("confmKey", confmKey)
-                .queryParam("currentPage", page)
-                .queryParam("countPerPage", size)
-                .queryParam("keyword", cleaned)
-                .queryParam("resultType", "json")
-                .toUriString();
+        // ✅ GET 대신 POST (x-www-form-urlencoded + UTF-8)
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("confmKey", confmKey);
+        form.add("currentPage", String.valueOf(page));
+        form.add("countPerPage", String.valueOf(size));
+        form.add("keyword", cleaned);
+        form.add("resultType", "json");
 
-        AddressApiResponse res = rest.getForObject(url, AddressApiResponse.class);
-        if (res == null || res.getResults() == null || res.getResults().getCommon() == null)
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        headers.setAcceptCharset(List.of(StandardCharsets.UTF_8));
+
+        HttpEntity<MultiValueMap<String, String>> req = new HttpEntity<>(form, headers);
+
+        AddressApiResponse res = rest.postForObject(
+                "https://business.juso.go.kr/addrlink/addrLinkApi.do",
+                req,
+                AddressApiResponse.class
+        );
+
+        if (res == null || res.getResults() == null || res.getResults().getCommon() == null) {
             throw new IllegalStateException("Juso API 응답 비정상");
+        }
 
         var common = res.getResults().getCommon();
         if (!"0".equals(common.getErrorCode())) {
-            throw new IllegalStateException("Juso API 오류: " + common.getErrorMessage());
+            // ❗ 여기서 IllegalArgumentException으로 던져야 컨트롤러에서 400으로 변환됨
+            throw new IllegalArgumentException("Juso API 오류: " + common.getErrorMessage());
         }
 
         var list = res.getResults().getJuso();
         if (list == null) return List.of();
 
         return list.stream().map(this::map).toList();
-
-
     }
 
     private String sanitizeKeyword(String keyword) {
@@ -73,9 +86,8 @@ public class AddressService {
         return k;
     }
 
-    private NormalizedAddress map(AddressApiResponse.Juso j) {  // ✅ 타입 일치
+    private NormalizedAddress map(AddressApiResponse.Juso j) {
         NormalizedAddress n = new NormalizedAddress();
-        // ✅ 세터 사용 (필드가 private일 때 컴파일 문제 방지)
         n.setRoadAddr(j.getRoadAddr());
         n.setJibunAddr(j.getJibunAddr());
         n.setZipNo(j.getZipNo());
@@ -90,19 +102,15 @@ public class AddressService {
         n.setBuldSlno(parseInt(j.getBuldSlno()));
         n.setJibunMain(parseInt(j.getLnbrMnnm()));
         n.setJibunSub(parseInt(j.getLnbrSlno()));
-
         if (n.getLawdCd() != null && n.getJibunMain() != null) {
             n.setAddressKey(String.format("%s-%d-%d",
-                    n.getLawdCd(), n.getJibunMain(), (n.getJibunSub() == null ? 0 : n.getJibunSub())));
+                    n.getLawdCd(), n.getJibunMain(), (n.getJibunSub()==null?0:n.getJibunSub())));
         }
         return n;
     }
 
     private Integer parseInt(String s) {
-        try {
-            return (s == null || s.isBlank()) ? null : Integer.parseInt(s);
-        } catch (Exception e) {
-            return null;
-        }
+        try { return (s == null || s.isBlank()) ? null : Integer.parseInt(s); }
+        catch (Exception e) { return null; }
     }
 }
