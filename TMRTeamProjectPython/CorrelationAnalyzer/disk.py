@@ -546,7 +546,9 @@ def train_and_eval(df_train, df_test):
             print(e)
 
         # GeoJSON 저장 호출
-        out_geojson_path = os.path.join(OUT_DIR, "seoul_risk.geojson")
+        out_geojson_path = os.path.abspath(
+            os.path.join(BASE_DIR, "..", "src", "main", "resources", "static", "Seoul_risk.geojson")
+        )
         try:
             save_result_as_geojson(
                 src_geojson_path=GEOJSON_SRC,
