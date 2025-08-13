@@ -143,7 +143,7 @@ def load_data():
         raise ValueError("공통 컬럼 기준으로 정리 후 비어 있음")
 
     # 테스트 원본에서 서비스 업종 정보 재부착 (순서 동일 가정)
-    for c in ['서비스_업종_코드', '서비스_업종_명']:
+    for c in ['서비스_업종_코드', '서비스_업종_코드_명']:
         if c in df_test_raw.columns and c not in df_test.columns:
             df_test[c] = df_test_raw.loc[df_test.index, c]
 
