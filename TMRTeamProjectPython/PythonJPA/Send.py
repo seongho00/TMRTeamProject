@@ -9,7 +9,7 @@ def df_to_json(df):
             "hjdCo": str(r.get("행정동_코드", "")),
             "hjdCn": str(r.get("행정동_코드_명", "")),
             "serviceTypeCode": str(r.get("서비스_업종_코드", "")),
-            "serviceTypeName": str(r.get("서비스_업종_명", "")),
+            "serviceTypeName": str(r.get("서비스_업종_코드_명", "")),
             "riskScore": None if pd.isna(r.get("위험도_점수")) else float(r["위험도_점수"]),
             "riskLabel": None if pd.isna(r.get("위험도")) else int(r["위험도"]),
             "predictedRiskLabel": None if pd.isna(r.get("예측_위험도")) else int(r["예측_위험도"]),
