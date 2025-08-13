@@ -51,3 +51,6 @@ solapi:
   apiKey: NCS8X6JXYL5LGJ0B
   apiSecret: OPMRNQJAWXRAEDUGNAOPOI8AZNRTTSCO
   sender: 01030417745
+
+address:
+  confmKey: devU01TX0FVVEgyMDI1MDgxMzA5MzU0NzExNjA2NTE=  # 발급받은 승인키
