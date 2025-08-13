@@ -1,5 +1,6 @@
 package com.koreait.exam.tmrteamproject.service;
 
+import com.koreait.exam.tmrteamproject.vo.AddressPickReq;
 import com.koreait.exam.tmrteamproject.vo.AddressApiResponse;
 import com.koreait.exam.tmrteamproject.vo.NormalizedAddress;
 import lombok.RequiredArgsConstructor;
@@ -104,13 +105,57 @@ public class AddressService {
         n.setJibunSub(parseInt(j.getLnbrSlno()));
         if (n.getLawdCd() != null && n.getJibunMain() != null) {
             n.setAddressKey(String.format("%s-%d-%d",
-                    n.getLawdCd(), n.getJibunMain(), (n.getJibunSub()==null?0:n.getJibunSub())));
+                    n.getLawdCd(), n.getJibunMain(), (n.getJibunSub() == null ? 0 : n.getJibunSub())));
         }
         return n;
     }
 
     private Integer parseInt(String s) {
-        try { return (s == null || s.isBlank()) ? null : Integer.parseInt(s); }
-        catch (Exception e) { return null; }
+        try {
+            return (s == null || s.isBlank()) ? null : Integer.parseInt(s);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public NormalizedAddress confirm(AddressPickReq req) {
+
+        NormalizedAddress n = req.getSelected(); // ← map() 필요 없음
+
+        Integer dong = parseIntOnlyDigits(req.getDong());
+        Integer ho = parseIntOnlyDigits(req.getHo());
+
+        String baseKey = n.getAddressKey();
+        if (baseKey == null || baseKey.isBlank()) {
+            if (n.getLawdCd() == null || n.getJibunMain() == null) {
+                throw new IllegalArgumentException(
+                        "선택 항목에 lawdCd/jibunMain이 없어 addressKey를 만들 수 없습니다. /search 응답 그대로 보내주세요.");
+            }
+            int sub = n.getJibunSub() == null ? 0 : n.getJibunSub();
+            baseKey = String.format("%s-%d-%d", n.getLawdCd(), n.getJibunMain(), sub);
+        }
+
+        // addressKey: lawdCd-지번본-지번부-동-호
+        String finalKey = String.format("%s-%s-%s",
+                baseKey,
+                (dong == null ? "00" : String.valueOf(dong)),
+                (ho == null ? "00" : String.valueOf(ho)));
+
+        n.setAddressKey(finalKey);
+        // (선택) 여기서 n을 DB 저장
+
+
+        return n;
+    }
+
+    private Integer parseIntOnlyDigits(String s) {
+        if (s == null) return null;
+        String d = s.replaceAll("\\D", ""); // "101동" -> "101"
+        if (d.isBlank()) return null;
+        try {
+            return Integer.parseInt(d);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

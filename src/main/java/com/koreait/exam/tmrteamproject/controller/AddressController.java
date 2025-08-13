@@ -1,35 +1,12 @@
 package com.koreait.exam.tmrteamproject.controller;
 
-import com.koreait.exam.tmrteamproject.security.MemberContext;
 import com.koreait.exam.tmrteamproject.service.AddressService;
-import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
-import com.koreait.exam.tmrteamproject.service.MemberService;
-import com.koreait.exam.tmrteamproject.service.NaverOAuthService;
-import com.koreait.exam.tmrteamproject.util.Ut;
-import com.koreait.exam.tmrteamproject.vo.Member;
-import com.koreait.exam.tmrteamproject.vo.NormalizedAddress;
-import com.koreait.exam.tmrteamproject.vo.ResultData;
-import com.koreait.exam.tmrteamproject.vo.Rq;
+import com.koreait.exam.tmrteamproject.vo.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("usr/address")
@@ -46,9 +23,9 @@ public class AddressController {
         return addressService.search(keyword, page, size);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String,String> handleBadRequest(IllegalArgumentException e){
-        return Map.of("error", e.getMessage());
+
+    @PostMapping("/confirm")
+    public NormalizedAddress confirm(@RequestBody AddressPickReq req){
+        return addressService.confirm(req); // 동/호 파싱 + addressKey 생성 + (선택) DB 저장
     }
 }
