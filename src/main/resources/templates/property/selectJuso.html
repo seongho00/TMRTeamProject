@@ -110,6 +110,6 @@
     const confirmed = await res.json();
     document.getElementById('confirmRes').style.color = 'green';
     document.getElementById('confirmRes').innerText =
-            `확정 완료! addressKey = ${confirmed.addressKey}`;
+            `확정 완료! addressKey = ${confirmed.addressKey} , ${confirmed.x} , ${confirmed.y}`;
   });
 </script>
