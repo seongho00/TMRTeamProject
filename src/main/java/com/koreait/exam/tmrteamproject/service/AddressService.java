@@ -2,11 +2,12 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.koreait.exam.tmrteamproject.vo.AddressCoordResponse;
+import com.koreait.exam.tmrteamproject.util.CrsConverter;
 import com.koreait.exam.tmrteamproject.vo.AddressPickReq;
 import com.koreait.exam.tmrteamproject.vo.AddressApiResponse;
 import com.koreait.exam.tmrteamproject.vo.NormalizedAddress;
 import lombok.RequiredArgsConstructor;
+import org.locationtech.proj4j.ProjCoordinate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -192,8 +193,6 @@ public class AddressService {
                 .build()
                 .toUri();
 
-        System.out.println("[VWorld] URI = " + uri); // 여기에는 이미 인코딩된 값이 찍힘
-
         ResponseEntity<Map> res = rest.getForEntity(uri, Map.class);
         Map<?, ?> body = res.getBody();
         Map<?, ?> resp = (Map<?, ?>) body.get("response");
@@ -206,11 +205,15 @@ public class AddressService {
         double lon = Double.parseDouble(String.valueOf(pt.get("x")));
         double lat = Double.parseDouble(String.valueOf(pt.get("y")));
 
-        System.out.println("실행됨2");
 
-        n.setX(lon);
-        n.setY(lat);
+        n.setLon(lon);
+        n.setLat(lat);
         n.setCrs("EPSG:4326");
+
+        ProjCoordinate projCoordinate = CrsConverter.toEPSG5179(lon, lat);
+
+        n.setEntX(projCoordinate.x);
+        n.setEntY(projCoordinate.y);
         return n;
     }
 
@@ -220,6 +223,7 @@ public class AddressService {
         // 2) 지오코딩까지 붙이기 (실패해도 전체 실패는 막고 경고만)
         try {
             n = geocodeByVWorld(n);  // ← 앞서 구현한 Juso 좌표 API 호출
+            System.out.println(n);
         } catch (Exception e) {
             log.warn("Geocoding failed for {}: {}", n.getAddressKey(), e.getMessage());
             // 필요시 n.setX(null); n.setY(null);

@@ -18,7 +18,9 @@ public class NormalizedAddress {
     public String siNm, sggNm, emdNm, roadName;
     public Integer buldMnnm, buldSlno, jibunMain, jibunSub;
     public String addressKey; // lawdCd-jibunMain-jibunSub
-    private Double x;      // entX (GRS80/UTM-K)
-    private Double y;      // entY (GRS80/UTM-K)
+    private Double lon;
+    private Double lat;
+    private Double entX;
+    private Double entY;
     private String crs;    // "EPSG:5179" 등 표기
 }
