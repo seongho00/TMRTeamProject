@@ -3,14 +3,12 @@ package com.koreait.exam.tmrteamproject.controller;
 import com.koreait.exam.tmrteamproject.service.DataSaveService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.concurrent.CompletableFuture;
 
 @Controller
 @RequiredArgsConstructor
@@ -21,38 +19,12 @@ public class DataSaveController {
     private final DataSaveService dataSaveService;
 
     @GetMapping("/upload")
-    public String upload(@RequestParam(required = false) boolean run, Model model) {
-        if (run) {
-            try {
-                // 리소스 폴더 내 디렉토리 접근 (개발 환경에서만 동작)
-                File folder = new ClassPathResource("dataset").getFile();
-                File[] files = folder.listFiles((dir, name) -> name.endsWith(".xlsx") || name.endsWith(".xls"));
-
-                if (files == null || files.length == 0) {
-                    model.addAttribute("message", "엑셀 파일이 존재하지 않습니다.");
-                    return "dataset/excel";
-                }
-
-                int success = 0;
-                for (File file : files) {
-                    String result = dataSaveService.setInsertData(file, model);
-                    log.info("처리된 파일: {}, 결과: {}", file.getName(), result);
-                    success++;
-                }
-
-                model.addAttribute("message", success + "개의 파일을 처리했습니다.");
-            } catch (IOException e) {
-                model.addAttribute("message", "리소스 폴더 접근 실패: " + e.getMessage());
-            }
-        }
-
-        return "dataset/excel";
-    }
-
-    @GetMapping("/savedDB")
-    public String savedDB() {
+    public String savedDB(Model model) {
         String csvDir = Paths.get("src/main/resources/seoul_data_merge").toString();
-        int savedCount = dataSaveService.saveAllFromDir(csvDir);
-        return savedCount + "개의 데이터 저장 완료";
+        CompletableFuture<Integer> future = dataSaveService.saveAllFromDirAsync(csvDir);
+        System.out.println(future);
+
+        model.addAttribute("message", "저장 작업을 백그라운드에서 시작했습니다. 잠시 후 완료 됩니다.");
+        return "dataset/excel";
     }
 }
