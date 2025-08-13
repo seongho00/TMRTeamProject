@@ -39,6 +39,8 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
     // pdf 읽기 의존성
     implementation("org.apache.pdfbox:pdfbox:3.0.5")
 
