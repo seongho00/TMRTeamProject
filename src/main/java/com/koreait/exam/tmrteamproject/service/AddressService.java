@@ -1,5 +1,7 @@
 package com.koreait.exam.tmrteamproject.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.koreait.exam.tmrteamproject.vo.AddressCoordResponse;
 import com.koreait.exam.tmrteamproject.vo.AddressPickReq;
 import com.koreait.exam.tmrteamproject.vo.AddressApiResponse;
@@ -11,9 +13,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -151,7 +157,6 @@ public class AddressService {
 
         n.setAddressKey(finalKey);
         // (선택) 여기서 n을 DB 저장
-        System.out.println(n);
 
         return n;
     }
@@ -167,29 +172,48 @@ public class AddressService {
         }
     }
 
-    public NormalizedAddress geocodeByVWorld(NormalizedAddress n){
-        if (n.getRoadAddr()==null || n.getRoadAddr().isBlank())
+    public NormalizedAddress geocodeByVWorld(NormalizedAddress n) {
+        if (n.getRoadAddr() == null || n.getRoadAddr().isBlank())
             throw new IllegalArgumentException("roadAddr가 비었습니다.");
 
-        String q = URLEncoder.encode(n.getRoadAddr(), StandardCharsets.UTF_8);
-        String url = "https://api.vworld.kr/req/address?service=address&request=getCoord"
-                + "&format=json&type=ROAD&address=" + q + "&key=" + vworldKey;
+        // 괄호 뒤 아파트명 등은 선택적으로 제거 (매칭률 올리고 싶으면)
+        String addr = n.getRoadAddr().replaceAll("\\s*\\(.*\\)$", "");
 
-        Map<?,?> m = rest.getForObject(url, Map.class);
-        Map<?,?> resp = (Map<?,?>) m.get("response");
-        if (resp==null || !"OK".equals(resp.get("status")))
-            throw new IllegalStateException("VWorld 응답 비정상: " + resp);
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl("https://api.vworld.kr/req/address")
+                .queryParam("service", "address")
+                .queryParam("request", "getcoord")   // 소문자 권장
+                .queryParam("format", "json")
+                .queryParam("crs", "EPSG:4326")
+                .queryParam("type", "road")          // 소문자 권장
+                .queryParam("address", addr)         // ★ 한글 포함 → 아래 encode가 처리
+                .queryParam("key", vworldKey)
+                .encode(StandardCharsets.UTF_8)      // ★ 값만 안전하게 인코딩
+                .build()
+                .toUri();
 
-        Map<?,?> result = (Map<?,?>) resp.get("result");
-        Map<?,?> pt = (Map<?,?>) result.get("point");
+        System.out.println("[VWorld] URI = " + uri); // 여기에는 이미 인코딩된 값이 찍힘
+
+        ResponseEntity<Map> res = rest.getForEntity(uri, Map.class);
+        Map<?, ?> body = res.getBody();
+        Map<?, ?> resp = (Map<?, ?>) body.get("response");
+        if (resp == null || !"OK".equalsIgnoreCase(String.valueOf(resp.get("status")))) {
+            throw new IllegalStateException("VWorld 응답 비정상: " + body);
+        }
+
+        Map<?, ?> result = (Map<?, ?>) resp.get("result");
+        Map<?, ?> pt = (Map<?, ?>) result.get("point");
         double lon = Double.parseDouble(String.valueOf(pt.get("x")));
         double lat = Double.parseDouble(String.valueOf(pt.get("y")));
 
-        System.out.println();
-        System.out.println(n);
-        n.setX(lon); n.setY(lat); n.setCrs("EPSG:4326"); // 경위도 저장
+        System.out.println("실행됨2");
+
+        n.setX(lon);
+        n.setY(lat);
+        n.setCrs("EPSG:4326");
         return n;
     }
+
 
     public NormalizedAddress confirmAndGeocode(AddressPickReq req) {
         NormalizedAddress n = confirm(req); // ← 이미 만들었던 메서드 재사용
