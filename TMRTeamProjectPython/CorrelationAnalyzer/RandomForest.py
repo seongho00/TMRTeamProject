@@ -1,3 +1,4 @@
+import json
 import os
 import numpy as np
 import pandas as pd
@@ -11,7 +12,11 @@ from sklearn.utils import compute_class_weight
 from tqdm import tqdm
 
 # 파일 경로 설정
-DATA_DIR = "C:/Users/admin/Downloads/seoul_data_merge"  # 업로드 폴더
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.abspath(
+    os.path.join(BASE_DIR, "..", "src", "main", "resources", "seoul_data_merge")
+)
+
 TRAIN_FILES = [
     "서울_데이터_병합_20221.csv",
     "서울_데이터_병합_20222.csv",
@@ -43,38 +48,27 @@ selected_features = [
     '지하철_역_수', '대학교_수', '관공서_수'
 ]
 
-correlation_features = []
-correlation_features += [
+correlation_features = [
     '총_유동인구_수', '남성_유동인구_수', '여성_유동인구_수',
     '연령대_10_유동인구_수', '연령대_20_유동인구_수', '연령대_30_유동인구_수',
     '연령대_40_유동인구_수', '연령대_50_유동인구_수', '연령대_60_이상_유동인구_수',
     '시간대_유동인구_수_00~06', '시간대_유동인구_수_06~11', '시간대_유동인구_수_11~14',
     '시간대_유동인구_수_14~17', '시간대_유동인구_수_17~21', '시간대_유동인구_수_21~24',
-    '요일별_유동인구_수_평일', '요일별_유동인구_수_주말'
-]
-correlation_features += [
+    '요일별_유동인구_수_평일', '요일별_유동인구_수_주말',
     '당월_매출_금액', '주중_매출_금액', '주말_매출_금액',
     '요일_매출_월요일', '요일_매출_화요일', '요일_매출_수요일', '요일_매출_목요일',
     '요일_매출_금요일', '요일_매출_토요일', '요일_매출_일요일',
     '남성_매출_금액', '여성_매출_금액',
     '연령대_10_매출_금액', '연령대_20_매출_금액', '연령대_30_매출_금액',
-    '연령대_40_매출_금액', '연령대_50_매출_금액', '연령대_60_이상_매출_금액'
-]
-correlation_features += [
+    '연령대_40_매출_금액', '연령대_50_매출_금액', '연령대_60_이상_매출_금액',
     '총_상주인구_수', '남성_상주인구_수', '여성_상주인구_수',
     '연령대_10_상주인구_수', '연령대_20_상주인구_수', '연령대_30_상주인구_수',
     '연령대_40_상주인구_수', '연령대_50_상주인구_수', '연령대_60_이상_상주인구_수',
-    '총_가구_수'
-]
-correlation_features += [
+    '총_가구_수',
     '월_평균_소득_금액', '지출_총금액',
     '식료품_지출_금액', '의류_신발_지출_금액', '생활용품_지출_금액',
-    '의료비_지출_금액', '여가_지출_금액', '문화_지출_금액'
-]
-correlation_features += [
-    '점포_수', '프랜차이즈_점포_수', '개업_점포_수', '폐업_점포_수', '유사_업종_점포_수'
-]
-correlation_features += [
+    '의료비_지출_금액', '여가_지출_금액', '문화_지출_금액',
+    '점포_수', '프랜차이즈_점포_수', '개업_점포_수', '폐업_점포_수', '유사_업종_점포_수',
     '총_직장_인구_수', '남성_직장_인구_수', '여성_직장_인구_수',
     '연령대_10_직장_인구_수', '연령대_20_직장_인구_수', '연령대_30_직장_인구_수',
     '연령대_40_직장_인구_수', '연령대_50_직장_인구_수', '연령대_60_이상_직장_인구_수'
@@ -387,3 +381,173 @@ print(f"\n저장 완료: {save_path}")
 # 미리보기
 print("\n=== 결과 상위 10행 ===")
 print(out.head(10))
+
+# 5단계 팔레트(낮음→높음)
+PALETTE_5 = {
+    0: "#E3F2FD",  # 매우 낮음
+    1: "#BBDEFB",  # 낮음
+    2: "#90CAF9",  # 보통
+    3: "#64B5F6",  # 높음
+    4: "#1E88E5",  # 매우 높음
+}
+LABEL_5 = {0: "매우 낮음", 1: "낮음", 2: "보통", 3: "높음", 4: "매우 높음"}
+
+# GeoJSON 원본/출력 경로 (프로젝트 구조에 맞게 조정)
+GEOJSON_SRC = os.path.abspath(
+    os.path.join(BASE_DIR, "..", "src", "main", "resources", "static", "Seoul_emds.geojson")
+)
+GEOJSON_OUT = os.path.abspath(
+    os.path.join(BASE_DIR, "..", "src", "main", "resources", "static", "Seoul_risk.geojson")
+)
+
+def _normalize_code(x):
+    """행정동 코드 표준화: None/NaN → '', '123.0' → '123'"""
+    if x is None:
+        return ""
+    try:
+        if isinstance(x, float) and np.isnan(x):
+            return ""
+    except Exception:
+        pass
+    s = str(x).strip()
+    if not s:
+        return ""
+    if s.endswith(".0"):
+        s = s[:-2]
+    try:
+        if "." in s:
+            f = float(s)
+            return str(int(f)) if f.is_integer() else s
+        int(s)
+        return s
+    except Exception:
+        return s
+
+def _get_feature_code(props: dict) -> str:
+    """GeoJSON properties 안에서 행정동 코드를 유연하게 추출"""
+    for k in ("행정동_코드", "ADSTRD_CD", "adm_cd", "EMD_CD"):
+        if k in props and props[k] not in (None, ""):
+            return _normalize_code(props[k])
+    return ""
+
+def _get_feature_name(props: dict) -> str:
+    """GeoJSON properties 안에서 행정동 이름을 유연하게 추출(참고용)"""
+    for k in ("행정동_코드_명", "행정동_명", "ADSTRD_NM", "adm_nm"):
+        if k in props and props[k] not in (None, ""):
+            return str(props[k])
+    return ""
+
+def _build_service_list(df_group: pd.DataFrame) -> list:
+    """동 내부 업종별 위험도 리스트 생성(아이템별 color 계산)"""
+    items = []
+    for _, r in df_group.iterrows():
+        # 색상 계산: 예측_위험도(0~4) 우선, 없으면 위험도_단계('1단계'~'5단계') 사용
+        color = "#D3D3D3"
+        try:
+            if pd.notna(r.get("예측_위험도")):
+                color = PALETTE_5.get(int(r["예측_위험도"]), "#D3D3D3")
+            elif pd.notna(r.get("위험도_단계")):
+                step = str(r["위험도_단계"]).replace("단계", "")
+                idx = max(0, min(4, int(step) - 1))
+                color = PALETTE_5.get(idx, "#D3D3D3")
+        except Exception:
+            # 변환 실패 시 기본 회색 유지
+            pass
+
+        # 업종별 상세 정보 구성
+        item = {
+            "서비스_업종_코드": r.get("서비스_업종_코드"),
+            "서비스_업종_코드_명": r.get("서비스_업종_코드_명"),
+            "예측_위험도": int(r["예측_위험도"]) if pd.notna(r.get("예측_위험도")) else None,
+            "예측_위험도_라벨": LABEL_5.get(int(r["예측_위험도"]), None) if pd.notna(r.get("예측_위험도")) else None,
+            "예측_신뢰도": float(r["예측_신뢰도"]) if pd.notna(r.get("예측_신뢰도")) else None,
+            "위험도_점수": float(r["위험도_점수"]) if pd.notna(r.get("위험도_점수")) else None,
+            "위험도_단계": r.get("위험도_단계"),
+            "color": color,
+        }
+        items.append(item)
+
+    # 업종명 사전순 정렬 (필요 시 위험도 내림차순 정렬로 변경 가능)
+    items.sort(key=lambda x: (x["서비스_업종_코드_명"] or ""))
+    return items
+
+def save_result_as_geojson(src_geojson_path: str, out_geojson_path: str, df_result: pd.DataFrame):
+    # 경로 체크
+    if not os.path.exists(src_geojson_path):
+        raise FileNotFoundError(f"원본 GeoJSON이 없음: {src_geojson_path}")
+    os.makedirs(os.path.dirname(out_geojson_path), exist_ok=True)
+
+    # 필요한 컬럼 확인
+    if "행정동_코드" not in df_result.columns:
+        raise KeyError("df_result에 '행정동_코드' 컬럼이 필요해")
+    if "행정동_코드_명" not in df_result.columns:
+        df_result["행정동_코드_명"] = None
+
+    # 동 단위 그룹핑 → 업종 리스트 빌드
+    dong_map = {}
+    for (emd_cd, emd_nm), g in df_result.groupby(["행정동_코드", "행정동_코드_명"], dropna=False):
+        emd_cd_norm = _normalize_code(emd_cd)
+        services = _build_service_list(g)
+        dong_map[emd_cd_norm] = {
+            "행정동_코드": emd_cd_norm,
+            "행정동_코드_명": emd_nm,
+            "업종별_위험도": services,
+            "업종_개수": len(services),
+        }
+
+    # GeoJSON 로드
+    with open(src_geojson_path, "r", encoding="utf-8") as f:
+        gj = json.load(f)
+
+    feats = gj.get("features", [])
+    matched = 0
+
+    for feat in feats:
+        props = feat.get("properties", {}) or {}
+
+        # 기존 대표/색상 필드 깔끔히 제거
+        for k in ["대표_예측_위험도", "대표_예측_라벨", "risk_color_5", "color"]:
+            if k in props:
+                props.pop(k, None)
+
+        # 행정동 코드 획득
+        code = _get_feature_code(props)
+        if not code:
+            # 코드 없으면 비매칭 처리
+            props["risk_exists"] = False
+            props["업종별_위험도"] = []
+            props["업종_개수"] = 0
+            feat["properties"] = props
+            continue
+
+        # 매핑 조회
+        info = dong_map.get(code) or dong_map.get(_normalize_code(code))
+        if not info:
+            props["risk_exists"] = False
+            props["업종별_위험도"] = []
+            props["업종_개수"] = 0
+            feat["properties"] = props
+            continue
+
+        # 병합(대표 개념 없이 업종 배열만)
+        matched += 1
+        props["risk_exists"] = True
+        props["행정동_코드"] = info["행정동_코드"]
+        if info["행정동_코드_명"] is not None:
+            props["행정동_명"] = info["행정동_코드_명"]
+        props["업종별_위험도"] = info["업종별_위험도"]
+        props["업종_개수"] = info["업종_개수"]
+
+        feat["properties"] = props
+
+    gj["features"] = feats
+
+    # 저장
+    with open(out_geojson_path, "w", encoding="utf-8") as f:
+        json.dump(gj, f, ensure_ascii=False)
+
+    print(f"[GeoJSON 병합] features={len(feats)}, 매칭 성공={matched}, 실패={len(feats)-matched}")
+    print(f"저장 완료: {out_geojson_path}")
+
+# 실행
+save_result_as_geojson(GEOJSON_SRC, GEOJSON_OUT, out)
