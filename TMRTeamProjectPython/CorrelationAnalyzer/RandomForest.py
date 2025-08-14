@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-# ============================================================
-# 군집분석(KMeans) + 상관분석 + 랜덤포레스트 위험도 예측 파이프라인
-# - 학습: 20241~20244
-# - 테스트: 20251
-# - 군집 변수(selected_features): 질문에서 준 목록 그대로 사용
-# - 상관분석 변수(correlation_features): 질문에서 준 목록 그대로 사용
-# - 타깃: 파생 위험도 점수(가중합) 기반 3클래스 라벨(낮음/보통/높음)
-# - 출력: 테스트(20251) 각 행정동×업종 위험도 예측 CSV
-# - 주의: 업로드된 CSV는 /mnt/data 폴더에 있다고 가정
-# ============================================================
-
 import os
 import numpy as np
 import pandas as pd
@@ -22,9 +10,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.utils import compute_class_weight
 from tqdm import tqdm
 
-# -----------------------------
 # 파일 경로 설정
-# -----------------------------
 DATA_DIR = "C:/Users/admin/Downloads/seoul_data_merge"  # 업로드 폴더
 TRAIN_FILES = [
     "서울_데이터_병합_20221.csv",
@@ -45,9 +31,7 @@ TEST_FILE = "서울_데이터_병합_20251.csv"
 OUT_DIR = "C:/Users/admin/Downloads/Seoul_RandomForest"
 os.makedirs(OUT_DIR, exist_ok=True)
 
-# -----------------------------
-# 변수 목록 (질문에서 제공)
-# -----------------------------
+# 변수 목록
 selected_features = [
     '점포_수', '개업_율', '폐업_률', '프랜차이즈_점포_수',
     '당월_매출_금액', '주중_매출_금액', '주말_매출_금액',
@@ -108,9 +92,7 @@ RISK_WEIGHTS = {
 # 식별/그룹 기준 컬럼 후보
 ID_COLS = ['행정동_코드', '행정동_코드_명', '서비스_업종_코드', '서비스_업종_코드_명']
 
-# -----------------------------
 # 유틸 함수
-# -----------------------------
 def read_csv_any(path):
     # UTF-8 우선, 실패 시 CP949 시도
     try:
@@ -272,9 +254,7 @@ def corr_analysis(df: pd.DataFrame, target='당월_매출_금액', features=None
         ranking.to_csv(out_path, encoding="utf-8-sig")
     return ranking.index.tolist()
 
-# -----------------------------
 # 데이터 로드
-# -----------------------------
 train_list = []
 for fn in TRAIN_FILES:
     path = os.path.join(DATA_DIR, fn)
@@ -301,9 +281,7 @@ if not keep_ids:
     # 최소한 행정동/업종명이 있어야 함
     raise ValueError("테스트 데이터에 식별 컬럼(행정동/업종)이 없습니다.")
 
-# -----------------------------
 # 군집분석 피처 추가
-# -----------------------------
 df_train_clu = df_train_raw.copy()
 df_test_clu  = df_test_raw.copy()
 
@@ -311,17 +289,13 @@ df_train_clu, df_test_clu = add_cluster_features(
     df_train_clu, df_test_clu, selected_features, n_clusters=5, random_state=42
 )
 
-# -----------------------------
 # 위험도 구성요소 파생 + 점수/라벨 생성
-# -----------------------------
 df_train_feat = add_risk_components(df_train_clu)
 df_test_feat  = add_risk_components(df_test_clu)
 
 df_train_feat, df_test_feat = risk_score_label(df_train_feat, df_test_feat, weights=RISK_WEIGHTS)
 
-# -----------------------------
 # 상관분석 (타깃: 당월_매출_금액)
-# -----------------------------
 top_corr = corr_analysis(
     df_train_feat,
     target='당월_매출_금액',
@@ -330,9 +304,7 @@ top_corr = corr_analysis(
     top_k=30
 )
 
-# -----------------------------
 # 랜덤포레스트 학습/예측 (타깃: 위험도)
-# -----------------------------
 # 입력 피처: 상관 상위 + cluster + 주요 파생
 base_features = list(top_corr) + ['cluster', '경쟁강도', '프랜차이즈비중', '주중주말편차', '연령의존도', '폐업_률']
 base_features = [c for c in base_features if c in df_train_feat.columns and c in df_test_feat.columns]
@@ -372,9 +344,7 @@ rf.fit(X_tr, y_tr)
 pred = rf.predict(X_te)
 proba = rf.predict_proba(X_te) if hasattr(rf, "predict_proba") else None
 
-# -----------------------------
 # 평가 리포트 출력
-# -----------------------------
 print("=== 입력 크기 ===")
 print("X_tr:", X_tr.shape, "X_te:", X_te.shape)
 print("레이블 분포 train/test:", Counter(y_tr), Counter(y_te))
@@ -388,9 +358,7 @@ fi = pd.Series(rf.feature_importances_, index=base_features).sort_values(ascendi
 print("\n=== 변수 중요도 TOP 20 ===")
 print(fi.head(20))
 
-# -----------------------------
 # 결과 저장 (20251 예측)
-# -----------------------------
 out_cols = [c for c in keep_ids if c in df_test_raw.columns]
 out = df_test_raw[out_cols].copy()
 
