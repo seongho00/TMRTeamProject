@@ -1,31 +1,40 @@
 # -*- coding: utf-8 -*-
 # ============================================================
-# 군집분석(KMeans) + 상관분석 + 랜덤포레스트 위험도 예측 파이프라인
-# - 학습: 20241~20244
+# 파일명 예시: rf_n_estimators_benchmark.py
+# 목적: 랜덤포레스트 트리 개수(n_estimators)별 성능/시간 비교
+# - 학습: 20221~20244 (사용 가능한 파일만 자동 로드)
 # - 테스트: 20251
-# - 군집 변수(selected_features): 질문에서 준 목록 그대로 사용
-# - 상관분석 변수(correlation_features): 질문에서 준 목록 그대로 사용
-# - 타깃: 파생 위험도 점수(가중합) 기반 3클래스 라벨(낮음/보통/높음)
-# - 출력: 테스트(20251) 각 행정동×업종 위험도 예측 CSV
-# - 주의: 업로드된 CSV는 /mnt/data 폴더에 있다고 가정
+# - 군집 변수(selected_features), 상관분석 변수(correlation_features) 고정
+# - 위험도 라벨: 5분위(0~4)
+# - 출력: 결과 CSV 및 콘솔 표
+# 준비:
+#   pip install pandas scikit-learn tqdm
+# 경로/파일명은 아래 CONFIG에서 수정
 # ============================================================
 
 import os
+import time
+import warnings
 import numpy as np
 import pandas as pd
 from collections import Counter
 
+from tqdm import tqdm
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.utils import compute_class_weight
-from tqdm import tqdm
+from sklearn.metrics import accuracy_score, f1_score, confusion_matrix, classification_report
+from sklearn.utils.class_weight import compute_class_weight
+
+warnings.filterwarnings("ignore", message="class_weight presets .* are not recommended for warm_start")
 
 # -----------------------------
-# 파일 경로 설정
+# CONFIG
 # -----------------------------
-DATA_DIR = "C:/Users/admin/Downloads/seoul_data_merge"  # 업로드 폴더
+DATA_DIR = r"C:/Users/admin/Downloads/seoul_data_merge"
+OUT_DIR = r"C:/Users/admin/Downloads/Seoul_RandomForest"
+os.makedirs(OUT_DIR, exist_ok=True)
+
 TRAIN_FILES = [
     "서울_데이터_병합_20221.csv",
     "서울_데이터_병합_20222.csv",
@@ -38,16 +47,17 @@ TRAIN_FILES = [
     "서울_데이터_병합_20241.csv",
     "서울_데이터_병합_20242.csv",
     "서울_데이터_병합_20243.csv",
-    "서울_데이터_병합_20244.csv"
+    "서울_데이터_병합_20244.csv",
 ]
 TEST_FILE = "서울_데이터_병합_20251.csv"
 
-OUT_DIR = "C:/Users/admin/Downloads/Seoul_RandomForest"
-os.makedirs(OUT_DIR, exist_ok=True)
+# 비교할 트리 개수 목록
+N_LIST = [50, 100, 200, 300, 400, 600, 800]
 
-# -----------------------------
-# 변수 목록 (질문에서 제공)
-# -----------------------------
+# 식별/그룹 기준 컬럼
+ID_COLS = ['행정동_코드', '행정동_코드_명', '서비스_업종_코드', '서비스_업종_코드_명']
+
+# 군집 변수(selected_features)
 selected_features = [
     '점포_수', '개업_율', '폐업_률', '프랜차이즈_점포_수',
     '당월_매출_금액', '주중_매출_금액', '주말_매출_금액',
@@ -59,6 +69,7 @@ selected_features = [
     '지하철_역_수', '대학교_수', '관공서_수'
 ]
 
+# 상관분석 변수(correlation_features)
 correlation_features = []
 correlation_features += [
     '총_유동인구_수', '남성_유동인구_수', '여성_유동인구_수',
@@ -96,7 +107,7 @@ correlation_features += [
     '연령대_40_직장_인구_수', '연령대_50_직장_인구_수', '연령대_60_이상_직장_인구_수'
 ]
 
-# 위험도 구성요소 가중치(필요시 조정)
+# 위험도 가중치
 RISK_WEIGHTS = {
     '경쟁강도': 0.20,        # 유사_업종_점포_수
     '프랜차이즈비중': 0.15,  # 프랜차이즈_점포_수 / 점포_수
@@ -105,41 +116,37 @@ RISK_WEIGHTS = {
     '폐업_률': 0.30          # 폐업_률 자체
 }
 
-# 식별/그룹 기준 컬럼 후보
-ID_COLS = ['행정동_코드', '행정동_코드_명', '서비스_업종_코드', '서비스_업종_코드_명']
-
-# -----------------------------
-# 유틸 함수
-# -----------------------------
+# ------------------------------------------------------------
+# 유틸/전처리 함수들
+# ------------------------------------------------------------
 def read_csv_any(path):
-    # UTF-8 우선, 실패 시 CP949 시도
+    """CSV를 UTF-8 → CP949 순으로 시도해 읽기"""
     try:
         return pd.read_csv(path, encoding="utf-8")
     except UnicodeDecodeError:
         return pd.read_csv(path, encoding="cp949")
 
 def unify_columns(df: pd.DataFrame) -> pd.DataFrame:
-    # 컬럼 문자열화 및 공백 제거, 중복 제거
+    """컬럼명 공백 제거 + 중복 제거"""
     df = df.rename(columns=lambda c: str(c).strip())
     df = df.loc[:, ~df.columns.duplicated()].copy()
     return df
 
 def ensure_numeric(df: pd.DataFrame, cols):
-    # 지정 컬럼을 숫자로 강제 변환
+    """지정 컬럼을 숫자로 강제 변환"""
     for c in cols:
         if c in df.columns:
             df[c] = pd.to_numeric(df[c], errors='coerce')
     return df
 
 def add_cluster_features(df_train, df_test, feats, n_clusters=5, random_state=42):
-    # 군집 변수 없으면 cluster=0 지정
+    """선택 피처로 KMeans 클러스터 추가"""
     feats = [c for c in feats if c in df_train.columns and c in df_test.columns]
     if not feats:
         df_train['cluster'] = 0
         df_test['cluster'] = 0
         return df_train, df_test
 
-    # 결측/무한 처리
     for d in (df_train, df_test):
         d[feats] = d[feats].replace([np.inf, -np.inf], np.nan).fillna(0)
 
@@ -148,7 +155,6 @@ def add_cluster_features(df_train, df_test, feats, n_clusters=5, random_state=42
     Xte = scaler.transform(df_test[feats].values)
 
     if Xtr.shape[0] < n_clusters:
-        # 표본이 적으면 단일 클러스터
         df_train['cluster'] = 0
         df_test['cluster'] = 0
         return df_train, df_test
@@ -159,23 +165,20 @@ def add_cluster_features(df_train, df_test, feats, n_clusters=5, random_state=42
     return df_train, df_test
 
 def add_risk_components(df):
-    # 위험도 구성요소 파생
+    """경쟁강도/프랜차이즈비중/주중주말편차/연령의존도 파생 + 결측/무한 처리"""
     df = df.copy()
 
-    # 경쟁강도: 유사업종 점포수
     if '유사_업종_점포_수' in df.columns:
         df['경쟁강도'] = df['유사_업종_점포_수'].fillna(0)
     else:
         df['경쟁강도'] = 0
 
-    # 프랜차이즈비중: 프랜차이즈_점포_수 / 점포_수
     if all(c in df.columns for c in ['프랜차이즈_점포_수', '점포_수']):
         denom = df['점포_수'].replace(0, np.nan)
         df['프랜차이즈비중'] = (df['프랜차이즈_점포_수'] / denom).fillna(0)
     else:
         df['프랜차이즈비중'] = 0
 
-    # 주중주말편차: |주중 - 주말| / 당월
     if all(c in df.columns for c in ['주중_매출_금액', '주말_매출_금액', '당월_매출_금액']):
         diff = (df['주중_매출_금액'] - df['주말_매출_금액']).abs()
         denom = df['당월_매출_금액'].replace(0, np.nan)
@@ -183,7 +186,6 @@ def add_risk_components(df):
     else:
         df['주중주말편차'] = 0
 
-    # 연령의존도: (20+30+40 매출)/당월
     if all(c in df.columns for c in ['연령대_20_매출_금액','연령대_30_매출_금액','연령대_40_매출_금액','당월_매출_금액']):
         core = df['연령대_20_매출_금액'] + df['연령대_30_매출_금액'] + df['연령대_40_매출_금액']
         denom = df['당월_매출_금액'].replace(0, np.nan)
@@ -191,16 +193,14 @@ def add_risk_components(df):
     else:
         df['연령의존도'] = 0
 
-    # 폐업_률 없으면 0
     if '폐업_률' not in df.columns:
         df['폐업_률'] = 0
 
-    # 정리
     df = df.replace([np.inf, -np.inf], 0).fillna(0)
     return df
 
 def risk_score_label(train_df, test_df, weights=RISK_WEIGHTS):
-    # 표준화 후 가중합 점수 계산
+    """가중합 위험도 점수 → 5분위 라벨(0~4) 생성"""
     cols = [c for c in weights.keys() if c in train_df.columns]
     if not cols:
         train_df['위험도_점수'] = 0
@@ -213,7 +213,6 @@ def risk_score_label(train_df, test_df, weights=RISK_WEIGHTS):
         train_df['위험도_점수'] = Ztr @ w
         test_df['위험도_점수'] = Zte @ w
 
-    # 5분위 경계 계산
     qs = train_df['위험도_점수'].quantile([i/5 for i in range(6)]).values
     bins = np.unique(qs).tolist()
     if len(bins) < 6:
@@ -222,38 +221,16 @@ def risk_score_label(train_df, test_df, weights=RISK_WEIGHTS):
             mn, mx = mn - 1e-6, mx + 1e-6
         bins = [mn + (mx - mn) * i / 5 for i in range(6)]
 
-    # 1) 학습용 숫자 라벨(0~4)
     num_labels = [0, 1, 2, 3, 4]
     train_df['위험도'] = pd.cut(train_df['위험도_점수'], bins=bins, labels=num_labels, include_lowest=True).astype(int)
     test_df['위험도']  = pd.cut(test_df['위험도_점수'],  bins=bins, labels=num_labels, include_lowest=True)
     test_df = test_df[test_df['위험도'].notna()].copy()
     test_df['위험도'] = test_df['위험도'].astype(int)
 
-    # 2) 보기용 문자열 라벨(별도 컬럼)
-    label_map = {
-        0: '매우 낮음',
-        1: '낮음',
-        2: '보통',
-        3: '높음',
-        4: '매우 높음'
-    }
-    train_df['위험도_라벨'] = train_df['위험도'].map(label_map)
-    test_df['위험도_라벨']  = test_df['위험도'].map(label_map)
-
-    # 참고용 5단계 라벨
-    q5 = np.quantile(train_df['위험도_점수'], [i/5 for i in range(6)])
-    q5 = sorted(set(q5))
-    if len(q5) < 6:
-        mn, mx = float(train_df['위험도_점수'].min()), float(train_df['위험도_점수'].max())
-        q5 = [mn + (mx - mn) * i / 5 for i in range(6)]
-    labels5 = ['1단계', '2단계', '3단계', '4단계', '5단계']
-    train_df['위험도_단계'] = pd.cut(train_df['위험도_점수'], bins=q5, labels=labels5[:len(q5)-1], include_lowest=True)
-    test_df['위험도_단계'] = pd.cut(test_df['위험도_점수'], bins=q5, labels=labels5[:len(q5)-1], include_lowest=True)
-
     return train_df, test_df
 
-def corr_analysis(df: pd.DataFrame, target='당월_매출_금액', features=None, out_path=None, top_k=30):
-    # 상관분석: target과의 피어슨 상관계수 상위 top_k
+def corr_analysis(df: pd.DataFrame, target='당월_매출_금액', features=None, top_k=30):
+    """피어슨 상관계수 기준 상위 top_k 피처 반환"""
     cols = [c for c in (features or []) if c in df.columns] + [target]
     cols = list(dict.fromkeys(cols))
     sub = df[cols].copy()
@@ -268,154 +245,124 @@ def corr_analysis(df: pd.DataFrame, target='당월_매출_금액', features=None
         .dropna()
         .head(top_k)
     )
-    if out_path:
-        ranking.to_csv(out_path, encoding="utf-8-sig")
     return ranking.index.tolist()
 
-# -----------------------------
-# 데이터 로드
-# -----------------------------
-train_list = []
-for fn in TRAIN_FILES:
-    path = os.path.join(DATA_DIR, fn)
-    if os.path.exists(path):
-        df = read_csv_any(path)
-        train_list.append(df)
-if not train_list:
-    raise FileNotFoundError("학습용 CSV(20221~20244)가 없습니다.")
+# ------------------------------------------------------------
+# 메인 로직
+# ------------------------------------------------------------
+def main():
+    # 1) 데이터 로드
+    train_frames = []
+    for fn in TRAIN_FILES:
+        path = os.path.join(DATA_DIR, fn)
+        if os.path.exists(path):
+            train_frames.append(read_csv_any(path))
+    if not train_frames:
+        raise FileNotFoundError("학습용 CSV(20221~20244) 파일이 없습니다.")
+    df_train_raw = pd.concat(train_frames, ignore_index=True)
 
-test_path = os.path.join(DATA_DIR, TEST_FILE)
-if not os.path.exists(test_path):
-    raise FileNotFoundError("테스트 CSV(20251)가 없습니다.")
-df_test_raw = read_csv_any(test_path)
+    test_path = os.path.join(DATA_DIR, TEST_FILE)
+    if not os.path.exists(test_path):
+        raise FileNotFoundError("테스트 CSV(20251) 파일이 없습니다.")
+    df_test_raw = read_csv_any(test_path)
 
-df_train_raw = pd.concat(train_list, ignore_index=True)
+    # 2) 컬럼 정리
+    df_train_raw = unify_columns(df_train_raw)
+    df_test_raw  = unify_columns(df_test_raw)
 
-# 컬럼 정리
-df_train_raw = unify_columns(df_train_raw)
-df_test_raw  = unify_columns(df_test_raw)
+    # 3) 식별 컬럼 체크
+    keep_ids = [c for c in ID_COLS if c in df_test_raw.columns]
+    if not keep_ids:
+        raise ValueError("테스트 데이터에 식별 컬럼(행정동/업종)이 없습니다.")
 
-# 식별자 보존
-keep_ids = [c for c in ID_COLS if c in df_test_raw.columns]
-if not keep_ids:
-    # 최소한 행정동/업종명이 있어야 함
-    raise ValueError("테스트 데이터에 식별 컬럼(행정동/업종)이 없습니다.")
+    # 4) 군집 피처
+    df_train_clu, df_test_clu = add_cluster_features(
+        df_train_raw.copy(), df_test_raw.copy(),
+        selected_features, n_clusters=5, random_state=42
+    )
 
-# -----------------------------
-# 군집분석 피처 추가
-# -----------------------------
-df_train_clu = df_train_raw.copy()
-df_test_clu  = df_test_raw.copy()
+    # 5) 위험 파생 + 5분위 라벨
+    df_train_feat = add_risk_components(df_train_clu)
+    df_test_feat  = add_risk_components(df_test_clu)
+    df_train_feat, df_test_feat = risk_score_label(df_train_feat, df_test_feat, weights=RISK_WEIGHTS)
 
-df_train_clu, df_test_clu = add_cluster_features(
-    df_train_clu, df_test_clu, selected_features, n_clusters=5, random_state=42
-)
+    # 6) 상관분석으로 상위 피처 선택
+    top_corr = corr_analysis(df_train_feat, target='당월_매출_금액', features=correlation_features, top_k=30)
 
-# -----------------------------
-# 위험도 구성요소 파생 + 점수/라벨 생성
-# -----------------------------
-df_train_feat = add_risk_components(df_train_clu)
-df_test_feat  = add_risk_components(df_test_clu)
+    # 7) 학습/예측 입력 피처 구성
+    base_features = list(top_corr) + ['cluster', '경쟁강도', '프랜차이즈비중', '주중주말편차', '연령의존도', '폐업_률']
+    base_features = [c for c in base_features if c in df_train_feat.columns and c in df_test_feat.columns]
 
-df_train_feat, df_test_feat = risk_score_label(df_train_feat, df_test_feat, weights=RISK_WEIGHTS)
+    X_tr = df_train_feat[base_features].replace([np.inf, -np.inf], 0).fillna(0).values
+    y_tr = df_train_feat['위험도'].astype(int).values
+    X_te = df_test_feat[base_features].replace([np.inf, -np.inf], 0).fillna(0).values
+    y_te = df_test_feat['위험도'].astype(int).values
 
-# -----------------------------
-# 상관분석 (타깃: 당월_매출_금액)
-# -----------------------------
-top_corr = corr_analysis(
-    df_train_feat,
-    target='당월_매출_금액',
-    features=correlation_features,
-    out_path=os.path.join(OUT_DIR, "corr_top.csv"),
-    top_k=30
-)
+    print("학습/평가 데이터 크기:", X_tr.shape, X_te.shape)
+    print("레이블 분포(train/test):", Counter(y_tr), Counter(y_te))
 
-# -----------------------------
-# 랜덤포레스트 학습/예측 (타깃: 위험도)
-# -----------------------------
-# 입력 피처: 상관 상위 + cluster + 주요 파생
-base_features = list(top_corr) + ['cluster', '경쟁강도', '프랜차이즈비중', '주중주말편차', '연령의존도', '폐업_률']
-base_features = [c for c in base_features if c in df_train_feat.columns and c in df_test_feat.columns]
+    # 8) class_weight 직접 계산(경고 방지/불균형 보정)
+    classes = np.unique(y_tr)
+    weights = compute_class_weight(class_weight="balanced", classes=classes, y=y_tr)
+    class_weights = dict(zip(classes, weights))
 
-X_tr = df_train_feat[base_features].replace([np.inf, -np.inf], 0).fillna(0)
-y_tr = df_train_feat['위험도'].astype(int)
+    # 9) n_estimators 벤치마크
+    records = []
+    print("\n=== n_estimators 벤치마크 시작 ===")
+    for n in N_LIST:
+        # 진행 상황 출력
+        print(f"\n>> 트리 개수: {n}")
 
-X_te = df_test_feat[base_features].replace([np.inf, -np.inf], 0).fillna(0)
-y_te = df_test_feat['위험도'].astype(int)  # 테스트도 라벨 존재(비교/평가용)
+        # 모델 생성
+        rf = RandomForestClassifier(
+            n_estimators=n,
+            random_state=42,
+            n_jobs=-1,
+            class_weight=class_weights
+        )
 
-class RFwithProgress(RandomForestClassifier):
-    def fit(self, X, y, **kwargs):
-        # 전체 트리 개수
-        n_estimators = self.n_estimators
+        # 학습 시간 측정
+        t0 = time.perf_counter()
+        rf.fit(X_tr, y_tr)
+        train_sec = time.perf_counter() - t0
 
-        with tqdm(total=n_estimators, unit="tree") as pbar:
-            self.set_params(warm_start=True)
-            for i in range(1, n_estimators + 1):
-                self.set_params(n_estimators=i)
-                super(RandomForestClassifier, self).fit(X, y, **kwargs)
-                pbar.update(1)
+        # 예측/평가 시간 측정
+        t1 = time.perf_counter()
+        pred = rf.predict(X_te)
+        infer_sec = time.perf_counter() - t1
 
-        return self
+        # 성능 지표 계산
+        acc = accuracy_score(y_te, pred)
+        f1_macro = f1_score(y_te, pred, average='macro', zero_division=0)
+        f1_weighted = f1_score(y_te, pred, average='weighted', zero_division=0)
 
-# y_tr은 학습용 타겟 데이터
-classes = np.unique(y_tr)
-weights = compute_class_weight(class_weight="balanced", classes=classes, y=y_tr)
-class_weights_dict = dict(zip(classes, weights))
+        print(f"정확도: {acc:.4f} | F1-macro: {f1_macro:.4f} | F1-weighted: {f1_weighted:.4f}")
+        print(f"학습시간: {train_sec:.2f}s | 예측시간: {infer_sec:.2f}s")
 
-rf = RFwithProgress(
-    n_estimators=600,
-    random_state=42,
-    n_jobs=-1,
-    class_weight=class_weights_dict
-)
-rf.fit(X_tr, y_tr)
-pred = rf.predict(X_te)
-proba = rf.predict_proba(X_te) if hasattr(rf, "predict_proba") else None
+        records.append({
+            "n_estimators": n,
+            "accuracy": acc,
+            "f1_macro": f1_macro,
+            "f1_weighted": f1_weighted,
+            "train_sec": train_sec,
+            "infer_sec": infer_sec
+        })
 
-# -----------------------------
-# 평가 리포트 출력
-# -----------------------------
-print("=== 입력 크기 ===")
-print("X_tr:", X_tr.shape, "X_te:", X_te.shape)
-print("레이블 분포 train/test:", Counter(y_tr), Counter(y_te))
-print("\n=== 혼동행렬 ===")
-print(confusion_matrix(y_te, pred))
-print("\n=== 분류 리포트 ===")
-print(classification_report(y_te, pred, zero_division=0))
+    # 10) 결과 저장
+    res = pd.DataFrame(records)
+    res = res.sort_values(by=["f1_macro", "accuracy"], ascending=[False, False]).reset_index(drop=True)
+    out_csv = os.path.join(OUT_DIR, "rf_n_estimators_benchmark.csv")
+    res.to_csv(out_csv, index=False, encoding="utf-8-sig")
 
-# 중요도 상위 20
-fi = pd.Series(rf.feature_importances_, index=base_features).sort_values(ascending=False)
-print("\n=== 변수 중요도 TOP 20 ===")
-print(fi.head(20))
+    print("\n=== 정렬된 결과 (상위 10) ===")
+    print(res.head(10))
+    print(f"\n저장 완료: {out_csv}")
 
-# -----------------------------
-# 결과 저장 (20251 예측)
-# -----------------------------
-out_cols = [c for c in keep_ids if c in df_test_raw.columns]
-out = df_test_raw[out_cols].copy()
+    # 11) 최적 선택 안내(참고)
+    best_row = res.iloc[0]
+    print(f"\n권장 n_estimators: {int(best_row['n_estimators'])}  "
+          f"(F1-macro={best_row['f1_macro']:.4f}, Acc={best_row['accuracy']:.4f}, "
+          f"Train={best_row['train_sec']:.2f}s)")
 
-# 실제/예측 라벨 및 점수
-out['실제_위험도'] = y_te.values
-out['예측_위험도'] = pred
-out['위험도_점수'] = df_test_feat.loc[X_te.index, '위험도_점수'].values
-out['위험도_단계'] = df_test_feat.loc[X_te.index, '위험도_단계'].astype(str).values
-
-# 예측 신뢰도(최대 확률) 추가
-if proba is not None:
-    out['예측_신뢰도'] = proba.max(axis=1)
-else:
-    out['예측_신뢰도'] = np.nan
-
-# 정렬(선택)
-pref = ['행정동_코드_명','서비스_업종_코드_명','실제_위험도','예측_위험도','예측_신뢰도','위험도_점수','위험도_단계']
-ordered = [c for c in pref if c in out.columns] + [c for c in out.columns if c not in pref]
-out = out[ordered]
-
-# 저장
-save_path = os.path.join(OUT_DIR, "risk_pred_20251.csv")
-out.to_csv(save_path, index=False, encoding="utf-8-sig")
-print(f"\n저장 완료: {save_path}")
-
-# 미리보기
-print("\n=== 결과 상위 10행 ===")
-print(out.head(10))
+if __name__ == "__main__":
+    main()
