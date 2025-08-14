@@ -35,3 +35,6 @@ build/
 # Firebase service account key (DO NOT COMMIT)
 src/main/resources/firebase-adminsdk.json
 src/main/resources/*.json
+
+### Gradle ###
+.gradle/

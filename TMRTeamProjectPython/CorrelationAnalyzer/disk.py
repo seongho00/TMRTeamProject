@@ -1,8 +1,15 @@
+# =========================================
+# 서울 행정동 위험도 분석 + GeoJSON 병합/저장 (정리된 버전)
+# - 경로: 전부 절대경로 문자열 사용
+# - GeoJSON 병합: 코드 정규화(+ADSTRD_CD/adm_cd/EMD_CD 호환), 병합 통계 출력
+# - KakaoMap 스타일용 색상 속성 추가(risk_color_3, risk_color_7, color)
+# =========================================
+
 import os
+import json
 import glob
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from collections import Counter
 
 from sklearn.preprocessing import StandardScaler
@@ -16,8 +23,14 @@ from PythonJPA.Send import send_to_server
 
 # ========= 기본 설정 =========
 DATA_DIR = r"C:/Users/admin/Downloads/seoul_data_merge"
-OUT_DIR = r"C:/Users/admin/Downloads"
-Path(OUT_DIR).mkdir(parents=True, exist_ok=True)
+OUT_DIR = r"C:/Users/admin/Downloads/out_json"  # 결과 저장 폴더(절대경로 문자열)
+os.makedirs(OUT_DIR, exist_ok=True)
+
+# 원본 행정동 GeoJSON 절대경로 (Spring 리소스 폴더 기준)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # .../TMRTeamProject/TMRTeamProjectPython
+GEOJSON_SRC = os.path.abspath(
+    os.path.join(BASE_DIR, "..", "src", "main", "resources", "static", "Seoul_emds.geojson")
+)
 
 TRAIN_QUARTERS = ['20231','20232','20233','20234','20241','20242','20243','20244']
 TEST_QUARTER = '20251'
@@ -73,13 +86,13 @@ plt.rcParams['font.family'] = 'Malgun Gothic'
 plt.rcParams['axes.unicode_minus'] = False
 
 
+# ========= 유틸 =========
 def read_csv_safely(path):
     # CSV 인코딩 자동 처리
     try:
         return pd.read_csv(path, encoding='utf-8')
     except UnicodeDecodeError:
         return pd.read_csv(path, encoding='cp949')
-
 
 def sanitize_columns(df, target=COR_TARGET):
     # 컬럼 공백 제거 + 타깃 중복 합치기 + 전체 중복 제거
@@ -93,7 +106,71 @@ def sanitize_columns(df, target=COR_TARGET):
     df = df.loc[:, ~df.columns.duplicated()].copy()
     return df
 
+def _safe_float(x):
+    try:
+        if x is None or (isinstance(x, float) and np.isnan(x)):
+            return None
+        return float(x)
+    except Exception:
+        return None
 
+def _safe_int(x):
+    try:
+        if x is None or (isinstance(x, float) and np.isnan(x)):
+            return None
+        return int(x)
+    except Exception:
+        return None
+
+def _safe_str(x):
+    try:
+        if x is None:
+            return None
+        return str(x)
+    except Exception:
+        return None
+
+def _normalize_code(x):
+    # 행정동 코드 표준화: None/NaN -> '', '123.0' -> '123', 숫자 -> '정수문자열'
+    if x is None:
+        return ""
+    try:
+        if isinstance(x, float) and np.isnan(x):
+            return ""
+    except Exception:
+        pass
+    s = str(x).strip()
+    if s == "":
+        return ""
+    if s.endswith(".0"):
+        s = s[:-2]
+    try:
+        if "." in s:
+            f = float(s)
+            if f.is_integer():
+                return str(int(f))
+            return s
+        int(s)
+        return s
+    except Exception:
+        return s
+
+def _get_feature_code(props: dict) -> str:
+    # GeoJSON properties에서 코드 키를 유연하게 탐색
+    for k in ("행정동_코드", "ADSTRD_CD", "adm_cd", "EMD_CD"):
+        if k in props and props[k] not in (None, ""):
+            return _normalize_code(props[k])
+    return ""
+
+def _get_feature_name(props: dict) -> str:
+    # GeoJSON properties에서 이름 키를 유연하게 탐색(참고용)
+    for k in ("행정동_명", "ADSTRD_NM", "adm_nm"):
+        if k in props and props[k] not in (None, ""):
+            return str(props[k])
+    return ""
+
+
+# ========= 데이터 로드/전처리 =========
 def load_data():
     # 파일 읽기
     csv_files = glob.glob(os.path.join(DATA_DIR, "*.csv"))
@@ -143,7 +220,7 @@ def load_data():
         raise ValueError("공통 컬럼 기준으로 정리 후 비어 있음")
 
     # 테스트 원본에서 서비스 업종 정보 재부착 (순서 동일 가정)
-    for c in ['서비스_업종_코드', '서비스_업종_명']:
+    for c in ['서비스_업종_코드', '서비스_업종_코드_명']:
         if c in df_test_raw.columns and c not in df_test.columns:
             df_test[c] = df_test_raw.loc[df_test.index, c]
 
@@ -157,6 +234,7 @@ def load_data():
     return df_train, df_test
 
 
+# ========= 모델링/파생 =========
 def build_clusters(df_train, df_test):
     # 클러스터 피처 스케일링 + KMeans
     df_train = df_train.copy()
@@ -199,7 +277,6 @@ def build_clusters(df_train, df_test):
 
     return df_train, df_test
 
-
 def add_risk_components(df):
     # 위험도 구성요소 파생
     df = df.copy()
@@ -213,7 +290,7 @@ def add_risk_components(df):
     # 프랜차이즈 비중: 프랜차이즈_점포_수 / 점포_수
     if all(c in df.columns for c in ['프랜차이즈_점포_수','점포_수']):
         denom = df['점포_수'].replace(0, np.nan)
-        df['프랜차이즈비중'] = (df['프랜차이즈_점포_수'] / denom).fillna(0) if '프랜차이즈_점포_수' in df.columns else (df['프랜차이즈_점포_수'] / denom).fillna(0)
+        df['프랜차이즈비중'] = (df['프랜차이즈_점포_수'] / denom).fillna(0)
     else:
         df['프랜차이즈비중'] = 0
 
@@ -240,7 +317,6 @@ def add_risk_components(df):
     df.replace([np.inf, -np.inf], 0, inplace=True)
     df.fillna(0, inplace=True)
     return df
-
 
 def risk_score_and_label(df_train, df_test, weights=RISK_WEIGHTS):
     # 위험도 가중합 점수 + 3단계/7단계 라벨
@@ -285,7 +361,6 @@ def risk_score_and_label(df_train, df_test, weights=RISK_WEIGHTS):
 
     return df_train, df_test
 
-
 def top_corr_features(df, k=20):
     # 타깃과의 상관계수 상위 k개 피처 반환
     df = sanitize_columns(df, target=COR_TARGET)
@@ -319,6 +394,102 @@ def top_corr_features(df, k=20):
     return order
 
 
+# ========= GeoJSON 병합/저장 =========
+COLOR_3 = {0: "#9AD1A3", 1: "#FFD480", 2: "#FF8A80"}  # 3단계 색
+COLOR_7 = {"1단계":"#e8f5e9","2단계":"#c8e6c9","3단계":"#a5d6a7","4단계":"#81c784","5단계":"#66bb6a","6단계":"#ffb74d","7단계":"#e57373"}
+
+def save_result_as_geojson(
+        src_geojson_path: str,
+        out_geojson_path: str,
+        df_result: pd.DataFrame,
+        code_col: str = "행정동_코드",
+        name_col: str = "행정동_코드_명"
+):
+    # 경로/입력 검증
+    if not os.path.exists(src_geojson_path):
+        raise FileNotFoundError(f"원본 GeoJSON이 없음: {src_geojson_path}")
+    out_dir = os.path.dirname(out_geojson_path)
+    os.makedirs(out_dir, exist_ok=True)
+
+    # DF -> dict 매핑(정규화 코드 키)
+    key_map = {}
+    for _, row in df_result.iterrows():
+        key = _normalize_code(row.get(code_col, ""))
+        if not key:
+            continue
+        key_map[key] = {
+            "행정동_코드": key,
+            "행정동_코드_명": row.get(name_col, None),
+            "서비스_업종_코드": row.get("서비스_업종_코드", None),
+            "서비스_업종_코드_명": row.get("서비스_업종_코드_명", None),
+            "위험도_점수": _safe_float(row.get("위험도_점수")),
+            "위험도": _safe_int(row.get("위험도")),
+            "위험도7": _safe_str(row.get("위험도7")),
+            "예측_위험도": _safe_int(row.get("예측_위험도"))
+        }
+
+    # GeoJSON 로드
+    with open(src_geojson_path, "r", encoding="utf-8") as f:
+        gj = json.load(f)
+
+    # feature 순회하며 속성 병합
+    feats = gj.get("features", [])
+    matched = 0
+    for feat in feats:
+        props = feat.get("properties", {}) or {}
+        code = _get_feature_code(props)
+        if not code:
+            # 코드 키 자체가 없거나 값이 비정상
+            continue
+
+        r = key_map.get(code)
+        if not r:
+            # 데이터가 없으면 표시만 기본값으로
+            props.setdefault("risk_exists", False)
+            props.setdefault("risk_color_3", "#D3D3D3")
+            props.setdefault("risk_color_7", "#D3D3D3")
+            feat["properties"] = props
+            continue
+
+        # 위험도/점수/업종 등 값 병합
+        matched += 1
+        props["risk_exists"] = True
+        props["행정동_코드"] = r["행정동_코드"]
+
+        # 이름: DF에 있으면 '행정동_명'에 기록(GeoJSON의 ADSTRD_NM 등은 그대로 둠)
+        if r.get("행정동_코드_명") is not None:
+            props["행정동_명"] = r["행정동_코드_명"]
+
+        # 업종 정보
+        if r.get("서비스_업종_코드") is not None:
+            props["서비스_업종_코드"] = r["서비스_업종_코드"]
+        if r.get("서비스_업종_코드_명") is not None:
+            props["서비스_업종_코드_명"] = r["서비스_업종_코드_명"]
+
+        # 위험도 결과
+        props["위험도_점수"] = r["위험도_점수"]
+        props["위험도"] = r["위험도"]
+        props["위험도7"] = r["위험도7"]
+        props["예측_위험도"] = r["예측_위험도"]
+
+        # 색상 프로퍼티 추가(지금 당장 KakaoMap 스타일에 활용 가능)
+        props["risk_color_3"] = COLOR_3.get(r["위험도"], "#D3D3D3")
+        props["risk_color_7"] = COLOR_7.get(r["위험도7"], "#D3D3D3")
+        props["color"] = props["risk_color_3"]
+
+        feat["properties"] = props
+
+    gj["features"] = feats
+
+    # 저장 (한글 유지를 위해 ensure_ascii=False)
+    with open(out_geojson_path, "w", encoding="utf-8") as f:
+        json.dump(gj, f, ensure_ascii=False)
+
+    # 매칭 통계 출력
+    print(f"[GeoJSON 병합] features: {len(feats)}, 매칭 성공: {matched}, 매칭 실패: {len(feats) - matched}")
+
+
+# ========= 학습/평가/저장 =========
 def train_and_eval(df_train, df_test):
     # 피처 선택
     top_feats = top_corr_features(df_train, k=20)
@@ -371,10 +542,26 @@ def train_and_eval(df_train, df_test):
         try:
             print(out.columns)
             send_to_server(out)
-
         except Exception as e:
             print(e)
 
+        # GeoJSON 저장 호출
+        out_geojson_path = os.path.abspath(
+            os.path.join(BASE_DIR, "..", "src", "main", "resources", "static", "Seoul_risk.geojson")
+        )
+        try:
+            save_result_as_geojson(
+                src_geojson_path=GEOJSON_SRC,
+                out_geojson_path=out_geojson_path,
+                df_result=out,
+                code_col="행정동_코드",
+                name_col="행정동_코드_명",
+            )
+            print(f"GeoJSON 저장 완료: {out_geojson_path}")
+        except Exception as e:
+            print("GeoJSON 저장 실패:", e)
+
+# ========= 메인 =========
 def main():
     # 로드
     df_train, df_test = load_data()
