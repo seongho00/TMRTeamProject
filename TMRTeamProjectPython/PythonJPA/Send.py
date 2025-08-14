@@ -11,9 +11,10 @@ def df_to_json(df):
             "serviceTypeCode": str(r.get("서비스_업종_코드", "")),
             "serviceTypeName": str(r.get("서비스_업종_코드_명", "")),
             "riskScore": None if pd.isna(r.get("위험도_점수")) else float(r["위험도_점수"]),
-            "riskLabel": None if pd.isna(r.get("위험도")) else int(r["위험도"]),
+            "riskLevel": None if pd.isna(r.get("위험도_단계")) else str(r["위험도_단계"]),
+            "riskLabel": None if pd.isna(r.get("실제_위험도")) else int(r["실제_위험도"]),
             "predictedRiskLabel": None if pd.isna(r.get("예측_위험도")) else int(r["예측_위험도"]),
-            "riskLabel7": None if pd.isna(r.get("위험도7")) else str(r["위험도7"])
+            "predictedConfidence": None if pd.isna(r.get("예측_신뢰도")) else float(r["예측_신뢰도"])
         }
         for _, r in df.iterrows()
     ]
