@@ -1,14 +1,26 @@
 package com.koreait.exam.tmrteamproject.controller;
 
+import com.koreait.exam.tmrteamproject.service.PropertyService;
 import com.koreait.exam.tmrteamproject.vo.AdminDong;
+import com.koreait.exam.tmrteamproject.vo.StoredFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
 
 @Controller
 @RequestMapping("usr/property")
@@ -16,11 +28,48 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PropertyController {
 
+
+    private static final Set<String> ALLOWED = Set.of(
+            "image/jpeg", "image/png", "image/webp" // 사진 업로드 기준
+            // PDF까지 허용하려면 "application/pdf" 추가
+    );
+
+    private final Path uploadRoot;
+    private PropertyService propertyService;
+
+    public PropertyController() throws IOException {
+        // OS 임시폴더 하위에 저장 폴더 생성
+        this.uploadRoot = Paths.get(System.getProperty("java.io.tmpdir"), "registry-uploads");
+        Files.createDirectories(uploadRoot);
+    }
+
+
+    @GetMapping("/upload")
+    public String uploadForm() {
+        // templates/registry/upload.html 렌더링
+        return "property/upload";
+    }
+
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseBody
+    public ResponseEntity<?> handleUpload(@RequestParam("files") List<MultipartFile> files) throws IOException {
+        List<StoredFile> saved = propertyService.saveFiles(files);
+        Map<String, Object> analyze = propertyService.analyzeWithPython(saved);
+
+        return ResponseEntity.ok(Map.of(
+                "ok", true,
+                "count", saved.size(),
+                "files", saved,
+                "analyze", analyze
+        ));
+    }
+
     @GetMapping("/selectJuso")
     public String commercialZoneMap(Model model) {
 
         return "property/selectJuso";
     }
+
 
 }
 
