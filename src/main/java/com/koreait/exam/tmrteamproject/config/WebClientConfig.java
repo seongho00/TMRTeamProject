@@ -8,6 +8,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class WebClientConfig {
     @Bean
     public WebClient pythonClient(WebClient.Builder builder) {
-        return builder.baseUrl("http://localhost:8000").build(); // FastAPI 주소
+        return builder.baseUrl("http://localhost:5000").build(); // FastAPI 주소
     }
 }

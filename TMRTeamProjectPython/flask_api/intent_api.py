@@ -6,6 +6,15 @@ import pickle
 import re
 import mecab_ko
 import pymysql
+import os, uuid, tempfile
+from werkzeug.utils import secure_filename
+
+# 사진 업로드 저장 디렉토리 (스프링과 동일/공유 경로면 더 좋음)
+UPLOAD_DIR = os.path.join(tempfile.gettempdir(), "registry-uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# 허용 MIME (필요시 application/pdf 추가)
+ALLOWED = {"image/jpeg", "image/png", "image/webp", "image/heic"}
 
 # ✅ 예측 함수
 def predict_intent(text, threshold=0.1):
@@ -258,6 +267,50 @@ def predict():
     )
 
 
+@app.route("/analyze", methods=["POST"])
+def analyze():
+    """
+    스프링에서 MultipartBodyBuilder로 'files' 필드로 보낸 멀티파트를 받습니다.
+    분석은 하지 않고, 임시 폴더에 저장만 한 뒤 메타 정보를 JSON으로 반환합니다.
+    """
+    if "files" not in request.files:
+        return jsonify(ok=False, message="files 필드가 없습니다."), 400
+
+    files = request.files.getlist("files")
+    if not files:
+        return jsonify(ok=False, message="업로드된 파일이 없습니다."), 400
+
+    saved = []
+    for f in files:
+        if not f or f.filename == "":
+            continue
+
+        ctype = (f.mimetype or "").lower()
+        if ctype not in ALLOWED:
+            return jsonify(ok=False, message=f"허용되지 않은 형식: {ctype}"), 415
+
+        # 안전한 파일명 + UUID 부여
+        base, ext = os.path.splitext(secure_filename(f.filename))
+        ext = ext or ".jpg"
+        fname = f"{uuid.uuid4()}{ext}"
+        path = os.path.join(UPLOAD_DIR, fname)
+
+        # 저장
+        f.save(path)
+
+        saved.append({
+            "originalName": f.filename,
+            "contentType": ctype,
+            "storedPath": path,
+            "fileName": fname,
+            "size": f.content_length  # 없으면 None일 수 있음
+        })
+
+    if not saved:
+        return jsonify(ok=False, message="저장된 파일이 없습니다."), 400
+
+    return jsonify(ok=True, count=len(saved), files=saved), 200
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
+
