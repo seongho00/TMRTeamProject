@@ -78,7 +78,7 @@
         selectedFiles.forEach(f => form.append("files", f));
 
         try {
-            const r = await fetch("/deed/upload", { // URL을 /registry/upload 대신 /deed/upload로 변경 가능
+            const r = await fetch("/usr/property/upload", { // URL을 /registry/upload 대신 /deed/upload로 변경 가능
                 method: "POST",
                 body: form
             });
