@@ -34,15 +34,7 @@ public class PropertyController {
             // PDF까지 허용하려면 "application/pdf" 추가
     );
 
-    private final Path uploadRoot;
-    private PropertyService propertyService;
-
-    public PropertyController() throws IOException {
-        // OS 임시폴더 하위에 저장 폴더 생성
-        this.uploadRoot = Paths.get(System.getProperty("java.io.tmpdir"), "registry-uploads");
-        Files.createDirectories(uploadRoot);
-    }
-
+    private final PropertyService propertyService;
 
     @GetMapping("/upload")
     public String uploadForm() {

@@ -6,8 +6,8 @@ import pickle
 import re
 import mecab_ko
 import pymysql
-import os, uuid, tempfile
 from werkzeug.utils import secure_filename
+import os, uuid, tempfile, hashlib
 
 # 사진 업로드 저장 디렉토리 (스프링과 동일/공유 경로면 더 좋음)
 UPLOAD_DIR = os.path.join(tempfile.gettempdir(), "registry-uploads")
@@ -267,12 +267,17 @@ def predict():
     )
 
 
+def _sha1(path, limit=1024*128):
+    """파일 앞부분만 읽어 빠른 체크섬(선택)"""
+    h = hashlib.sha1()
+    with open(path, "rb") as f:
+        chunk = f.read(limit)
+        h.update(chunk)
+    return h.hexdigest()
+
+
 @app.route("/analyze", methods=["POST"])
 def analyze():
-    """
-    스프링에서 MultipartBodyBuilder로 'files' 필드로 보낸 멀티파트를 받습니다.
-    분석은 하지 않고, 임시 폴더에 저장만 한 뒤 메타 정보를 JSON으로 반환합니다.
-    """
     if "files" not in request.files:
         return jsonify(ok=False, message="files 필드가 없습니다."), 400
 
@@ -281,6 +286,8 @@ def analyze():
         return jsonify(ok=False, message="업로드된 파일이 없습니다."), 400
 
     saved = []
+    app.logger.info("📥 받은 파일 수: %d", len(files))
+
     for f in files:
         if not f or f.filename == "":
             continue
@@ -289,7 +296,6 @@ def analyze():
         if ctype not in ALLOWED:
             return jsonify(ok=False, message=f"허용되지 않은 형식: {ctype}"), 415
 
-        # 안전한 파일명 + UUID 부여
         base, ext = os.path.splitext(secure_filename(f.filename))
         ext = ext or ".jpg"
         fname = f"{uuid.uuid4()}{ext}"
@@ -298,12 +304,27 @@ def analyze():
         # 저장
         f.save(path)
 
+        # 디스크 검증
+        exists = os.path.exists(path)
+        size_on_disk = os.path.getsize(path) if exists else 0
+        head = b""
+        with open(path, "rb") as rf:
+            head = rf.read(16)  # 매직넘버로 파일 유형도 대략 확인 가능
+
+        # 로그로도 남기기
+        app.logger.info("✅ saved: %s (%s) size=%d exists=%s head=%s",
+                        path, ctype, size_on_disk, exists, head)
+
         saved.append({
             "originalName": f.filename,
             "contentType": ctype,
             "storedPath": path,
             "fileName": fname,
-            "size": f.content_length  # 없으면 None일 수 있음
+            "size_header": getattr(f, "content_length", None),  # 요청 헤더상의 사이즈(없을 수 있음)
+            "size_on_disk": size_on_disk,                      # 실제 저장된 크기
+            "exists": exists,                                   # 디스크 존재 여부
+            "head_magic": head.hex(),                           # 앞 16바이트(매직넘버)
+            "sha1_head": _sha1(path)                            # 빠른 체크용 체크섬(선택)
         })
 
     if not saved:
