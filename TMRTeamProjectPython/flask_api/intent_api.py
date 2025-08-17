@@ -3,13 +3,12 @@ import json
 import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 import pickle
-import re
 import mecab_ko
 import pymysql
-from werkzeug.utils import secure_filename
 import os, uuid, tempfile, hashlib
 import cv2, numpy as np, pytesseract, re
 from PIL import Image
+from werkzeug.utils import secure_filename
 
 # 사진 업로드 저장 디렉토리 (스프링과 동일/공유 경로면 더 좋음)
 UPLOAD_DIR = os.path.join(tempfile.gettempdir(), "registry-uploads")
@@ -367,8 +366,9 @@ def analyze():
     if not files:
         return jsonify(ok=False, message="업로드된 파일이 없습니다."), 400
 
-    saved = []
+    results_meta = []
     texts = []
+
     for f in files:
         if not f or f.filename == "":
             continue
@@ -377,46 +377,45 @@ def analyze():
         if ctype not in ALLOWED:
             return jsonify(ok=False, message=f"허용되지 않은 형식: {ctype}"), 415
 
+        # 메타데이터만 보존(저장은 안 함)
         base, ext = os.path.splitext(secure_filename(f.filename))
-        ext = ext or ".jpg"
+        ext = ext or ".bin"
         fname = f"{uuid.uuid4()}{ext}"
-        path = os.path.join(UPLOAD_DIR, fname)
 
-        # 저장
-        f.save(path)
-        app.logger.info("✅ saved: %s (%s)", path, ctype)
+        # 바이트를 메모리로 읽음
+        data = f.read()
+        if not data:
+            continue
 
-        saved.append({
+        try:
+            if ctype == "application/pdf":
+                txt = ocr_pdf_bytes(data)
+            else:
+                txt = ocr_image_bytes(data, ctype)
+        except Exception as e:
+            txt = f"[OCR 실패: {e}]"
+
+        results_meta.append({
             "originalName": f.filename,
             "contentType": ctype,
-            "storedPath": path,
-            "fileName": fname,
+            "fileName": fname,     # 실제 저장은 안 하지만 추적용으로 응답
+            "size": len(data),
         })
+        texts.append(txt)
 
-        # PDF는 다음 단계에서 처리(지금은 이미지 기준)
-        if ctype == "application/pdf":
-            texts.append("[PDF는 아직 OCR 미구현]")  # 또는 pdf2image로 변환 후 OCR
-        else:
-            try:
-                txt = ocr_image(path)
-            except Exception as e:
-                txt = f"[OCR 실패: {e}]"
-            texts.append(txt)
+    if not results_meta:
+        return jsonify(ok=False, message="처리 가능한 파일이 없습니다."), 400
 
-    if not saved:
-        return jsonify(ok=False, message="저장된 파일이 없습니다."), 400
-
-    # 여러 페이지 텍스트를 합쳐 섹션 분리
     full_text = "\n\n---PAGEBREAK---\n\n".join(texts)
     secs = split_sections(full_text)
     eul_entries = parse_eulgu(secs.get("을구", ""))
 
     return jsonify(
         ok=True,
-        count=len(saved),
-        files=saved,
+        count=len(results_meta),
+        files=results_meta,                 # storedPath 제거됨 (디스크 저장 안 함)
         sections_detected=[k for k, v in secs.items() if v],
-        textPreview=full_text[:2000],  # 프리뷰만 반환 (길면 UI 느려짐)
+        textPreview=full_text[:2000],
         parsed={"을구_entries": eul_entries}
     ), 200
 
