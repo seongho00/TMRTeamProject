@@ -2,7 +2,6 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.PropertyFileRepository;
 import com.koreait.exam.tmrteamproject.vo.PropertyFile;
-import com.koreait.exam.tmrteamproject.vo.StoredFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
