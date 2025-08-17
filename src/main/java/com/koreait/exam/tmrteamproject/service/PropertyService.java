@@ -1,7 +1,11 @@
 package com.koreait.exam.tmrteamproject.service;
 
+import com.koreait.exam.tmrteamproject.repository.PropertyFileRepository;
+import com.koreait.exam.tmrteamproject.vo.PropertyFile;
 import com.koreait.exam.tmrteamproject.vo.StoredFile;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
@@ -11,37 +15,33 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PropertyService {
 
+    // iOS의 경우 image/heic, image/heif 모두 들어올 수 있음
     private static final Set<String> ALLOWED = Set.of(
-            "image/jpeg", "image/png", "image/webp", "image/heic" // HEIC도 허용(아이폰)
-            // "application/pdf" 추가 가능
+            "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"
+            // 필요하면 "application/pdf" 추가
     );
 
-    private final Path uploadRoot;
     private final WebClient pythonClient;
+    private final PropertyFileRepository propertyFileRepository;
 
-    public PropertyService(WebClient pythonClient) throws IOException {
-        this.pythonClient = pythonClient;
-        this.uploadRoot = Paths.get(System.getProperty("java.io.tmpdir"), "registry-uploads");
-        Files.createDirectories(uploadRoot);
-    }
-
-    /** 파일 저장 (검증 포함) */
-    public List<StoredFile> saveFiles(List<MultipartFile> files) throws IOException {
+    /** 파일을 DB(PropertyFile)로만 저장 */
+    public List<PropertyFile> saveFilesToDb(List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
             throw new IllegalArgumentException("파일이 없습니다.");
         }
 
-        List<StoredFile> saved = new ArrayList<>();
         String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        List<PropertyFile> saved = new ArrayList<>();
 
         for (MultipartFile f : files) {
             if (f.isEmpty()) continue;
@@ -53,18 +53,23 @@ public class PropertyService {
 
             String original = Optional.ofNullable(f.getOriginalFilename()).orElse("image");
             String clean = original.replaceAll("[^a-zA-Z0-9._-]", "_");
-            String ext = clean.contains(".") ? clean.substring(clean.lastIndexOf(".")) : ".jpg";
-            Path dest = uploadRoot.resolve(ts + "_" + UUID.randomUUID() + ext);
+            String fileName = ts + "_" + UUID.randomUUID() + "_" + clean;
 
-            Files.copy(f.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
+            try {
+                // @Lob String 이므로 Base64로 인코딩하여 저장
+                String base64 = Base64.getEncoder().encodeToString(f.getBytes());
 
-            saved.add(StoredFile.builder()
-                    .originalName(original)
-                    .contentType(ctype)
-                    .size(f.getSize())
-                    .storedPath(dest.toString())
-                    .fileName(dest.getFileName().toString())
-                    .build());
+                PropertyFile pf = PropertyFile.builder()
+                        .fileName(fileName)
+                        .fileType(ctype)
+                        .data(base64)
+                        .build();
+
+                saved.add(propertyFileRepository.save(pf));
+            } catch (Exception e) {
+                log.error("파일 저장 실패: {}", clean, e);
+                throw new RuntimeException("파일 저장 실패: " + clean, e);
+            }
         }
 
         if (saved.isEmpty()) {
@@ -73,13 +78,41 @@ public class PropertyService {
         return saved;
     }
 
-    /** 저장된 파일들을 FastAPI /analyze로 멀티파트 포워딩 */
+    /** DB에 저장된 PropertyFile들만으로 FastAPI /analyze 멀티파트 전송 */
     @SuppressWarnings("unchecked")
-    public Map<String, Object> analyzeWithPython(List<StoredFile> stored) {
+    public Map<String, Object> analyzeWithPythonFromDb(List<PropertyFile> filesInDb) {
+        if (filesInDb == null || filesInDb.isEmpty()) {
+            throw new IllegalArgumentException("분석할 파일이 없습니다.");
+        }
+
         MultipartBodyBuilder mb = new MultipartBodyBuilder();
-        for (StoredFile sf : stored) {
-            mb.part("files", new FileSystemResource(sf.getStoredPath()))
-                    .filename(sf.getFileName());
+
+        for (PropertyFile pf : filesInDb) {
+            byte[] bytes;
+            try {
+                // Base64 → 바이너리 복원
+                bytes = Base64.getDecoder().decode(pf.getData().getBytes(StandardCharsets.UTF_8));
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Base64 디코딩 실패: " + pf.getFileName(), e);
+            }
+
+            // 파일명/길이를 가진 ByteArrayResource
+            ByteArrayResource resource = new ByteArrayResource(bytes) {
+                @Override
+                public String getFilename() {
+                    return pf.getFileName();
+                }
+                @Override
+                public long contentLength() {
+                    return bytes.length;
+                }
+            };
+
+            mb.part("files", resource)
+                    .filename(pf.getFileName())
+                    .contentType(MediaType.parseMediaType(
+                            Optional.ofNullable(pf.getFileType()).orElse(MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                    ));
         }
 
         Map<String, Object> res = pythonClient.post()

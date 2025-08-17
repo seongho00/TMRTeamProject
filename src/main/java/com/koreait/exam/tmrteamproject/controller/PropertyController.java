@@ -2,7 +2,7 @@ package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.service.PropertyService;
 import com.koreait.exam.tmrteamproject.vo.AdminDong;
-import com.koreait.exam.tmrteamproject.vo.StoredFile;
+import com.koreait.exam.tmrteamproject.vo.PropertyFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -45,8 +45,8 @@ public class PropertyController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseBody
     public ResponseEntity<?> handleUpload(@RequestParam("files") List<MultipartFile> files) throws IOException {
-        List<StoredFile> saved = propertyService.saveFiles(files);
-        Map<String, Object> analyze = propertyService.analyzeWithPython(saved);
+        List<PropertyFile> saved = propertyService.saveFilesToDb(files);
+        Map<String, Object> analyze = propertyService.analyzeWithPythonFromDb(saved);
 
         return ResponseEntity.ok(Map.of(
                 "ok", true,
