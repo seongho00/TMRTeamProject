@@ -1,3 +1,10 @@
+/*************************************************
+ * [코드 기반으로 전면 전환]
+ * - 비교/선택/검색: "코드" 사용 (SIGUNGU_CD, ADSTRD_CD)
+ * - UI 표시: "이름" 사용 (SIGUNGU_NM, ADSTRD_NM)
+ * - select의 option: value=코드, text=이름
+ *************************************************/
+
 let map;
 let currentPolygon = null;
 let emdPolygons = [], emdOverlayList = [];
@@ -5,23 +12,31 @@ let sggPolygons = [], sggOverlayList = [];
 let currentLevel = 6;
 let isProgrammatic = false;
 
-// 낮음 → 높음 (아주 연한 노랑 → 진한 주황)
+// 낮음 → 높음
 const PALETTE_5 = {
-    0: "#FFF7BC",  // 매우 낮음
-    1: "#FEE391",  // 낮음
-    2: "#FEC44F",  // 보통
-    3: "#FE9929",  // 높음
-    4: "#D95F0E"   // 매우 높음
+    0: "#FFF7BC",
+    1: "#FEE391",
+    2: "#FEC44F",
+    3: "#FE9929",
+    4: "#D95F0E"
 };
 const COLOR_DEFAULT = "#D3D3D3";
 
+// 업종/자동선택
 window.selectedUpjongName = null;
-window.autoSelectedEmd = null;
+// 자동 선택은 "행정동 코드"로 저장
+window.autoSelectedEmdCd = null;
 
 // ===== 공용 유틸 =====
 const fmtNum = v => (v == null || isNaN(v)) ? "-" : Number(v).toLocaleString();
 const fmtPct = v => (v == null || isNaN(v)) ? "-" : (Number(v)*100).toFixed(1)+"%";
 const norm = s => (s||"").toString().trim().replace(/\s+/g,"");
+
+// 코드/이름 추출 유틸 (여러 키 대응)
+function getEmdCode(p){ return p?.ADSTRD_CD || p?.행정동_코드 || p?.adm_cd || null; }
+function getEmdName(p){ return p?.ADSTRD_NM || p?.행정동_명 || p?.adm_nm || null; }
+function getSggCode(p){ return p?.SIGUNGU_CD || p?.시군구코드 || p?.sgg_cd || null; }
+function getSggName(p){ return p?.SIGUNGU_NM || p?.시군구명 || p?.sgg_nm || null; }
 
 // ===== 초기화 =====
 document.addEventListener("DOMContentLoaded", () => {
@@ -32,7 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         Promise.all([
-            // ★ 위험도 병합본 GeoJSON 사용
             loadPolygons("/Seoul_risk.geojson", emdPolygons, emdOverlayList, "#e45c2f", "ADSTRD_NM"),
             loadPolygons("/Seoul_sggs.geojson", sggPolygons, sggOverlayList, "#e45c2f", "SIGUNGU_NM")
         ]).then(updatePolygonsByZoom);
@@ -45,28 +59,19 @@ document.addEventListener("DOMContentLoaded", () => {
         kakao.maps.event.addListener(map, 'click', evt => handleMapClick(evt.latLng));
     });
 
-    // 시군구 선택 → 행정동 로드 + 지도 이동
+    // select는 value=코드, text=이름
     $('#sggSelect').on('change', onSggChange);
-
-    // 행정동 선택 → 지도 이동 + 강조
     $('#emdSelect').on('change', onEmdChange);
 
-    // 대분류 클릭 → 중분류 목록
+    // 카테고리 이벤트
     $(document).on("click", ".major-item", onMajorClick);
-
-    // 중분류 클릭 → 소분류 목록
     $(document).on("click", ".middle-item", onMiddleClick);
-
-    // 소분류 클릭 → 입력 채우기 + 즉시 색칠/패널
     $(document).on("click", ".minor-item", onMinorClick);
 
-    // 업종 입력 자동검색 (원하면 보여주기)
-    $('.upjongInput').on('compositionend', () => handleSearch($('.upjongInput').val().trim()))
-        .on('keydown', e => {
-            if (e.keyCode===8 || e.keyCode===46) {
-                setTimeout(()=>handleSearch($('.upjongInput').val().trim()), 10);
-            }
-        });
+    // 업종 자동검색
+    $('.upjongInput')
+        .on('compositionend', () => handleSearch($('.upjongInput').val().trim()))
+        .on('keydown', e => { if (e.keyCode===8 || e.keyCode===46) setTimeout(()=>handleSearch($('.upjongInput').val().trim()), 10); });
 });
 
 // ===== 지도/도형 =====
@@ -81,14 +86,16 @@ function loadPolygons(url, container, overlayList, color, nameKey){
                 const coords = poly[0];
                 const path = coords.map(c => new kakao.maps.LatLng(c[1], c[0]));
 
-                const guide = new kakao.maps.Polygon({ path, strokeWeight:2, strokeColor:color, strokeOpacity:0.5, strokeStyle:"dash", fillOpacity:0 });
+                const guide = new kakao.maps.Polygon({
+                    path, strokeWeight:2, strokeColor:color, strokeOpacity:0.5, strokeStyle:"dash", fillOpacity:0
+                });
 
-                const center = (()=>{
+                // 라벨은 이름 표시
+                const center = (()=> {
                     const lat = path.reduce((s,pt)=>s+pt.getLat(),0)/path.length;
                     const lng = path.reduce((s,pt)=>s+pt.getLng(),0)/path.length;
                     return new kakao.maps.LatLng(lat,lng);
                 })();
-
                 const displayName = p[nameKey] || p['행정동_명'] || p['ADSTRD_NM'] || p['SIGUNGU_NM'] || '';
                 const overlayContent = document.createElement('div');
                 overlayContent.innerText = displayName;
@@ -100,14 +107,6 @@ function loadPolygons(url, container, overlayList, color, nameKey){
             });
         });
     });
-}
-
-// 이름 추출(여러 키를 안전하게 커버)
-function getEmdName(props){
-    return props?.ADSTRD_NM || props?.행정동_명 || props?.adm_nm || null;
-}
-function getSggName(props){
-    return props?.SIGUNGU_NM || props?.시군구명 || props?.sgg_nm || null;
 }
 
 function updatePolygonsByZoom(){
@@ -146,35 +145,42 @@ function isSamePath(path1, path2){
     return true;
 }
 
+function centerOf(path){
+    const lat = path.reduce((s,p)=>s+p.getLat(),0)/path.length;
+    const lng = path.reduce((s,p)=>s+p.getLng(),0)/path.length;
+    return new kakao.maps.LatLng(lat,lng);
+}
+
+// ===== 지도 클릭: select에 "코드" 주입 =====
 function handleMapClick(latLng){
     const targets = currentLevel >= 7 ? sggPolygons : emdPolygons;
     for (let i=0;i<targets.length;i++){
         const {path, properties} = targets[i];
         if (!isPointInPolygon(latLng, path)) continue;
 
-        const sggName = getSggName(properties);     // 변경
-        const emdName = getEmdName(properties);     // 변경
+        const sggCd = getSggCode(properties);
+        const emdCd = getEmdCode(properties);
 
-        if (sggName){
+        if (sggCd){
             isProgrammatic = true;
-            $('#sggSelect').val(sggName).trigger('change');
+            $('#sggSelect').val(sggCd).trigger('change'); // value=코드
             isProgrammatic = false;
         }
 
-        if (emdName){
-            // 클릭 지점이 포함된 시군구를 찾아 이름 얻기 (fallback)
-            let matchedSggName = null;
+        if (emdCd){
+            // 클릭 지점이 포함된 시군구 코드 재확인
+            let matchedSggCd = null;
             for (let j=0;j<sggPolygons.length;j++){
                 const sgg = sggPolygons[j];
                 if (isPointInPolygon(latLng, sgg.path)){
-                    matchedSggName = getSggName(sgg.properties); // 변경
+                    matchedSggCd = getSggCode(sgg.properties);
                     break;
                 }
             }
-            if (matchedSggName){
-                window.autoSelectedEmd = emdName;
+            if (matchedSggCd){
+                window.autoSelectedEmdCd = emdCd; // 자동 선택도 코드로
                 isProgrammatic = true;
-                $('#sggSelect').val(matchedSggName).trigger('change');
+                $('#sggSelect').val(matchedSggCd).trigger('change');
                 isProgrammatic = false;
             }
         }
@@ -190,7 +196,7 @@ function handleMapClick(latLng){
     }
 }
 
-// ===== 업종별 위험도 검색/표시 =====
+// ===== 업종별 위험도 =====
 function getRiskRecordForUpjong(props, upjongKeyword){
     const items = Array.isArray(props?.업종별_위험도) ? props.업종별_위험도 : [];
     if (!upjongKeyword) return null;
@@ -200,19 +206,21 @@ function getRiskRecordForUpjong(props, upjongKeyword){
         || null;
 }
 
-function renderRiskPanel(emdName, upjongName){
+// 패널은 코드로 찾고, 표시만 이름으로
+function renderRiskPanel(emdCd, upjongName){
     const $panel = document.getElementById("riskResult");
     if (!$panel) return;
 
-    const target = emdPolygons.find(({properties}) => properties?.ADSTRD_NM === emdName);
+    const target = emdPolygons.find(({properties}) => getEmdCode(properties) === emdCd);
     if (!target){ $panel.innerHTML = "<div>선택한 행정동을 찾을 수 없어요.</div>"; return; }
 
+    const emdNm = getEmdName(target.properties);
     const rec = getRiskRecordForUpjong(target.properties, upjongName);
     if (!rec){
         $panel.innerHTML = `
-      <div><b>행정동:</b> ${emdName}</div>
-      <div><b>업종:</b> ${upjongName||"-"}</div>
-      <div style="color:#666;margin-top:6px;">해당 업종의 위험도 정보가 없어요.</div>`;
+          <div><b>행정동:</b> ${emdNm ?? "-"}</div>
+          <div><b>업종:</b> ${upjongName||"-"}</div>
+          <div style="color:#666;margin-top:6px;">해당 업종의 위험도 정보가 없어요.</div>`;
         return;
     }
 
@@ -224,7 +232,7 @@ function renderRiskPanel(emdName, upjongName){
 
     $panel.innerHTML = `
     <div style="line-height:1.5;">
-      <div><b>행정동:</b> ${emdName}</div>
+      <div><b>행정동:</b> ${emdNm ?? "-"}</div>
       <div><b>업종:</b> ${rec["서비스_업종_코드_명"] ?? upjongName ?? "-"}</div>
       <div><b>위험도:</b>
         <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};vertical-align:middle;margin-right:6px;"></span>
@@ -237,65 +245,76 @@ function renderRiskPanel(emdName, upjongName){
 
 // ===== 지역/업종 검색 버튼 =====
 function searchInfoByRegionAndUpjong(){
-    const sgg = $('#sggSelect').val();
-    const emd = $('#emdSelect').val();
-    const upjong = $('.upjongInput').val().trim();
+    const sggCd = $('#sggSelect').val(); // 코드
+    const emdCd = $('#emdSelect').val(); // 코드
+    const upjong = ($('.upjongInput').val() || '').trim();
 
-    if (!sgg || !emd){ alert('지역을 선택해주세요.'); return; }
+    if (!sggCd || !emdCd){ alert('지역을 선택해주세요.'); return; }
     if (!upjong){ alert('업종을 선택해주세요.'); return; }
 
-    // 클릭 할 때만 지도 반영 + 패널 표시
-    colorOnlySelectedEmdByUpjong(emd, upjong);
+    // 지도 반영 + 패널
+    colorOnlySelectedEmdByUpjong(emdCd, upjong);
     const box = document.getElementById('riskResult');
     if (box) box.classList.remove('hidden');
-    renderRiskPanel(emd, upjong);
+    renderRiskPanel(emdCd, upjong);
 
-    // 필요 시 서버 조회 (선택)
+    // 서버도 코드로 전달
     $.ajax({
         url: 'searchInfoByRegionAndUpjong',
         method: 'GET',
-        data: { sgg, emd, upjong },
+        data: { sggCd, emdCd, upjong },
         success: function(resp){ console.log('서버 응답:', resp); },
-        error: function(){ console.error('데이터 로드 실패'); }
+        error: function(jq){ console.error('데이터 로드 실패', jq?.status, jq?.responseText); }
     });
 }
 
 // ===== 이벤트 핸들러 =====
 function onSggChange(){
-    const sgg = $(this).val();
+    const sggCd = $('#sggSelect').val(); // 코드
     $('#emdSelect').empty().append('<option value="">행정동</option>');
 
-    if (!isProgrammatic){
+    // 시군구 폴리곤 하이라이트 (코드 비교)
+    if (!isProgrammatic && sggCd){
         for (let i=0;i<sggPolygons.length;i++){
             const {properties, path} = sggPolygons[i];
-            if (properties.SIGUNGU_NM === sgg){
+            if (getSggCode(properties) === sggCd){
                 const center = centerOf(path);
                 map.setLevel(7); map.panTo(center);
                 if (currentPolygon){ currentPolygon.setMap(null); currentPolygon=null; }
-                currentPolygon = new kakao.maps.Polygon({ map, path, strokeWeight:2, strokeColor:'#004c80', strokeOpacity:0.8, fillColor:'#00a0e9', fillOpacity:0.3 });
+                currentPolygon = new kakao.maps.Polygon({
+                    map, path, strokeWeight:2, strokeColor:'#004c80', strokeOpacity:0.8, fillColor:'#00a0e9', fillOpacity:0.3
+                });
                 break;
             }
         }
     }
 
-    if (sgg){
+    // 시군구 코드로 행정동 목록 조회, option value=emdCd, text=emdNm
+    if (sggCd){
         $.ajax({
-            url: 'getEmdsBySggNm',
+            url: 'getEmdsBySggCd', // 코드 기반 API 권장
             method:'GET',
-            data:{ sgg },
+            data:{ sggCd },
             success: function(rows){
-                rows.forEach(d => $('#emdSelect').append($('<option>', {value:d.emdNm, text:d.emdNm})));
+                // rows: [{ emdCd, emdNm }, ...]
+                rows.forEach(d => $('#emdSelect').append(
+                    $('<option>', { value: d.emdCd, text: d.emdNm })
+                ));
 
-                if (window.autoSelectedEmd){
-                    const norm = s => (s||'').toString().trim();
-                    let pick = null;
+                // 지도 클릭에서 넘어온 자동 선택(코드)
+                if (window.autoSelectedEmdCd){
+                    let hit = null;
                     $('#emdSelect option').each(function(){
-                        if (norm($(this).text()) === norm(window.autoSelectedEmd)){ pick = $(this).val(); return false; }
+                        if ($(this).val() === window.autoSelectedEmdCd){ hit = window.autoSelectedEmdCd; return false; }
                     });
-                    if (pick){ $('#emdSelect').val(pick).trigger('change'); }
-                    else { console.warn('autoSelectedEmd 옵션을 못찾음:', window.autoSelectedEmd); }
-                    window.autoSelectedEmd = null;
-                    isProgrammatic = false;
+                    if (hit){
+                        isProgrammatic = true;
+                        $('#emdSelect').val(hit).trigger('change');
+                        isProgrammatic = false;
+                    } else {
+                        console.warn('autoSelectedEmdCd 코드 매칭 실패:', window.autoSelectedEmdCd);
+                    }
+                    window.autoSelectedEmdCd = null;
                 }
             },
             error: function(){ alert('행정동 정보를 가져오는데 실패했습니다.'); }
@@ -304,23 +323,26 @@ function onSggChange(){
 }
 
 function onEmdChange(){
-    const emd = $(this).val();
-    if (!emd) return;
+    const emdCd = $('#emdSelect').val(); // 코드
+    if (!emdCd) return;
 
     for (let i=0; i < emdPolygons.length; i++){
         const {properties, path} = emdPolygons[i];
-        if (getEmdName(properties) === emd){
+        if (getEmdCode(properties) === emdCd){
             if (!isProgrammatic){
                 const center = centerOf(path);
                 map.setLevel(5); map.panTo(center);
                 if (currentPolygon){ currentPolygon.setMap(null); }
-                currentPolygon = new kakao.maps.Polygon({ map, path, strokeWeight:2, strokeColor:'#004c80', strokeOpacity:0.8, fillColor:'#00a0e9', fillOpacity:0.3 });
+                currentPolygon = new kakao.maps.Polygon({
+                    map, path, strokeWeight:2, strokeColor:'#004c80', strokeOpacity:0.8, fillColor:'#00a0e9', fillOpacity:0.3
+                });
             }
             break;
         }
     }
 }
 
+// ===== 카테고리 =====
 function onMajorClick(){
     const majorCd = $(this).data("majorcd");
     $.ajax({
@@ -359,7 +381,7 @@ function onMinorClick(){
             const minorNm = upjongCode.minorNm;
             $('.upjongInput').val(`${upjongCode.majorNm} > ${upjongCode.middleNm} > ${minorNm}`);
 
-            // 색/패널은 '확인' 때만 -> 선택만 저장 후 초기화
+            // 선택만 저장 후 초기화
             window.selectedUpjongName = minorNm;
             if (typeof clearEmdColors === 'function') clearEmdColors();
             const box = document.getElementById("riskResult");
@@ -373,19 +395,13 @@ function onMinorClick(){
 }
 
 // ===== 기타 =====
-function centerOf(path){
-    const lat = path.reduce((s,p)=>s+p.getLat(),0)/path.length;
-    const lng = path.reduce((s,p)=>s+p.getLng(),0)/path.length;
-    return new kakao.maps.LatLng(lat,lng);
-}
-
 function handleSearch(keyword){
     if (!keyword){ $('#autocompleteList').empty().addClass('hidden'); return; }
     $.ajax({
         url: 'searchUpjong',
         method: 'GET',
         data: { keyword },
-        success: function(list){ console.log('auto:', list); /* 필요시 자동완성 UI 구성 */ },
+        success: function(list){ console.log('auto:', list); /* 자동완성 UI 필요 시 구현 */ },
         error: function(){ console.log('업종 검색 실패'); }
     });
 }
@@ -397,23 +413,18 @@ function clearEmdColors() {
     });
 }
 
-// 2) 선택 동만 업종 위험도 색칠
-function colorOnlySelectedEmdByUpjong(emdName, upjongName) {
+// 2) 선택 동만 업종 위험도 색칠 (파라미터=emdCd)
+function colorOnlySelectedEmdByUpjong(emdCd, upjongName) {
     clearEmdColors();
 
-    // 대상 동 찾기
-    const target = emdPolygons.find(({ properties }) => {
-        const name = properties?.ADSTRD_NM || properties?.행정동_명 || properties?.adm_nm;
-        return name === emdName;
-    });
+    // 대상 동: 코드로 찾기
+    const target = emdPolygons.find(({ properties }) => getEmdCode(properties) === emdCd);
     if (!target) return;
 
-    // 위험도 레코드
     const rec = getRiskRecordForUpjong(target.properties, upjongName);
     const color = (rec && Number.isFinite(rec["예측_위험도"]))
         ? (PALETTE_5[Number(rec["예측_위험도"])] || COLOR_DEFAULT)
         : COLOR_DEFAULT;
 
-    // 해당 동만 채우기
     target.guide.setOptions({ fillColor: color, fillOpacity: (color===COLOR_DEFAULT?0.2:0.6), strokeOpacity: 0.8 });
 }
