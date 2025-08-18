@@ -588,6 +588,64 @@ def analyze():
 # --- Playwright 설정 ---
 USER_DATA_DIR = "./.chrome-profile"   # 쿠키/지문 유지
 HEADLESS = False                      # 먼저 창 띄워서 확인 후 True로 전환 가능
+LIST_SEL_CANDS = [
+    "div.item_list.item_list--article",
+    "div.item_list--article",
+    "div.article_list",  # 예비
+]
+
+def _pick_scroll_box(page) -> str:
+    # scrollHeight > clientHeight 인 첫 요소 선택
+    page.wait_for_selector(", ".join(LIST_SEL_CANDS), timeout=8000)
+    for sel in LIST_SEL_CANDS:
+        try:
+            ok = page.evaluate("""(s) => {
+                const el = document.querySelector(s);
+                if (!el) return false;
+                return el.scrollHeight > el.clientHeight;
+            }""", sel)
+            if ok:
+                return sel
+        except:
+            pass
+    return LIST_SEL_CANDS[0]
+
+def scroll_list_to_bottom(page, pause_ms=700, max_stall=2):
+    sel = _pick_scroll_box(page)
+    stall = 0
+    last_h = -1
+
+    # 컨테이너에 포커스(키보드 스크롤 백업용)
+    try:
+        page.locator(sel).click(position={"x":10,"y":10}, timeout=1000)
+    except:
+        pass
+
+    for _ in range(60):  # 충분한 횟수 시도
+        try:
+            h = page.evaluate("""(s) => {
+                const el = document.querySelector(s);
+                if (!el) return 0;
+                el.scrollTop = el.scrollHeight;
+                return el.scrollHeight;
+            }""", sel)
+        except:
+            # 리렌더 됐을 때 다시 고르기
+            sel = _pick_scroll_box(page)
+            h = page.evaluate("(s) => document.querySelector(s)?.scrollHeight || 0", sel)
+
+        page.wait_for_timeout(pause_ms)
+
+        if h == last_h:
+            stall += 1
+            if stall >= max_stall:
+                break
+        else:
+            stall = 0
+            last_h = h
+
+    # 스크롤 후 카드 수집
+    return page.query_selector_all("div.item, div.item_list--article div.item")
 
 def get_env_proxy():
     for k in ("HTTPS_PROXY","https_proxy","HTTP_PROXY","http_proxy"):
@@ -623,7 +681,7 @@ def _launch_ctx(p):
 
 def _goto_offices(page, lat: float, lng: float):
     root = "https://new.land.naver.com"
-    path = f"/offices?ms={lat:.6f},{lng:.6f},16&a=SG&e=RETAIL"
+    path = f"/offices?ms={lat},{lng},17&a=SG&e=RETAIL"
     page.goto(root, wait_until="domcontentloaded", timeout=30000)
     try:
         page.evaluate("href => { location.href = href }", path)
@@ -633,6 +691,7 @@ def _goto_offices(page, lat: float, lng: float):
         pass
     page.goto(root + path, referer=root, wait_until="domcontentloaded", timeout=30000)
     page.wait_for_url("**/offices**", timeout=20000)
+
 
 def crawl_viewport(lat: float, lng: float,
                    radius_m: int = 800,
@@ -668,11 +727,8 @@ def crawl_viewport(lat: float, lng: float,
 
         # 2) 스크롤로 목록 XHR 유도
         page.wait_for_timeout(1200)
-        for _ in range(12):
-            page.mouse.wheel(0, 3200)
-            page.wait_for_timeout(700 + int(random.random()*300))
-            if limit_detail_fetch and len(collected) >= int(limit_detail_fetch):
-                break
+        cards = scroll_list_to_bottom(page, pause_ms=700, max_stall=2)
+        print("cards:", len(cards))
 
         # 3) 카드 일부 클릭으로 상세 XHR 유도
         try:
