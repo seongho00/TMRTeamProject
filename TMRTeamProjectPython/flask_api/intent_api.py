@@ -9,6 +9,7 @@ import io, os, uuid, tempfile, hashlib
 import cv2, numpy as np, pytesseract, re
 from PIL import Image
 from werkzeug.utils import secure_filename
+from pytesseract import Output
 
 # HEIC 지원 (설치되어 있으면 자동 등록)
 try:
@@ -26,15 +27,14 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 os.environ["TESSDATA_PREFIX"] = r"C:\Program Files\Tesseract-OCR\tessdata"
 
 # 공통 OCR 설정
-BASE_CONF = "--oem 3 --dpi 300 -c preserve_interword_spaces=1"
-LANG = "kor+eng"
+LANG_MAIN = "kor"
 
 # 허용 MIME (필요시 application/pdf 추가)
 ALLOWED = {"image/jpeg", "image/png", "image/webp", "image/heic"}
 
 
 print(pytesseract.get_tesseract_version())
-print(pytesseract.get_languages(config=f"-l {LANG}"))
+print(pytesseract.get_languages(config=f"-l {LANG_MAIN}"))
 
 
 # ✅ 예측 함수
@@ -323,15 +323,6 @@ def _cleanup_text(text: str) -> str:
     return text.strip()
 
 
-def ocr_image_bytes(data: bytes) -> str:
-    pil = Image.open(io.BytesIO(data))
-    pil.load()
-    pil = auto_orient(pil)
-    gray = enhance_gray(pil, target_long=2000)
-    text = run_ocr_best_effort(gray)
-    return _cleanup_text(text)
-
-
 # 섹션 나누기(표제부/갑구/을구 키워드 기반의 매우 단순한 분리)
 SEC_RE = {
     "표제부": re.compile(r"(표제부.*?)(?=갑구|을구|$)", re.S),
@@ -378,20 +369,24 @@ def parse_eulgu(eul_text: str) -> list:
 
 
 # 전처리 파이프라인
+def build_conf(psm=6, lang=LANG_MAIN):
+    # 문서형 레이아웃 기본값
+    return f'-l {lang} --oem 3 --psm {psm} --dpi 300 -c preserve_interword_spaces=1'
+
+# --------- (1) 자동 방향 보정 ---------
 def auto_orient(pil: Image.Image) -> Image.Image:
-    """OSD로 회전 각도 추정 후 바로잡기"""
     try:
-        osd = pytesseract.image_to_osd(pil, config=f"{BASE_CONF} -l {LANG}")
-        m = re.search(r"Rotate: (\d+)", osd)
+        osd = pytesseract.image_to_osd(pil, config=f'--oem 3 --psm 0 -l {LANG_MAIN}')
+        m = re.search(r"Rotate:\s+(\d+)", osd)
         deg = int(m.group(1)) if m else 0
-        if deg and deg in {90, 180, 270}:
+        if deg in (90, 180, 270):
             pil = pil.rotate(-deg, expand=True)
     except Exception:
         pass
     return pil
 
+# --------- (2) 데스큐 + CLAHE(부드러운 그레이 후보) ---------
 def deskew(gray: np.ndarray) -> np.ndarray:
-    """미세 기울기 보정"""
     bw = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
     coords = np.column_stack(np.where(bw > 0))
     if coords.size == 0:
@@ -403,7 +398,6 @@ def deskew(gray: np.ndarray) -> np.ndarray:
     return cv2.warpAffine(gray, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
 
 def enhance_gray(pil: Image.Image, target_long=2000) -> np.ndarray:
-    """해상도 보정(+업스케일), 그레이 변환, CLAHE, 데스큐"""
     rgb = np.array(pil.convert("RGB"))
     bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
     h, w = bgr.shape[:2]
@@ -416,27 +410,108 @@ def enhance_gray(pil: Image.Image, target_long=2000) -> np.ndarray:
     gray = deskew(gray)
     return gray
 
-def run_ocr_best_effort(gray: np.ndarray) -> str:
-    """그레이/약한 이진 + psm(6/4/3) 조합을 시도하고 한글이 가장 많은 결과 선택"""
-    candidates = [gray]
+# --------- (3) 너가 가진 크롭/강이진 그대로 사용 ---------
+def crop_document(bgr: np.ndarray) -> np.ndarray:
+    h, w = bgr.shape[:2]
+    y1, y2 = int(0.05*h), int(0.95*h)
+    x1, x2 = int(0.06*w), int(0.94*w)
+    bgr = bgr[y1:y2, x1:x2].copy()
+    try:
+        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+        edges = cv2.Canny(gray, 60, 180)
+        cnts, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if cnts:
+            c = max(cnts, key=cv2.contourArea)
+            peri = cv2.arcLength(c, True)
+            approx = cv2.approxPolyDP(c, 0.02*peri, True)
+            if len(approx) == 4:
+                pts = approx.reshape(4,2).astype(np.float32)
+                s = pts.sum(axis=1); diff = np.diff(pts, axis=1)
+                rect = np.array([pts[np.argmin(s)], pts[np.argmin(diff)],
+                                 pts[np.argmax(s)], pts[np.argmax(diff)]], dtype=np.float32)
+                (tl,tr,br,bl) = rect
+                W = int(max(np.linalg.norm(br-bl), np.linalg.norm(tr-tl)))
+                H = int(max(np.linalg.norm(tr-br), np.linalg.norm(tl-bl)))
+                M = cv2.getPerspectiveTransform(rect, np.array([[0,0],[W,0],[W,H],[0,H]], np.float32))
+                bgr = cv2.warpPerspective(bgr, M, (W,H))
+    except Exception:
+        pass
+    return bgr
+
+def preprocess_doc(bgr: np.ndarray, upscale_to=2000) -> np.ndarray:
+    h, w = bgr.shape[:2]
+    scale = max(1.0, upscale_to / max(h, w))
+    bgr = cv2.resize(bgr, (int(w*scale), int(h*scale)), interpolation=cv2.INTER_CUBIC)
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    bg = cv2.medianBlur(gray, 31)
+    norm = cv2.divide(gray, bg, scale=255)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    norm = clahe.apply(norm)
+    _, bw = cv2.threshold(norm, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    bw = cv2.medianBlur(bw, 3)
+    bw = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, np.ones((2,2), np.uint8), iterations=1)
+    return bw
+
+# --------- (4) Tesseract 실행 + 점수화 ---------
+def _run_tess(pil_img: Image.Image, psm: int):
+    conf = build_conf(psm=psm)
+    data = pytesseract.image_to_data(pil_img, config=conf, output_type=Output.DICT)
+    words = [w for w in data["text"] if w.strip()]
+    confs = [int(c) for c in data["conf"] if c not in ("-1", "-0.0")]
+    avg = sum(confs)/len(confs) if confs else 0
+    return " ".join(words), avg
+
+def run_ocr(gray: np.ndarray, extra_candidates=None) -> str:
+    cands = [gray]
+    # 약이진 후보 추가
     thr = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                 cv2.THRESH_BINARY, 31, 15)
-    candidates.append(thr)
+    cands.append(thr)
+    # 강이진(있으면)도 후보로
+    if extra_candidates:
+        cands.extend(extra_candidates)
 
-    best_txt, best_score = "", -1
-    for img in candidates:
+    best_txt, best_score = "", -1.0
+    for img in cands:
         pil = Image.fromarray(img)
-        for psm in (6, 4, 3):  # 6: 단일 블록, 4: 컬럼 가능, 3: 완전 자동
-            conf = f"{BASE_CONF} --psm {psm} -l {LANG}"
+        for psm in (6, 4, 11, 3):  # 문서(6)→컬럼(4)→스파스(11)→자동(3)
             try:
-                txt = pytesseract.image_to_string(pil, config=conf)
+                txt, avg = _run_tess(pil, psm)
             except Exception:
                 continue
-            txt = _cleanup_text(txt)
-            score = len(re.findall(r"[가-힣]", txt)) * 3 + len(txt)  # 간단 점수
+            # 한글/전체 길이로 가중치 주기
+            score = (avg or 0) + 0.2 * len(re.findall(r"[가-힣]", txt))
             if score > best_score:
                 best_score, best_txt = score, txt
-    return best_txt
+    return _cleanup_text(best_txt)
+
+def ocr_image_bytes(data: bytes) -> str:
+    # 1) 로드 + 자동 회전
+    pil = Image.open(io.BytesIO(data)); pil.load()
+    pil = auto_orient(pil)
+
+    # 2) 문서 크롭(가능하면)
+    try:
+        bgr = cv2.cvtColor(np.array(pil.convert("RGB")), cv2.COLOR_RGB2BGR)
+        bgr = crop_document(bgr)
+        pil = Image.fromarray(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
+    except Exception:
+        pass
+
+    # 3) 부드러운 그레이 후보
+    gray = enhance_gray(pil, target_long=2000)
+
+    # 4) 강이진 후보 (preprocess_doc)
+    extra = []
+    try:
+        bgr_for_bw = cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
+        bw = preprocess_doc(bgr_for_bw)
+        extra.append(bw)
+    except Exception:
+        pass
+
+    # 5) 여러 PSM/후보 조합 → best pick
+    return run_ocr(gray, extra_candidates=extra)
 
 
 
