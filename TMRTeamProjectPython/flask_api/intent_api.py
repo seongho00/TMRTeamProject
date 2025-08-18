@@ -14,6 +14,8 @@ from werkzeug.utils import secure_filename
 UPLOAD_DIR = os.path.join(tempfile.gettempdir(), "registry-uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
 TESS_CONF = r"-l kor+eng --oem 1 --psm 6"
 # 허용 MIME (필요시 application/pdf 추가)
 ALLOWED = {"image/jpeg", "image/png", "image/webp", "image/heic"}
@@ -390,7 +392,7 @@ def analyze():
             continue
 
         try:
-            txt = ocr_image_bytes(data, ctype)
+            txt = ocr_image_bytes(data)
         except Exception as e:
             txt = f"[OCR 실패: {e}]"
 
