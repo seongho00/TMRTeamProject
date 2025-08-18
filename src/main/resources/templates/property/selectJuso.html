@@ -111,5 +111,19 @@
     document.getElementById('confirmRes').style.color = 'green';
     document.getElementById('confirmRes').innerText =
             `확정 완료! addressKey = ${confirmed.addressKey} , ${confirmed.entX} , ${confirmed.entY}`;
+
+
+    const res2 = await fetch('/usr/address/confirm-crawl', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload) // 서버가 selected/dong/ho로 좌표 재확정 후 파이썬 호출
+    });
+    const crawl = await res2.json();
+    if (!res2.ok || crawl.ok === false) {
+      // 크롤 실패만 별도 표시하고 끝
+      console.warn('crawl failed', crawl);
+      return;
+    }
+
   });
 </script>

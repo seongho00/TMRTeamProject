@@ -239,49 +239,57 @@ public class AddressService {
     }
 
 
-    public Map<String, Object> crawlViewport(
+    private Map<String, Object> callViewportCrawl(
             double lat, double lng,
             Integer radiusM, String category,
-            Map<String,Object> filters, Integer limitDetailFetch
+            Map<String, Object> filters, Integer limitDetailFetch
     ) {
-        Map<String,Object> payload = new HashMap<>();
+        Map<String, Object> payload = new java.util.HashMap<>();
         payload.put("lat", lat);
         payload.put("lng", lng);
-        payload.put("radius_m", radiusM != null ? radiusM : 800);
-        payload.put("category", (category == null || category.isBlank()) ? "offices" : category);
-        payload.put("filters", (filters == null) ? Map.of() : filters);
-        payload.put("limit_detail_fetch", (limitDetailFetch == null) ? 60 : limitDetailFetch);
+        if (radiusM != null) payload.put("radius_m", radiusM);
+        if (category != null) payload.put("category", category);
+        payload.put("filters", (filters == null ? Map.of() : filters));
+        if (limitDetailFetch != null) payload.put("limit_detail_fetch", limitDetailFetch);
 
-        Map<String,Object> res = pythonClient.post()
-                .uri("/crawl")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(payload)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .onErrorResume(ex -> {
-                    log.error("Python /crawl 호출 실패", ex);
-                    return Mono.just(Map.of(
-                            "ok", false,
-                            "error", "crawl_failed",
-                            "message", Optional.ofNullable(ex.getMessage()).orElse("unknown")
-                    ));
-                })
-                .block();
-
-
-        return Objects.requireNonNullElse(res, Map.of("ok", false, "error", "no_response"));
-    }
-
-    public Map<String, Object> crawlViewportByAddress(
-            AddressPickReq req,
-            Integer radiusM, String category,
-            Map<String,Object> filters, Integer limitDetailFetch
-    ) {
-        NormalizedAddress n = confirmAndGeocode(req); // lat/lon 채워짐
-        if (n.getLat() == null || n.getLon() == null) {
-            return Map.of("ok", false, "error", "geocode_failed");
+        try {
+            return pythonClient.post()
+                    .uri("/crawl")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+        } catch (Exception ex) {
+            log.warn("Viewport crawl failed: {}", ex.toString());
+            return Map.of("ok", false, "error", "crawl_failed", "message", ex.getMessage());
         }
-        return crawlViewport(n.getLat(), n.getLon(), radiusM, category, filters, limitDetailFetch);
     }
 
+    /**
+     * 기존 confirmAndGeocode 뒤에, 좌표가 있으면 바로 /crawl 호출해서 함께 반환.
+     * 반환도 Map으로 단순화.
+     */
+    public Map<String, Object> confirmGeoAndCrawl(AddressPickReq req) {
+        NormalizedAddress n = confirm(req);
+        try {
+            n = geocodeByVWorld(n);
+        } catch (Exception e) {
+            log.warn("Geocoding failed for {}: {}", n.getAddressKey(), e.getMessage());
+        }
+
+        Map<String, Object> crawl = Map.of("ok", false, "error", "skip", "message", "no geocode");
+        if (n.getLat() != null && n.getLon() != null) {
+            // 필요 시 radius/category/limit 을 파라미터로 받을 수도 있음. 일단 기본값으로 호출
+            crawl = callViewportCrawl(n.getLat(), n.getLon(),
+                    800, "offices", Map.of(), 60);
+        }
+
+        // 통합 응답 (Address는 그대로 JSON 직렬화됨)
+        return Map.of(
+                "ok", true,
+                "address", n,
+                "crawl", crawl
+        );
+    }
 }

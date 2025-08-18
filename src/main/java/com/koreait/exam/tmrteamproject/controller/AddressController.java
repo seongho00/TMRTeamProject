@@ -31,31 +31,9 @@ public class AddressController {
         return addressService.confirmAndGeocode(req); // 동/호 파싱 + addressKey 생성 + (선택) DB 저장
     }
 
-    @PostMapping("/crawl-by-address")
-    public ResponseEntity<Map<String,Object>> crawlByAddress(
-            @RequestBody AddressPickReq req,
-            @RequestParam(required = false) Integer radiusM,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) Integer limitDetailFetch
-    ) {
-        Map<String,Object> res = addressService.crawlViewportByAddress(
-                req, radiusM, category, null, limitDetailFetch
-        );
+    @PostMapping("/confirm-crawl")
+    public ResponseEntity<Map<String, Object>> confirmCrawl(@RequestBody AddressPickReq req) {
+        Map<String, Object> res = addressService.confirmGeoAndCrawl(req);
         return ResponseEntity.ok(res);
     }
-
-    @GetMapping("/crawl")
-    public ResponseEntity<Map<String,Object>> crawl(
-            @RequestParam double lat,
-            @RequestParam double lng,
-            @RequestParam(required = false) Integer radiusM,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) Integer limitDetailFetch
-    ) {
-        Map<String,Object> res = addressService.crawlViewport(
-                lat, lng, radiusM, category, null, limitDetailFetch
-        );
-        return ResponseEntity.ok(res);
-    }
-
 }
