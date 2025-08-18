@@ -5,7 +5,7 @@ from transformers import BertTokenizer, BertForSequenceClassification
 import pickle
 import mecab_ko
 import pymysql
-import os, uuid, tempfile, hashlib
+import io, os, uuid, tempfile, hashlib
 import cv2, numpy as np, pytesseract, re
 from PIL import Image
 from werkzeug.utils import secure_filename
@@ -14,6 +14,7 @@ from werkzeug.utils import secure_filename
 UPLOAD_DIR = os.path.join(tempfile.gettempdir(), "registry-uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+TESS_CONF = r"-l kor+eng --oem 1 --psm 6"
 # 허용 MIME (필요시 application/pdf 추가)
 ALLOWED = {"image/jpeg", "image/png", "image/webp", "image/heic"}
 
@@ -298,18 +299,19 @@ def preprocess_for_ocr(img_bgr: np.ndarray) -> np.ndarray:
     return bw
 
 
-def ocr_image(path: str) -> str:
-    """이미지 파일 경로 → 전처리 → Tesseract OCR → 텍스트"""
-    pil = Image.open(path)  # HEIC도 pillow-heif 등록하면 자동 처리
+def _cleanup_text(text: str) -> str:
+    text = re.sub(r'[ \t]+', ' ', text)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
+
+
+def ocr_image_bytes(data: bytes) -> str:
+    pil = Image.open(io.BytesIO(data))
     pil.load()
     bgr = cv2.cvtColor(np.array(pil.convert("RGB")), cv2.COLOR_RGB2BGR)
     pre = preprocess_for_ocr(bgr)
-    pil_pre = Image.fromarray(pre)
-    text = pytesseract.image_to_string(pil_pre, config=TESS_CONF)
-    # 약간의 클린업
-    text = re.sub(r'[ \t]+', ' ', text)
-    text = re.sub(r'\n{3,}', '\n\n', text).strip()
-    return text
+    txt = pytesseract.image_to_string(Image.fromarray(pre), config=TESS_CONF)
+    return _cleanup_text(txt)
 
 
 # 섹션 나누기(표제부/갑구/을구 키워드 기반의 매우 단순한 분리)
@@ -388,17 +390,14 @@ def analyze():
             continue
 
         try:
-            if ctype == "application/pdf":
-                txt = ocr_pdf_bytes(data)
-            else:
-                txt = ocr_image_bytes(data, ctype)
+            txt = ocr_image_bytes(data, ctype)
         except Exception as e:
             txt = f"[OCR 실패: {e}]"
 
         results_meta.append({
             "originalName": f.filename,
             "contentType": ctype,
-            "fileName": fname,     # 실제 저장은 안 하지만 추적용으로 응답
+            "fileName": fname,  # 실제 저장은 안 하지만 추적용으로 응답
             "size": len(data),
         })
         texts.append(txt)
@@ -408,15 +407,16 @@ def analyze():
 
     full_text = "\n\n---PAGEBREAK---\n\n".join(texts)
     secs = split_sections(full_text)
-    eul_entries = parse_eulgu(secs.get("을구", ""))
+    # eul_entries = parse_eulgu(secs.get("을구", ""))
 
     return jsonify(
         ok=True,
         count=len(results_meta),
-        files=results_meta,                 # storedPath 제거됨 (디스크 저장 안 함)
+        files=results_meta,  # storedPath 제거됨 (디스크 저장 안 함)
         sections_detected=[k for k, v in secs.items() if v],
         textPreview=full_text[:2000],
-        parsed={"을구_entries": eul_entries}
+        textFull=full_text,  # ⬅️ 전체 OCR 텍스트 추가
+        # parsed={"을구_entries": eul_entries}
     ), 200
 
 
