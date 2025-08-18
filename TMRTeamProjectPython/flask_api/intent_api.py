@@ -10,15 +10,31 @@ import cv2, numpy as np, pytesseract, re
 from PIL import Image
 from werkzeug.utils import secure_filename
 
+# HEIC 지원 (설치되어 있으면 자동 등록)
+try:
+    import pillow_heif
+    pillow_heif.register_heif_opener()
+except Exception:
+    pass
+
 # 사진 업로드 저장 디렉토리 (스프링과 동일/공유 경로면 더 좋음)
 UPLOAD_DIR = os.path.join(tempfile.gettempdir(), "registry-uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# tesseract 엔진 경로 (Doker로 팀플로 전환 예정)
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+os.environ["TESSDATA_PREFIX"] = r"C:\Program Files\Tesseract-OCR\tessdata"
 
-TESS_CONF = r"-l kor+eng --oem 1 --psm 6"
+# 공통 OCR 설정
+BASE_CONF = "--oem 3 --dpi 300 -c preserve_interword_spaces=1"
+LANG = "kor+eng"
+
 # 허용 MIME (필요시 application/pdf 추가)
 ALLOWED = {"image/jpeg", "image/png", "image/webp", "image/heic"}
+
+
+print(pytesseract.get_tesseract_version())
+print(pytesseract.get_languages(config=f"-l {LANG}"))
 
 
 # ✅ 예측 함수
@@ -310,10 +326,10 @@ def _cleanup_text(text: str) -> str:
 def ocr_image_bytes(data: bytes) -> str:
     pil = Image.open(io.BytesIO(data))
     pil.load()
-    bgr = cv2.cvtColor(np.array(pil.convert("RGB")), cv2.COLOR_RGB2BGR)
-    pre = preprocess_for_ocr(bgr)
-    txt = pytesseract.image_to_string(Image.fromarray(pre), config=TESS_CONF)
-    return _cleanup_text(txt)
+    pil = auto_orient(pil)
+    gray = enhance_gray(pil, target_long=2000)
+    text = run_ocr_best_effort(gray)
+    return _cleanup_text(text)
 
 
 # 섹션 나누기(표제부/갑구/을구 키워드 기반의 매우 단순한 분리)
@@ -359,6 +375,69 @@ def parse_eulgu(eul_text: str) -> list:
             "금액": int((m.group(6) or "0").replace(",", "")) if m.group(6) else None
         })
     return entries
+
+
+# 전처리 파이프라인
+def auto_orient(pil: Image.Image) -> Image.Image:
+    """OSD로 회전 각도 추정 후 바로잡기"""
+    try:
+        osd = pytesseract.image_to_osd(pil, config=f"{BASE_CONF} -l {LANG}")
+        m = re.search(r"Rotate: (\d+)", osd)
+        deg = int(m.group(1)) if m else 0
+        if deg and deg in {90, 180, 270}:
+            pil = pil.rotate(-deg, expand=True)
+    except Exception:
+        pass
+    return pil
+
+def deskew(gray: np.ndarray) -> np.ndarray:
+    """미세 기울기 보정"""
+    bw = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    coords = np.column_stack(np.where(bw > 0))
+    if coords.size == 0:
+        return gray
+    angle = cv2.minAreaRect(coords)[-1]
+    angle = -(90 + angle) if angle < -45 else -angle
+    h, w = gray.shape[:2]
+    M = cv2.getRotationMatrix2D((w/2, h/2), angle, 1.0)
+    return cv2.warpAffine(gray, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+
+def enhance_gray(pil: Image.Image, target_long=2000) -> np.ndarray:
+    """해상도 보정(+업스케일), 그레이 변환, CLAHE, 데스큐"""
+    rgb = np.array(pil.convert("RGB"))
+    bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+    h, w = bgr.shape[:2]
+    scale = target_long / max(h, w)
+    if scale > 1.0:  # 저해상도만 업스케일
+        bgr = cv2.resize(bgr, (int(w*scale), int(h*scale)), interpolation=cv2.INTER_CUBIC)
+    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+    gray = clahe.apply(gray)
+    gray = deskew(gray)
+    return gray
+
+def run_ocr_best_effort(gray: np.ndarray) -> str:
+    """그레이/약한 이진 + psm(6/4/3) 조합을 시도하고 한글이 가장 많은 결과 선택"""
+    candidates = [gray]
+    thr = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                cv2.THRESH_BINARY, 31, 15)
+    candidates.append(thr)
+
+    best_txt, best_score = "", -1
+    for img in candidates:
+        pil = Image.fromarray(img)
+        for psm in (6, 4, 3):  # 6: 단일 블록, 4: 컬럼 가능, 3: 완전 자동
+            conf = f"{BASE_CONF} --psm {psm} -l {LANG}"
+            try:
+                txt = pytesseract.image_to_string(pil, config=conf)
+            except Exception:
+                continue
+            txt = _cleanup_text(txt)
+            score = len(re.findall(r"[가-힣]", txt)) * 3 + len(txt)  # 간단 점수
+            if score > best_score:
+                best_score, best_txt = score, txt
+    return best_txt
+
 
 
 @app.route("/analyze", methods=["POST"])
