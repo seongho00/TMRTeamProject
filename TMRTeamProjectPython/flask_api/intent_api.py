@@ -674,25 +674,20 @@ def crawl_viewport(
 
 
 @app.post("/crawl")
-def crawl() -> Dict[str, Any]:
-    payload: Dict[str, Any] = request.get_json(silent=True) or {}
+def crawl():
+    payload = request.get_json(silent=True) or {}
     lat = float(payload.get("lat", 0))
     lng = float(payload.get("lng", 0))
-    radius_m = int(payload.get("radius_m", 800))
-    category = str(payload.get("category") or "offices")
-    filters: Dict[str, Any] = payload.get("filters") or {}
-    limit_detail_fetch = payload.get("limit_detail_fetch")  # Optional[int]
-
-    # TODO: 뷰포트 크롤링 로직
-    return {
-        "ok": True,
-        "meta": {
-            "lat": lat, "lng": lng,
-            "radius_m": radius_m, "category": category,
-            "limit_detail_fetch": limit_detail_fetch,
-        },
-        "items": []  # List[Dict[str, Any]]
-    }
+    radius = int(payload.get("radius_m", 800))
+    category = (payload.get("category") or "offices")
+    # TODO: 여기서 실제 네이버 뷰포트 크롤링 로직 호출
+    print(lat)
+    print(lng)
+    return jsonify(
+        ok=True,
+        meta={"lat": lat, "lng": lng, "radius_m": radius, "category": category},
+        items=[]  # 수집 결과 넣기
+    ), 200
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
