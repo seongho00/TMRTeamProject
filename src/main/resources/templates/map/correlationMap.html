@@ -6,8 +6,141 @@
 </head>
 <body>
 <header th:replace="common/mapHeader::header"></header>
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=69544617df3febfc879cd18eed451ba3"></script>
-<div id="map" class="w-full h-screen pt-[100px]"></div>
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=69544617df3febfc879cd18eed451ba3&libraries=services&autoload=false"></script>
 <script type="text/javascript" th:src="@{/js/correlationMap.js}"></script>
+
+<!-- 지도 불러오기 -->
+<div id="map" class="w-full h-screen pt-[100px]"></div>
+
+<!-- 선택 패널 (z-index 높임) -->
+<div class="flex absolute top-[180px] left-[150px] justify-start items-start gap-2.5 px-[7px] py-1 z-10">
+    <div class="flex flex-col items-center h-[615px] w-[445px] gap-[31px] pt-[30px] pb-[99px] rounded-[15px] bg-white border border-black">
+        <div class="self-stretch h-[46px] px-[30px]">
+            <p class="text-xl font-medium">점수 확인</p>
+        </div>
+
+        <div class="flex flex-col justify-start items-start flex-grow-0 flex-shrink-0 overflow-hidden gap-5">
+            <div class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-2.5 px-[104px] py-2.5">
+                <div class="flex justify-between items-center flex-grow-0 flex-shrink-0 w-[381px] h-[41px] relative gap-2.5 px-2.5 py-[7px] rounded-[15px] bg-white border border-black relative">
+                    <input placeholder="업종을 입력해주세요"
+                           class="upjongInput flex-grow flex-shrink-0  text-xl font-medium text-left focus:outline-none focus:border-none"/>
+
+                    <svg width="22" height="22" viewBox="0 0 22 22"
+                         fill="none" xmlns="http://www.w3.org/2000/svg"
+                         class="flex-grow-0 flex-shrink-0 w-[21px] h-[21.5px]"
+                         preserveAspectRatio="none">
+
+                        <circle cx="9" cy="9" r="8.5" transform="matrix(-1 0 0 1 18 0)" stroke="black"></circle>
+                        <path d="M15 15.5L21 21.5" stroke="black" stroke-linecap="round"></path>
+
+                    </svg>
+                    <div id="autocompleteList"
+                         class="border border-gray-300 bg-white absolute z-10 hidden w-full max-h-48 overflow-auto">
+                        <!-- 자동완성 결과가 여기에 들어감 -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="majorSelector flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-[19px]">
+                <ul class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden px-[5px]">
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black border border-black cursor-pointer"
+                        data-majorCd="L1">
+                        부동산
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="I1">
+                        숙박
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="M1">
+                        과학/기술
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        +
+                        data-majorCd="Q1">
+                        보건/의료
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="N1">
+                        관리/임대
+                    </li>
+                </ul>
+
+                <ul class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden">
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="G2">
+                        소매
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="I2">
+                        음식
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="S2">
+                        수리
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="R1">
+                        예체능
+                    </li>
+                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
+                        data-majorCd="P1">
+                        교육
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 확인 버튼 -->
+        <div onclick="searchInfoByRegionAndUpjong();" class="px-[115px] py-2.5 rounded-[10px] bg-[#10f] cursor-pointer">
+            <p class="text-xl font-medium text-white">확인</p>
+        </div>
+
+        <!-- 결과 패널 -->
+        <div class="px-[53px]">
+            <div id="riskResult" class="min-w-[205px] min-h-[120px] p-3 rounded-[6px] border border-gray-300 bg-white text-sm">
+                확인 입력 시 위험도 표시
+            </div>
+        </div>
+    </div>
+
+    <div class="middleSelector hidden w-[386px] h-[200px] px-[10px] rounded-[15px] bg-white border border-black">
+        <ul class="w-full overflow-auto p-2.5"></ul>
+    </div>
+
+    <div class="minorSelector hidden w-[386px] h-[200px] px-[23px] py-[13px] rounded-[15px] bg-white border border-black">
+        <ul class="w-full overflow-auto p-2.5"></ul>
+    </div>
+</div>
+
+<!-- 지역 선택 UI -->
+<ul class="flex justify-between items-center w-[450px] h-[47px] overflow-hidden px-[10px] py-[15px] rounded-[10px] bg-white border border-black absolute left-1/2 -translate-x-1/2 top-[110px] z-10">
+    <li class="flex justify-center items-center h-[41px] cursor-pointer">
+        <select class="flex justify-center items-center text-[22px] text-center text-black cursor-pointer focus:outline-none focus:ring-0 focus:border-transparent"
+                name="sidoSelect"
+                id="sidoSelect">
+            <option>서울특별시</option>
+        </select>
+    </li>
+
+    <li class="flex justify-center items-center h-[41px]  ">
+        <select class="flex justify-center items-center text-[22px] text-center text-black cursor-pointer focus:outline-none focus:ring-0 focus:border-transparent"
+                name="sggSelect"
+                id="sggSelect">
+            <option value="">시/군/구</option>
+            <th:block th:each="adminDong : ${adminDongsGroupBySggCd}">
+                <option th:value="${adminDong.sggNm}" th:text="${adminDong.sggNm}"></option>
+            </th:block>
+        </select>
+    </li>
+
+    <li class="flex justify-center items-center h-[41px] ">
+        <select class="flex justify-center items-center text-[22px] text-center text-black cursor-pointer focus:outline-none focus:ring-0 focus:border-transparent"
+                name="emdSelect"
+                id="emdSelect">
+            <option>행정동</option>
+        </select>
+    </li>
+</ul>
 </body>
 </html>
