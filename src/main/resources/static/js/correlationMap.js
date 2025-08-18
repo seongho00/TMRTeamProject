@@ -5,7 +5,14 @@ let sggPolygons = [], sggOverlayList = [];
 let currentLevel = 6;
 let isProgrammatic = false;
 
-const PALETTE_5 = {0:"#E3F2FD",1:"#BBDEFB",2:"#90CAF9",3:"#64B5F6",4:"#1E88E5"};
+// 낮음 → 높음 (아주 연한 노랑 → 진한 주황)
+const PALETTE_5 = {
+    0: "#FFF7BC",  // 매우 낮음
+    1: "#FEE391",  // 낮음
+    2: "#FEC44F",  // 보통
+    3: "#FE9929",  // 높음
+    4: "#D95F0E"   // 매우 높음
+};
 const COLOR_DEFAULT = "#D3D3D3";
 
 window.selectedUpjongName = null;
@@ -26,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         Promise.all([
             // ★ 위험도 병합본 GeoJSON 사용
-            loadPolygons("/Seoul_risk.geojson", emdPolygons, emdOverlayList, "#004c80", "ADSTRD_NM"),
+            loadPolygons("/Seoul_risk.geojson", emdPolygons, emdOverlayList, "#e45c2f", "ADSTRD_NM"),
             loadPolygons("/Seoul_sggs.geojson", sggPolygons, sggOverlayList, "#e45c2f", "SIGUNGU_NM")
         ]).then(updatePolygonsByZoom);
 
@@ -193,17 +200,6 @@ function getRiskRecordForUpjong(props, upjongKeyword){
         || null;
 }
 
-function recolorEmdByUpjong(upjongName){
-    window.selectedUpjongName = upjongName;
-    emdPolygons.forEach(({guide, properties}) => {
-        const rec = getRiskRecordForUpjong(properties, upjongName);
-        const color = (rec && Number.isFinite(rec["예측_위험도"]))
-            ? (PALETTE_5[Number(rec["예측_위험도"])] || COLOR_DEFAULT)
-            : COLOR_DEFAULT;
-        guide.setOptions({ fillColor: color, fillOpacity: (color===COLOR_DEFAULT?0.2:0.6), strokeOpacity:0.6 });
-    });
-}
-
 function renderRiskPanel(emdName, upjongName){
     const $panel = document.getElementById("riskResult");
     if (!$panel) return;
@@ -220,7 +216,7 @@ function renderRiskPanel(emdName, upjongName){
         return;
     }
 
-    const color = rec.color || (PALETTE_5[Number(rec["예측_위험도"])] || COLOR_DEFAULT);
+    const color = PALETTE_5[Number(rec["예측_위험도"])] || COLOR_DEFAULT;
     const label = rec["예측_위험도_라벨"] ?? "-";
     const stage = rec["위험도_단계"] ?? "-";
     const score = fmtNum(rec["위험도_점수"]);
@@ -248,8 +244,10 @@ function searchInfoByRegionAndUpjong(){
     if (!sgg || !emd){ alert('지역을 선택해주세요.'); return; }
     if (!upjong){ alert('업종을 선택해주세요.'); return; }
 
-    // 즉시 지도 반영 + 패널 표시
-    recolorEmdByUpjong(upjong);
+    // 클릭 할 때만 지도 반영 + 패널 표시
+    colorOnlySelectedEmdByUpjong(emd, upjong);
+    const box = document.getElementById('riskResult');
+    if (box) box.classList.remove('hidden');
     renderRiskPanel(emd, upjong);
 
     // 필요 시 서버 조회 (선택)
@@ -318,8 +316,6 @@ function onEmdChange(){
                 if (currentPolygon){ currentPolygon.setMap(null); }
                 currentPolygon = new kakao.maps.Polygon({ map, path, strokeWeight:2, strokeColor:'#004c80', strokeOpacity:0.8, fillColor:'#00a0e9', fillOpacity:0.3 });
             }
-            // 이미 업종이 선택돼 있으면 패널 업데이트
-            if (window.selectedUpjongName) renderRiskPanel(emd, window.selectedUpjongName);
             break;
         }
     }
@@ -362,10 +358,13 @@ function onMinorClick(){
         success: function(upjongCode){
             const minorNm = upjongCode.minorNm;
             $('.upjongInput').val(`${upjongCode.majorNm} > ${upjongCode.middleNm} > ${minorNm}`);
+
+            // 색/패널은 '확인' 때만 -> 선택만 저장 후 초기화
             window.selectedUpjongName = minorNm;
-            recolorEmdByUpjong(minorNm);
-            const emdNow = $('#emdSelect').val();
-            if (emdNow) renderRiskPanel(emdNow, minorNm);
+            if (typeof clearEmdColors === 'function') clearEmdColors();
+            const box = document.getElementById("riskResult");
+            if (box) box.classList.add("hidden");
+
             $('.middleSelector').addClass('hidden');
             $('.minorSelector').addClass('hidden');
         },
@@ -389,4 +388,32 @@ function handleSearch(keyword){
         success: function(list){ console.log('auto:', list); /* 필요시 자동완성 UI 구성 */ },
         error: function(){ console.log('업종 검색 실패'); }
     });
+}
+
+// 1) 전체 색 제거
+function clearEmdColors() {
+    emdPolygons.forEach(({ guide }) => {
+        guide.setOptions({ fillOpacity: 0, strokeOpacity: 0.5 });
+    });
+}
+
+// 2) 선택 동만 업종 위험도 색칠
+function colorOnlySelectedEmdByUpjong(emdName, upjongName) {
+    clearEmdColors();
+
+    // 대상 동 찾기
+    const target = emdPolygons.find(({ properties }) => {
+        const name = properties?.ADSTRD_NM || properties?.행정동_명 || properties?.adm_nm;
+        return name === emdName;
+    });
+    if (!target) return;
+
+    // 위험도 레코드
+    const rec = getRiskRecordForUpjong(target.properties, upjongName);
+    const color = (rec && Number.isFinite(rec["예측_위험도"]))
+        ? (PALETTE_5[Number(rec["예측_위험도"])] || COLOR_DEFAULT)
+        : COLOR_DEFAULT;
+
+    // 해당 동만 채우기
+    target.guide.setOptions({ fillColor: color, fillOpacity: (color===COLOR_DEFAULT?0.2:0.6), strokeOpacity: 0.8 });
 }

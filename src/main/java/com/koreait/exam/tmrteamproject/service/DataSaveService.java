@@ -14,10 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
@@ -54,7 +51,7 @@ public class DataSaveService {
 
     // 파일 하나씩 처리
     public int saveOneFileInTx(Path csvFile) {
-        final int BATCH_SIZE = 500; // 필요에 따라 조절
+        final int BATCH_SIZE = 1000; // 필요에 따라 조절
         int savedCount = 0;
         List<DataSet> buffer = new ArrayList<>(BATCH_SIZE);
 
@@ -63,31 +60,18 @@ public class DataSaveService {
 
             Map<String, String> raw;
             while ((raw = csvReader.readMap()) != null) {
-                // 만든 키 정규화
-                Map<String, String> row = normalizeRowKeys(raw);
                 // CSV → Entity 매핑
-                DataSet entity = mapRowToEntity(row);
-
-                // 이미 동일한 데이터가 있는지 체크
-                boolean exists = dataSaveRepository.existsByBaseYearQuarterCodeAndAdminDongCodeAndServiceIndustryCode(
-                        entity.getBaseYearQuarterCode(),
-                        entity.getAdminDongCode(),
-                        entity.getServiceIndustryCode()
-                );
-
-                if (!exists) {
-                    buffer.add(entity);
-                    savedCount++;
-                }
+                DataSet entity = mapRowToEntity(normalizeRowKeys(raw));
+                buffer.add(entity);
 
                 if (buffer.size() >= BATCH_SIZE) {
-                    dataSaveRepository.saveAll(buffer);
+                    savedCount += saveBatchSkippingDuplicates(buffer);
                     buffer.clear();
                 }
             }
 
             if (!buffer.isEmpty()) {
-                dataSaveRepository.saveAll(buffer);
+                savedCount += saveBatchSkippingDuplicates(buffer);
                 buffer.clear();
             }
 
@@ -96,6 +80,31 @@ public class DataSaveService {
         }
 
         return savedCount;
+    }
+
+    private static String compositeKeyOf(DataSet e) {
+        return (e.getBaseYearQuarterCode() == null ? "" : e.getBaseYearQuarterCode()) + "|" +
+                (e.getAdminDongCode()        == null ? "" : e.getAdminDongCode())        + "|" +
+                (e.getServiceIndustryCode()  == null ? "" : e.getServiceIndustryCode());
+    }
+
+    private int saveBatchSkippingDuplicates(List<DataSet> batch) {
+        // (1) 파일 내부 중복 제거(동일 키가 여러 번 등장 시 마지막 행만 남김)
+        Map<String, DataSet> uniq = new LinkedHashMap<>();
+        for (DataSet e : batch) uniq.put(compositeKeyOf(e), e);
+
+        // (2) DB에 이미 있는 키 한번에 조회
+        List<String> existingKeys = dataSaveRepository.findExistingKeys(uniq.keySet());
+        Set<String> existing = new java.util.HashSet<>(existingKeys);
+
+        // (3) 신규만 추려서 저장
+        List<DataSet> toInsert = uniq.entrySet().stream()
+                .filter(en -> !existing.contains(en.getKey()))
+                .map(Map.Entry::getValue)
+                .toList();
+
+        if (!toInsert.isEmpty()) dataSaveRepository.saveAll(toInsert);
+        return toInsert.size();
     }
 
     private static String normalizeKey(String k) {

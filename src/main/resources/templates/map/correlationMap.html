@@ -8,11 +8,12 @@
 <header th:replace="common/mapHeader::header"></header>
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=69544617df3febfc879cd18eed451ba3&libraries=services&autoload=false"></script>
 <script type="text/javascript" th:src="@{/js/correlationMap.js}"></script>
+<script type="text/javascript" th:src="@{/js/upjong.js}"></script>
 
 <!-- 지도 불러오기 -->
 <div id="map" class="w-full h-screen pt-[100px]"></div>
 
-<!-- 선택 패널 (z-index 높임) -->
+<!-- 선택 패널 -->
 <div class="flex absolute top-[180px] left-[150px] justify-start items-start gap-2.5 px-[7px] py-1 z-10">
     <div class="flex flex-col items-center h-[615px] w-[445px] gap-[31px] pt-[30px] pb-[99px] rounded-[15px] bg-white border border-black">
         <div class="self-stretch h-[46px] px-[30px]">
@@ -22,8 +23,8 @@
         <div class="flex flex-col justify-start items-start flex-grow-0 flex-shrink-0 overflow-hidden gap-5">
             <div class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-2.5 px-[104px] py-2.5">
                 <div class="flex justify-between items-center flex-grow-0 flex-shrink-0 w-[381px] h-[41px] relative gap-2.5 px-2.5 py-[7px] rounded-[15px] bg-white border border-black relative">
-                    <input placeholder="업종을 입력해주세요"
-                           class="upjongInput flex-grow flex-shrink-0  text-xl font-medium text-left focus:outline-none focus:border-none"/>
+                    <input id="upjongSearch" placeholder="업종을 입력해주세요"
+                           class="flex-grow flex-shrink-0 text-xl font-medium text-left focus:outline-none focus:border-none"/>
 
                     <svg width="22" height="22" viewBox="0 0 22 22"
                          fill="none" xmlns="http://www.w3.org/2000/svg"
@@ -34,60 +35,31 @@
                         <path d="M15 15.5L21 21.5" stroke="black" stroke-linecap="round"></path>
 
                     </svg>
-                    <div id="autocompleteList"
-                         class="border border-gray-300 bg-white absolute z-10 hidden w-full max-h-48 overflow-auto">
-                        <!-- 자동완성 결과가 여기에 들어감 -->
+
+                    <div id="upjongSearchDrop"
+                         class="absolute left-0 right-0 top-full bg-white border rounded shadow hidden max-h-60 overflow-auto z-20">
                     </div>
                 </div>
             </div>
 
             <div class="majorSelector flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-[19px]">
-                <ul class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden px-[5px]">
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black border border-black cursor-pointer"
-                        data-majorCd="L1">
-                        부동산
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="I1">
-                        숙박
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="M1">
-                        과학/기술
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        +
-                        data-majorCd="Q1">
-                        보건/의료
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="N1">
-                        관리/임대
-                    </li>
-                </ul>
+                <!-- 그룹 탭 -->
+                <div id="upjongGroups" class="flex gap-2">
+                    <button type="button" data-group="all"
+                            class="chip active">전체</button>
+                    <button type="button" data-group="CS100" class="chip">음식</button>
+                    <button type="button" data-group="CS300" class="chip">소매</button>
+                    <button type="button" data-group="CS200" class="chip">서비스</button>
+                </div>
 
-                <ul class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden">
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="G2">
-                        소매
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="I2">
-                        음식
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="S2">
-                        수리
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="R1">
-                        예체능
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="P1">
-                        교육
-                    </li>
-                </ul>
+                <!-- 항목 그리드 -->
+                <div id="upjongList"
+                     class="grid grid-cols-2 gap-2 h-56 overflow-auto border rounded p-2 bg-white">
+                    <!-- JS가 버튼들 렌더링 -->
+                </div>
+
+                <!-- 선택된 값 바인딩(기존 input 유지) -->
+                <input class="upjongInput hidden">
             </div>
         </div>
 
@@ -98,7 +70,8 @@
 
         <!-- 결과 패널 -->
         <div class="px-[53px]">
-            <div id="riskResult" class="min-w-[205px] min-h-[120px] p-3 rounded-[6px] border border-gray-300 bg-white text-sm">
+            <div id="riskResult"
+                 class="hidden min-w-[205px] min-h-[120px] p-3 rounded-[6px] border border-gray-300 bg-white text-sm">
                 확인 입력 시 위험도 표시
             </div>
         </div>
