@@ -18,13 +18,14 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Service
@@ -38,6 +39,9 @@ public class AddressService {
 
     @Value("${vworld.key}")
     private String vworldKey;
+
+    private final WebClient pythonClient;
+
 
     private final RestTemplate rest = new RestTemplate();
 
@@ -233,4 +237,51 @@ public class AddressService {
         return n;
 
     }
+
+
+    public Map<String, Object> crawlViewport(
+            double lat, double lng,
+            Integer radiusM, String category,
+            Map<String,Object> filters, Integer limitDetailFetch
+    ) {
+        Map<String,Object> payload = new HashMap<>();
+        payload.put("lat", lat);
+        payload.put("lng", lng);
+        payload.put("radius_m", radiusM != null ? radiusM : 800);
+        payload.put("category", (category == null || category.isBlank()) ? "offices" : category);
+        payload.put("filters", (filters == null) ? Map.of() : filters);
+        payload.put("limit_detail_fetch", (limitDetailFetch == null) ? 60 : limitDetailFetch);
+
+        Map<String,Object> res = pythonClient.post()
+                .uri("/crawl")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(payload)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .onErrorResume(ex -> {
+                    log.error("Python /crawl 호출 실패", ex);
+                    return Mono.just(Map.of(
+                            "ok", false,
+                            "error", "crawl_failed",
+                            "message", Optional.ofNullable(ex.getMessage()).orElse("unknown")
+                    ));
+                })
+                .block();
+
+
+        return Objects.requireNonNullElse(res, Map.of("ok", false, "error", "no_response"));
+    }
+
+    public Map<String, Object> crawlViewportByAddress(
+            AddressPickReq req,
+            Integer radiusM, String category,
+            Map<String,Object> filters, Integer limitDetailFetch
+    ) {
+        NormalizedAddress n = confirmAndGeocode(req); // lat/lon 채워짐
+        if (n.getLat() == null || n.getLon() == null) {
+            return Map.of("ok", false, "error", "geocode_failed");
+        }
+        return crawlViewport(n.getLat(), n.getLon(), radiusM, category, filters, limitDetailFetch);
+    }
+
 }
