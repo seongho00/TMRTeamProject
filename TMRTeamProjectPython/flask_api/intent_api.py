@@ -5,11 +5,12 @@ from transformers import BertTokenizer, BertForSequenceClassification
 import pickle
 import mecab_ko
 import pymysql
-import io, os, uuid, tempfile, hashlib
+import io, os, uuid, tempfile
 import cv2, numpy as np, pytesseract, re
 from PIL import Image
 from werkzeug.utils import secure_filename
 from pytesseract import Output
+import re, time, random, hashlib
 
 
 # HEIC 지원 (설치되어 있으면 자동 등록)
@@ -587,107 +588,166 @@ def analyze():
 
 
 # 좌표를 통한 네이버 부동산 실시간 크롤링
-def crawl_viewport(
-        lat: float,
-        lng: float,
-        radius_m: int = 800,
-        category: str = "offices",
-        filters: Optional[Dict[str, Any]] = None,
-        limit_detail_fetch: Optional[int] = 60,
-) -> Dict[str, Any]:
-    """좌표 중심 뷰포트 기반 크롤링(최소 동작 예제).
-       ※ 네이버 구조/정책 바뀌면 셀렉터 조정 필요"""
+def _wait_css(drv, sel, t=10):
+    return WebDriverWait(drv, t).until(EC.presence_of_element_located((By.CSS_SELECTOR, sel)))
+
+def _scroll_list_to_bottom(drv, list_sel="div.item_list.item_list--article", pause=0.8, max_stall=2):
+    box = _wait_css(drv, list_sel, 12)
+    last_h = -1; stall = 0
+    while True:
+        drv.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", box)
+        time.sleep(pause)
+        h = drv.execute_script("return arguments[0].scrollHeight", box)
+        if h == last_h:
+            stall += 1
+            if stall >= max_stall: break
+        else:
+            stall = 0
+            last_h = h
+    return drv.find_elements(By.CSS_SELECTOR, "div.item")
+
+def _parse_detail(drv) -> Dict[str, Any]:
+    out: Dict[str, Any] = {}
+    try:
+        price_box = _wait_css(drv, "div.info_article_price", 8)
+        out["price_type"] = price_box.find_element(By.CLASS_NAME, "type").text.strip()
+        out["price"]      = price_box.find_element(By.CLASS_NAME, "price").text.strip()
+    except: pass
+
+    try:
+        table = _wait_css(drv, "table.info_table_wrap", 8)
+        for row in table.find_elements(By.CSS_SELECTOR, "tr.info_table_item"):
+            if "매물설명" in row.text:  # 긴 설명은 건너뛰기
+                continue
+            for th, td in zip(row.find_elements(By.TAG_NAME, "th"), row.find_elements(By.TAG_NAME, "td")):
+                out[th.text.strip()] = td.text.strip()
+    except: pass
+
+    # 패널 전체에서 매물번호 보조 추출
+    try:
+        panel = _wait_css(drv, "div.panel--detail", 6)
+        m = re.search(r"매물번호\s*([\d-]+)", panel.text)
+        if m: out["매물번호"] = m.group(1)
+    except: pass
+    return out
+
+def _area_pair(s: str):
+    m = re.match(r"([\d\.]+)\s*㎡\s*/\s*([\d\.]+)\s*㎡", s or "")
+    return (float(m.group(1)), float(m.group(2))) if m else (0.0, 0.0)
+
+def _normalize(d: Dict[str, Any]) -> Dict[str, Any]:
+    ac, ar = _area_pair(d.get("계약/전용면적",""))
+    return {
+        "article_no": d.get("매물번호",""),
+        "price_type": d.get("price_type",""),
+        "price":      d.get("price",""),
+        "location":   d.get("소재지",""),
+        "area_contract": ac,
+        "area_real":     ar,
+        "floor_info":    d.get("해당층/총층",""),
+        "move_in_date":  d.get("입주가능일",""),
+        "management_fee":d.get("월관리비",""),
+        "parking":       f'{d.get("주차가능여부","")} / {d.get("총주차대수","")}'.strip(" /"),
+        "heating":       d.get("난방(방식/연료)",""),
+        "purpose":       d.get("건축물 용도",""),
+        "use_approval_date": d.get("사용승인일",""),
+        "toilet_count":  d.get("화장실 수",""),
+        "broker_name":   d.get("중개사명",""),
+        "broker_ceo":    d.get("대표자",""),
+        "broker_address":d.get("중개사소재지",""),
+        "broker_phone":  d.get("전화번호",""),
+    }
+
+def crawl_viewport(lat: float, lng: float,
+                   radius_m: int = 800,                # (단일 뷰포트에선 미사용)
+                   category: str = "offices",
+                   filters: Optional[Dict[str, Any]] = None,
+                   limit_detail_fetch: Optional[int] = 60) -> Dict[str, Any]:
     opts = webdriver.ChromeOptions()
-    opts.add_argument("--headless=new")
+    # opts.add_argument("--headless=new")
     opts.add_argument("--disable-gpu")
     opts.add_argument("--no-sandbox")
+    # opts.add_argument("--disable-dev-shm-use")  # 리눅스/도커면 권장
     driver = webdriver.Chrome(options=opts)
 
     try:
-        # 줌 레벨은 대략 15~17에서 시작: 16 권장
-        url = f"https://new.land.naver.com/offices?ms={lat},{lng},16&a=SG&e=RETAIL"
-        driver.get(url)
+        driver.get("https://new.land.naver.com/")
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
+        time.sleep(1.2 + random.random()*0.6)
 
-        wait = WebDriverWait(driver, 10)
-        # 리스트 영역 로드 대기
-        list_box = wait.until(EC.presence_of_element_located(
-            (By.CSS_SELECTOR, "div.item_list.item_list--article")
-        ))
+        # 2) 타깃 페이지로 이동
+        target = f"https://new.land.naver.com/offices?ms={lat:.6f},{lng:.6f},16&a=SG&e=RETAIL"
+        driver.get(target)
 
+        items = []
         seen = set()
-        results = []
+        cards = _scroll_list_to_bottom(driver)
 
-        while len(results) < limit_detail_fetch:
-            items = driver.find_elements(By.CSS_SELECTOR, "div.item")
-            new_found = False
+        for card in cards:
+            if limit_detail_fetch and len(items) >= limit_detail_fetch:
+                break
 
-            for it in items:
-                key = it.text.strip()
-                if not key or key in seen:
-                    continue
-                seen.add(key)
-                new_found = True
+            # 텍스트 해시로 1차 중복 방지
+            fp = hashlib.sha1(card.text.strip().encode("utf-8","ignore")).hexdigest()
+            if fp in seen:
+                continue
 
-                # 클릭하여 상세 패널 열기
-                driver.execute_script("arguments[0].scrollIntoView(true);", it)
-                it.click()
+            try:
+                driver.execute_script("arguments[0].scrollIntoView({block:'center'});", card)
+                time.sleep(0.1 + random.random()*0.2)
+                card.click()
 
-                # 가격 영역
-                price_box = wait.until(EC.presence_of_element_located(
-                    (By.CSS_SELECTOR, "div.info_article_price")
-                ))
-                price_type = price_box.find_element(By.CLASS_NAME, "type").text
-                price_value = price_box.find_element(By.CLASS_NAME, "price").text
+                _wait_css(driver, "div.panel--detail", 10)
+                raw = _parse_detail(driver)
 
-                # 기본 테이블
-                table = wait.until(EC.presence_of_element_located(
-                    (By.CSS_SELECTOR, "table.info_table_wrap")
-                ))
-                rows = table.find_elements(By.CSS_SELECTOR, "tr.info_table_item")
-
-                detail = {}
-                for row in rows:
-                    ths = row.find_elements(By.TAG_NAME, "th")
-                    tds = row.find_elements(By.TAG_NAME, "td")
-                    # '매물설명' 행은 건너뜀
-                    if any("매물설명" in th.text for th in ths):
+                # 매물번호 있으면 그걸로 재중복 제거
+                no = raw.get("매물번호","")
+                if no:
+                    if no in seen:
                         continue
-                    for th, td in zip(ths, tds):
-                        detail[th.text.strip()] = td.text.strip()
+                    seen.add(no)
+                else:
+                    seen.add(fp)
 
-                detail["price_type"] = price_type
-                detail["price"] = price_value
-                results.append(detail)
+                items.append(_normalize(raw))
+                time.sleep(0.15 + random.random()*0.25)
+            except Exception:
+                continue
 
-                if len(results) >= limit_detail_fetch:
-                    break
-
-            if not new_found:
-                # 리스트 영역을 스크롤하여 추가 로딩 유도
-                driver.execute_script("arguments[0].scrollTop += 800", list_box)
-            # 필요 시 지도 드래그(뷰포트 이동)나 줌 조절 로직도 추가 가능
-
-        return results
-
+        return {
+            "ok": True,
+            "meta": {
+                "count": len(items),
+                "lat": lat, "lng": lng,
+                "category": category,
+                "limit_detail_fetch": limit_detail_fetch or 0,
+                "viewport": "single"  # (그리드 미사용 표기)
+            },
+            "items": items
+        }
     finally:
         driver.quit()
 
 
-@app.post("/crawl")
-def crawl():
+@app.route("/crawl", methods=["POST"])
+def api_crawl():
     payload = request.get_json(silent=True) or {}
-    lat = float(payload.get("lat", 0))
-    lng = float(payload.get("lng", 0))
-    radius = int(payload.get("radius_m", 800))
-    category = (payload.get("category") or "offices")
-    # TODO: 여기서 실제 네이버 뷰포트 크롤링 로직 호출
-    print(lat)
-    print(lng)
-    return jsonify(
-        ok=True,
-        meta={"lat": lat, "lng": lng, "radius_m": radius, "category": category},
-        items=[]  # 수집 결과 넣기
-    ), 200
+    lat = float(payload.get("lat"))
+    lng = float(payload.get("lng"))
+    radius_m = payload.get("radius_m") or 800
+    category  = payload.get("category") or "offices"
+    limit_detail_fetch = payload.get("limit_detail_fetch") or 60
+
+    print(f"[CRAWL IN] lat={lat}, lng={lng}, r={radius_m}, cat={category}, limit={limit_detail_fetch}")
+    try:
+        res = crawl_viewport(lat, lng, radius_m, category, limit_detail_fetch)
+        print(f"[CRAWL OUT] count={res['meta']['count']}")
+        return jsonify(res), 200
+    except Exception as e:
+        print(f"[CRAWL ERR] {e}")
+        return jsonify(ok=False, error="crawl_failed", message=str(e)), 500
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
