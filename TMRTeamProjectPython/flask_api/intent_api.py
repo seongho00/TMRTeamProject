@@ -11,12 +11,22 @@ from PIL import Image
 from werkzeug.utils import secure_filename
 from pytesseract import Output
 
+
 # HEIC 지원 (설치되어 있으면 자동 등록)
 try:
     import pillow_heif
     pillow_heif.register_heif_opener()
 except Exception:
     pass
+
+# 크롤링 관련 import
+from typing import Dict, Any, List
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from typing import Optional, Dict, Any
+
 
 # 사진 업로드 저장 디렉토리 (스프링과 동일/공유 경로면 더 좋음)
 UPLOAD_DIR = os.path.join(tempfile.gettempdir(), "registry-uploads")
@@ -526,7 +536,6 @@ def analyze():
 
     results_meta = []
     texts = []
-
     for f in files:
         if not f or f.filename == "":
             continue
@@ -539,6 +548,7 @@ def analyze():
         base, ext = os.path.splitext(secure_filename(f.filename))
         ext = ext or ".bin"
         fname = f"{uuid.uuid4()}{ext}"
+
 
         # 바이트를 메모리로 읽음
         data = f.read()
@@ -575,6 +585,114 @@ def analyze():
         # parsed={"을구_entries": eul_entries}
     ), 200
 
+
+# 좌표를 통한 네이버 부동산 실시간 크롤링
+def crawl_viewport(
+        lat: float,
+        lng: float,
+        radius_m: int = 800,
+        category: str = "offices",
+        filters: Optional[Dict[str, Any]] = None,
+        limit_detail_fetch: Optional[int] = 60,
+) -> Dict[str, Any]:
+    """좌표 중심 뷰포트 기반 크롤링(최소 동작 예제).
+       ※ 네이버 구조/정책 바뀌면 셀렉터 조정 필요"""
+    opts = webdriver.ChromeOptions()
+    opts.add_argument("--headless=new")
+    opts.add_argument("--disable-gpu")
+    opts.add_argument("--no-sandbox")
+    driver = webdriver.Chrome(options=opts)
+
+    try:
+        # 줌 레벨은 대략 15~17에서 시작: 16 권장
+        url = f"https://new.land.naver.com/offices?ms={lat},{lng},16&a=SG&e=RETAIL"
+        driver.get(url)
+
+        wait = WebDriverWait(driver, 10)
+        # 리스트 영역 로드 대기
+        list_box = wait.until(EC.presence_of_element_located(
+            (By.CSS_SELECTOR, "div.item_list.item_list--article")
+        ))
+
+        seen = set()
+        results = []
+
+        while len(results) < limit_detail_fetch:
+            items = driver.find_elements(By.CSS_SELECTOR, "div.item")
+            new_found = False
+
+            for it in items:
+                key = it.text.strip()
+                if not key or key in seen:
+                    continue
+                seen.add(key)
+                new_found = True
+
+                # 클릭하여 상세 패널 열기
+                driver.execute_script("arguments[0].scrollIntoView(true);", it)
+                it.click()
+
+                # 가격 영역
+                price_box = wait.until(EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, "div.info_article_price")
+                ))
+                price_type = price_box.find_element(By.CLASS_NAME, "type").text
+                price_value = price_box.find_element(By.CLASS_NAME, "price").text
+
+                # 기본 테이블
+                table = wait.until(EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, "table.info_table_wrap")
+                ))
+                rows = table.find_elements(By.CSS_SELECTOR, "tr.info_table_item")
+
+                detail = {}
+                for row in rows:
+                    ths = row.find_elements(By.TAG_NAME, "th")
+                    tds = row.find_elements(By.TAG_NAME, "td")
+                    # '매물설명' 행은 건너뜀
+                    if any("매물설명" in th.text for th in ths):
+                        continue
+                    for th, td in zip(ths, tds):
+                        detail[th.text.strip()] = td.text.strip()
+
+                detail["price_type"] = price_type
+                detail["price"] = price_value
+                results.append(detail)
+
+                if len(results) >= limit_detail_fetch:
+                    break
+
+            if not new_found:
+                # 리스트 영역을 스크롤하여 추가 로딩 유도
+                driver.execute_script("arguments[0].scrollTop += 800", list_box)
+            # 필요 시 지도 드래그(뷰포트 이동)나 줌 조절 로직도 추가 가능
+
+        return results
+
+    finally:
+        driver.quit()
+
+
+@app.post("/crawl")
+def crawl() -> Dict[str, Any]:
+    payload: Dict[str, Any] = request.get_json(silent=True) or {}
+    lat = float(payload.get("lat", 0))
+    lng = float(payload.get("lng", 0))
+    radius_m = int(payload.get("radius_m", 800))
+    category = str(payload.get("category") or "offices")
+    filters: Dict[str, Any] = payload.get("filters") or {}
+    limit_detail_fetch = payload.get("limit_detail_fetch")  # Optional[int]
+
+    # TODO: 뷰포트 크롤링 로직
+    return {
+        "ok": True,
+        "meta": {
+            "lat": lat, "lng": lng,
+            "radius_m": radius_m, "category": category,
+            "limit_detail_fetch": limit_detail_fetch,
+        },
+        "items": []  # List[Dict[str, Any]]
+    }
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
