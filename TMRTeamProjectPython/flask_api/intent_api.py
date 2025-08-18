@@ -21,12 +21,9 @@ except Exception:
     pass
 
 # 크롤링 관련 import
-from typing import Dict, Any, List
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from typing import Optional, Dict, Any
+from typing import Any, Dict, List, Optional
+from playwright.sync_api import sync_playwright, TimeoutError as PwTimeout
+
 
 
 # 사진 업로드 저장 디렉토리 (스프링과 동일/공유 경로면 더 좋음)
@@ -588,149 +585,132 @@ def analyze():
 
 
 # 좌표를 통한 네이버 부동산 실시간 크롤링
-def _wait_css(drv, sel, t=10):
-    return WebDriverWait(drv, t).until(EC.presence_of_element_located((By.CSS_SELECTOR, sel)))
+# --- Playwright 설정 ---
+USER_DATA_DIR = "./.chrome-profile"   # 쿠키/지문 유지
+HEADLESS = False                      # 먼저 창 띄워서 확인 후 True로 전환 가능
 
-def _scroll_list_to_bottom(drv, list_sel="div.item_list.item_list--article", pause=0.8, max_stall=2):
-    box = _wait_css(drv, list_sel, 12)
-    last_h = -1; stall = 0
-    while True:
-        drv.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight", box)
-        time.sleep(pause)
-        h = drv.execute_script("return arguments[0].scrollHeight", box)
-        if h == last_h:
-            stall += 1
-            if stall >= max_stall: break
-        else:
-            stall = 0
-            last_h = h
-    return drv.find_elements(By.CSS_SELECTOR, "div.item")
+def get_env_proxy():
+    for k in ("HTTPS_PROXY","https_proxy","HTTP_PROXY","http_proxy"):
+        v = os.environ.get(k)
+        if v: return {"server": v}
+    return None
 
-def _parse_detail(drv) -> Dict[str, Any]:
-    out: Dict[str, Any] = {}
+def _launch_ctx(p):
+    proxy_cfg = get_env_proxy()
+    ctx = p.chromium.launch_persistent_context(
+        user_data_dir=USER_DATA_DIR,
+        channel="chrome",
+        headless=HEADLESS,
+        locale="ko-KR",
+        viewport={"width": 1280, "height": 860},
+        proxy=proxy_cfg,
+        ignore_https_errors=True,
+        args=[
+            "--disable-blink-features=AutomationControlled",
+            "--no-first-run","--no-default-browser-check",
+            "--disable-dev-shm-use","--no-sandbox",
+        ],
+    )
+    # 약식 스텔스
+    ctx.add_init_script("""
+      Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+      Object.defineProperty(navigator, 'language', {get: () => 'ko-KR'});
+      Object.defineProperty(navigator, 'languages', {get: () => ['ko-KR','ko','en-US','en']});
+      window.chrome = window.chrome || { runtime: {} };
+    """)
+    ctx.set_extra_http_headers({"Accept-Language":"ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"})
+    return ctx
+
+def _goto_offices(page, lat: float, lng: float):
+    root = "https://new.land.naver.com"
+    path = f"/offices?ms={lat:.6f},{lng:.6f},16&a=SG&e=RETAIL"
+    page.goto(root, wait_until="domcontentloaded", timeout=30000)
     try:
-        price_box = _wait_css(drv, "div.info_article_price", 8)
-        out["price_type"] = price_box.find_element(By.CLASS_NAME, "type").text.strip()
-        out["price"]      = price_box.find_element(By.CLASS_NAME, "price").text.strip()
-    except: pass
-
-    try:
-        table = _wait_css(drv, "table.info_table_wrap", 8)
-        for row in table.find_elements(By.CSS_SELECTOR, "tr.info_table_item"):
-            if "매물설명" in row.text:  # 긴 설명은 건너뛰기
-                continue
-            for th, td in zip(row.find_elements(By.TAG_NAME, "th"), row.find_elements(By.TAG_NAME, "td")):
-                out[th.text.strip()] = td.text.strip()
-    except: pass
-
-    # 패널 전체에서 매물번호 보조 추출
-    try:
-        panel = _wait_css(drv, "div.panel--detail", 6)
-        m = re.search(r"매물번호\s*([\d-]+)", panel.text)
-        if m: out["매물번호"] = m.group(1)
-    except: pass
-    return out
-
-def _area_pair(s: str):
-    m = re.match(r"([\d\.]+)\s*㎡\s*/\s*([\d\.]+)\s*㎡", s or "")
-    return (float(m.group(1)), float(m.group(2))) if m else (0.0, 0.0)
-
-def _normalize(d: Dict[str, Any]) -> Dict[str, Any]:
-    ac, ar = _area_pair(d.get("계약/전용면적",""))
-    return {
-        "article_no": d.get("매물번호",""),
-        "price_type": d.get("price_type",""),
-        "price":      d.get("price",""),
-        "location":   d.get("소재지",""),
-        "area_contract": ac,
-        "area_real":     ar,
-        "floor_info":    d.get("해당층/총층",""),
-        "move_in_date":  d.get("입주가능일",""),
-        "management_fee":d.get("월관리비",""),
-        "parking":       f'{d.get("주차가능여부","")} / {d.get("총주차대수","")}'.strip(" /"),
-        "heating":       d.get("난방(방식/연료)",""),
-        "purpose":       d.get("건축물 용도",""),
-        "use_approval_date": d.get("사용승인일",""),
-        "toilet_count":  d.get("화장실 수",""),
-        "broker_name":   d.get("중개사명",""),
-        "broker_ceo":    d.get("대표자",""),
-        "broker_address":d.get("중개사소재지",""),
-        "broker_phone":  d.get("전화번호",""),
-    }
+        page.evaluate("href => { location.href = href }", path)
+        page.wait_for_url("**/offices**", timeout=20000)
+        return
+    except PwTimeout:
+        pass
+    page.goto(root + path, referer=root, wait_until="domcontentloaded", timeout=30000)
+    page.wait_for_url("**/offices**", timeout=20000)
 
 def crawl_viewport(lat: float, lng: float,
-                   radius_m: int = 800,                # (단일 뷰포트에선 미사용)
+                   radius_m: int = 800,
                    category: str = "offices",
                    filters: Optional[Dict[str, Any]] = None,
                    limit_detail_fetch: Optional[int] = 60) -> Dict[str, Any]:
-    opts = webdriver.ChromeOptions()
-    # opts.add_argument("--headless=new")
-    opts.add_argument("--disable-gpu")
-    opts.add_argument("--no-sandbox")
-    # opts.add_argument("--disable-dev-shm-use")  # 리눅스/도커면 권장
-    driver = webdriver.Chrome(options=opts)
+    """
+    Playwright로 /offices 진입 후 new.land.naver.com/api/ 응답만 수집해서 반환
+    """
+    with sync_playwright() as p:
+        ctx = _launch_ctx(p)
+        page = ctx.new_page()
 
-    try:
-        driver.get("https://new.land.naver.com/")
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
-        time.sleep(1.2 + random.random()*0.6)
-
-        # 2) 타깃 페이지로 이동
-        target = f"https://new.land.naver.com/offices?ms={lat:.6f},{lng:.6f},16&a=SG&e=RETAIL"
-        driver.get(target)
-
-        items = []
+        # /api 응답 후킹
+        collected: List[Dict[str, Any]] = []
         seen = set()
-        cards = _scroll_list_to_bottom(driver)
+        def is_target(url: str) -> bool:
+            return "new.land.naver.com/api/" in url
+        def on_resp(resp):
+            url = resp.url
+            if (not is_target(url)) or (url in seen):
+                return
+            try:
+                data = resp.json()
+            except Exception:
+                return
+            seen.add(url)
+            collected.append({"url": url, "status": resp.status, "data": data})
+        page.on("response", on_resp)
 
-        for card in cards:
-            if limit_detail_fetch and len(items) >= limit_detail_fetch:
+        # 1) /offices 진입
+        _goto_offices(page, lat, lng)
+
+        # 2) 스크롤로 목록 XHR 유도
+        page.wait_for_timeout(1200)
+        for _ in range(12):
+            page.mouse.wheel(0, 3200)
+            page.wait_for_timeout(700 + int(random.random()*300))
+            if limit_detail_fetch and len(collected) >= int(limit_detail_fetch):
                 break
 
-            # 텍스트 해시로 1차 중복 방지
-            fp = hashlib.sha1(card.text.strip().encode("utf-8","ignore")).hexdigest()
-            if fp in seen:
-                continue
+        # 3) 카드 일부 클릭으로 상세 XHR 유도
+        try:
+            page.wait_for_selector(
+                "div.item_list--article div.item, div.item_list.item_list--article div.item",
+                timeout=6000
+            )
+            for c in page.query_selector_all(
+                    "div.item_list--article div.item, div.item_list.item_list--article div.item"
+            )[:20]:
+                if limit_detail_fetch and len(collected) >= int(limit_detail_fetch): break
+                try:
+                    c.scroll_into_view_if_needed()
+                    c.click()
+                    page.wait_for_timeout(350 + int(random.random()*250))
+                except Exception:
+                    continue
+        except Exception:
+            pass
 
-            try:
-                driver.execute_script("arguments[0].scrollIntoView({block:'center'});", card)
-                time.sleep(0.1 + random.random()*0.2)
-                card.click()
+        # 정리
+        page.off("response", on_resp)
+        ctx.close()
 
-                _wait_css(driver, "div.panel--detail", 10)
-                raw = _parse_detail(driver)
-
-                # 매물번호 있으면 그걸로 재중복 제거
-                no = raw.get("매물번호","")
-                if no:
-                    if no in seen:
-                        continue
-                    seen.add(no)
-                else:
-                    seen.add(fp)
-
-                items.append(_normalize(raw))
-                time.sleep(0.15 + random.random()*0.25)
-            except Exception:
-                continue
-
+        items = collected[: int(limit_detail_fetch or len(collected))]
         return {
             "ok": True,
             "meta": {
                 "count": len(items),
                 "lat": lat, "lng": lng,
                 "category": category,
-                "limit_detail_fetch": limit_detail_fetch or 0,
-                "viewport": "single"  # (그리드 미사용 표기)
+                "limit_detail_fetch": int(limit_detail_fetch or 0),
+                "source": "playwright_api_sniff"
             },
             "items": items
         }
-    finally:
-        driver.quit()
 
-
+# --- Flask 라우트 ---
 @app.route("/crawl", methods=["POST"])
 def api_crawl():
     payload = request.get_json(silent=True) or {}
@@ -738,11 +718,17 @@ def api_crawl():
     lng = float(payload.get("lng"))
     radius_m = payload.get("radius_m") or 800
     category  = payload.get("category") or "offices"
-    limit_detail_fetch = payload.get("limit_detail_fetch") or 60
+    limit_detail_fetch = int(payload.get("limit_detail_fetch") or 60)
 
     print(f"[CRAWL IN] lat={lat}, lng={lng}, r={radius_m}, cat={category}, limit={limit_detail_fetch}")
     try:
-        res = crawl_viewport(lat, lng, radius_m, category, limit_detail_fetch)
+        # ★ 키워드 인자로 호출 (포지셔널로 넘기면 filters 자리에 박혀서 엉망됨)
+        res = crawl_viewport(
+            lat, lng,
+            radius_m=radius_m,
+            category=category,
+            limit_detail_fetch=limit_detail_fetch
+        )
         print(f"[CRAWL OUT] count={res['meta']['count']}")
         return jsonify(res), 200
     except Exception as e:
@@ -750,4 +736,5 @@ def api_crawl():
         return jsonify(ok=False, error="crawl_failed", message=str(e)), 500
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    # 리로더/멀티스레드 충돌 방지(먼저 이렇게 확인 후 점진 확장)
+    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False, threaded=False)
