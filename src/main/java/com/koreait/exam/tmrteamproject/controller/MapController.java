@@ -102,12 +102,11 @@ public class MapController {
 
     // 상관분석 페이지
     @GetMapping("/correlationMap")
-    public String correlationMap() {
-        return "map/correlationMap";
-    }
+    public String correlationMap(Model model) {
+        List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
 
-    @GetMapping("/diskmap")
-    public String diskmap() {
-        return "map/dis";
+        model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
+
+        return "map/correlationMap";
     }
 }

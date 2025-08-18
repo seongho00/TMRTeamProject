@@ -16,6 +16,7 @@ import javax.persistence.Id;
 @SuperBuilder
 @ToString(callSuper = true)
 public class Learning {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,8 +29,9 @@ public class Learning {
 
     private float riskScore;             // 위험도_점수
 
-    private int riskLabel;            // 위험도
-    private int predictedRiskLabel;   // 예측_위험도
+    private int riskLabel;              // 실제_위험도
+    private String riskLevel;           // 위험도_단계
 
-    private String riskLabel7;            // 위험도7
+    private int predictedRiskLabel;     // 예측_위험도
+    private float predictedConfidence;  // 예측_신뢰도
 }
