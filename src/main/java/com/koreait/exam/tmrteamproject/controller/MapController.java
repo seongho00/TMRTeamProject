@@ -1,9 +1,7 @@
 package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.service.AdminDongService;
-import com.koreait.exam.tmrteamproject.service.UpjongCodeService;
 import com.koreait.exam.tmrteamproject.vo.AdminDong;
-import com.koreait.exam.tmrteamproject.vo.UpjongCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +21,6 @@ public class MapController {
 
     @Autowired
     private AdminDongService adminDongService;
-    @Autowired
-    private UpjongCodeService upjongCodeService;
 
     @GetMapping("/commercialZoneMap")
     public String commercialZoneMap(Model model) {
@@ -59,12 +55,5 @@ public class MapController {
         model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
 
         return "map/correlationMap";
-    }
-
-    @GetMapping("/api/upjong")
-    @ResponseBody
-    public List<UpjongCode> listUpjong() {
-
-        return upjongCodeService.findAll();
     }
 }
