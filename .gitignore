@@ -54,3 +54,6 @@ trace.zip
 naver_land_api_*.json
 snapshot_*.png
 root_*.png
+
+# Gradle cache (잠금파일 포함)
+.gradle/
