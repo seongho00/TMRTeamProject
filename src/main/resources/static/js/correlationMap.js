@@ -1,10 +1,3 @@
-/*************************************************
- * [코드 기반으로 전면 전환]
- * - 비교/선택/검색: "코드" 사용 (SIGUNGU_CD, ADSTRD_CD)
- * - UI 표시: "이름" 사용 (SIGUNGU_NM, ADSTRD_NM)
- * - select의 option: value=코드, text=이름
- *************************************************/
-
 let map;
 let currentPolygon = null;
 let emdPolygons = [], emdOverlayList = [];
