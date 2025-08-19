@@ -38,22 +38,22 @@ public class PropertyController {
 
     @GetMapping("/upload")
     public String uploadForm() {
-        // templates/registry/upload.html 렌더링
+        // templates/property/upload.html 렌더링
         return "property/upload";
     }
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ResponseBody
-    public ResponseEntity<?> handleUpload(@RequestParam("files") List<MultipartFile> files) throws IOException {
-        List<PropertyFile> saved = propertyService.saveFilesToDb(files);
-        Map<String, Object> analyze = propertyService.analyzeWithPythonFromDb(saved);
+    public ResponseEntity<?> handleUpload(
+            @RequestPart("files") List<MultipartFile> files,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng
+    ) {
+        Map<String, String> extra = new HashMap<>();
+        if (lat != null) extra.put("lat", String.valueOf(lat));
+        if (lng != null) extra.put("lng", String.valueOf(lng));
 
-        return ResponseEntity.ok(Map.of(
-                "ok", true,
-                "count", saved.size(),
-                "files", saved,
-                "analyze", analyze
-        ));
+        Map<String, Object> result = propertyService.analyzeWithPythonDirect(files, extra);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/selectJuso")
