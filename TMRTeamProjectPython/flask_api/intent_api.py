@@ -498,7 +498,7 @@ def run_ocr(gray: np.ndarray, extra_candidates=None) -> str:
                 best_score, best_txt = score, txt
     return _cleanup_text(best_txt)
 
-def ocr_image_bytes(data: bytes) -> str:
+def ocr_image_bytes(data: bytes, return_all: bool = False, top_k: int = 6):
     # 1) 로드 + 자동 회전
     pil = Image.open(io.BytesIO(data)); pil.load()
     pil = auto_orient(pil)
@@ -514,7 +514,7 @@ def ocr_image_bytes(data: bytes) -> str:
     # 3) 부드러운 그레이 후보
     gray = enhance_gray(pil, target_long=2000)
 
-    # 4) 강이진 후보 (preprocess_doc)
+    # 4) 강이진 후보
     extra = []
     try:
         bgr_for_bw = cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
@@ -523,52 +523,121 @@ def ocr_image_bytes(data: bytes) -> str:
     except Exception:
         pass
 
-    # 5) 여러 PSM/후보 조합 → best pick
-    return run_ocr(gray, extra_candidates=extra)
+    # 5) 모든 후보 실행
+    candidates = run_ocr_candidates(gray, extra_candidates=extra, top_k=top_k)
+
+    if return_all:
+        return {"candidates": candidates, "best": (candidates[0] if candidates else None)}
+    # 하위 호환: 텍스트만
+    return (candidates[0]["text"] if candidates else "")
 
 
+HAN_RE = re.compile(r"[가-힣]")
+
+def run_ocr_candidates(gray: np.ndarray, extra_candidates=None, top_k: Optional[int] = None) -> List[Dict[str, Any]]:
+    """
+    여러 전처리(gray/adapt/bw_strong...) × 여러 PSM(6,4,11,3)을 전부 돌려
+    후보 리스트를 점수 내림차순으로 반환.
+    score = avg_conf + 0.2 * (한글자수)  # 기존 가중치 그대로
+    """
+    # 전처리 후보들(라벨, 이미지)
+    cands: List[Tuple[str, np.ndarray]] = [("gray_clahe", gray)]
+
+    thr = cv2.adaptiveThreshold(
+        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 15
+    )
+    cands.append(("gray_adapt", thr))
+
+    if extra_candidates:
+        for idx, im in enumerate(extra_candidates):
+            cands.append((f"bw_strong_{idx}", im))
+
+    results: List[Dict[str, Any]] = []
+    for pre_label, img in cands:
+        pil = Image.fromarray(img)
+        for psm in (6, 4, 11, 3):  # 문서 → 컬럼 → 스파스 → 자동
+            try:
+                conf = build_conf(psm=psm)
+                data = pytesseract.image_to_data(pil, config=conf, output_type=Output.DICT)
+                words = [w for w in data["text"] if w.strip()]
+                confs = [int(c) for c in data["conf"] if c not in ("-1", "-0.0")]
+                avg = sum(confs) / len(confs) if confs else 0
+                text = _cleanup_text(" ".join(words))
+            except Exception:
+                continue
+
+            han = len(HAN_RE.findall(text))
+            score = (avg or 0) + 0.2 * han
+
+            results.append({
+                "pre": pre_label,
+                "psm": psm,
+                "avg_conf": avg,
+                "han": han,
+                "len": len(text),
+                "score": score,
+                "text": text,
+            })
+
+    results.sort(key=lambda r: r["score"], reverse=True)
+    if top_k is not None:
+        results = results[:top_k]
+    return results
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
     if "files" not in request.files:
         return jsonify(ok=False, message="files 필드가 없습니다."), 400
 
-    files = request.files.getlist("files")
-    if not files:
+    uploads = request.files.getlist("files")   # ← 여기!
+    if not uploads:
         return jsonify(ok=False, message="업로드된 파일이 없습니다."), 400
 
     results_meta = []
     texts = []
-    for f in files:
-        if not f or f.filename == "":
+
+    for up in uploads:                         # ← 여기!
+        if not up or up.filename == "":
             continue
 
-        ctype = (f.mimetype or "").lower()
+        ctype = (up.mimetype or "").lower()
         if ctype not in ALLOWED:
             return jsonify(ok=False, message=f"허용되지 않은 형식: {ctype}"), 415
 
-        # 메타데이터만 보존(저장은 안 함)
-        base, ext = os.path.splitext(secure_filename(f.filename))
-        ext = ext or ".bin"
-        fname = f"{uuid.uuid4()}{ext}"
-
-
-        # 바이트를 메모리로 읽음
-        data = f.read()
+        data = up.read()
         if not data:
             continue
 
         try:
-            txt = ocr_image_bytes(data)
+            # 모든 시도 결과를 함께 받기
+            ocr_res = ocr_image_bytes(data, return_all=True, top_k=6)
+            best = ocr_res["best"]
+            cands = ocr_res["candidates"]
+            txt = (best["text"] if best else "")
         except Exception as e:
+            best = None
+            cands = []
             txt = f"[OCR 실패: {e}]"
 
         results_meta.append({
-            "originalName": f.filename,
+            "originalName": up.filename,
             "contentType": ctype,
-            "fileName": fname,  # 실제 저장은 안 하지만 추적용으로 응답
             "size": len(data),
+            "best": ({
+                         "pre": best["pre"], "psm": best["psm"],
+                         "avg_conf": best["avg_conf"], "score": round(best["score"], 3)
+                     } if best else None),
+            "ocrCandidates": [
+                {
+                    "pre": c["pre"], "psm": c["psm"],
+                    "avg_conf": c["avg_conf"],
+                    "han": c["han"], "len": c["len"],
+                    "score": round(c["score"], 3),
+                    "textPreview": c["text"][:400]
+                } for c in (cands or [])
+            ]
         })
+
         texts.append(txt)
 
     if not results_meta:
@@ -576,17 +645,16 @@ def analyze():
 
     full_text = "\n\n---PAGEBREAK---\n\n".join(texts)
     secs = split_sections(full_text)
-    # eul_entries = parse_eulgu(secs.get("을구", ""))
 
     return jsonify(
         ok=True,
         count=len(results_meta),
-        files=results_meta,  # storedPath 제거됨 (디스크 저장 안 함)
+        files=results_meta,                 # 응답 JSON 키 "files"는 문제 없음
         sections_detected=[k for k, v in secs.items() if v],
         textPreview=full_text[:2000],
-        textFull=full_text,  # ⬅️ 전체 OCR 텍스트 추가
-        # parsed={"을구_entries": eul_entries}
+        textFull=full_text
     ), 200
+
 
 
 # 좌표를 통한 네이버 부동산 실시간 크롤링
