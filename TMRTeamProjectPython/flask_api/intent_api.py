@@ -761,7 +761,7 @@ def crawl_viewport(lat: float, lng: float,
         )
 
         # 3) 클릭 → (짧게) API 소프트 대기 → DOM 파싱(항상)
-        for c in cards[len(cards)]:
+        for i, c in enumerate(cards):  # ✅ 모든 카드 순회
             if limit_detail_fetch and len(detail_hits) >= int(limit_detail_fetch):
                 break
 
@@ -772,7 +772,7 @@ def crawl_viewport(lat: float, lng: float,
             except Exception:
                 continue
 
-            # API는 최대 1.2초만 대기 (없어도 통과)
+            # API는 최대 1.2초만 소프트 대기 (없어도 통과)
             hit = _soft_wait_detail(page, api_detail_queue, before_len, API_SOFT_WAIT_MS)
 
             # 디테일 패널 DOM 파싱 (항상 시도)
@@ -789,13 +789,12 @@ def crawl_viewport(lat: float, lng: float,
                 "dom":    dom_data,
             })
 
-            # 내부 추가 XHR 시간을 아주 살짝 부여
             page.wait_for_timeout(120 + int(random.random() * 120))
 
         # 정리
-        page.off("response", on_resp)
         ctx.close()
 
+        # 모든 항목 반환 (limit_detail_fetch가 None이면 전부)
         limit = int(limit_detail_fetch or len(detail_hits))
         return {
             "ok": True,
@@ -806,7 +805,7 @@ def crawl_viewport(lat: float, lng: float,
                 "count_detail": len(detail_hits),
                 "source": "playwright_softwait(dom+api)",
             },
-            "items": detail_hits[:limit],   # 각 item = {"json":..., "dom":...}
+            "items": detail_hits[:limit],   # limit=None이면 전부
         }
 
 from playwright.sync_api import Page, Locator, TimeoutError as PWTimeout
@@ -881,8 +880,7 @@ def scrape_detail_panel(page: Page) -> dict:
     # 페이지마다 라벨이 약간 다를 수 있어, 필요한 것만 골라 호출하면 됨
     candidates = {
         "관리비": ["관리비"],
-        "전용면적": ["전용면적", "전용"],
-        "공급면적": ["공급면적", "공급"],
+        "전용면적": ["전용면적"],
         "층": ["층", "층수"],
         "입주가능일": ["입주가능일", "입주일"],
         "주차": ["주차"],
@@ -913,6 +911,62 @@ def scrape_detail_panel(page: Page) -> dict:
 
     return detail
 
+# ── ㎡ 파싱: 문자열에서 "…㎡" 값들만 뽑아 '가장 작은 ㎡'를 전용면적으로 간주 ──
+# 예) "50㎡/38.6㎡(전용률80%)" → [50.0, 38.6] → 38.6
+def _extract_area_sqm(val: Optional[str]) -> Optional[float]:
+    if val is None:
+        return None
+    s = str(val)
+    matches = re.findall(r"([\d]+(?:\.\d+)?)\s*(?:㎡|m²)", s, flags=re.IGNORECASE)
+    if matches:
+        nums = [float(x) for x in matches]
+        return min(nums)  # 보통 전용(㎡)이 더 작음
+    # "14평" 같은 경우를 대비(있다면)
+    m_py = re.search(r"([\d]+(?:\.\d+)?)\s*평", s)
+    if m_py:
+        return round(float(m_py.group(1)) * 3.305785, 3)
+    return None
+
+# ── 핵심: 월세만 필터 → 면적 뽑기 → 구간별 평균 월세 계산 ─────────────
+def avg_monthly_by_area(detail_hits: List[Dict[str, Any]]) -> Dict[str, float]:
+    per_sqm_vals: List[float] = []      # 만원/㎡
+    per_pyeong_vals: List[float] = []   # 만원/평
+
+    for it in detail_hits:
+        d = it.get("dom") or {}
+        if not d:
+            continue
+
+        # 월세만
+        price_type = str(d.get("price_type") or "")
+        if "월세" not in price_type:
+            continue
+
+        # 월세 금액
+        monthly: Optional[int] = d.get("monthly")
+
+        # 면적: 전용면적 우선, 없으면 공급면적 시도
+        area_str = d.get("전용면적")
+        area = _extract_area_sqm(area_str)
+
+
+        if monthly is None or area is None:
+            continue
+
+        per_sqm = monthly / area                     # 만원/㎡
+        per_pyeong = monthly / (area / 3.305785)     # 만원/평
+
+        per_sqm_vals.append(per_sqm)
+        per_pyeong_vals.append(per_pyeong)
+
+        def _avg(vs: List[float]) -> Optional[float]:
+            return round(sum(vs) / len(vs), 3) if vs else None
+
+    return {
+        "count": len(per_sqm_vals),
+        "avg_per_sqm_manwon": _avg(per_sqm_vals),         # 만원/㎡
+        "avg_per_pyeong_manwon": _avg(per_pyeong_vals),   # 만원/평
+    }
 # --- Flask 라우트 ---
 @app.route("/crawl", methods=["POST"])
 def api_crawl():
@@ -926,12 +980,16 @@ def api_crawl():
     print(f"[CRAWL IN] lat={lat}, lng={lng}, r={radius_m}, cat={category}, limit={limit_detail_fetch}")
     try:
         # ★ 키워드 인자로 호출 (포지셔널로 넘기면 filters 자리에 박혀서 엉망됨)
-        res = crawl_viewport(
+        res =   crawl_viewport(
             lat, lng,
             radius_m=radius_m,
             category=category,
             limit_detail_fetch=limit_detail_fetch
         )
+
+        stats = avg_monthly_by_area(res["items"])
+        print("[면적 구간별 평균 월세]", stats)
+
         print(f"[CRAWL OUT] count={res['meta']['count']}")
         return jsonify(res), 200
     except Exception as e:
