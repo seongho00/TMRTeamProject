@@ -990,12 +990,11 @@ def api_crawl():
         stats = avg_monthly_by_area(res["items"])
         print("[면적 구간별 평균 월세]", stats)
 
-        print(f"[CRAWL OUT] count={res['meta']['count']}")
+        print(f"[CRAWL OUT] count={res['meta'].get('count_detail', len(res.get('items', [])))}")
         return jsonify(res), 200
     except Exception as e:
         print(f"[CRAWL ERR] {e}")
         return jsonify(ok=False, error="crawl_failed", message=str(e)), 500
 
 if __name__ == "__main__":
-    # 리로더/멀티스레드 충돌 방지(먼저 이렇게 확인 후 점진 확장)
     app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False, threaded=False)
