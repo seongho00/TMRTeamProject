@@ -1,3 +1,6 @@
+from collections import deque
+from contextlib import nullcontext
+
 from flask import Flask, request, jsonify, Response
 import json
 import torch
@@ -11,6 +14,8 @@ from PIL import Image
 from werkzeug.utils import secure_filename
 from pytesseract import Output
 import re, time, random, hashlib
+from collections import deque
+from playwright.sync_api import sync_playwright, Page
 
 
 # HEIC 지원 (설치되어 있으면 자동 등록)
@@ -21,7 +26,7 @@ except Exception:
     pass
 
 # 크롤링 관련 import
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from playwright.sync_api import sync_playwright, TimeoutError as PwTimeout
 
 
@@ -593,6 +598,8 @@ LIST_SEL_CANDS = [
     "div.item_list--article",
     "div.article_list",  # 예비
 ]
+API_SOFT_WAIT_MS = 1200          # 800~1500 권장 (너무 느리면 900로)
+MAX_CLICK = 20                   # 클릭할 카드 수 상한
 
 def _pick_scroll_box(page) -> str:
     # scrollHeight > clientHeight 인 첫 요소 선택
@@ -693,78 +700,218 @@ def _goto_offices(page, lat: float, lng: float):
     page.wait_for_url("**/offices**", timeout=20000)
 
 
+DETAIL_PATTERNS = [
+    re.compile(r"https://new\.land\.naver\.com/api/.*/articles/\d+"),
+    re.compile(r"https://new\.land\.naver\.com/api/.*/article/\d+"),
+    re.compile(r"https://new\.land\.naver\.com/api/.*/detail"),
+]
+
+def _soft_wait_detail(page: Page, q: deque, prev_len: int, wait_ms: int) -> Optional[Dict[str, Any]]:
+    deadline = time.time() + wait_ms / 1000.0
+    while time.time() < deadline:
+        if len(q) > prev_len:
+            return q[-1]  # 가장 최근 도착분
+        page.wait_for_timeout(40)  # 짧게 양보
+    return None
+
+def _is_api(url: str) -> bool:
+    return "https://new.land.naver.com/api/" in url
+
+def _is_detail(url: str) -> bool:
+    return _is_api(url) and any(p.search(url) for p in DETAIL_PATTERNS)
+
 def crawl_viewport(lat: float, lng: float,
                    radius_m: int = 800,
                    category: str = "offices",
                    filters: Optional[Dict[str, Any]] = None,
                    limit_detail_fetch: Optional[int] = 60) -> Dict[str, Any]:
-    """
-    Playwright로 /offices 진입 후 new.land.naver.com/api/ 응답만 수집해서 반환
-    """
+
     with sync_playwright() as p:
         ctx = _launch_ctx(p)
         page = ctx.new_page()
 
-        # /api 응답 후킹
-        collected: List[Dict[str, Any]] = []
-        seen = set()
-        def is_target(url: str) -> bool:
-            return "new.land.naver.com/api/" in url
+        detail_hits: List[Dict[str, Any]] = []
+
+        # 디테일 응답 큐 (on_resp가 여기로 push)
+        api_detail_queue: deque = deque()
+
         def on_resp(resp):
             url = resp.url
-            if (not is_target(url)) or (url in seen):
-                return
-            try:
-                data = resp.json()
-            except Exception:
-                return
-            seen.add(url)
-            collected.append({"url": url, "status": resp.status, "data": data})
+            if _is_detail(url):
+                try:
+                    data = resp.json()
+                except Exception:
+                    data = None
+                api_detail_queue.append({"url": url, "status": resp.status, "data": data})
+
         page.on("response", on_resp)
 
-        # 1) /offices 진입
+        # 1) /offices 진입 & 목록 로드
         _goto_offices(page, lat, lng)
+        page.wait_for_timeout(800)
+        scroll_list_to_bottom(page, pause_ms=700, max_stall=2)
 
-        # 2) 스크롤로 목록 XHR 유도
-        page.wait_for_timeout(1200)
-        cards = scroll_list_to_bottom(page, pause_ms=700, max_stall=2)
-        print("cards:", len(cards))
+        # 2) 카드 목록 확보
+        page.wait_for_selector(
+            "div.item_list--article div.item, div.item_list.item_list--article div.item",
+            timeout=6000
+        )
+        cards = page.query_selector_all(
+            "div.item_list--article div.item, div.item_list.item_list--article div.item"
+        )
 
-        # 3) 카드 일부 클릭으로 상세 XHR 유도
-        try:
-            page.wait_for_selector(
-                "div.item_list--article div.item, div.item_list.item_list--article div.item",
-                timeout=6000
-            )
-            for c in page.query_selector_all(
-                    "div.item_list--article div.item, div.item_list.item_list--article div.item"
-            )[:20]:
-                if limit_detail_fetch and len(collected) >= int(limit_detail_fetch): break
-                try:
-                    c.scroll_into_view_if_needed()
-                    c.click()
-                    page.wait_for_timeout(350 + int(random.random()*250))
-                except Exception:
-                    continue
-        except Exception:
-            pass
+        # 3) 클릭 → (짧게) API 소프트 대기 → DOM 파싱(항상)
+        for c in cards[len(cards)]:
+            if limit_detail_fetch and len(detail_hits) >= int(limit_detail_fetch):
+                break
+
+            try:
+                before_len = len(api_detail_queue)
+                c.scroll_into_view_if_needed()
+                c.click()
+            except Exception:
+                continue
+
+            # API는 최대 1.2초만 대기 (없어도 통과)
+            hit = _soft_wait_detail(page, api_detail_queue, before_len, API_SOFT_WAIT_MS)
+
+            # 디테일 패널 DOM 파싱 (항상 시도)
+            page.wait_for_timeout(200)  # 패널 렌더 여유
+            try:
+                dom_data = scrape_detail_panel(page)   # 또는 scrape_detail_panel_raw(page)
+            except Exception:
+                dom_data = {}
+
+            detail_hits.append({
+                "url":    (hit["url"] if hit else None),
+                "status": (hit["status"] if hit else None),
+                "json":   (hit["data"] if hit else None),
+                "dom":    dom_data,
+            })
+
+            # 내부 추가 XHR 시간을 아주 살짝 부여
+            page.wait_for_timeout(120 + int(random.random() * 120))
 
         # 정리
         page.off("response", on_resp)
         ctx.close()
 
-        items = collected[: int(limit_detail_fetch or len(collected))]
+        limit = int(limit_detail_fetch or len(detail_hits))
         return {
             "ok": True,
             "meta": {
-                "count": len(items),
                 "lat": lat, "lng": lng,
                 "category": category,
-                "limit_detail_fetch": int(limit_detail_fetch or 0),
-                "source": "playwright_api_sniff"
+                "limit_detail_fetch": limit,
+                "count_detail": len(detail_hits),
+                "source": "playwright_softwait(dom+api)",
             },
-            "items": items
+            "items": detail_hits[:limit],   # 각 item = {"json":..., "dom":...}
         }
+
+from playwright.sync_api import Page, Locator, TimeoutError as PWTimeout
+import re
+
+def wait_for_element(page: Page, selector: str, timeout: int = 6000) -> Locator:
+    loc = page.locator(selector)
+    loc.wait_for(state="visible", timeout=timeout)
+    return loc
+
+def wait_for_elements(page: Page, selector: str, min_count: int = 1, timeout: int = 6000):
+    page.wait_for_selector(selector, state="attached", timeout=timeout)
+    loc = page.locator(selector)
+    # 개수 만족까지 폴링
+    with page.expect_event("load", timeout=200) if False else nullcontext():  # no-op
+        end = page.context._impl_obj._loop.time() + (timeout / 1000)
+        while True:
+            if loc.count() >= min_count:
+                break
+            if page.context._impl_obj._loop.time() > end:
+                raise PWTimeout(f"Timeout waiting for {min_count}+ elements: {selector}")
+    return [loc.nth(i) for i in range(loc.count())]
+
+def wait_for_child_element(parent: Locator, selector: str, timeout: int = 6000) -> Locator:
+    child = parent.locator(selector)
+    child.wait_for(state="visible", timeout=timeout)
+    return child
+
+def text_or_none(loc: Locator, timeout: int = 3000) -> Optional[str]:
+    try:
+        return loc.inner_text(timeout=timeout).strip()
+    except Exception:
+        return None
+
+def get_by_header(page: Page, header_text: str) -> Optional[str]:
+    """
+    <tr class="info_table_item">
+      <th>관리비</th><td>…</td>
+    </tr>
+    같은 구조에서 헤더 텍스트로 값을 뽑아옴
+    """
+    row = page.locator(
+        "tr.info_table_item",
+        has=page.locator("th", has_text=header_text)
+    ).first
+
+    if row.count() == 0:
+        return None
+
+    return text_or_none(row.locator("td").first)  # text_or_none: Optional[str] 반환
+
+def parse_deposit_monthly(price_value: Optional[str]) -> Tuple[Optional[int], Optional[int]]:
+    if not price_value or "/" not in price_value:
+        return None, None
+    a, b = price_value.split("/", 1)
+    clean = lambda s: int("".join(ch for ch in s if ch.isdigit())) if any(ch.isdigit() for ch in s) else None
+    return clean(a), clean(b)
+
+def scrape_detail_panel(page: Page) -> dict:
+    detail = {}
+
+    # 가격 박스
+    price_box = wait_for_element(page, "div.info_article_price")
+    detail["price_type"]  = text_or_none(price_box.locator(".type"))   # 예: "월세"
+    detail["price_value"] = text_or_none(price_box.locator(".price"))  # 예: "4,000/230"
+
+    dep, mon = parse_deposit_monthly(detail["price_value"])
+    detail["deposit"] = dep
+    detail["monthly"] = mon
+
+    # 상세 테이블(헤더 기반 추출)
+    # 페이지마다 라벨이 약간 다를 수 있어, 필요한 것만 골라 호출하면 됨
+    candidates = {
+        "관리비": ["관리비"],
+        "전용면적": ["전용면적", "전용"],
+        "공급면적": ["공급면적", "공급"],
+        "층": ["층", "층수"],
+        "입주가능일": ["입주가능일", "입주일"],
+        "주차": ["주차"],
+        "난방": ["난방"],
+        "용도": ["용도", "주용도"],
+        "사용승인일": ["사용승인일", "준공일", "사용승인"],
+        "화장실 수": ["화장실 수"],
+    }
+
+
+    for key, labels in candidates.items():
+        val = None
+        for lbl in labels:
+            val = get_by_header(page, lbl)
+            if val: break
+        detail[key] = val
+
+    # 중개업소(있을 경우)
+    broker_box = page.locator("div.broker_info, div.article_broker_info").first
+    if broker_box.count() > 0:
+        detail["broker_name"]    = text_or_none(broker_box.locator(".name, .broker_name"))
+        detail["broker_ceo"]     = text_or_none(broker_box.locator(".ceo, .broker_ceo"))
+        detail["broker_address"] = text_or_none(broker_box.locator(".addr, .broker_address"))
+        detail["broker_phone"]   = text_or_none(broker_box.locator(".tel, .broker_phone"))
+
+    print(detail)
+
+
+    return detail
 
 # --- Flask 라우트 ---
 @app.route("/crawl", methods=["POST"])
