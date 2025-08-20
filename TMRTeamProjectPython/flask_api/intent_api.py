@@ -10,13 +10,12 @@ import mecab_ko
 import pymysql
 import io, os, uuid, tempfile
 import cv2, numpy as np, pytesseract, re
-from PIL import Image
-from werkzeug.utils import secure_filename
-from pytesseract import Output
 import re, time, random, hashlib
 from collections import deque
 from playwright.sync_api import sync_playwright, Page
-
+import io
+import pdfplumber
+import fitz  # ← PyMuPDF
 
 # HEIC 지원 (설치되어 있으면 자동 등록)
 try:
@@ -28,26 +27,6 @@ except Exception:
 # 크롤링 관련 import
 from typing import Optional, Collection, List, Dict, Tuple, Any, Set
 from playwright.sync_api import sync_playwright, TimeoutError as PwTimeout
-
-
-
-# 사진 업로드 저장 디렉토리 (스프링과 동일/공유 경로면 더 좋음)
-UPLOAD_DIR = os.path.join(tempfile.gettempdir(), "registry-uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-# tesseract 엔진 경로 (Doker로 팀플로 전환 예정)
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-os.environ["TESSDATA_PREFIX"] = r"C:\Program Files\Tesseract-OCR\tessdata"
-
-# 공통 OCR 설정
-LANG_MAIN = "kor"
-
-# 허용 MIME (필요시 application/pdf 추가)
-ALLOWED = {"image/jpeg", "image/png", "image/webp", "image/heic"}
-
-
-print(pytesseract.get_tesseract_version())
-print(pytesseract.get_languages(config=f"-l {LANG_MAIN}"))
 
 
 # ✅ 예측 함수
@@ -382,118 +361,136 @@ def parse_eulgu(eul_text: str) -> list:
 
 
 # 전처리 파이프라인
+def squash_ws(s: str) -> str:
+    return re.sub(r"\s+", " ", s or "").strip()
 
-def _sniff_type_and_meta(data: bytes):
-    """
-    파일 타입/메타 빠른 확인.
-    반환: (sniffed_type:str, details:dict)
-    """
-    head = data[:1024]  # PDF 헤더가 0이 아닐 수도 있어 일부 여유
-    pdf_hdr_at = head.find(b"%PDF-")
+def extract_pages_text_textonly(doc: fitz.Document) -> List[str]:
+    """OCR 없이 텍스트만 가져옴"""
+    pages = []
+    for i in range(len(doc)):
+        p = doc[i]
+        txt = p.get_text("text") or ""
+        pages.append(txt)
+    return pages
 
-    # 1) PDF 검사 (헤더가 앞이 아니어도 허용)
-    if pdf_hdr_at != -1:
-        details = {}
+def extract_tables_textbased(pdf_bytes: bytes) -> List[Dict[str, Any]]:
+    """pdfplumber로 선/텍스트 기반 테이블 추출 (있으면)"""
+    out = []
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for pidx, page in enumerate(pdf.pages, start=1):
+            tables = []
+            # 라인 기반 시도
+            try:
+                tables = page.extract_tables(table_settings={
+                    "vertical_strategy": "lines",
+                    "horizontal_strategy": "lines",
+                    "intersection_x_tolerance": 3,
+                    "intersection_y_tolerance": 3
+                }) or []
+            except Exception:
+                pass
+            # 실패하면 기본 전략
+            if not tables:
+                try:
+                    tables = page.extract_tables() or []
+                except Exception:
+                    tables = []
+            for t in tables:
+                lines = ["\t".join("" if c is None else str(c) for c in row) for row in t]
+                out.append({"page": pidx, "tsv": "\n".join(lines)})
+    return out
+
+# --- 최소 파서(원하면 정교 파서로 교체 가능) ---
+def simple_parse(full_text: str) -> Dict[str, Any]:
+    header = {}
+    m = re.search(r"\[집합건물\].*", full_text)
+    if m: header["building_line"] = squash_ws(m.group(0))
+    m = re.search(r"발행번호\s*([A-Z0-9\-]+)", full_text)
+    if m: header["publish_no"] = m.group(1)
+    m = re.search(r"발급확인번호\s*([A-Z0-9\-]+)", full_text)
+    if m: header["verify_no"] = m.group(1)
+    m = re.search(r"발행일\s*(\d{4}[./-]\d{1,2}[./-]\d{1,2})", full_text)
+    if m: header["publish_date"] = m.group(1).replace(".", "/")
+
+    # 표제부 예시: '1층 401.08㎡'
+    floors = []
+    for fl, area in re.findall(r"(\d+층)\s+([\d,]+(?:\.\d+)?)㎡", full_text):
         try:
-            doc = fitz.open(stream=data, filetype="pdf")
-            # 암호/비번 요구 플래그 (PyMuPDF 버전별 호환)
-            is_encrypted = bool(getattr(doc, "is_encrypted", False))
-            needs_pass   = bool(getattr(doc, "needs_pass", False))
-            page_count   = int(getattr(doc, "page_count", 0))
-            details.update({
-                "pageCount": page_count,
-                "encrypted": is_encrypted,
-                "needsPassword": needs_pass,
-            })
+            floors.append({"층": fl, "면적_㎡": float(area.replace(",", ""))})
+        except:
+            pass
 
-            # 텍스트/스캔 추정 (처음 5페이지만 가볍게 샘플)
-            text_pages = 0
-            scanned_pages = 0
-            previews = []
-            sample_n = min(5, page_count or 0)
-            for i in range(sample_n):
-                p = doc[i]
-                txt = p.get_text("text") or ""
-                glyphs = len("".join(txt.split()))
-                if glyphs >= 50:
-                    text_pages += 1
-                    previews.append({"page": i+1, "mode": "text", "preview": txt[:120]})
-                else:
-                    scanned_pages += 1
-                    previews.append({"page": i+1, "mode": "scan", "preview": ""})
-            details.update({
-                "sampleTextPages": text_pages,
-                "sampleScannedPages": scanned_pages,
-                "previews": previews
-            })
-        except Exception as e:
-            details["error"] = f"pdf_open_failed: {e}"
-        return "pdf", details
+    # 대지권 비율 예시: '358분의 3.84'
+    land_shares = []
+    for denom, numer in re.findall(r"([\d\.]+)\s*분의\s*([\d\.]+)", full_text):
+        try:
+            land_shares.append({"base": float(denom), "share": float(numer)})
+        except:
+            pass
 
-    # 2) 이미지(가능하면 PIL로 판독)
-    try:
-        im = Image.open(io.BytesIO(data))
-        details = {
-            "format": im.format,
-            "size": {"width": im.width, "height": im.height},
-            "mode": im.mode,
-        }
-        return "image", details
-    except Exception:
-        pass
+    # 섹션 자르기
+    def section(name, after):
+        m = re.search(r"【\s*" + name + r"\s*구\s*】", full_text)
+        if not m: return None
+        s = m.end()
+        e = len(full_text)
+        mm = re.search(r"【\s*(?:" + after + r")\s*】", full_text[s:])
+        if mm: e = s + mm.start()
+        return full_text[s:e]
 
-    # 3) 기타 매직바이트 간단 체크
-    sigs = {
-        b"\x89PNG\r\n\x1a\n": "png",
-        b"\xff\xd8\xff": "jpeg",
-        b"GIF87a": "gif",
-        b"GIF89a": "gif",
-        b"RIFF": "riff/webp/avi/etc",
+    gap = section("갑", "을|공동담보목록")
+    eul = section("을", "공동담보목록")
+
+    return {
+        "header": header,
+        "pyojebu": {"floors": floors},
+        "daejigwon": {"shares": land_shares},
+        "gapgu_raw": squash_ws(gap) if gap else None,
+        "eulgu_raw": squash_ws(eul) if eul else None,
     }
-    head8 = data[:8]
-    for sig, label in sigs.items():
-        if head8.startswith(sig):
-            return label, {}
-
-    return "unknown", {}
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
-    if "files" not in request.files:
-        return jsonify(ok=False, message="files 필드가 없습니다."), 400
+    # 'files' 또는 'file' 어느 쪽이든 수용
+    uploads = []
+    if "files" in request.files:
+        uploads = request.files.getlist("files")
+    elif "file" in request.files:
+        uploads = [request.files["file"]]
 
-    uploads = request.files.getlist("files")
     if not uploads:
-        return jsonify(ok=False, message="업로드된 파일이 없습니다."), 400
+        return jsonify(ok=False, message="PDF 파일이 없습니다. (필드: files 또는 file)"), 400
+    if len(uploads) > 1:
+        return jsonify(ok=False, message="PDF는 1개만 업로드하세요."), 400
 
-    infos = []
-    for up in uploads:
-        if not up or not up.filename:
-            continue
+    up = uploads[0]
+    data = up.read() or b""
+    if b"%PDF-" not in data[:1024] and b"%PDF-" not in data:
+        return jsonify(ok=False, message="PDF만 허용합니다."), 415
 
-        data = up.read()
-        if not data:
-            continue
+    try:
+        doc = fitz.open(stream=data, filetype="pdf")
+    except Exception as e:
+        return jsonify(ok=False, message=f"PDF 열기 실패: {e}"), 400
 
-        # 브라우저 헤더 + 우리가 스니핑한 타입
-        ctype_hdr = (up.mimetype or "").lower()
-        sniffed, meta = _sniff_type_and_meta(data)
+    # 텍스트만 추출
+    pages = extract_pages_text_textonly(doc)
+    full_text = "\n\n---PAGEBREAK---\n\n".join(pages)
 
-        infos.append({
-            "originalName": up.filename,
-            "contentTypeHeader": ctype_hdr,
-            "sniffedType": sniffed,
-            "sizeBytes": len(data),
-            "sha256_16": hashlib.sha256(data).hexdigest()[:16],
-            "magicHex": data[:8].hex(),
-            **({"pdf": meta} if sniffed == "pdf" else {}),
-            **({"image": meta} if sniffed == "image" else {}),
-        })
+    # (선택) 테이블 추출
+    tables = extract_tables_textbased(data)
 
-    if not infos:
-        return jsonify(ok=False, message="처리 가능한 파일이 없습니다."), 400
+    # 간단 파싱
+    parsed = simple_parse(full_text)
 
-    return jsonify(ok=True, count=len(infos), files=infos), 200
+    return jsonify(
+        ok=True,
+        pageCount=len(doc),
+        textPreview=full_text[:2000],
+        parsed=parsed,
+        tables_textbased=tables
+    ), 200
+
 
 
 
