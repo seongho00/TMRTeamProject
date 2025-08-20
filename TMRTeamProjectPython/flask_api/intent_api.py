@@ -382,14 +382,14 @@ def parse_eulgu(eul_text: str) -> list:
 
 
 # 전처리 파이프라인
-def build_conf(psm=6, lang=LANG_MAIN):
-    # 문서형 레이아웃 기본값
-    return f'-l {lang} --oem 3 --psm {psm} --dpi 300 -c preserve_interword_spaces=1'
-
 # --------- (1) 자동 방향 보정 ---------
+def build_conf(psm=6, lang=LANG_MAIN):
+    # kor+eng 권장
+    return f'-l {lang} --oem 1 --psm {psm} -c user_defined_dpi=300 -c preserve_interword_spaces=1'
+
 def auto_orient(pil: Image.Image) -> Image.Image:
     try:
-        osd = pytesseract.image_to_osd(pil, config=f'--oem 3 --psm 0 -l {LANG_MAIN}')
+        osd = pytesseract.image_to_osd(pil, config='--oem 1 --psm 0 -l osd')
         m = re.search(r"Rotate:\s+(\d+)", osd)
         deg = int(m.group(1)) if m else 0
         if deg in (90, 180, 270):
@@ -397,6 +397,20 @@ def auto_orient(pil: Image.Image) -> Image.Image:
     except Exception:
         pass
     return pil
+
+# --------- 표 라인 제거 ----------
+def remove_table_lines(bin_img: np.ndarray):
+    h, w = bin_img.shape[:2]
+    # 커널 길이는 이미지 크기 기준 비율로
+    hk = max(30, w // 40)
+    vk = max(30, h // 40)
+    h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (hk, 1))
+    v_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vk))
+    h_lines = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, h_kernel, iterations=1)
+    v_lines = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, v_kernel, iterations=1)
+    mask = cv2.bitwise_or(h_lines, v_lines)
+    no_lines = cv2.bitwise_and(bin_img, cv2.bitwise_not(mask))
+    return mask, no_lines
 
 # --------- (2) 데스큐 + CLAHE(부드러운 그레이 후보) ---------
 def deskew(gray: np.ndarray) -> np.ndarray:
@@ -423,7 +437,6 @@ def enhance_gray(pil: Image.Image, target_long=2000) -> np.ndarray:
     gray = deskew(gray)
     return gray
 
-# --------- (3) 너가 가진 크롭/강이진 그대로 사용 ---------
 def crop_document(bgr: np.ndarray) -> np.ndarray:
     h, w = bgr.shape[:2]
     y1, y2 = int(0.05*h), int(0.95*h)
@@ -519,6 +532,13 @@ def ocr_image_bytes(data: bytes, return_all: bool = False, top_k: int = 6):
     try:
         bgr_for_bw = cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
         bw = preprocess_doc(bgr_for_bw)
+
+        try:
+            _, no_lines = remove_table_lines(bw)
+            extra.append(no_lines)
+        except Exception:
+            pass
+
         extra.append(bw)
     except Exception:
         pass
@@ -533,6 +553,18 @@ def ocr_image_bytes(data: bytes, return_all: bool = False, top_k: int = 6):
 
 
 HAN_RE = re.compile(r"[가-힣]")
+
+def _tess_text(pil, conf):
+    d = pytesseract.image_to_data(pil, config=conf, output_type=Output.DICT)
+    words = [w for w in d["text"] if w.strip()]
+    confs = [int(c) for c in d["conf"] if c not in ("-1", "-0.0")]
+    avg = sum(confs)/len(confs) if confs else 0
+    return _cleanup_text(" ".join(words)), avg
+
+def _try_numeric(pil, base_conf):
+    conf_num = base_conf + ' -c tessedit_char_whitelist=0123456789.-/%㎡m²㎥'
+    return _tess_text(pil, conf_num)
+
 
 def run_ocr_candidates(gray: np.ndarray, extra_candidates=None, top_k: Optional[int] = None) -> List[Dict[str, Any]]:
     """
@@ -577,6 +609,22 @@ def run_ocr_candidates(gray: np.ndarray, extra_candidates=None, top_k: Optional[
                 "len": len(text),
                 "score": score,
                 "text": text,
+            })
+        for psm in (7,):  # 셀·짧은 줄 대응
+            conf = build_conf(psm=psm)
+            try:
+                text7, avg7 = _tess_text(pil, conf)
+                # 숫자 시도도 병행해서 더 높은 쪽 채택
+                textn, avgn = _try_numeric(pil, conf)
+                if avgn > avg7 + 2:  # 약한 임계
+                    text7, avg7 = textn, avgn
+            except Exception:
+                continue
+            han = len(HAN_RE.findall(text7))
+            score = (avg7 or 0) + 0.2 * han
+            results.append({
+                "pre": pre_label, "psm": 7, "avg_conf": avg7, "han": han,
+                "len": len(text7), "score": score, "text": text7
             })
 
     results.sort(key=lambda r: r["score"], reverse=True)
