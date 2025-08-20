@@ -26,7 +26,7 @@ except Exception:
     pass
 
 # 크롤링 관련 import
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Optional, Collection, List, Dict, Tuple, Any, Set
 from playwright.sync_api import sync_playwright, TimeoutError as PwTimeout
 
 
@@ -382,326 +382,118 @@ def parse_eulgu(eul_text: str) -> list:
 
 
 # 전처리 파이프라인
-# --------- (1) 자동 방향 보정 ---------
-def build_conf(psm=6, lang=LANG_MAIN):
-    # kor+eng 권장
-    return f'-l {lang} --oem 1 --psm {psm} -c user_defined_dpi=300 -c preserve_interword_spaces=1'
 
-def auto_orient(pil: Image.Image) -> Image.Image:
-    try:
-        osd = pytesseract.image_to_osd(pil, config='--oem 1 --psm 0 -l osd')
-        m = re.search(r"Rotate:\s+(\d+)", osd)
-        deg = int(m.group(1)) if m else 0
-        if deg in (90, 180, 270):
-            pil = pil.rotate(-deg, expand=True)
-    except Exception:
-        pass
-    return pil
+def _sniff_type_and_meta(data: bytes):
+    """
+    파일 타입/메타 빠른 확인.
+    반환: (sniffed_type:str, details:dict)
+    """
+    head = data[:1024]  # PDF 헤더가 0이 아닐 수도 있어 일부 여유
+    pdf_hdr_at = head.find(b"%PDF-")
 
-# --------- 표 라인 제거 ----------
-def remove_table_lines(bin_img: np.ndarray):
-    h, w = bin_img.shape[:2]
-    # 커널 길이는 이미지 크기 기준 비율로
-    hk = max(30, w // 40)
-    vk = max(30, h // 40)
-    h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (hk, 1))
-    v_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vk))
-    h_lines = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, h_kernel, iterations=1)
-    v_lines = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, v_kernel, iterations=1)
-    mask = cv2.bitwise_or(h_lines, v_lines)
-    no_lines = cv2.bitwise_and(bin_img, cv2.bitwise_not(mask))
-    return mask, no_lines
-
-# --------- (2) 데스큐 + CLAHE(부드러운 그레이 후보) ---------
-def deskew(gray: np.ndarray) -> np.ndarray:
-    bw = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-    coords = np.column_stack(np.where(bw > 0))
-    if coords.size == 0:
-        return gray
-    angle = cv2.minAreaRect(coords)[-1]
-    angle = -(90 + angle) if angle < -45 else -angle
-    h, w = gray.shape[:2]
-    M = cv2.getRotationMatrix2D((w/2, h/2), angle, 1.0)
-    return cv2.warpAffine(gray, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-
-def enhance_gray(pil: Image.Image, target_long=2000) -> np.ndarray:
-    rgb = np.array(pil.convert("RGB"))
-    bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-    h, w = bgr.shape[:2]
-    scale = target_long / max(h, w)
-    if scale > 1.0:  # 저해상도만 업스케일
-        bgr = cv2.resize(bgr, (int(w*scale), int(h*scale)), interpolation=cv2.INTER_CUBIC)
-    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
-    gray = clahe.apply(gray)
-    gray = deskew(gray)
-    return gray
-
-def crop_document(bgr: np.ndarray) -> np.ndarray:
-    h, w = bgr.shape[:2]
-    y1, y2 = int(0.05*h), int(0.95*h)
-    x1, x2 = int(0.06*w), int(0.94*w)
-    bgr = bgr[y1:y2, x1:x2].copy()
-    try:
-        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-        edges = cv2.Canny(gray, 60, 180)
-        cnts, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        if cnts:
-            c = max(cnts, key=cv2.contourArea)
-            peri = cv2.arcLength(c, True)
-            approx = cv2.approxPolyDP(c, 0.02*peri, True)
-            if len(approx) == 4:
-                pts = approx.reshape(4,2).astype(np.float32)
-                s = pts.sum(axis=1); diff = np.diff(pts, axis=1)
-                rect = np.array([pts[np.argmin(s)], pts[np.argmin(diff)],
-                                 pts[np.argmax(s)], pts[np.argmax(diff)]], dtype=np.float32)
-                (tl,tr,br,bl) = rect
-                W = int(max(np.linalg.norm(br-bl), np.linalg.norm(tr-tl)))
-                H = int(max(np.linalg.norm(tr-br), np.linalg.norm(tl-bl)))
-                M = cv2.getPerspectiveTransform(rect, np.array([[0,0],[W,0],[W,H],[0,H]], np.float32))
-                bgr = cv2.warpPerspective(bgr, M, (W,H))
-    except Exception:
-        pass
-    return bgr
-
-def preprocess_doc(bgr: np.ndarray, upscale_to=2000) -> np.ndarray:
-    h, w = bgr.shape[:2]
-    scale = max(1.0, upscale_to / max(h, w))
-    bgr = cv2.resize(bgr, (int(w*scale), int(h*scale)), interpolation=cv2.INTER_CUBIC)
-    gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-    bg = cv2.medianBlur(gray, 31)
-    norm = cv2.divide(gray, bg, scale=255)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-    norm = clahe.apply(norm)
-    _, bw = cv2.threshold(norm, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-    bw = cv2.medianBlur(bw, 3)
-    bw = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, np.ones((2,2), np.uint8), iterations=1)
-    return bw
-
-# --------- (4) Tesseract 실행 + 점수화 ---------
-def _run_tess(pil_img: Image.Image, psm: int):
-    conf = build_conf(psm=psm)
-    data = pytesseract.image_to_data(pil_img, config=conf, output_type=Output.DICT)
-    words = [w for w in data["text"] if w.strip()]
-    confs = [int(c) for c in data["conf"] if c not in ("-1", "-0.0")]
-    avg = sum(confs)/len(confs) if confs else 0
-    return " ".join(words), avg
-
-def run_ocr(gray: np.ndarray, extra_candidates=None) -> str:
-    cands = [gray]
-    # 약이진 후보 추가
-    thr = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                cv2.THRESH_BINARY, 31, 15)
-    cands.append(thr)
-    # 강이진(있으면)도 후보로
-    if extra_candidates:
-        cands.extend(extra_candidates)
-
-    best_txt, best_score = "", -1.0
-    for img in cands:
-        pil = Image.fromarray(img)
-        for psm in (6, 4, 11, 3):  # 문서(6)→컬럼(4)→스파스(11)→자동(3)
-            try:
-                txt, avg = _run_tess(pil, psm)
-            except Exception:
-                continue
-            # 한글/전체 길이로 가중치 주기
-            score = (avg or 0) + 0.2 * len(re.findall(r"[가-힣]", txt))
-            if score > best_score:
-                best_score, best_txt = score, txt
-    return _cleanup_text(best_txt)
-
-def ocr_image_bytes(data: bytes, return_all: bool = False, top_k: int = 6):
-    # 1) 로드 + 자동 회전
-    pil = Image.open(io.BytesIO(data)); pil.load()
-    pil = auto_orient(pil)
-
-    # 2) 문서 크롭(가능하면)
-    try:
-        bgr = cv2.cvtColor(np.array(pil.convert("RGB")), cv2.COLOR_RGB2BGR)
-        bgr = crop_document(bgr)
-        pil = Image.fromarray(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
-    except Exception:
-        pass
-
-    # 3) 부드러운 그레이 후보
-    gray = enhance_gray(pil, target_long=2000)
-
-    # 4) 강이진 후보
-    extra = []
-    try:
-        bgr_for_bw = cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
-        bw = preprocess_doc(bgr_for_bw)
-
+    # 1) PDF 검사 (헤더가 앞이 아니어도 허용)
+    if pdf_hdr_at != -1:
+        details = {}
         try:
-            _, no_lines = remove_table_lines(bw)
-            extra.append(no_lines)
-        except Exception:
-            pass
+            doc = fitz.open(stream=data, filetype="pdf")
+            # 암호/비번 요구 플래그 (PyMuPDF 버전별 호환)
+            is_encrypted = bool(getattr(doc, "is_encrypted", False))
+            needs_pass   = bool(getattr(doc, "needs_pass", False))
+            page_count   = int(getattr(doc, "page_count", 0))
+            details.update({
+                "pageCount": page_count,
+                "encrypted": is_encrypted,
+                "needsPassword": needs_pass,
+            })
 
-        extra.append(bw)
+            # 텍스트/스캔 추정 (처음 5페이지만 가볍게 샘플)
+            text_pages = 0
+            scanned_pages = 0
+            previews = []
+            sample_n = min(5, page_count or 0)
+            for i in range(sample_n):
+                p = doc[i]
+                txt = p.get_text("text") or ""
+                glyphs = len("".join(txt.split()))
+                if glyphs >= 50:
+                    text_pages += 1
+                    previews.append({"page": i+1, "mode": "text", "preview": txt[:120]})
+                else:
+                    scanned_pages += 1
+                    previews.append({"page": i+1, "mode": "scan", "preview": ""})
+            details.update({
+                "sampleTextPages": text_pages,
+                "sampleScannedPages": scanned_pages,
+                "previews": previews
+            })
+        except Exception as e:
+            details["error"] = f"pdf_open_failed: {e}"
+        return "pdf", details
+
+    # 2) 이미지(가능하면 PIL로 판독)
+    try:
+        im = Image.open(io.BytesIO(data))
+        details = {
+            "format": im.format,
+            "size": {"width": im.width, "height": im.height},
+            "mode": im.mode,
+        }
+        return "image", details
     except Exception:
         pass
 
-    # 5) 모든 후보 실행
-    candidates = run_ocr_candidates(gray, extra_candidates=extra, top_k=top_k)
+    # 3) 기타 매직바이트 간단 체크
+    sigs = {
+        b"\x89PNG\r\n\x1a\n": "png",
+        b"\xff\xd8\xff": "jpeg",
+        b"GIF87a": "gif",
+        b"GIF89a": "gif",
+        b"RIFF": "riff/webp/avi/etc",
+    }
+    head8 = data[:8]
+    for sig, label in sigs.items():
+        if head8.startswith(sig):
+            return label, {}
 
-    if return_all:
-        return {"candidates": candidates, "best": (candidates[0] if candidates else None)}
-    # 하위 호환: 텍스트만
-    return (candidates[0]["text"] if candidates else "")
-
-
-HAN_RE = re.compile(r"[가-힣]")
-
-def _tess_text(pil, conf):
-    d = pytesseract.image_to_data(pil, config=conf, output_type=Output.DICT)
-    words = [w for w in d["text"] if w.strip()]
-    confs = [int(c) for c in d["conf"] if c not in ("-1", "-0.0")]
-    avg = sum(confs)/len(confs) if confs else 0
-    return _cleanup_text(" ".join(words)), avg
-
-def _try_numeric(pil, base_conf):
-    conf_num = base_conf + ' -c tessedit_char_whitelist=0123456789.-/%㎡m²㎥'
-    return _tess_text(pil, conf_num)
-
-
-def run_ocr_candidates(gray: np.ndarray, extra_candidates=None, top_k: Optional[int] = None) -> List[Dict[str, Any]]:
-    """
-    여러 전처리(gray/adapt/bw_strong...) × 여러 PSM(6,4,11,3)을 전부 돌려
-    후보 리스트를 점수 내림차순으로 반환.
-    score = avg_conf + 0.2 * (한글자수)  # 기존 가중치 그대로
-    """
-    # 전처리 후보들(라벨, 이미지)
-    cands: List[Tuple[str, np.ndarray]] = [("gray_clahe", gray)]
-
-    thr = cv2.adaptiveThreshold(
-        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 15
-    )
-    cands.append(("gray_adapt", thr))
-
-    if extra_candidates:
-        for idx, im in enumerate(extra_candidates):
-            cands.append((f"bw_strong_{idx}", im))
-
-    results: List[Dict[str, Any]] = []
-    for pre_label, img in cands:
-        pil = Image.fromarray(img)
-        for psm in (6, 4, 11, 3):  # 문서 → 컬럼 → 스파스 → 자동
-            try:
-                conf = build_conf(psm=psm)
-                data = pytesseract.image_to_data(pil, config=conf, output_type=Output.DICT)
-                words = [w for w in data["text"] if w.strip()]
-                confs = [int(c) for c in data["conf"] if c not in ("-1", "-0.0")]
-                avg = sum(confs) / len(confs) if confs else 0
-                text = _cleanup_text(" ".join(words))
-            except Exception:
-                continue
-
-            han = len(HAN_RE.findall(text))
-            score = (avg or 0) + 0.2 * han
-
-            results.append({
-                "pre": pre_label,
-                "psm": psm,
-                "avg_conf": avg,
-                "han": han,
-                "len": len(text),
-                "score": score,
-                "text": text,
-            })
-        for psm in (7,):  # 셀·짧은 줄 대응
-            conf = build_conf(psm=psm)
-            try:
-                text7, avg7 = _tess_text(pil, conf)
-                # 숫자 시도도 병행해서 더 높은 쪽 채택
-                textn, avgn = _try_numeric(pil, conf)
-                if avgn > avg7 + 2:  # 약한 임계
-                    text7, avg7 = textn, avgn
-            except Exception:
-                continue
-            han = len(HAN_RE.findall(text7))
-            score = (avg7 or 0) + 0.2 * han
-            results.append({
-                "pre": pre_label, "psm": 7, "avg_conf": avg7, "han": han,
-                "len": len(text7), "score": score, "text": text7
-            })
-
-    results.sort(key=lambda r: r["score"], reverse=True)
-    if top_k is not None:
-        results = results[:top_k]
-    return results
+    return "unknown", {}
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
     if "files" not in request.files:
         return jsonify(ok=False, message="files 필드가 없습니다."), 400
 
-    uploads = request.files.getlist("files")   # ← 여기!
+    uploads = request.files.getlist("files")
     if not uploads:
         return jsonify(ok=False, message="업로드된 파일이 없습니다."), 400
 
-    results_meta = []
-    texts = []
-
-    for up in uploads:                         # ← 여기!
-        if not up or up.filename == "":
+    infos = []
+    for up in uploads:
+        if not up or not up.filename:
             continue
-
-        ctype = (up.mimetype or "").lower()
-        if ctype not in ALLOWED:
-            return jsonify(ok=False, message=f"허용되지 않은 형식: {ctype}"), 415
 
         data = up.read()
         if not data:
             continue
 
-        try:
-            # 모든 시도 결과를 함께 받기
-            ocr_res = ocr_image_bytes(data, return_all=True, top_k=6)
-            best = ocr_res["best"]
-            cands = ocr_res["candidates"]
-            txt = (best["text"] if best else "")
-        except Exception as e:
-            best = None
-            cands = []
-            txt = f"[OCR 실패: {e}]"
+        # 브라우저 헤더 + 우리가 스니핑한 타입
+        ctype_hdr = (up.mimetype or "").lower()
+        sniffed, meta = _sniff_type_and_meta(data)
 
-        results_meta.append({
+        infos.append({
             "originalName": up.filename,
-            "contentType": ctype,
-            "size": len(data),
-            "best": ({
-                         "pre": best["pre"], "psm": best["psm"],
-                         "avg_conf": best["avg_conf"], "score": round(best["score"], 3)
-                     } if best else None),
-            "ocrCandidates": [
-                {
-                    "pre": c["pre"], "psm": c["psm"],
-                    "avg_conf": c["avg_conf"],
-                    "han": c["han"], "len": c["len"],
-                    "score": round(c["score"], 3),
-                    "textPreview": c["text"][:400]
-                } for c in (cands or [])
-            ]
+            "contentTypeHeader": ctype_hdr,
+            "sniffedType": sniffed,
+            "sizeBytes": len(data),
+            "sha256_16": hashlib.sha256(data).hexdigest()[:16],
+            "magicHex": data[:8].hex(),
+            **({"pdf": meta} if sniffed == "pdf" else {}),
+            **({"image": meta} if sniffed == "image" else {}),
         })
 
-        texts.append(txt)
-
-    if not results_meta:
+    if not infos:
         return jsonify(ok=False, message="처리 가능한 파일이 없습니다."), 400
 
-    full_text = "\n\n---PAGEBREAK---\n\n".join(texts)
-    secs = split_sections(full_text)
-
-    return jsonify(
-        ok=True,
-        count=len(results_meta),
-        files=results_meta,                 # 응답 JSON 키 "files"는 문제 없음
-        sections_detected=[k for k, v in secs.items() if v],
-        textPreview=full_text[:2000],
-        textFull=full_text
-    ), 200
+    return jsonify(ok=True, count=len(infos), files=infos), 200
 
 
 
