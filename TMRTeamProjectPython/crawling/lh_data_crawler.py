@@ -1,14 +1,14 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, NoSuchElementException
-from selenium.webdriver.common.by import By
-import time
 import re
+import time
 from datetime import datetime
-import pymysql
 
+import pymysql
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, NoSuchElementException
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 # ====== 대기 함수 ======
 def wait_for_elements(driver, by, value, min_count=1, timeout=10):
@@ -336,7 +336,7 @@ def parse_li_texts(texts):
 conn = pymysql.connect(
     host="localhost",
     user="root",
-    password="",
+    password="1234",
     database="TMRTeamProject",
     charset="utf8mb4"
 )
