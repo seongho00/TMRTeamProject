@@ -504,21 +504,124 @@ def parse_mortgages_from_eulgu(eul_text: str) -> List[Dict[str, Any]]:
     mortgages.sort(key=lambda x: x["order_no"])
     return mortgages
 
-def extract_joint_collateral_addresses(full_text: str) -> List[str]:
-    out, seen = [], set()
-    for m in re.finditer(r"(공동담보목록\s*제?\s*\d{4}-\d+\s*호)(?P<blk>[\s\S]+?)(?:---PAGEBREAK---|발행번호|【|\Z)", full_text):
-        blk = m.group("blk")
-        addr_pats = [
-            r"[가-힣]+(특별시|광역시|도|시)\s+[가-힣0-9]+(구|군|시)\s+[가-힣0-9]+(동|읍|면)\s+\d+(?:-\d+)?번지(?:\s*외\s*\d+\s*필지)?",
-            r"[가-힣]+(특별시|광역시|도|시)\s+[가-힣0-9]+(구|군|시)\s+[^\s]+(로|길)[^\s]*\s+\d+(?:-\d+)?(?:\s*\([^)]+\))?"
-        ]
-        for pat in addr_pats:
-            for a in re.finditer(pat, blk):
-                addr = a.group(0).strip()
-                if addr not in seen:
-                    seen.add(addr)
-                    out.append(addr)
-    return out
+# "제103호" 같은 호수만 보조로 뽑아 덧붙일 때 사용(없어도 동작은 함)
+_HO = re.compile(r"제?\s*(\d{1,4})\s*호")
+# [건물], [토지] 등 대괄호 태그 제거
+_BRACKETS = re.compile(r"\[[^\]]+\]")
+# 공동담보표 헤더(열 제목) 후보들
+_JOINT_HEADER_CANDIDATES = (
+    "부동산에 관한 권리의 표시"
+)
+_SKIP_INLINE = re.compile(r"(권리자|채권최고액|근저당|설정계약)")
+
+def _norm_ws(s: str) -> str:
+    """여백 정리(개행, 탭 → 공백 1개), 앞뒤 공백 제거"""
+    return " ".join((s or "").replace("\u200b", "").split()).strip()
+
+def extract_joint_collateral_units(pdf_bytes: bytes,
+                                   require_unit: bool = True,
+                                   must_have_bracket: bool = True) -> Dict[str, Any]:
+    """
+    [공동담보목록] 헤더(대괄호 포함)를 찾고, 그 '아래' bbox 내에서만 표를 추출.
+    - '부동산에 관한 (권리의) 표시' 컬럼만 타깃
+    - [건물] 등 대괄호 태그 제거
+    - require_unit=True면 '제○○호' 없는 줄은 스킵
+    - 요약행(권리자/채권최고액/근저당/설정계약 등) 스킵
+    """
+    pages_hit: List[int] = []
+    rows: List[Dict[str, Any]] = []
+    addr_set = set()
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for pno, page in enumerate(pdf.pages, start=1):
+            words = page.extract_words() or []
+            # [공동담보목록] 또는 공동담보목록 단어의 y좌표 찾기
+            marks = [w for w in words if "공동담보목록" in (w.get("text") or "")]
+            if not marks:
+                if must_have_bracket:
+                    continue
+                # fallback: 페이지에 텍스트만이라도 존재하는지 체크
+                if ("공동담보목록" not in (page.extract_text() or "")):
+                    continue
+                header_top = 0
+            else:
+                header_top = min(w["top"] for w in marks)
+
+            pages_hit.append(pno)
+
+            # 헤더 아래 영역으로 크롭
+            crop = page.within_bbox((0, header_top, page.width, page.height))
+
+            # 표 추출: 라인 기반 → 실패 시 기본
+            tables = []
+            try:
+                tables = crop.extract_tables(table_settings={
+                    "vertical_strategy": "lines",
+                    "horizontal_strategy": "lines",
+                    "intersection_x_tolerance": 3,
+                    "intersection_y_tolerance": 3,
+                }) or []
+            except Exception:
+                pass
+            if not tables:
+                try:
+                    tables = crop.extract_tables() or []
+                except Exception:
+                    tables = []
+
+            for tb in tables:
+                if not tb or not tb[0]:
+                    continue
+
+                header = [(_ or "").strip() for _ in tb[0]]
+                header_line = " ".join(header)
+                # 주소표 테이블만 선택
+                if not any(key in header_line for key in _JOINT_HEADER_CANDIDATES):
+                    continue
+
+                # '부동산 ... 표시' 컬럼 인덱스
+                try:
+                    idx = next(i for i, h in enumerate(header) if ("부동산" in h and "표시" in h))
+                except StopIteration:
+                    # 예외적으로 못 찾으면 텍스트 가장 긴 컬럼 사용
+                    col_scores = [
+                        sum(len(_norm_ws(r[i] or "")) for r in tb[1:])
+                        for i in range(len(header))
+                    ]
+                    idx = max(range(len(header)), key=lambda i: col_scores[i])
+
+                # 본문 행 처리
+                for r in tb[1:]:
+                    cell_raw = r[idx] if idx < len(r) else None
+                    if not cell_raw or not str(cell_raw).strip():
+                        continue
+
+                    raw_norm = _norm_ws(str(cell_raw))
+                    cleaned = _norm_ws(_BRACKETS.sub(" ", raw_norm))
+
+                    # 요약/불필요 라인 제거
+                    if _SKIP_INLINE.search(cleaned) or re.fullmatch(r"\d{4}-\d{2,}", cleaned):
+                        continue
+
+                    # 호수 필터
+                    m = _HO.search(cleaned)
+                    if require_unit and not m:
+                        continue
+                    unit = f"제{m.group(1)}호" if m else None
+
+                    rows.append({
+                        "page": pno,
+                        "raw": cell_raw,
+                        "text": cleaned,
+                        "unit": unit,
+                    })
+                    addr_set.add(cleaned)
+
+    return {
+        "pages": pages_hit,
+        "rows": rows,
+        "addresses": sorted(addr_set),
+    }
 
 # ------------------------- 라우트 -------------------------
 @app.route("/analyze", methods=["POST"])
@@ -565,7 +668,8 @@ def analyze():
     mortgages = parse_mortgages_from_eulgu(eul_text)
 
     total_max_claim_active = sum(m["max_claim_won"] or 0 for m in mortgages if not m["cancelled"])
-    joint_addresses = extract_joint_collateral_addresses(full_text)
+    joint_addresses = extract_joint_collateral_units(data, require_unit=True, must_have_bracket=True)
+
     print(mortgages)
     print(subject_addr)
     print(total_max_claim_active)
