@@ -24,26 +24,16 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class PropertyService {
 
-    // 허용 MIME (필요 시 추가)
-    private static final Set<String> ALLOWED = Set.of(
-            "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"
-            // "application/pdf"
-    );
+    // ✅ PDF만 허용
+    private static final Set<String> ALLOWED = Set.of(MediaType.APPLICATION_PDF_VALUE);
 
-    private final WebClient pythonClient; // baseUrl은 별도 Bean에서 주입
+    private final WebClient pythonClient;
 
-    /**
-     * 업로드 받은 파일을 DB에 저장하지 않고 곧바로 Python /analyze 로 멀티파트 전송
-     * @param files  업로드 파일 목록 (form field name: "files")
-     * @param extra  함께 보낼 추가 필드(옵션: lat/lng 등 메타데이터)
-     * @return       Python이 반환한 JSON(Map)
-     */
     @SuppressWarnings("unchecked")
     public Map<String, Object> analyzeWithPythonDirect(List<MultipartFile> files, Map<String, String> extra) {
         if (files == null || files.isEmpty()) {
@@ -52,20 +42,26 @@ public class PropertyService {
 
         MultipartBodyBuilder mb = new MultipartBodyBuilder();
 
-        // 파일 파트 구성 (스트리밍 전송)
         for (MultipartFile f : files) {
             if (f == null || f.isEmpty()) continue;
 
-            String ctype = Optional.ofNullable(f.getContentType())
+            String headerCtype = Optional.ofNullable(f.getContentType())
                     .orElse(MediaType.APPLICATION_OCTET_STREAM_VALUE);
-            if (!ALLOWED.contains(ctype)) {
-                throw new IllegalArgumentException("허용되지 않은 파일 형식입니다. (허용: jpg, png, webp, heic)");
+
+            // 헤더가 아니더라도 실제로 PDF인지 스니핑
+            boolean headerOk = ALLOWED.contains(headerCtype);
+            boolean looksPdf = looksLikePdf(f);
+
+            if (!headerOk && !looksPdf) {
+                throw new IllegalArgumentException("허용되지 않은 파일 형식입니다. (PDF만 허용)");
             }
 
-            String filename = Optional.ofNullable(f.getOriginalFilename()).orElse("upload");
+            // ✅ Python으로 넘길 때는 확실히 application/pdf로 지정
+            MediaType sendType = MediaType.APPLICATION_PDF;
+
+            String filename = Optional.ofNullable(f.getOriginalFilename()).orElse("upload.pdf");
             long length = f.getSize();
 
-            // InputStreamResource로 메모리 전체 복사 없이 전달
             InputStreamResource resource;
             try {
                 resource = new InputStreamResource(f.getInputStream()) {
@@ -76,22 +72,19 @@ public class PropertyService {
                 throw new RuntimeException("업로드 파일 스트림 열기 실패: " + filename, e);
             }
 
-            mb.part("files", resource)
-                    .filename(filename)
-                    .contentType(MediaType.parseMediaType(ctype));
+            mb.part("files", resource)              // ← Python 쪽이 "files"로 받는다면 그대로 유지
+                    .filename(filename.endsWith(".pdf") ? filename : (filename + ".pdf"))
+                    .contentType(sendType);
         }
 
-        // 추가 필드(선택: 좌표, 옵션 등)
         if (extra != null) {
-            extra.forEach((k, v) -> {
-                if (v != null) mb.part(k, v);
-            });
+            extra.forEach((k, v) -> { if (v != null) mb.part(k, v); });
         }
 
-        MultiValueMap<String, HttpEntity<?>> parts = mb.build();
+        var parts = mb.build();
 
         Map<String, Object> res = pythonClient.post()
-                .uri("/analyze")
+                .uri("/analyze")                               // ← Python 엔드포인트가 /analyze(멀티 파일)라면 그대로
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(BodyInserters.fromMultipartData(parts))
                 .retrieve()
@@ -109,8 +102,19 @@ public class PropertyService {
         return Objects.requireNonNullElse(res, Map.of("ok", false, "error", "no_response"));
     }
 
-    // 오버로드: extra 없이 호출하고 싶을 때
     public Map<String, Object> analyzeWithPythonDirect(List<MultipartFile> files) {
         return analyzeWithPythonDirect(files, Map.of());
+    }
+
+    // ===== 유틸: 매직바이트로 PDF 판정 =====
+    private boolean looksLikePdf(MultipartFile f) {
+        try {
+            var is = f.getInputStream();
+            byte[] buf = is.readNBytes(1024);
+            for (int i = 0; i <= buf.length - 4; i++) {
+                if (buf[i] == '%' && buf[i+1] == 'P' && buf[i+2] == 'D' && buf[i+3] == 'F') return true;
+            }
+        } catch (Exception ignored) {}
+        return false;
     }
 }
