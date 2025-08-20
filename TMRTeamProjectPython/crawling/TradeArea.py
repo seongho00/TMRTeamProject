@@ -1,15 +1,15 @@
-import requests
-import pymysql
-import time
 import os
 import random
 import re
+import time
 
+import pymysql
+import requests
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
@@ -38,7 +38,7 @@ conn = pymysql.connect(
     host="localhost",
     user="root",
     password="1234",
-    db="tmrteamproject",
+    db="TMRTeamProject",
     charset="utf8mb4"
 )
 cursor = conn.cursor()

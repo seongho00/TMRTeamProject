@@ -18,4 +18,16 @@ public class UpjongCodeService {
     public List<UpjongCode> findAll() {
         return upjongCodeRepository.findAll();
     }
+
+    public List<String> getAllNames() {
+        return upjongCodeRepository.findAllName();
+    }
+
+    public List<String> searchNames(String q) {
+        if (q == null || q.isEmpty()) {
+            return getAllNames();
+        }
+
+        return upjongCodeRepository.searchNames(q);
+    }
 }

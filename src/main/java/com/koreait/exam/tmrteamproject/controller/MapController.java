@@ -1,6 +1,7 @@
 package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.service.AdminDongService;
+import com.koreait.exam.tmrteamproject.service.UpjongCodeService;
 import com.koreait.exam.tmrteamproject.vo.AdminDong;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,9 @@ public class MapController {
 
     @Autowired
     private AdminDongService adminDongService;
+
+    @Autowired
+    private UpjongCodeService upjongCodeService;
 
     @GetMapping("/commercialZoneMap")
     public String commercialZoneMap(Model model) {
@@ -53,6 +57,7 @@ public class MapController {
         List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
 
         model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
+        model.addAttribute("upjongNames", upjongCodeService.getAllNames());
 
         return "map/correlationMap";
     }
