@@ -17,6 +17,7 @@ import io
 import pdfplumber
 import fitz  # ← PyMuPDF
 
+
 # HEIC 지원 (설치되어 있으면 자동 등록)
 try:
     import pillow_heif
@@ -285,96 +286,20 @@ def predict():
 
 
 # 사진 전처리 및 분석 코드
-def _sha1(path, limit=1024 * 128):
-    """파일 앞부분만 읽어 빠른 체크섬(선택)"""
-    h = hashlib.sha1()
-    with open(path, "rb") as f:
-        chunk = f.read(limit)
-        h.update(chunk)
-    return h.hexdigest()
-
-
-def preprocess_for_ocr(img_bgr: np.ndarray) -> np.ndarray:
-    """기본 전처리: 리사이즈 → 그레이 → 잡음제거 → 대비보정 → 이진화"""
-    h, w = img_bgr.shape[:2]
-    scale = 1400 / max(h, w)
-    if scale < 1:
-        img_bgr = cv2.resize(img_bgr, (int(w * scale), int(h * scale)))
-    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
-    gray = cv2.bilateralFilter(gray, 9, 75, 75)  # 잡음 줄이면서 엣지 살리기
-    gray = cv2.equalizeHist(gray)  # 대비 향상
-    bw = cv2.adaptiveThreshold(gray, 255,
-                               cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                               cv2.THRESH_BINARY, 31, 15)
-    return bw
-
-
-def _cleanup_text(text: str) -> str:
-    text = re.sub(r'[ \t]+', ' ', text)
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    return text.strip()
-
-
-# 섹션 나누기(표제부/갑구/을구 키워드 기반의 매우 단순한 분리)
-SEC_RE = {
-    "표제부": re.compile(r"(표제부.*?)(?=갑구|을구|$)", re.S),
-    "갑구": re.compile(r"(갑구.*?)(?=표제부|을구|$)", re.S),
-    "을구": re.compile(r"(을구.*?)(?=표제부|갑구|$)", re.S),
-}
-
-
-def split_sections(text: str) -> dict:
-    secs = {}
-    for k, rx in SEC_RE.items():
-        m = rx.search(text)
-        secs[k] = m.group(1) if m else ""
-    return secs
-
-
-# 을구에서 권리/금액/날짜 아주 기초 추출(정규식 기반 – 서식 차이에 약함)
-DATE_RE = r"(\d{4}[./-]\d{1,2}[./-]\d{1,2})"
-MONEY_RE = r"([0-9,]+)\s*원"
-
-
-def parse_eulgu(eul_text: str) -> list:
-    """
-    예: 순위번호 1 근저당권 ... 접수일 2023-01-01 채권최고액 100,000,000원
-    서식이 제각각이라 100% 정확하진 않지만, 기본적인 패턴만 뽑음
-    """
-    entries = []
-    pat = re.compile(
-        rf"순위번호\s*(\d+).*?"
-        rf"(근저당권|저당권|전세권|임차권|가등기|신탁등기).*?"
-        rf"(접수|접수일|원인일자).*?{DATE_RE}.*?"
-        rf"(채권최고액|전세금|채권액)?\s*{MONEY_RE}?",
-        re.S
-    )
-    for m in pat.finditer(eul_text):
-        entries.append({
-            "순위": int(m.group(1)),
-            "권리": m.group(2),
-            "접수일": re.sub(r"[./]", "-", m.group(4)),
-            "금액명": m.group(5) or "",
-            "금액": int((m.group(6) or "0").replace(",", "")) if m.group(6) else None
-        })
-    return entries
-
-
-# 전처리 파이프라인
+# ------------------------- 텍스트 유틸 -------------------------
 def squash_ws(s: str) -> str:
     return re.sub(r"\s+", " ", s or "").strip()
 
 def extract_pages_text_textonly(doc: fitz.Document) -> List[str]:
-    """OCR 없이 텍스트만 가져옴"""
+    """OCR 없이 PDF 내 텍스트만 추출"""
     pages = []
     for i in range(len(doc)):
-        p = doc[i]
-        txt = p.get_text("text") or ""
+        txt = doc[i].get_text("text") or ""
         pages.append(txt)
     return pages
 
 def extract_tables_textbased(pdf_bytes: bytes) -> List[Dict[str, Any]]:
-    """pdfplumber로 선/텍스트 기반 테이블 추출 (있으면)"""
+    """pdfplumber로 선/텍스트 기반 테이블 추출(있으면) → TSV"""
     out = []
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for pidx, page in enumerate(pdf.pages, start=1):
@@ -400,7 +325,20 @@ def extract_tables_textbased(pdf_bytes: bytes) -> List[Dict[str, Any]]:
                 out.append({"page": pidx, "tsv": "\n".join(lines)})
     return out
 
-# --- 최소 파서(원하면 정교 파서로 교체 가능) ---
+# ------------------------- 간단 파서(기존 베이스) -------------------------
+SEC_RE = {
+    "표제부": re.compile(r"(표제부.*?)(?=갑구|을구|$)", re.S),
+    "갑구":   re.compile(r"(갑구.*?)(?=표제부|을구|$)", re.S),
+    "을구":   re.compile(r"(을구.*?)(?=표제부|갑구|$)", re.S),
+}
+
+def split_sections(text: str) -> dict:
+    secs = {}
+    for k, rx in SEC_RE.items():
+        m = rx.search(text)
+        secs[k] = m.group(1) if m else ""
+    return secs
+
 def simple_parse(full_text: str) -> Dict[str, Any]:
     header = {}
     m = re.search(r"\[집합건물\].*", full_text)
@@ -431,11 +369,13 @@ def simple_parse(full_text: str) -> Dict[str, Any]:
     # 섹션 자르기
     def section(name, after):
         m = re.search(r"【\s*" + name + r"\s*구\s*】", full_text)
-        if not m: return None
+        if not m:
+            return None
         s = m.end()
         e = len(full_text)
         mm = re.search(r"【\s*(?:" + after + r")\s*】", full_text[s:])
-        if mm: e = s + mm.start()
+        if mm:
+            e = s + mm.start()
         return full_text[s:e]
 
     gap = section("갑", "을|공동담보목록")
@@ -449,6 +389,87 @@ def simple_parse(full_text: str) -> Dict[str, Any]:
         "eulgu_raw": squash_ws(eul) if eul else None,
     }
 
+# ------------------------- 요약(주소/채권최고액/공동담보 주소) -------------------------
+KOR_DATE_RE = re.compile(r"(?P<y>\d{4})\s*년\s*(?P<m>\d{1,2})\s*월\s*(?P<d>\d{1,2})\s*일")
+WON_DIGIT_RE = re.compile(r"채권최고액\s*금?\s*(?P<amt>[0-9][0-9,]*)\s*원")
+BRACKET_ADDR_RE = re.compile(r"\[.*?집합건물.*?\]\s*(?P<line>.+)")
+
+def _to_date_yyyy_mm_dd(s: str) -> Optional[str]:
+    m = KOR_DATE_RE.search(s)
+    if not m:
+        return None
+    y, mth, d = int(m.group("y")), int(m.group("m")), int(m.group("d"))
+    return f"{y:04d}-{mth:02d}-{d:02d}"
+
+def _to_won_int(s: str) -> Optional[int]:
+    s = s.strip().replace(",", "")
+    return int(s) if s.isdigit() else None
+
+def extract_subject_address(full_text: str) -> Optional[str]:
+    m = BRACKET_ADDR_RE.search(full_text)
+    if m:
+        return m.group("line").strip()
+    # fallback: 지번 주소 패턴
+    addr_re = re.compile(r"[가-힣]+(특별시|광역시|도|시)\s+[가-힣0-9]+(구|군|시)\s+[가-힣0-9]+(동|읍|면)\s+[0-9\-]+(?:번지)?")
+    m2 = addr_re.search(full_text)
+    return m2.group(0).strip() if m2 else None
+
+def extract_eulgu_block(full_text: str) -> str:
+    m = re.search(r"【\s*을\s*구\s*】(?P<blk>[\s\S]+?)(?:【\s*갑\s*구\s*】|---PAGEBREAK---|\Z)", full_text)
+    return m.group("blk") if m else full_text
+
+def parse_mortgages_from_eulgu(eul_text: str) -> List[Dict[str, Any]]:
+    results = []
+    mort_re = re.compile(
+        r"^\s*(?P<idx>\d+)\s+근저당권설정\b(?P<tail>[\s\S]*?)(?=^\s*\d+\s+\S|\Z)",
+        re.MULTILINE
+    )
+    for m in mort_re.finditer(eul_text):
+        idx = m.group("idx")
+        block = m.group("tail")
+        reg_date = _to_date_yyyy_mm_dd(block)  # 블럭에서 첫 한글날짜 추정
+        amt = None
+        m_amt = WON_DIGIT_RE.search(block)
+        if m_amt:
+            amt = _to_won_int(m_amt.group("amt"))
+        joint_id = None
+        m_joint = re.search(r"공동담보목록\s*제?\s*(?P<id>\d{4}-\d+)\s*호", block)
+        if m_joint:
+            joint_id = m_joint.group("id")
+        results.append({
+            "order_no": int(idx),
+            "registered_at": reg_date,
+            "max_claim_won": amt,
+            "joint_list_id": joint_id,
+            "cancelled": False,
+            "raw": block.strip()[:500]
+        })
+
+    # 'N번근저당권설정등 ... 기말소 ... 해지' → N번 말소 처리
+    cancel_re = re.compile(r"^\s*(?P<idx>\d+)\s+(?P<ref>\d+)번근저당권설정등[\s\S]*?기말소[\s\S]*?해지", re.MULTILINE)
+    cancelled_refs = {int(c.group("ref")) for c in cancel_re.finditer(eul_text)}
+    for r in results:
+        if r["order_no"] in cancelled_refs:
+            r["cancelled"] = True
+    return results
+
+def extract_joint_collateral_addresses(full_text: str) -> List[str]:
+    out, seen = [], set()
+    for m in re.finditer(r"(공동담보목록\s*제?\s*\d{4}-\d+\s*호)(?P<blk>[\s\S]+?)(?:---PAGEBREAK---|발행번호|【|\Z)", full_text):
+        blk = m.group("blk")
+        addr_pats = [
+            r"[가-힣]+(특별시|광역시|도|시)\s+[가-힣0-9]+(구|군|시)\s+[가-힣0-9]+(동|읍|면)\s+\d+(?:-\d+)?번지(?:\s*외\s*\d+\s*필지)?",
+            r"[가-힣]+(특별시|광역시|도|시)\s+[가-힣0-9]+(구|군|시)\s+[^\s]+(로|길)[^\s]*\s+\d+(?:-\d+)?(?:\s*\([^)]+\))?"
+        ]
+        for pat in addr_pats:
+            for a in re.finditer(pat, blk):
+                addr = a.group(0).strip()
+                if addr not in seen:
+                    seen.add(addr)
+                    out.append(addr)
+    return out
+
+# ------------------------- 라우트 -------------------------
 @app.route("/analyze", methods=["POST"])
 def analyze():
     # 'files' 또는 'file' 어느 쪽이든 수용
@@ -473,23 +494,48 @@ def analyze():
     except Exception as e:
         return jsonify(ok=False, message=f"PDF 열기 실패: {e}"), 400
 
-    # 텍스트만 추출
+    # 1) 텍스트 추출
     pages = extract_pages_text_textonly(doc)
     full_text = "\n\n---PAGEBREAK---\n\n".join(pages)
 
-    # (선택) 테이블 추출
+    # 2) (선택) 텍스트 기반 테이블
     tables = extract_tables_textbased(data)
 
-    # 간단 파싱
+    # 3) 네 기존 최소 파서
     parsed = simple_parse(full_text)
+
+    # 4) 요약 생성
+    subject_addr = extract_subject_address(full_text)
+
+    eul_text = parsed.get("eulgu_raw") if isinstance(parsed, dict) else None
+    if not eul_text:
+        eul_text = extract_eulgu_block(full_text)
+
+    mortgages = parse_mortgages_from_eulgu(eul_text)
+    total_max_claim_active = sum(m["max_claim_won"] or 0 for m in mortgages if not m["cancelled"])
+    joint_addresses = extract_joint_collateral_addresses(full_text)
+    print(mortgages)
+    print(subject_addr)
+    print(total_max_claim_active)
+    print(joint_addresses)
+
+
 
     return jsonify(
         ok=True,
         pageCount=len(doc),
         textPreview=full_text[:2000],
         parsed=parsed,
-        tables_textbased=tables
+        tables_textbased=tables,
+        summary=dict(
+            subject_address=subject_addr,
+            mortgages=mortgages,                 # [{order_no, registered_at, max_claim_won, joint_list_id, cancelled, raw}]
+            total_active_max_claim=total_max_claim_active,
+            joint_collateral_addresses=joint_addresses
+        )
     ), 200
+
+
 
 
 
