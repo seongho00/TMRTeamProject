@@ -1,26 +1,30 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="common/head::head"></head>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head::head"></head>
 
-<h1 class="text-2xl font-bold mb-2">등기부 사진 업로드</h1>
-<p class="text-sm text-gray-500 mb-4">각 페이지를 한 장씩, 그림자/반사 최소화, 정면으로 촬영해주세요.</p>
+<h1 class="text-2xl font-bold mb-2">등기부 PDF 업로드</h1>
+<p class="text-sm text-gray-500 mb-4">원본 PDF 1개를 업로드하세요. (최대 20MB)</p>
 
 <!-- Dropzone -->
 <div id="drop" class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer bg-white">
-    <p class="font-medium text-gray-700">여기에 사진을 끌어다 놓거나</p>
+    <p class="font-medium text-gray-700">여기에 PDF를 끌어다 놓거나</p>
     <p class="text-gray-500">아래 버튼으로 선택하세요</p>
 
-    <input id="files" type="file" name="files" accept="image/*" multiple capture="environment" class="hidden"/>
+    <!-- PDF만, 단일 파일 -->
+    <input id="file" type="file" name="file" accept="application/pdf" class="hidden"/>
 
     <div class="flex justify-center gap-3 mt-4">
-        <button id="pick" type="button" class="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700">사진 선택
-        </button>
+        <button id="pick" type="button" class="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700">PDF 선택</button>
         <button id="upload" type="button" disabled
-                class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50">업로드
+                class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50">
+            업로드
         </button>
     </div>
 
-    <p class="text-xs text-gray-400 mt-2">허용 형식: JPG, PNG, WEBP (최대 20MB/파일)</p>
+    <p class="text-xs text-gray-400 mt-2">허용 형식: PDF (최대 20MB)</p>
 </div>
 
 <!-- 미리보기 -->
@@ -31,61 +35,76 @@
 <pre id="resp" class="bg-gray-900 text-blue-100 p-3 rounded-lg text-sm whitespace-pre-wrap"></pre>
 
 <script>
-    let selectedFiles = [];
+    let selectedFile = null;
+    const MAX_MB = 20;
 
-    function refreshThumbs() {
-        $("#thumbs").empty();
-        selectedFiles.forEach(file => {
-            const url = URL.createObjectURL(file);
-            $("#thumbs").append(`
-          <div class="border rounded-lg p-2 bg-white shadow">
-            <img src="${url}" alt="${file.name}" class="w-full h-40 object-cover rounded" />
-            <div class="mt-1 text-sm text-gray-600 truncate">${file.name}</div>
-          </div>
-        `);
-        });
-        $("#upload").prop("disabled", selectedFiles.length === 0);
+    const isPdf = (f) => f && (f.type === "application/pdf" || (f.name || "").toLowerCase().endsWith(".pdf"));
+
+    function showPreview() {
+        const thumbs = document.getElementById("thumbs");
+        thumbs.innerHTML = "";
+        if (!selectedFile) {
+            document.getElementById("upload").disabled = true;
+            return;
+        }
+        const sizeMB = (selectedFile.size / (1024*1024)).toFixed(2);
+        const card = document.createElement("div");
+        card.className = "border rounded-lg p-2 bg-white shadow";
+        card.innerHTML = `
+      <div class="w-full h-40 flex items-center justify-center bg-gray-50 rounded">
+        <span class="text-gray-700 font-semibold">PDF</span>
+      </div>
+      <div class="mt-1 text-sm text-gray-600 truncate">${selectedFile.name}
+        <span class="text-xs text-gray-400">(${sizeMB}MB)</span>
+      </div>`;
+        thumbs.appendChild(card);
+        document.getElementById("upload").disabled = false;
     }
 
-    // 파일 선택 버튼
-    $("#pick").on("click", () => $("#files").click());
-    $("#files").on("change", function () {
-        selectedFiles = Array.from(this.files || []);
-        refreshThumbs();
+    function setPdf(file) {
+        if (!file) { selectedFile = null; showPreview(); return; }
+        if (!isPdf(file)) {
+            alert("PDF만 업로드할 수 있습니다.");
+            selectedFile = null;
+            showPreview();
+            return;
+        }
+        if (file.size > 20 * 1024 * 1024) {
+            alert("파일이 20MB를 초과합니다.");
+            selectedFile = null;
+            showPreview();
+            return;
+        }
+        selectedFile = file;
+        showPreview();
+    }
+
+    document.getElementById("pick").addEventListener("click", () => document.getElementById("file").click());
+    document.getElementById("file").addEventListener("change", function () { setPdf(this.files?.[0]); });
+
+    const drop = document.getElementById("drop");
+    drop.addEventListener("dragenter", e => { e.preventDefault(); drop.classList.add("border-blue-500"); });
+    drop.addEventListener("dragover",  e => { e.preventDefault(); });
+    drop.addEventListener("dragleave", e => { e.preventDefault(); drop.classList.remove("border-blue-500"); });
+    drop.addEventListener("drop",      e => {
+        e.preventDefault(); drop.classList.remove("border-blue-500");
+        const file = e.dataTransfer.files?.[0];
+        setPdf(file);
     });
 
-    // 드래그 앤 드롭
-    $("#drop").on("dragenter dragover", e => {
-        e.preventDefault();
-        e.stopPropagation();
-        $("#drop").addClass("border-blue-500");
-    });
-    $("#drop").on("dragleave drop", e => {
-        e.preventDefault();
-        e.stopPropagation();
-        $("#drop").removeClass("border-blue-500");
-    });
-    $("#drop").on("drop", e => {
-        selectedFiles = Array.from(e.originalEvent.dataTransfer.files || [])
-            .filter(f => f.type.startsWith("image/"));
-        refreshThumbs();
-    });
-
-    // 업로드 버튼
-    $("#upload").on("click", async () => {
-        $("#resp").text("업로드 중...");
+    document.getElementById("upload").addEventListener("click", async () => {
+        const resp = document.getElementById("resp");
+        resp.textContent = "업로드 중...";
         const form = new FormData();
-        selectedFiles.forEach(f => form.append("files", f));
+        form.append("file", selectedFile);
 
         try {
-            const r = await fetch("/usr/property/upload", { // URL을 /registry/upload 대신 /deed/upload로 변경 가능
-                method: "POST",
-                body: form
-            });
+            const r = await fetch("/usr/property/upload", { method: "POST", body: form });
             const json = await r.json();
-            $("#resp").text(JSON.stringify(json, null, 2));
+            resp.textContent = JSON.stringify(json, null, 2);
         } catch (err) {
-            $("#resp").text("업로드 실패: " + err.message);
+            resp.textContent = "업로드 실패: " + err.message;
         }
     });
 </script>
+</html>
