@@ -385,8 +385,8 @@ def simple_parse(full_text: str) -> Dict[str, Any]:
         "header": header,
         "pyojebu": {"floors": floors},
         "daejigwon": {"shares": land_shares},
-        "gapgu_raw": squash_ws(gap) if gap else None,
-        "eulgu_raw": squash_ws(eul) if eul else None,
+        "gapgu_raw": gap.strip() if gap else None,
+        "eulgu_raw": eul.strip() if eul else None,
     }
 
 # ------------------------- 요약(주소/채권최고액/공동담보 주소) -------------------------
@@ -418,40 +418,91 @@ def extract_eulgu_block(full_text: str) -> str:
     m = re.search(r"【\s*을\s*구\s*】(?P<blk>[\s\S]+?)(?:【\s*갑\s*구\s*】|---PAGEBREAK---|\Z)", full_text)
     return m.group("blk") if m else full_text
 
+
+def split_eulgu_blocks(eul_text: str) -> List[Tuple[int, str]]:
+    """
+    을구 원문을 '순위번호' 단위로 분할.
+    줄바꿈이 있는 원문을 가정. (simple_parse에서 strip만 하고 줄바꿈은 보존해야 함)
+    반환: [(순위번호, 블록텍스트), ...]
+    """
+    txt = eul_text or ""
+    # 줄 시작에서 "숫자 + 공백 + 다음 글자" 패턴을 모두 잡아 경계로 사용
+    anchors = list(re.finditer(r"(?m)^\s*(\d+)\s+\S", txt))
+    blocks: List[Tuple[int, str]] = []
+    for i, m in enumerate(anchors):
+        idx = int(m.group(1))
+        start = m.start()
+        end = anchors[i+1].start() if i+1 < len(anchors) else len(txt)
+        blocks.append((idx, txt[start:end].strip()))
+    return blocks
+
 def parse_mortgages_from_eulgu(eul_text: str) -> List[Dict[str, Any]]:
-    results = []
-    mort_re = re.compile(
-        r"^\s*(?P<idx>\d+)\s+근저당권설정\b(?P<tail>[\s\S]*?)(?=^\s*\d+\s+\S|\Z)",
-        re.MULTILINE
-    )
-    for m in mort_re.finditer(eul_text):
-        idx = m.group("idx")
-        block = m.group("tail")
-        reg_date = _to_date_yyyy_mm_dd(block)  # 블럭에서 첫 한글날짜 추정
-        amt = None
-        m_amt = WON_DIGIT_RE.search(block)
-        if m_amt:
-            amt = _to_won_int(m_amt.group("amt"))
-        joint_id = None
-        m_joint = re.search(r"공동담보목록\s*제?\s*(?P<id>\d{4}-\d+)\s*호", block)
-        if m_joint:
-            joint_id = m_joint.group("id")
-        results.append({
-            "order_no": int(idx),
+    """
+    1) split_eulgu_blocks로 블록을 자르고
+    2) '근저당권설정' → 근저당 데이터 추출
+       'N번근저당권설정등 ... (기)말소/해지' → 말소 참조만 수집
+    3) 말소 참조된 근저당은 cancelled=True로 마킹
+    """
+    txt = eul_text or ""
+    blocks = split_eulgu_blocks(txt)
+
+    money_re = re.compile(r"채권최고액\s*금?\s*([0-9][0-9,]*)\s*원")
+    date_kr  = re.compile(r"(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일")
+    joint_re = re.compile(r"공동담보목록\s*제?\s*(\d{4}-\d+)\s*호")
+    # “1번근저당권설정등 … 말소/해지” 패턴
+    cancel_re = re.compile(r"(\d+)\s*번\s*근저당권설정등[\s\S]*?(?:기말소|말소)[\s\S]*?(?:해지)?")
+
+    mortgages: List[Dict[str, Any]] = []
+    cancelled_refs: set[int] = set()
+
+    for order_no, block in blocks:
+        # 말소 블록인가?
+        mc = cancel_re.search(block)
+        if mc:
+            cancelled_refs.add(int(mc.group(1)))
+            continue
+
+        # 근저당권 설정 블록인가?
+        if not re.search(r"근저당권\s*설정", block):
+            # (저당권/전세권 등 다른 권리면 스킵. 필요하면 분기 추가)
+            continue
+
+        # 날짜: 블록 내 첫 번째 한글식 날짜 하나만 사용
+        reg_date: Optional[str] = None
+        md = date_kr.search(block)
+        if md:
+            y, mm, dd = int(md.group(1)), int(md.group(2)), int(md.group(3))
+            reg_date = f"{y:04d}-{mm:02d}-{dd:02d}"
+
+        # 금액
+        amt: Optional[int] = None
+        ma = money_re.search(block)
+        if ma:
+            amt = int(ma.group(1).replace(",", ""))
+
+        # 공동담보 ID
+        jid: Optional[str] = None
+        mj = joint_re.search(block)
+        if mj:
+            jid = mj.group(1)
+
+        mortgages.append({
+            "order_no": order_no,
             "registered_at": reg_date,
             "max_claim_won": amt,
-            "joint_list_id": joint_id,
+            "joint_list_id": jid,
             "cancelled": False,
-            "raw": block.strip()[:500]
+            "raw": block[:500].strip(),
         })
 
-    # 'N번근저당권설정등 ... 기말소 ... 해지' → N번 말소 처리
-    cancel_re = re.compile(r"^\s*(?P<idx>\d+)\s+(?P<ref>\d+)번근저당권설정등[\s\S]*?기말소[\s\S]*?해지", re.MULTILINE)
-    cancelled_refs = {int(c.group("ref")) for c in cancel_re.finditer(eul_text)}
-    for r in results:
+    # 말소 마킹
+    for r in mortgages:
         if r["order_no"] in cancelled_refs:
             r["cancelled"] = True
-    return results
+
+    # 순번 기준 정렬(안전)
+    mortgages.sort(key=lambda x: x["order_no"])
+    return mortgages
 
 def extract_joint_collateral_addresses(full_text: str) -> List[str]:
     out, seen = [], set()
@@ -512,6 +563,7 @@ def analyze():
         eul_text = extract_eulgu_block(full_text)
 
     mortgages = parse_mortgages_from_eulgu(eul_text)
+
     total_max_claim_active = sum(m["max_claim_won"] or 0 for m in mortgages if not m["cancelled"])
     joint_addresses = extract_joint_collateral_addresses(full_text)
     print(mortgages)
