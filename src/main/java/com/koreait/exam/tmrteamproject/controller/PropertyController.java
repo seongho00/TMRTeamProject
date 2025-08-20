@@ -28,12 +28,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class PropertyController {
 
-
-    private static final Set<String> ALLOWED = Set.of(
-            "image/jpeg", "image/png", "image/webp" // 사진 업로드 기준
-            // PDF까지 허용하려면 "application/pdf" 추가
-    );
-
     private final PropertyService propertyService;
 
     @GetMapping("/upload")
@@ -45,21 +39,27 @@ public class PropertyController {
     // 파일 업로드 및 파이썬으로 파일 보내기
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> handleUpload(
-            @RequestPart("files") List<MultipartFile> files,
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng
     ) {
-        if (files == null || files.isEmpty()) {
+        // 1) 들어온 파일 모으기 (file 또는 files)
+        List<MultipartFile> all = new ArrayList<>();
+        if (file != null && !file.isEmpty()) all.add(file);
+        if (files != null) {
+            for (MultipartFile f : files) if (f != null && !f.isEmpty()) all.add(f);
+        }
+        if (all.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("ok", false, "message", "파일이 없습니다."));
         }
 
-        // PDF만 필터 (MIME/확장자 또는 매직바이트)
-        List<MultipartFile> pdfOnly = files.stream()
+        // 2) PDF만 추리기 (MIME/확장자 + 매직바이트 스니핑)
+        List<MultipartFile> pdfOnly = all.stream()
                 .filter(f -> isPdfByHeader(f) || looksLikePdf(f))
                 .toList();
 
         if (pdfOnly.isEmpty()) {
-            // PDF가 하나도 없음
             return ResponseEntity.status(415).body(Map.of(
                     "ok", false,
                     "error", "unsupported_media_type",
@@ -67,8 +67,8 @@ public class PropertyController {
             ));
         }
 
+        // 3) PDF가 2개 이상이면 경고하고 중단
         if (pdfOnly.size() > 1) {
-            // ✅ PDF 2개 이상 → 경고하고 처리 중단
             List<String> names = pdfOnly.stream()
                     .map(f -> Optional.ofNullable(f.getOriginalFilename()).orElse("noname"))
                     .toList();
@@ -81,31 +81,32 @@ public class PropertyController {
             ));
         }
 
-        // 여기까지 왔으면 PDF 1개
-        MultipartFile firstPdf = pdfOnly.get(0);
-
+        // 4) 좌표 메타(옵션)
         Map<String, String> extra = new HashMap<>();
         if (lat != null) extra.put("lat", String.valueOf(lat));
         if (lng != null) extra.put("lng", String.valueOf(lng));
 
-        Map<String, Object> result = propertyService.analyzeWithPythonDirect(List.of(firstPdf), extra);
+        // 5) 정상 처리
+        MultipartFile thePdf = pdfOnly.get(0);
+        Map<String, Object> result = propertyService.analyzeWithPythonDirect(List.of(thePdf), extra);
         return ResponseEntity.ok(result);
     }
 
-    // ===== 도우미 =====
     private boolean isPdfByHeader(MultipartFile f) {
         String ct = Optional.ofNullable(f.getContentType()).orElse("");
         return ct.equalsIgnoreCase(MediaType.APPLICATION_PDF_VALUE)
-                || (f.getOriginalFilename() != null && f.getOriginalFilename().toLowerCase().endsWith(".pdf"));
+                || Optional.ofNullable(f.getOriginalFilename()).orElse("")
+                .toLowerCase().endsWith(".pdf");
     }
 
     private boolean looksLikePdf(MultipartFile f) {
         try (var is = f.getInputStream()) {
             byte[] buf = is.readNBytes(1024);
             for (int i = 0; i <= buf.length - 4; i++) {
-                if (buf[i] == '%' && buf[i+1] == 'P' && buf[i+2] == 'D' && buf[i+3] == 'F') return true;
+                if (buf[i] == '%' && buf[i + 1] == 'P' && buf[i + 2] == 'D' && buf[i + 3] == 'F') return true;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return false;
     }
 
