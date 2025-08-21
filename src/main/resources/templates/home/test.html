@@ -1,32 +1,27 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="common/head::head"></head> <!-- ✅ 공백 제거 -->
-
+<head th:replace="common/head::head"></head> <!-- 공백 제거 -->
 
 <div class=" flex">
     <img src="/images/g-normal.png" width="30px">
     <span class="buttonText">Log in with Google</span>
 </div>
 
-
 <a href="/usr/member/conditionalLogout">로그아웃</a>
 <button onclick="checkLoginStatus()">로그인 상태 확인</button>
 <button onclick="deleteAccount()">계정 삭제</button>
 
-<!-- ✅ 모듈 방식으로 수정 -->
+<!-- 모듈 방식으로 수정 -->
 <script type="module">
     import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import {
         getAuth,
         GoogleAuthProvider,
-        GithubAuthProvider,
         signInWithPopup,
-        linkWithCredential,
-        onAuthStateChanged,
-        fetchSignInMethodsForEmail
+        onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    // ✅ Firebase 설정
+    // Firebase 설정
     const firebaseConfig = {
         apiKey: "AIzaSyDqY-Lj2sJliSi2FOF-nwXf5d99lrlWyMs",
         authDomain: "tmrteamproject.firebaseapp.com",
@@ -49,12 +44,12 @@
         }
     });
 
-    // ✅ 구글 로그인 함수
-    // ✅ Google 로그인 함수
+    // 구글 로그인 함수
+    // Google 로그인 함수
     window.googleLogin = async () => {
         const provider = new GoogleAuthProvider();
 
-        // 🔒 기본 및 민감한 정보 scope 추가
+        // 기본 및 민감한 정보 scope 추가
         provider.addScope('profile');
         provider.addScope('email');
         provider.addScope('https://www.googleapis.com/auth/user.phonenumbers.read');
@@ -67,13 +62,13 @@
             const user = result.user;
             console.log("✅ 로그인 성공:", user);
 
-            // ✅ Firebase idToken → 서버 전송 (선택)
+            // Firebase idToken → 서버 전송 (선택)
             const idToken = await user.getIdToken();
 
             const token = await user.getIdTokenResult();
             console.log(token.claims);
             console.log(token.signInProvider);
-            // ✅ accessToken → Google People API 호출
+            // accessToken → Google People API 호출
             const credential = GoogleAuthProvider.credentialFromResult(result);
             const accessToken = credential.accessToken;
 
@@ -109,7 +104,7 @@
             const data = await response.json();
             console.log("✅ People API 응답:", data);
 
-            // ✅ 원하는 정보 파싱
+            // 원하는 정보 파싱
             const name = data.names?.[0]?.displayName || "이름 없음";
             const email = data.emailAddresses?.[0]?.value || "이메일 없음";
             const birthday = data.birthdays?.[0]?.date || null;
@@ -130,7 +125,7 @@
     }
 
 
-    // ✅ 서버로 토큰 전송
+    // 서버로 토큰 전송
     function sendTokenToServer(idToken, profile) {
         fetch("http://localhost:8080/usr/member/googleCallback", {
             method: "POST",
@@ -143,7 +138,7 @@
                 email: profile.email,
                 phone: profile.phone,
                 photoUrl: profile.photoUrl
-            })  // ✅ 여기에 idToken 추가
+            })  // 여기에 idToken 추가
         })
             .then(res => {
                 if (!res.ok) throw new Error("서버 응답 실패");
@@ -151,7 +146,7 @@
             })
             .then(result => {
                 console.log("✅ 서버 응답:", result);
-                // ✅ 리디렉션 실행
+                // 리디렉션 실행
                 window.location.href = "/usr/home/main";  // 원하는 경로로 수정
             })
             .catch(err => {
@@ -161,7 +156,7 @@
     }
 
 
-    // ✅ 로그인 상태 확인 버튼 클릭 시 호출
+    // 로그인 상태 확인 버튼 클릭 시 호출
     window.checkLoginStatus = () => {
         onAuthStateChanged(auth, (user) => {
             if (user) {
