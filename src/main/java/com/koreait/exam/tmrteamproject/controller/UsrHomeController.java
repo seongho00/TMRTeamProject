@@ -42,6 +42,8 @@ public class UsrHomeController {
 
             }
 
+            model.addAttribute("loginMemberId", loginMember.getId());
+            System.out.println(loginMember.getId());
         }
         System.out.println(lhSupplySchedules);
         model.addAttribute("lhSupplySchedules", lhSupplySchedules);
@@ -51,5 +53,10 @@ public class UsrHomeController {
     @GetMapping("/test")
     public String test() {
         return "home/test";
+    }
+
+    @GetMapping("/notifications")
+    public String notifications() {
+        return "home/notifications";
     }
 }
