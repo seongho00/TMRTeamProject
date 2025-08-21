@@ -1,5 +1,8 @@
 package com.koreait.exam.tmrteamproject.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.koreait.exam.tmrteamproject.repository.PropertyFileRepository;
 import com.koreait.exam.tmrteamproject.vo.PropertyFile;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ import org.springframework.web.util.UriUtils;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.time.LocalDateTime;
@@ -36,6 +40,9 @@ public class PropertyService {
 
     @Value("${bldrgst.apiKey}")
     private String bldrgstKey;
+
+    @Value("${bldrgst.apiKeyEncoded:false}")
+    private boolean apiKeyEncoded;
 
     @Value("${address.confmKey}")
     private String jusoKey;
@@ -144,7 +151,7 @@ public class PropertyService {
     }
 
 
-    public void resolveAreaFromLine(String raw) {
+    public void resolveAreaFromLine(String raw) throws JsonProcessingException {
         // 1) 전처리: ‘외 n필지’, 대괄호 태그 제거, 공백 정리
         String cleaned = cleanup(raw);
 
@@ -168,32 +175,40 @@ public class PropertyService {
 
 
         // 3) HUB getBrExposPubuseAreaInfo 호출 (전유=1, 주건축물=0)
+        // 3) 파라미터 구성
         Map<String, String> q = new LinkedHashMap<>();
-        q.put("serviceKey", bldrgstKey);
         q.put("sigunguCd", sigunguCd);
         q.put("bjdongCd", bjdongCd);
         q.put("platGbCd", platGbCd);
         q.put("bun", bun);
         q.put("ji", ji);
-        q.put("_type", "json");
-        if (dongNm != null) q.put("dongNm", String.valueOf(dongNm));
-        if (hoNm != null) q.put("hoNm", String.valueOf(hoNm));
+        if (dongNm != null) q.put("dongNm", dongNm);
+        if (hoNm != null) q.put("hoNm", hoNm);
+        q.put("numOfRows", "100");
+        q.put("pageNo", "1");
 
+        // 4) 호출
         List<Map<String, Object>> items = callBldRgst(
-                "https://apis.data.go.kr/1613000/BldRgstHubService/getBrExposPubuseAreaInfo", q);
+                "https://apis.data.go.kr/1613000/BldRgstHubService/getBrExposPubuseAreaInfo", q
+        );
 
-        System.out.println(items);
-        // 4) 결과 합산(보통 1건)
+        // 5) 면적 합산 (필드명이 'area', 'pubuseArea', 'exposPubuseArea' 등으로 올 수 있음)
+        String[] areaKeys = {"area", "pubuseArea", "exposPubuseArea"};
         double sum = 0.0;
         for (Map<String, Object> it : items) {
-            Object area = it.get("area");
-            if (area != null) {
-                try {
-                    sum += Double.parseDouble(String.valueOf(area));
-                } catch (Exception ignore) {
+            for (String k : areaKeys) {
+                Object v = it.get(k);
+                if (v != null) {
+                    try {
+                        sum += Double.parseDouble(String.valueOf(v));
+                        break;
+                    } catch (Exception ignore) {
+                    }
                 }
             }
         }
+
+        log.info("총 면적 합계: {}", sum);
 
     }
 
@@ -300,67 +315,130 @@ public class PropertyService {
 
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> callBldRgst(String endpoint, Map<String, String> params) {
-        params.putIfAbsent("numOfRows", "100");
-        params.putIfAbsent("pageNo", "1");
-        params.putIfAbsent("_type", "json");
-
-        // URL 빌드
-        String serviceKey = params.remove("serviceKey"); // 분리
-
+        // serviceKey만 “그대로” 넣고, 나머지는 개별 인코딩
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(endpoint);
-        params.forEach(ub::queryParam);
-        ub.queryParam("serviceKey", serviceKey);
 
-        boolean encodedKey = serviceKey.contains("%");
-        String url = encodedKey
-                ? ub.build(true).toUriString()                 // ✅ 이미 인코딩된 값 보존 (재인코딩 금지)
-                : ub.encode(StandardCharsets.UTF_8).toUriString(); // 일반키면 한 번만 인코딩
+        if (apiKeyEncoded) {
+            // 이미 인코딩된 키 → 그대로 추가
+            ub.queryParam("serviceKey", bldrgstKey);
+            // 다른 파라미터는 값만 인코딩
+            params.forEach((k, v) -> {
+                if (v != null && !v.isBlank()) {
+                    ub.queryParam(k, org.springframework.web.util.UriUtils.encode(v, java.nio.charset.StandardCharsets.UTF_8));
+                }
+            });
+            // ⚠️ 이미 인코딩되었다고 빌더에 알려서 “추가 인코딩 금지”
+            //    (serviceKey의 %2B, %3D 등을 그대로 유지)
+            String url = ub.build(true).toUriString();
+            logUrlMasked(url);
+            String xml = rest.getForObject(url, String.class);
+            return parseBldRgstXml(xml);
 
-        try {
-            // 👇 브라우저처럼 헤더 추가
-            HttpHeaders headers = new HttpHeaders();
-            headers.set(HttpHeaders.ACCEPT, "application/json");
-            headers.set(HttpHeaders.USER_AGENT, "Mozilla/5.0");
-
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<Map> resp = rest.exchange(url, HttpMethod.GET, entity, Map.class);
-            Map<String, Object> root = resp.getBody();
-            if (root == null) return List.of();
-
-            Map<String, Object> response = (Map<String, Object>) root.get("response");
-            if (response == null) return List.of();
-
-            Map<String, Object> body  = (Map<String, Object>) response.get("body");
-            Map<String, Object> items = (Map<String, Object>) body.get("items");
-            Object itemObj = items.get("item");
-
-            List<Map<String, Object>> list = new ArrayList<>();
-            if (itemObj instanceof Map) {
-                list.add((Map<String, Object>) itemObj);
-            } else if (itemObj instanceof List) {
-                for (Object o : (List<?>) itemObj) list.add((Map<String, Object>) o);
-            }
-            return list;
-        } catch (Exception e) {
-            log.error("BldRgst 호출 실패: {}", e.getMessage(), e);
-            return List.of();
+        } else {
+            // raw 키 → 빌더가 전체 UTF-8 인코딩
+            ub.queryParam("serviceKey", bldrgstKey);
+            params.forEach((k, v) -> {
+                if (v != null && !v.isBlank()) ub.queryParam(k, v);
+            });
+            String url = ub.encode(java.nio.charset.StandardCharsets.UTF_8).toUriString();
+            logUrlMasked(url);
+            String xml = rest.getForObject(url, String.class);
+            return parseBldRgstXml(xml);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> extractBldItems(Map<String, Object> root) {
-        Map<String, Object> response = (Map<String, Object>) root.getOrDefault("response", Map.of());
-        Map<String, Object> body = (Map<String, Object>) response.getOrDefault("body", Map.of());
-        Map<String, Object> items = (Map<String, Object>) body.getOrDefault("items", Map.of());
-        Object itemObj = items.get("item");
-        List<Map<String, Object>> list = new ArrayList<>();
-        if (itemObj instanceof Map) {
-            list.add((Map<String, Object>) itemObj);
-        } else if (itemObj instanceof List) {
-            for (Object o : (List<?>) itemObj) list.add((Map<String, Object>) o);
+    private List<Map<String, Object>> parseBldRgstXml(String xml) {
+        if (xml == null || xml.isBlank()) throw new IllegalStateException("빈 응답");
+        try {
+            com.fasterxml.jackson.dataformat.xml.XmlMapper xmlMapper = new com.fasterxml.jackson.dataformat.xml.XmlMapper();
+            com.fasterxml.jackson.databind.JsonNode root = xmlMapper.readTree(xml);
+
+            // 1) 표준 오류(<OpenAPI_ServiceResponse>) 먼저
+            com.fasterxml.jackson.databind.JsonNode cmm = findCmmMsgHeader(root);
+            if (cmm != null) {
+                String reason = cmm.path("returnReasonCode").asText(null);
+                String auth   = cmm.path("returnAuthMsg").asText(null);
+                String err    = cmm.path("errMsg").asText(null);
+                throw new IllegalStateException("BldRgst 인증/요청 오류: code=" + reason + ", auth=" + auth + ", msg=" + err);
+            }
+
+            // 2) 정상 헤더(<response><header>)
+            com.fasterxml.jackson.databind.JsonNode header = root.path("response").path("header");
+            String resultCode = header.path("resultCode").asText(null);
+            String resultMsg  = header.path("resultMsg").asText(null);
+
+            if ("00".equals(resultCode)) {
+                // ok
+            } else if ("03".equals(resultCode)) {
+                log.info("BldRgst: 데이터 없음(03) - {}", resultMsg);
+                return java.util.List.of();
+            } else if (resultCode != null) {
+                throw new IllegalStateException("BldRgst 오류: " + resultCode + " / " + resultMsg);
+            }
+
+            // 3) items 추출
+            com.fasterxml.jackson.databind.JsonNode itemNode = bestItemNode(root);
+            if (itemNode == null || itemNode.isNull() || itemNode.isMissingNode()) return java.util.List.of();
+
+            java.util.List<java.util.Map<String, Object>> out = new java.util.ArrayList<>();
+            if (itemNode.isArray()) {
+                for (com.fasterxml.jackson.databind.JsonNode it : itemNode) out.add(nodeToMap(it));
+            } else {
+                out.add(nodeToMap(itemNode));
+            }
+            return out;
+        } catch (RuntimeException re) {
+            throw re;
+        } catch (Exception e) {
+            throw new RuntimeException("XML 파싱 실패", e);
         }
-        return list;
+    }
+
+    private void logUrlMasked(String url) {
+        if (log.isInfoEnabled()) {
+            log.info("BldRgst GET {}", url.replaceFirst("(serviceKey=)[^&]+", "$1****"));
+        }
+    }
+
+    // JsonNode → Map 변환 간단 헬퍼
+    private Map<String, Object> nodeToMap(JsonNode it) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        it.fields().forEachRemaining(e -> m.put(e.getKey(), e.getValue().asText(null)));
+        return m;
+    }
+
+    // 가장 흔한 두 경로를 모두 탐색: <response><body><items><item> 또는 <body><items><item>
+    private JsonNode bestItemNode(JsonNode root) {
+        JsonNode p1 = root.path("response").path("body").path("items").path("item");
+        if (!p1.isMissingNode() && !p1.isNull() && (p1.isArray() || p1.size() > 0 || p1.fieldNames().hasNext()))
+            return p1;
+        JsonNode p2 = root.path("body").path("items").path("item");
+        if (!p2.isMissingNode() && !p2.isNull() && (p2.isArray() || p2.size() > 0 || p2.fieldNames().hasNext()))
+            return p2;
+        return null;
+    }
+
+    // ===== 표준 오류 응답(<OpenAPI_ServiceResponse><cmmMsgHeader>) 탐지 헬퍼 =====
+    private JsonNode findCmmMsgHeader(JsonNode root) {
+        // 1) 루트에 OpenAPI_ServiceResponse가 있는 케이스
+        if (root.has("OpenAPI_ServiceResponse")) {
+            JsonNode n = root.path("OpenAPI_ServiceResponse").path("cmmMsgHeader");
+            if (!isEmpty(n)) return n;
+        }
+        // 2) 루트 바로 아래에 cmmMsgHeader가 있는 케이스
+        if (root.has("cmmMsgHeader")) {
+            JsonNode n = root.path("cmmMsgHeader");
+            if (!isEmpty(n)) return n;
+        }
+        // 3) 어디 깊숙이 있든 첫 매치 찾기
+        JsonNode n = root.findPath("cmmMsgHeader");
+        return isEmpty(n) ? null : n;
+    }
+
+    private static boolean isEmpty(JsonNode n) {
+        return n == null || n.isMissingNode() || n.isNull()
+                || (n.isObject() && !n.fieldNames().hasNext())
+                || (n.isArray() && n.size() == 0);
     }
 
 

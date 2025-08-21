@@ -67,5 +67,5 @@ vworld:
 # 건축물대장 API
 bldrgst:
   apiKey: CtMWbR%2BmYCIwYQmPYdFuMiP4LsJ6aVV3CcbyZUXI5bGiblyS1OilOVAYopA9VxwIcRyQ7pT%2FADS7FzuMVs3uEw%3D%3D
+  apiKeyEncoded: true  # ← 인코딩된 키를 쓴다는 표시
 
-# 도로명주소 API
