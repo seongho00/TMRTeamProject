@@ -5,19 +5,41 @@ let sggPolygons = [], sggOverlayList = [];
 let currentLevel = 6;
 let isProgrammatic = false;
 
-const PALETTE_5 = {0:"#E3F2FD",1:"#BBDEFB",2:"#90CAF9",3:"#64B5F6",4:"#1E88E5"};
+// 팔레트
+const PALETTE_5 = {0:"#FFF7BC",1:"#FEE391",2:"#FEC44F",3:"#FE9929",4:"#D95F0E"};
 const COLOR_DEFAULT = "#D3D3D3";
 
-window.selectedUpjongName = null;
-window.autoSelectedEmd = null;
+// 업종 선택 상태
+window.selectedUpjongName = null; // 이름 우선
+window.selectedUpjongCd   = null; // 코드 보조
+window.autoSelectedEmdNm  = null; // 지도 클릭으로 자동 지정
 
-// ===== 공용 유틸 =====
+// 숫자/퍼센트 포맷
 const fmtNum = v => (v == null || isNaN(v)) ? "-" : Number(v).toLocaleString();
 const fmtPct = v => (v == null || isNaN(v)) ? "-" : (Number(v)*100).toFixed(1)+"%";
-const norm = s => (s||"").toString().trim().replace(/\s+/g,"");
 
-// ===== 초기화 =====
+// 공백 제거 후 소문자
+const norm = s => (s||"").toString().trim().replace(/\s+/g,"").toLowerCase();
+
+// 입력에서 "(코드)" 추출
+function parseUpjongCdFromInput(inputValue){
+    const m = /\(([^)]+)\)\s*$/.exec(inputValue || "");
+    return m ? m[1].trim() : null;
+}
+
+// GeoJSON 키 호환
+function getEmdCode(p){ return p?.ADSTRD_CD || p?.행정동_코드 || p?.adm_cd || null; }
+function getEmdName(p){ return p?.ADSTRD_NM || p?.행정동_명 || p?.adm_nm || null; }
+function getSggName(p){ return p?.SIGUNGU_NM || p?.시군구_명 || p?.sgg_nm || null; }
+
+// 위험도 항목 키 추출
+function pickNameField(obj){
+    return obj?.["서비스_업종_코드_명"] ?? obj?.["업종명"] ?? obj?.["이름"] ?? obj?.["upjongNm"] ?? null;
+}
+
+// 초기화
 document.addEventListener("DOMContentLoaded", () => {
+    // 맵 초기화
     kakao.maps.load(() => {
         map = new kakao.maps.Map(document.getElementById('map'), {
             center: new kakao.maps.LatLng(37.5665, 126.9780),
@@ -25,9 +47,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         Promise.all([
-            // ★ 위험도 병합본 GeoJSON 사용
-            loadPolygons("/Seoul_risk.geojson", emdPolygons, emdOverlayList, "#004c80", "ADSTRD_NM"),
-            loadPolygons("/Seoul_sggs.geojson", sggPolygons, sggOverlayList, "#e45c2f", "SIGUNGU_NM")
+            loadPolygons("/Seoul_risk.geojson", emdPolygons, emdOverlayList, "#004C80", "ADSTRD_NM"),
+            loadPolygons("/Seoul_sggs.geojson", sggPolygons, sggOverlayList, "#007580", "SIGUNGU_NM")
         ]).then(updatePolygonsByZoom);
 
         kakao.maps.event.addListener(map, 'zoom_changed', () => {
@@ -38,31 +59,15 @@ document.addEventListener("DOMContentLoaded", () => {
         kakao.maps.event.addListener(map, 'click', evt => handleMapClick(evt.latLng));
     });
 
-    // 시군구 선택 → 행정동 로드 + 지도 이동
-    $('#sggSelect').on('change', onSggChange);
+    // 지역 셀렉트 바인딩
+    $(document).on('change', '#sggSelect', onSggChange);
+    $(document).on('change', '#emdSelect', onEmdChange);
 
-    // 행정동 선택 → 지도 이동 + 강조
-    $('#emdSelect').on('change', onEmdChange);
-
-    // 대분류 클릭 → 중분류 목록
-    $(document).on("click", ".major-item", onMajorClick);
-
-    // 중분류 클릭 → 소분류 목록
-    $(document).on("click", ".middle-item", onMiddleClick);
-
-    // 소분류 클릭 → 입력 채우기 + 즉시 색칠/패널
-    $(document).on("click", ".minor-item", onMinorClick);
-
-    // 업종 입력 자동검색 (원하면 보여주기)
-    $('.upjongInput').on('compositionend', () => handleSearch($('.upjongInput').val().trim()))
-        .on('keydown', e => {
-            if (e.keyCode===8 || e.keyCode===46) {
-                setTimeout(()=>handleSearch($('.upjongInput').val().trim()), 10);
-            }
-        });
+    // 업종 소스/피커 초기화
+    initUpjongSource();
 });
 
-// ===== 지도/도형 =====
+/* ================= 지도/도형 로딩 ================= */
 function loadPolygons(url, container, overlayList, color, nameKey){
     return fetch(url).then(res => res.json()).then(geojson => {
         geojson.features.forEach(feature => {
@@ -73,18 +78,19 @@ function loadPolygons(url, container, overlayList, color, nameKey){
             multi.forEach(poly => {
                 const coords = poly[0];
                 const path = coords.map(c => new kakao.maps.LatLng(c[1], c[0]));
+                const guide = new kakao.maps.Polygon({
+                    path, strokeWeight:2, strokeColor:color, strokeOpacity:0.5, strokeStyle:"dash", fillOpacity:0
+                });
 
-                const guide = new kakao.maps.Polygon({ path, strokeWeight:2, strokeColor:color, strokeOpacity:0.5, strokeStyle:"dash", fillOpacity:0 });
-
-                const center = (()=>{
+                // 라벨용 중앙 좌표
+                const center = (()=> {
                     const lat = path.reduce((s,pt)=>s+pt.getLat(),0)/path.length;
                     const lng = path.reduce((s,pt)=>s+pt.getLng(),0)/path.length;
                     return new kakao.maps.LatLng(lat,lng);
                 })();
 
-                const displayName = p[nameKey] || p['행정동_명'] || p['ADSTRD_NM'] || p['SIGUNGU_NM'] || '';
                 const overlayContent = document.createElement('div');
-                overlayContent.innerText = displayName;
+                overlayContent.innerText = p[nameKey] || getEmdName(p) || getSggName(p) || '';
                 overlayContent.style.cssText = "background:#fff;border:1px solid #444;padding:3px 6px;font-size:13px;";
                 const overlay = new kakao.maps.CustomOverlay({content:overlayContent, position:center, yAnchor:1, zIndex:3});
 
@@ -95,14 +101,6 @@ function loadPolygons(url, container, overlayList, color, nameKey){
     });
 }
 
-// 이름 추출(여러 키를 안전하게 커버)
-function getEmdName(props){
-    return props?.ADSTRD_NM || props?.행정동_명 || props?.adm_nm || null;
-}
-function getSggName(props){
-    return props?.SIGUNGU_NM || props?.시군구명 || props?.sgg_nm || null;
-}
-
 function updatePolygonsByZoom(){
     const isSGG = currentLevel >= 7;
     const show = isSGG ? sggPolygons : emdPolygons;
@@ -111,14 +109,13 @@ function updatePolygonsByZoom(){
     const hideOv = isSGG ? emdOverlayList : sggOverlayList;
 
     if (currentPolygon){ currentPolygon.setMap(null); currentPolygon=null; }
-
     hide.forEach(p => p.guide.setMap(null));
     show.forEach(p => p.guide.setMap(map));
-
     hideOv.forEach(o => o.setMap(null));
     showOv.forEach(o => o.setMap(map));
 }
 
+/* ================= 폴리곤 헬퍼 ================= */
 function isPointInPolygon(latLng, path){
     let x=latLng.getLng(), y=latLng.getLat(), inside=false;
     for (let i=0,j=path.length-1;i<path.length;j=i++){
@@ -129,7 +126,6 @@ function isPointInPolygon(latLng, path){
     }
     return inside;
 }
-
 function isSamePath(path1, path2){
     if (!path1||!path2||path1.length!==path2.length) return false;
     for (let i=0;i<path1.length;i++){
@@ -138,40 +134,48 @@ function isSamePath(path1, path2){
     }
     return true;
 }
+function centerOf(path){
+    const lat = path.reduce((s,p)=>s+p.getLat(),0)/path.length;
+    const lng = path.reduce((s,p)=>s+p.getLng(),0)/path.length;
+    return new kakao.maps.LatLng(lat,lng);
+}
 
+/* ================= 지도 클릭 -> select 동기화 ================= */
 function handleMapClick(latLng){
     const targets = currentLevel >= 7 ? sggPolygons : emdPolygons;
     for (let i=0;i<targets.length;i++){
         const {path, properties} = targets[i];
         if (!isPointInPolygon(latLng, path)) continue;
 
-        const sggName = getSggName(properties);     // 변경
-        const emdName = getEmdName(properties);     // 변경
+        const sggNm = getSggName(properties);
+        const emdNm = getEmdName(properties);
+        let matchedSggNm = null;
 
-        if (sggName){
+        // 시군구 select 설정
+        if (sggNm){
             isProgrammatic = true;
-            $('#sggSelect').val(sggName).trigger('change');
+            $('#sggSelect').val(sggNm).trigger('change');
             isProgrammatic = false;
         }
 
-        if (emdName){
-            // 클릭 지점이 포함된 시군구를 찾아 이름 얻기 (fallback)
-            let matchedSggName = null;
+        // 행정동 클릭이면, 포함 시군구 찾아서 emd 자동선택
+        if (emdNm){
             for (let j=0;j<sggPolygons.length;j++){
                 const sgg = sggPolygons[j];
                 if (isPointInPolygon(latLng, sgg.path)){
-                    matchedSggName = getSggName(sgg.properties); // 변경
+                    matchedSggNm = getSggName(sgg.properties);
                     break;
                 }
             }
-            if (matchedSggName){
-                window.autoSelectedEmd = emdName;
+            if (matchedSggNm){
+                window.autoSelectedEmdNm = emdNm; // 이름 저장
                 isProgrammatic = true;
-                $('#sggSelect').val(matchedSggName).trigger('change');
+                $('#sggSelect').val(matchedSggNm).trigger('change');
                 isProgrammatic = false;
             }
         }
 
+        // 하이라이트 토글
         if (currentPolygon && isSamePath(currentPolygon.getPath(), path)){
             currentPolygon.setMap(null); currentPolygon=null; return;
         }
@@ -183,53 +187,58 @@ function handleMapClick(latLng){
     }
 }
 
-// ===== 업종별 위험도 검색/표시 =====
-function getRiskRecordForUpjong(props, upjongKeyword){
+// 업종 이름으로 레코드 찾기
+function getRiskRecordForUpjongByName(props, upjongName){
     const items = Array.isArray(props?.업종별_위험도) ? props.업종별_위험도 : [];
-    if (!upjongKeyword) return null;
-    const key = norm(upjongKeyword);
-    return items.find(it => norm(it["서비스_업종_코드_명"]) === key)
-        || items.find(it => norm(it["서비스_업종_코드_명"]).includes(key))
+    if (!items.length || !upjongName) return null;
+    const key = norm(upjongName);
+    return items.find(it => norm(pickNameField(it)||"") === key)
+        || items.find(it => norm(pickNameField(it)||"").includes(key))
         || null;
 }
 
-function recolorEmdByUpjong(upjongName){
-    window.selectedUpjongName = upjongName;
-    emdPolygons.forEach(({guide, properties}) => {
-        const rec = getRiskRecordForUpjong(properties, upjongName);
-        const color = (rec && Number.isFinite(rec["예측_위험도"]))
-            ? (PALETTE_5[Number(rec["예측_위험도"])] || COLOR_DEFAULT)
-            : COLOR_DEFAULT;
-        guide.setOptions({ fillColor: color, fillOpacity: (color===COLOR_DEFAULT?0.2:0.6), strokeOpacity:0.6 });
-    });
+// emd 값(코드 또는 이름)으로 polygon 찾기
+function findEmdByValue(v){
+    return emdPolygons.find(({properties}) =>
+        getEmdCode(properties) === v || getEmdName(properties) === v
+    );
 }
 
-function renderRiskPanel(emdName, upjongName){
+/* ================= 결과 패널 ================= */
+function renderRiskPanel(emdValue, upjongName){
     const $panel = document.getElementById("riskResult");
     if (!$panel) return;
 
-    const target = emdPolygons.find(({properties}) => properties?.ADSTRD_NM === emdName);
-    if (!target){ $panel.innerHTML = "<div>선택한 행정동을 찾을 수 없어요.</div>"; return; }
+    const target = findEmdByValue(emdValue);
+    if (!target){
+        $panel.classList.remove('hidden');
+        $panel.textContent = "선택한 행정동을 찾을 수 없어요.";
+        return;
+    }
 
-    const rec = getRiskRecordForUpjong(target.properties, upjongName);
+    const emdNm = getEmdName(target.properties);
+    const rec   = getRiskRecordForUpjongByName(target.properties, upjongName);
+
     if (!rec){
+        $panel.classList.remove('hidden');
         $panel.innerHTML = `
-      <div><b>행정동:</b> ${emdName}</div>
-      <div><b>업종:</b> ${upjongName||"-"}</div>
+      <div><b>행정동:</b> ${emdNm ?? "-"}</div>
+      <div><b>업종:</b> ${upjongName || "-"}</div>
       <div style="color:#666;margin-top:6px;">해당 업종의 위험도 정보가 없어요.</div>`;
         return;
     }
 
-    const color = rec.color || (PALETTE_5[Number(rec["예측_위험도"])] || COLOR_DEFAULT);
+    const color = PALETTE_5[Number(rec["예측_위험도"])] || COLOR_DEFAULT;
     const label = rec["예측_위험도_라벨"] ?? "-";
     const stage = rec["위험도_단계"] ?? "-";
     const score = fmtNum(rec["위험도_점수"]);
     const conf  = fmtPct(rec["예측_신뢰도"]);
 
+    $panel.classList.remove('hidden');
     $panel.innerHTML = `
     <div style="line-height:1.5;">
-      <div><b>행정동:</b> ${emdName}</div>
-      <div><b>업종:</b> ${rec["서비스_업종_코드_명"] ?? upjongName ?? "-"}</div>
+      <div><b>행정동:</b> ${emdNm ?? "-"}</div>
+      <div><b>업종:</b> ${upjongName ?? "-"}</div>
       <div><b>위험도:</b>
         <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};vertical-align:middle;margin-right:6px;"></span>
         ${label} (${stage})
@@ -239,154 +248,180 @@ function renderRiskPanel(emdName, upjongName){
     </div>`;
 }
 
-// ===== 지역/업종 검색 버튼 =====
+/* ================= 확인 버튼 ================= */
 function searchInfoByRegionAndUpjong(){
-    const sgg = $('#sggSelect').val();
-    const emd = $('#emdSelect').val();
-    const upjong = $('.upjongInput').val().trim();
+    // 지역 값
+    const sgg = document.getElementById('sggSelect')?.value || '';
+    const emd = document.getElementById('emdSelect')?.value || '';
 
-    if (!sgg || !emd){ alert('지역을 선택해주세요.'); return; }
-    if (!upjong){ alert('업종을 선택해주세요.'); return; }
+    // 업종 값: 버튼 클릭 선택 > 검색창 입력(엔터/포커스아웃)
+    const inputVal = (document.getElementById('upjongSearch')?.value || '').trim();
+    const upjongNm = (window.selectedUpjongName || inputVal || null);
 
-    // 즉시 지도 반영 + 패널 표시
-    recolorEmdByUpjong(upjong);
-    renderRiskPanel(emd, upjong);
+    if (!sgg || !emd){ alert('지역을 선택해줘.'); return; }
+    if (!upjongNm){ alert('업종 이름을 입력하거나 선택해줘.'); return; }
 
-    // 필요 시 서버 조회 (선택)
-    $.ajax({
-        url: 'searchInfoByRegionAndUpjong',
-        method: 'GET',
-        data: { sgg, emd, upjong },
-        success: function(resp){ console.log('서버 응답:', resp); },
-        error: function(){ console.error('데이터 로드 실패'); }
-    });
+    // 지도 색칠 + 패널 표시
+    colorOnlySelectedEmdByUpjong(emd, upjongNm);
+    renderRiskPanel(emd, upjongNm);
 }
 
-// ===== 이벤트 핸들러 =====
+/* ================= 지역 셀렉트 핸들러 ================= */
 function onSggChange(){
-    const sgg = $(this).val();
+    const sggNm = $('#sggSelect').val();
     $('#emdSelect').empty().append('<option value="">행정동</option>');
 
-    if (!isProgrammatic){
+    // 지도 이동/하이라이트
+    if (!isProgrammatic && sggNm){
         for (let i=0;i<sggPolygons.length;i++){
             const {properties, path} = sggPolygons[i];
-            if (properties.SIGUNGU_NM === sgg){
+            if (getSggName(properties) === sggNm){
                 const center = centerOf(path);
                 map.setLevel(7); map.panTo(center);
                 if (currentPolygon){ currentPolygon.setMap(null); currentPolygon=null; }
-                currentPolygon = new kakao.maps.Polygon({ map, path, strokeWeight:2, strokeColor:'#004c80', strokeOpacity:0.8, fillColor:'#00a0e9', fillOpacity:0.3 });
+                currentPolygon = new kakao.maps.Polygon({
+                    map, path, strokeWeight:2, strokeColor:'#004c80', strokeOpacity:0.8, fillColor:'#00a0e9', fillOpacity:0.3
+                });
                 break;
             }
         }
     }
 
-    if (sgg){
+    // 행정동 리스트는 서버에서 받아오거나(권장) 클라이언트에서 필터링
+    if (sggNm){
+        // 서버 사용시:
         $.ajax({
-            url: 'getEmdsBySggNm',
+            url: 'getEmdsBySggNm', // 서버에 맞춰 조정
             method:'GET',
-            data:{ sgg },
+            data:{ sgg: sggNm },
             success: function(rows){
-                rows.forEach(d => $('#emdSelect').append($('<option>', {value:d.emdNm, text:d.emdNm})));
-
-                if (window.autoSelectedEmd){
-                    const norm = s => (s||'').toString().trim();
-                    let pick = null;
-                    $('#emdSelect option').each(function(){
-                        if (norm($(this).text()) === norm(window.autoSelectedEmd)){ pick = $(this).val(); return false; }
-                    });
-                    if (pick){ $('#emdSelect').val(pick).trigger('change'); }
-                    else { console.warn('autoSelectedEmd 옵션을 못찾음:', window.autoSelectedEmd); }
-                    window.autoSelectedEmd = null;
+                // rows: [{ emdNm }, ...]
+                rows.forEach(d => $('#emdSelect').append($('<option>', { value: d.emdNm, text: d.emdNm })));
+                // 지도 클릭으로 넘어온 자동 선택
+                if (window.autoSelectedEmdNm){
+                    const hit = window.autoSelectedEmdNm;
+                    isProgrammatic = true;
+                    $('#emdSelect').val(hit).trigger('change');
                     isProgrammatic = false;
+                    window.autoSelectedEmdNm = null;
                 }
             },
-            error: function(){ alert('행정동 정보를 가져오는데 실패했습니다.'); }
+            error: function(){ console.warn('행정동 목록 조회 실패. 필요하면 클라이언트 필터로 대체해줘.'); }
         });
     }
 }
 
 function onEmdChange(){
-    const emd = $(this).val();
-    if (!emd) return;
+    const emdNm = $('#emdSelect').val();
+    if (!emdNm) return;
 
     for (let i=0; i < emdPolygons.length; i++){
         const {properties, path} = emdPolygons[i];
-        if (getEmdName(properties) === emd){
+        if (getEmdName(properties) === emdNm){
             if (!isProgrammatic){
                 const center = centerOf(path);
                 map.setLevel(5); map.panTo(center);
                 if (currentPolygon){ currentPolygon.setMap(null); }
-                currentPolygon = new kakao.maps.Polygon({ map, path, strokeWeight:2, strokeColor:'#004c80', strokeOpacity:0.8, fillColor:'#00a0e9', fillOpacity:0.3 });
+                currentPolygon = new kakao.maps.Polygon({
+                    map, path, strokeWeight:2, strokeColor:'#004c80', strokeOpacity:0.8, fillColor:'#00a0e9', fillOpacity:0.3
+                });
             }
-            // 이미 업종이 선택돼 있으면 패널 업데이트
-            if (window.selectedUpjongName) renderRiskPanel(emd, window.selectedUpjongName);
             break;
         }
     }
 }
 
-function onMajorClick(){
-    const majorCd = $(this).data("majorcd");
-    $.ajax({
-        url: "getMiddleCategories",
-        method: "GET",
-        data: { majorCd },
-        success: function(rows){
-            let liHTML = rows.map(it => `<li class="middle-item h-12 w-full text-xl text-center cursor-pointer hover:bg-gray-100" data-middlecd="${it.middleCd}">${it.middleNm}</li>`).join("");
-            $(".middleSelector ul").html(liHTML); $(".middleSelector").removeClass('hidden');
-        },
-        error: function(){ alert("중분류 데이터를 불러오는데 실패했습니다."); }
+/* ================= 색칠(이름 기반) ================= */
+function clearEmdColors() {
+    emdPolygons.forEach(({ guide }) => {
+        guide.setOptions({ fillOpacity: 0, strokeOpacity: 0.5 });
+    });
+}
+function colorOnlySelectedEmdByUpjong(emdValue, upjongName) {
+    clearEmdColors();
+    const target = findEmdByValue(emdValue);
+    if (!target) return;
+
+    const rec = getRiskRecordForUpjongByName(target.properties, upjongName);
+    const color = (rec && Number.isFinite(rec?.["예측_위험도"]))
+        ? (PALETTE_5[Number(rec["예측_위험도"])] || COLOR_DEFAULT)
+        : COLOR_DEFAULT;
+
+    target.guide.setOptions({
+        fillColor: color,
+        fillOpacity: (color===COLOR_DEFAULT?0.2:0.6),
+        strokeOpacity: 0.8
     });
 }
 
-function onMiddleClick(){
-    const middleCd = $(this).data("middlecd");
-    $.ajax({
-        url: "getMinorCategories",
-        method: "GET",
-        data: { middleCd },
-        success: function(rows){
-            let liHTML = rows.map(it => `<li class="minor-item h-12 w-full text-xl text-center cursor-pointer hover:bg-gray-100" data-minorcd="${it.minorCd}">${it.minorNm}</li>`).join("");
-            $(".minorSelector ul").html(liHTML); $(".minorSelector").removeClass('hidden');
-        },
-        error: function(){ alert("소분류 데이터를 불러오는데 실패했습니다."); }
-    });
-}
+/* ================= 업종 선택/검색 초기화 =================
+   - 업종 버튼(.upjong-btn) 클릭 시 window.selectedUpjongName 설정
+   - 선택된 버튼은 시각적으로 강조
+   - 검색창(#upjongSearch)에서 엔터 또는 포커스아웃 시 선택값 반영
+   - 자동완성 드롭다운(#upjongSearchDrop)은 소스 연동 시 확장
+======================================================== */
+function initUpjongSource(){
+    const $list = document.getElementById('upjongList');
+    const $input = document.getElementById('upjongSearch');
+    const SELECTED_CLASS = 'upjong-selected';
 
-function onMinorClick(){
-    const minorCd = $(this).data("minorcd");
-    $.ajax({
-        url: "getUpjongCodeByMinorCd",
-        method: "GET",
-        data: { minorCd },
-        success: function(upjongCode){
-            const minorNm = upjongCode.minorNm;
-            $('.upjongInput').val(`${upjongCode.majorNm} > ${upjongCode.middleNm} > ${minorNm}`);
-            window.selectedUpjongName = minorNm;
-            recolorEmdByUpjong(minorNm);
-            const emdNow = $('#emdSelect').val();
-            if (emdNow) renderRiskPanel(emdNow, minorNm);
-            $('.middleSelector').addClass('hidden');
-            $('.minorSelector').addClass('hidden');
-        },
-        error: function(){ alert("데이터를 불러오는 데 실패했습니다."); }
-    });
-}
+    // 스타일 주입(선택 강조)
+    const style = document.createElement('style');
+    style.textContent = `
+        .${SELECTED_CLASS}{ background:#eef2ff; border-color:#6366f1; }
+    `;
+    document.head.appendChild(style);
 
-// ===== 기타 =====
-function centerOf(path){
-    const lat = path.reduce((s,p)=>s+p.getLat(),0)/path.length;
-    const lng = path.reduce((s,p)=>s+p.getLng(),0)/path.length;
-    return new kakao.maps.LatLng(lat,lng);
-}
+    // 업종 버튼 클릭
+    if ($list){
+        $list.addEventListener('click', (e) => {
+            const btn = e.target.closest('.upjong-btn');
+            if (!btn) return;
 
-function handleSearch(keyword){
-    if (!keyword){ $('#autocompleteList').empty().addClass('hidden'); return; }
-    $.ajax({
-        url: 'searchUpjong',
-        method: 'GET',
-        data: { keyword },
-        success: function(list){ console.log('auto:', list); /* 필요시 자동완성 UI 구성 */ },
-        error: function(){ console.log('업종 검색 실패'); }
-    });
+            // 전체 선택 해제
+            $list.querySelectorAll('.upjong-btn').forEach(b => b.classList.remove(SELECTED_CLASS));
+
+            // 현재 선택 표시
+            btn.classList.add(SELECTED_CLASS);
+
+            // 전역 선택값 갱신
+            const nm = btn.getAttribute('data-nm') || btn.textContent || '';
+            window.selectedUpjongName = nm.trim();
+            window.selectedUpjongCd = null; // 필요 시 확장
+
+            // 입력창 동기화
+            if ($input){
+                $input.value = window.selectedUpjongName;
+            }
+        });
+    }
+
+    // 검색창 엔터 시 선택값 고정
+    if ($input){
+        $input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter'){
+                const val = ($input.value || '').trim();
+                if (val){
+                    window.selectedUpjongName = val;
+                    window.selectedUpjongCd = parseUpjongCdFromInput(val);
+                    // 리스트 강조 해제(직접 입력 우선)
+                    if ($list){
+                        $list.querySelectorAll('.upjong-btn').forEach(b => b.classList.remove(SELECTED_CLASS));
+                    }
+                }
+            }
+        });
+
+        // 포커스아웃 시에도 값 반영
+        $input.addEventListener('blur', () => {
+            const val = ($input.value || '').trim();
+            if (val){
+                window.selectedUpjongName = val;
+                window.selectedUpjongCd = parseUpjongCdFromInput(val);
+                if ($list){
+                    $list.querySelectorAll('.upjong-btn').forEach(b => b.classList.remove(SELECTED_CLASS));
+                }
+            }
+        });
+    }
 }

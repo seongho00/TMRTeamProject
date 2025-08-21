@@ -25,6 +25,6 @@ public class DataSaveController {
         System.out.println(future);
 
         model.addAttribute("message", "저장 작업을 백그라운드에서 시작했습니다. 잠시 후 완료 됩니다.");
-        return "dataset/excel";
+        return "dataset/csv";
     }
 }

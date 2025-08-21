@@ -13,7 +13,7 @@ now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 conn = pymysql.connect(
     host="localhost",
     user="root",
-    password="",
+    password="1234",
     database="TMRTeamProject",
     charset="utf8mb4"
 )
