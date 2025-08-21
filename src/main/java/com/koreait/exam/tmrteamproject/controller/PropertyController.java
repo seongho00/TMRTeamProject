@@ -117,6 +117,13 @@ public class PropertyController {
         return "property/selectJuso";
     }
 
+    @GetMapping("/test")
+    @ResponseBody
+    public String test(Model model) {
+        propertyService.resolveAreaFromLine("대전광역시 동구 천동 515 외 1필지 천동하늘빌딩 제1층 제103호");
+        return "property/selectJuso";
+    }
+
 
 }
 

@@ -238,7 +238,6 @@ public class AddressService {
 
     }
 
-
     private Map<String, Object> callViewportCrawl(
             double lat, double lng,
             Integer radiusM, String category,

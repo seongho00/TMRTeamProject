@@ -58,8 +58,14 @@ solapi:
 
 # 주소 검색 API
 address:
-  confmKey: devU01TX0FVVEgyMDI1MDgxMzA5MzU0NzExNjA2NTE=  # 발급받은 승인키
+  confmKey: devU01TX0FVVEgyMDI1MDgyMTA5NDEzNzExNjA5NTk=  # 발급받은 승인키
 
 # 지오코딩 API
 vworld:
   key: 0D1E185A-F71A-3D74-AE65-579E01CC79CD
+
+# 건축물대장 API
+bldrgst:
+  apiKey: CtMWbR%2BmYCIwYQmPYdFuMiP4LsJ6aVV3CcbyZUXI5bGiblyS1OilOVAYopA9VxwIcRyQ7pT%2FADS7FzuMVs3uEw%3D%3D
+
+# 도로명주소 API
