@@ -393,7 +393,6 @@ def extract_joint_collateral_addresses_follow(
             for r in tb[header_row_idx+1:]:
                 serial = (r[0] or "").strip() if r else ""
                 row_text = " ".join((c or "") for c in r)
-
                 # 주소 셀
                 cell = r[addr_idx] if addr_idx < len(r) else None
                 if not cell or not str(cell).strip():
@@ -401,12 +400,17 @@ def extract_joint_collateral_addresses_follow(
                 cleaned = _norm_ws(_BRACKETS.sub(" ", str(cell)))
                 if not cleaned:
                     continue
-
+                print(r)
                 if serial == "":
-                    # 독립된 결과 추가 X → 직전 결과와 merge
+                    print("실행됨")
+                    # merge
+                    print(results)
                     if results:
+                        print("실행됨2")
                         results[-1]["address"] = f"{results[-1]['address']} {cleaned}"
-                        # status 는 직전 결과 유지 (normal/cancelled)
+                        # 현재 행이 해지/말소 표시라면 직전 결과의 status 갱신
+                        if _CANCEL_RX.search(row_text):
+                            results[-1]["status"] = "cancelled"
                     continue
 
                 if not serial.isdigit():
@@ -423,7 +427,6 @@ def extract_joint_collateral_addresses_follow(
                     "status": status
                 })
 
-            print(results)
 
         return hits
 
