@@ -30,7 +30,7 @@ public class SmsScheduler {
     private final MemberRepository memberRepository;
     private final NotificationService notificationService;
 
-    @Scheduled(fixedDelay = 10000) // 시간설정
+    @Scheduled(cron = "0 0 13 * * *") // 시간설정
     public void checkAndSendSms() {
         LocalDate today = LocalDate.now();
 

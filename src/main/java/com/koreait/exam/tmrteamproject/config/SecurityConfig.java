@@ -35,7 +35,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .authenticationProvider(authenticationProvider(customUserDetailsService, passwordEncoder()))
-                .csrf().disable()
+                .csrf().ignoringAntMatchers("/ws/**").and()
                 .authorizeHttpRequests((auth) -> auth
                         .antMatchers("usr/static/**", "usr/images/**", "/css/**", "/static/js/**").permitAll()  // 정적 리소스 먼저 허용
                         .antMatchers("/admin/**").hasRole("ADMIN")
