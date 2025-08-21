@@ -17,10 +17,10 @@ import io
 import pdfplumber
 import fitz  # ← PyMuPDF
 
-
 # HEIC 지원 (설치되어 있으면 자동 등록)
 try:
     import pillow_heif
+
     pillow_heif.register_heif_opener()
 except Exception:
     pass
@@ -285,356 +285,167 @@ def predict():
     )
 
 
-# 사진 전처리 및 분석 코드
-# ------------------------- 텍스트 유틸 -------------------------
-def squash_ws(s: str) -> str:
-    return re.sub(r"\s+", " ", s or "").strip()
-
-def extract_pages_text_textonly(doc: fitz.Document) -> List[str]:
-    """OCR 없이 PDF 내 텍스트만 추출"""
-    pages = []
-    for i in range(len(doc)):
-        txt = doc[i].get_text("text") or ""
-        pages.append(txt)
-    return pages
-
-def extract_tables_textbased(pdf_bytes: bytes) -> List[Dict[str, Any]]:
-    """pdfplumber로 선/텍스트 기반 테이블 추출(있으면) → TSV"""
-    out = []
-    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-        for pidx, page in enumerate(pdf.pages, start=1):
-            tables = []
-            # 라인 기반 시도
-            try:
-                tables = page.extract_tables(table_settings={
-                    "vertical_strategy": "lines",
-                    "horizontal_strategy": "lines",
-                    "intersection_x_tolerance": 3,
-                    "intersection_y_tolerance": 3
-                }) or []
-            except Exception:
-                pass
-            # 실패하면 기본 전략
-            if not tables:
-                try:
-                    tables = page.extract_tables() or []
-                except Exception:
-                    tables = []
-            for t in tables:
-                lines = ["\t".join("" if c is None else str(c) for c in row) for row in t]
-                out.append({"page": pidx, "tsv": "\n".join(lines)})
-    return out
-
-# ------------------------- 간단 파서(기존 베이스) -------------------------
-SEC_RE = {
-    "표제부": re.compile(r"(표제부.*?)(?=갑구|을구|$)", re.S),
-    "갑구":   re.compile(r"(갑구.*?)(?=표제부|을구|$)", re.S),
-    "을구":   re.compile(r"(을구.*?)(?=표제부|갑구|$)", re.S),
-}
-
-def split_sections(text: str) -> dict:
-    secs = {}
-    for k, rx in SEC_RE.items():
-        m = rx.search(text)
-        secs[k] = m.group(1) if m else ""
-    return secs
-
-def simple_parse(full_text: str) -> Dict[str, Any]:
-    header = {}
-    m = re.search(r"\[집합건물\].*", full_text)
-    if m: header["building_line"] = squash_ws(m.group(0))
-    m = re.search(r"발행번호\s*([A-Z0-9\-]+)", full_text)
-    if m: header["publish_no"] = m.group(1)
-    m = re.search(r"발급확인번호\s*([A-Z0-9\-]+)", full_text)
-    if m: header["verify_no"] = m.group(1)
-    m = re.search(r"발행일\s*(\d{4}[./-]\d{1,2}[./-]\d{1,2})", full_text)
-    if m: header["publish_date"] = m.group(1).replace(".", "/")
-
-    # 표제부 예시: '1층 401.08㎡'
-    floors = []
-    for fl, area in re.findall(r"(\d+층)\s+([\d,]+(?:\.\d+)?)㎡", full_text):
-        try:
-            floors.append({"층": fl, "면적_㎡": float(area.replace(",", ""))})
-        except:
-            pass
-
-    # 대지권 비율 예시: '358분의 3.84'
-    land_shares = []
-    for denom, numer in re.findall(r"([\d\.]+)\s*분의\s*([\d\.]+)", full_text):
-        try:
-            land_shares.append({"base": float(denom), "share": float(numer)})
-        except:
-            pass
-
-    # 섹션 자르기
-    def section(name, after):
-        m = re.search(r"【\s*" + name + r"\s*구\s*】", full_text)
-        if not m:
-            return None
-        s = m.end()
-        e = len(full_text)
-        mm = re.search(r"【\s*(?:" + after + r")\s*】", full_text[s:])
-        if mm:
-            e = s + mm.start()
-        return full_text[s:e]
-
-    gap = section("갑", "을|공동담보목록")
-    eul = section("을", "공동담보목록")
-
-    return {
-        "header": header,
-        "pyojebu": {"floors": floors},
-        "daejigwon": {"shares": land_shares},
-        "gapgu_raw": gap.strip() if gap else None,
-        "eulgu_raw": eul.strip() if eul else None,
-    }
-
-# ------------------------- 요약(주소/채권최고액/공동담보 주소) -------------------------
-KOR_DATE_RE = re.compile(r"(?P<y>\d{4})\s*년\s*(?P<m>\d{1,2})\s*월\s*(?P<d>\d{1,2})\s*일")
-WON_DIGIT_RE = re.compile(r"채권최고액\s*금?\s*(?P<amt>[0-9][0-9,]*)\s*원")
-BRACKET_ADDR_RE = re.compile(r"\[.*?집합건물.*?\]\s*(?P<line>.+)")
-
-def _to_date_yyyy_mm_dd(s: str) -> Optional[str]:
-    m = KOR_DATE_RE.search(s)
-    if not m:
-        return None
-    y, mth, d = int(m.group("y")), int(m.group("m")), int(m.group("d"))
-    return f"{y:04d}-{mth:02d}-{d:02d}"
-
-def _to_won_int(s: str) -> Optional[int]:
-    s = s.strip().replace(",", "")
-    return int(s) if s.isdigit() else None
-
-def extract_subject_address(full_text: str) -> Optional[str]:
-    m = BRACKET_ADDR_RE.search(full_text)
-    if m:
-        return m.group("line").strip()
-    # fallback: 지번 주소 패턴
-    addr_re = re.compile(r"[가-힣]+(특별시|광역시|도|시)\s+[가-힣0-9]+(구|군|시)\s+[가-힣0-9]+(동|읍|면)\s+[0-9\-]+(?:번지)?")
-    m2 = addr_re.search(full_text)
-    return m2.group(0).strip() if m2 else None
-
-def extract_eulgu_block(full_text: str) -> str:
-    m = re.search(r"【\s*을\s*구\s*】(?P<blk>[\s\S]+?)(?:【\s*갑\s*구\s*】|---PAGEBREAK---|\Z)", full_text)
-    return m.group("blk") if m else full_text
-
-
-def split_eulgu_blocks(eul_text: str) -> List[Tuple[int, str]]:
-    """
-    을구 원문을 '순위번호' 단위로 분할.
-    줄바꿈이 있는 원문을 가정. (simple_parse에서 strip만 하고 줄바꿈은 보존해야 함)
-    반환: [(순위번호, 블록텍스트), ...]
-    """
-    txt = eul_text or ""
-    # 줄 시작에서 "숫자 + 공백 + 다음 글자" 패턴을 모두 잡아 경계로 사용
-    anchors = list(re.finditer(r"(?m)^\s*(\d+)\s+\S", txt))
-    blocks: List[Tuple[int, str]] = []
-    for i, m in enumerate(anchors):
-        idx = int(m.group(1))
-        start = m.start()
-        end = anchors[i+1].start() if i+1 < len(anchors) else len(txt)
-        blocks.append((idx, txt[start:end].strip()))
-    return blocks
-
-def parse_mortgages_from_eulgu(eul_text: str) -> List[Dict[str, Any]]:
-    """
-    1) split_eulgu_blocks로 블록을 자르고
-    2) '근저당권설정' → 근저당 데이터 추출
-       'N번근저당권설정등 ... (기)말소/해지' → 말소 참조만 수집
-    3) 말소 참조된 근저당은 cancelled=True로 마킹
-    """
-    txt = eul_text or ""
-    blocks = split_eulgu_blocks(txt)
-
-    money_re = re.compile(r"채권최고액\s*금?\s*([0-9][0-9,]*)\s*원")
-    date_kr  = re.compile(r"(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일")
-    joint_re = re.compile(r"공동담보목록\s*제?\s*(\d{4}-\d+)\s*호")
-    # “1번근저당권설정등 … 말소/해지” 패턴
-    cancel_re = re.compile(r"(\d+)\s*번\s*근저당권설정등[\s\S]*?(?:기말소|말소)[\s\S]*?(?:해지)?")
-
-    mortgages: List[Dict[str, Any]] = []
-    cancelled_refs: set[int] = set()
-
-    for order_no, block in blocks:
-        # 말소 블록인가?
-        mc = cancel_re.search(block)
-        if mc:
-            cancelled_refs.add(int(mc.group(1)))
-            continue
-
-        # 근저당권 설정 블록인가?
-        if not re.search(r"근저당권\s*설정", block):
-            # (저당권/전세권 등 다른 권리면 스킵. 필요하면 분기 추가)
-            continue
-
-        # 날짜: 블록 내 첫 번째 한글식 날짜 하나만 사용
-        reg_date: Optional[str] = None
-        md = date_kr.search(block)
-        if md:
-            y, mm, dd = int(md.group(1)), int(md.group(2)), int(md.group(3))
-            reg_date = f"{y:04d}-{mm:02d}-{dd:02d}"
-
-        # 금액
-        amt: Optional[int] = None
-        ma = money_re.search(block)
-        if ma:
-            amt = int(ma.group(1).replace(",", ""))
-
-        # 공동담보 ID
-        jid: Optional[str] = None
-        mj = joint_re.search(block)
-        if mj:
-            jid = mj.group(1)
-
-        mortgages.append({
-            "order_no": order_no,
-            "registered_at": reg_date,
-            "max_claim_won": amt,
-            "joint_list_id": jid,
-            "cancelled": False,
-            "raw": block[:500].strip(),
-        })
-
-    # 말소 마킹
-    for r in mortgages:
-        if r["order_no"] in cancelled_refs:
-            r["cancelled"] = True
-
-    # 순번 기준 정렬(안전)
-    mortgages.sort(key=lambda x: x["order_no"])
-    return mortgages
-
-# "제103호" 같은 호수만 보조로 뽑아 덧붙일 때 사용(없어도 동작은 함)
-_HO = re.compile(r"제?\s*(\d{1,4})\s*호")
-# [건물], [토지] 등 대괄호 태그 제거
 _BRACKETS = re.compile(r"\[[^\]]+\]")
-# 공동담보표 헤더(열 제목) 후보들
-_JOINT_HEADER_CANDIDATES = (
-    "부동산에 관한 권리의 표시"
-)
-_SKIP_INLINE = re.compile(r"(권리자|채권최고액|근저당|설정계약)")
+_CANCEL_RX = re.compile(r"(기?말소|해지)")
+_HANGUL_OR_NUM = re.compile(r"[가-힣0-9]")
 
 def _norm_ws(s: str) -> str:
-    """여백 정리(개행, 탭 → 공백 1개), 앞뒤 공백 제거"""
     return " ".join((s or "").replace("\u200b", "").split()).strip()
 
-def extract_joint_collateral_units(pdf_bytes: bytes,
-                                   require_unit: bool = True,
-                                   must_have_bracket: bool = True) -> Dict[str, Any]:
+def _stable_unique(seq):
+    seen, out = set(), []
+    for x in seq:
+        if x not in seen:
+            seen.add(x); out.append(x)
+    return out
+
+def extract_joint_collateral_addresses_follow(
+        pdf_bytes: bytes,
+        must_have_bracket: bool = True,
+        max_follow: int = 6,
+):
     """
-    [공동담보목록] 헤더(대괄호 포함)를 찾고, 그 '아래' bbox 내에서만 표를 추출.
-    - '부동산에 관한 (권리의) 표시' 컬럼만 타깃
-    - [건물] 등 대괄호 태그 제거
-    - require_unit=True면 '제○○호' 없는 줄은 스킵
-    - 요약행(권리자/채권최고액/근저당/설정계약 등) 스킵
+    【공동담보목록】에서 '부동산에 관한 권리의 표시' 주소만 추출.
+    - 첫 페이지: 헤더(부동산/표시) 반드시 찾고 그 열만 사용
+    - 이어지는 페이지: 헤더가 없어도 주소열을 '텍스트량/한글+숫자량' 스코어로 추정
+    - 같은 행에 '해지/말소/기말소' 포함되면 제외
     """
-    pages_hit: List[int] = []
-    rows: List[Dict[str, Any]] = []
-    addr_set = set()
 
-    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-        for pno, page in enumerate(pdf.pages, start=1):
-            words = page.extract_words() or []
-            # [공동담보목록] 또는 공동담보목록 단어의 y좌표 찾기
-            marks = [w for w in words if "공동담보목록" in (w.get("text") or "")]
-            if not marks:
-                if must_have_bracket:
-                    continue
-                # fallback: 페이지에 텍스트만이라도 존재하는지 체크
-                if ("공동담보목록" not in (page.extract_text() or "")):
-                    continue
-                header_top = 0
-            else:
-                header_top = min(w["top"] for w in marks)
+    def _find_header_top(page):
+        txt = page.extract_text() or ""
+        if not re.search(r"【\s*공동담보목록\s*】", txt):
+            return False, 0.0
+        words = page.extract_words(extra_attrs=["top","text"]) or []
+        tops = [w["top"] for w in words if "공동담보목록" in (w.get("text") or "")]
+        return True, min(tops) if tops else 0.0
 
-            pages_hit.append(pno)
-
-            # 헤더 아래 영역으로 크롭
-            crop = page.within_bbox((0, header_top, page.width, page.height))
-
-            # 표 추출: 라인 기반 → 실패 시 기본
-            tables = []
+    def _extract_tables_on(page, crop_bbox=None):
+        tgt = page.within_bbox(crop_bbox) if crop_bbox else page
+        tables = []
+        try:
+            tables = tgt.extract_tables(table_settings={
+                "vertical_strategy": "lines",
+                "horizontal_strategy": "lines",
+                "intersection_x_tolerance": 3,
+                "intersection_y_tolerance": 3,
+            }) or []
+        except Exception:
+            pass
+        if not tables:
             try:
-                tables = crop.extract_tables(table_settings={
-                    "vertical_strategy": "lines",
-                    "horizontal_strategy": "lines",
-                    "intersection_x_tolerance": 3,
-                    "intersection_y_tolerance": 3,
-                }) or []
+                tables = tgt.extract_tables() or []
             except Exception:
-                pass
-            if not tables:
-                try:
-                    tables = crop.extract_tables() or []
-                except Exception:
-                    tables = []
+                tables = []
+        return tables
 
-            for tb in tables:
-                if not tb or not tb[0]:
+    def _guess_addr_col(tb):
+        """헤더가 없을 때 주소열 추정: (한글+숫자 개수 스코어 + 전체 길이 스코어) 최대"""
+        if not tb or not tb[0]:
+            return None
+        cols = max(len(r or []) for r in tb)
+        def col_score(i):
+            kor_num = 0
+            total = 0
+            for r in tb[1:]:
+                cell = (r[i] if i < len(r) else "") or ""
+                t = _norm_ws(str(cell))
+                kor_num += len(_HANGUL_OR_NUM.findall(t))
+                total += len(t)
+            # 한글/숫자 비중을 더 가중
+            return kor_num * 2 + total
+        scores = [col_score(i) for i in range(cols)]
+        return max(range(cols), key=lambda i: scores[i])
+
+    def _pick_addresses_from_tables(tables, require_header: bool):
+        hits = []
+        for tb in tables:
+            if not tb or not tb[0]:
+                continue
+
+            addr_idx = None
+            header_row_idx = 0
+
+            if require_header:
+                # 헤더는 상단 5행 안에서 탐색
+                for r_idx, row in enumerate(tb[:5]):
+                    header = [(_ or "").strip() for _ in (row or [])]
+                    header_txt = " ".join(header)
+                    if "부동산" in header_txt and "표시" in header_txt:
+                        header_row_idx = r_idx
+                        try:
+                            addr_idx = next(i for i, h in enumerate(header) if ("부동산" in h and "표시" in h))
+                        except StopIteration:
+                            addr_idx = None
+                        break
+                if addr_idx is None:
+                    # 헤더가 있어야 한다면 이 표는 스킵
+                    continue
+            else:
+                # 이어지는 페이지: 헤더 없어도 주소열 추정
+                addr_idx = _guess_addr_col(tb)
+                if addr_idx is None:
                     continue
 
-                header = [(_ or "").strip() for _ in tb[0]]
-                header_line = " ".join(header)
-                # 주소표 테이블만 선택
-                if not any(key in header_line for key in _JOINT_HEADER_CANDIDATES):
+            # 데이터 행 스캔
+            for r in tb[header_row_idx+1:]:
+                row_text = " ".join((c or "") for c in r)
+                if _CANCEL_RX.search(row_text):
+                    continue  # 해지/말소 포함 행 제외
+                cell = r[addr_idx] if addr_idx < len(r) else None
+                if not cell or not str(cell).strip():
                     continue
+                cleaned = _norm_ws(_BRACKETS.sub(" ", str(cell)))
+                if cleaned:
+                    hits.append(cleaned)
+        return hits
 
-                # '부동산 ... 표시' 컬럼 인덱스
-                try:
-                    idx = next(i for i, h in enumerate(header) if ("부동산" in h and "표시" in h))
-                except StopIteration:
-                    # 예외적으로 못 찾으면 텍스트 가장 긴 컬럼 사용
-                    col_scores = [
-                        sum(len(_norm_ws(r[i] or "")) for r in tb[1:])
-                        for i in range(len(header))
-                    ]
-                    idx = max(range(len(header)), key=lambda i: col_scores[i])
+    pages_hit, addresses = [], []
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        i = 0
+        while i < len(pdf.pages):
+            page = pdf.pages[i]
 
-                # 본문 행 처리
-                for r in tb[1:]:
-                    cell_raw = r[idx] if idx < len(r) else None
-                    if not cell_raw or not str(cell_raw).strip():
-                        continue
+            # 시작 페이지는 【공동담보목록】이 있는 페이지만
+            found, header_top = _find_header_top(page)
+            if must_have_bracket and not found:
+                i += 1
+                continue
 
-                    raw_norm = _norm_ws(str(cell_raw))
-                    cleaned = _norm_ws(_BRACKETS.sub(" ", raw_norm))
+            crop = (0, header_top, page.width, page.height)
+            # 시작 페이지: 헤더 필요
+            addrs = _pick_addresses_from_tables(_extract_tables_on(page, crop), require_header=True)
+            if addrs:
+                pages_hit.append(i + 1)
+                addresses.extend(addrs)
 
-                    # 요약/불필요 라인 제거
-                    if _SKIP_INLINE.search(cleaned) or re.fullmatch(r"\d{4}-\d{2,}", cleaned):
-                        continue
+            # 이어지는 페이지: 헤더 없이도 추정
+            follow, j = 0, i + 1
+            while j < len(pdf.pages) and follow < max_follow:
+                more = _pick_addresses_from_tables(_extract_tables_on(pdf.pages[j]), require_header=False)
+                if not more:
+                    break
+                pages_hit.append(j + 1)
+                addresses.extend(more)
+                follow += 1
+                j += 1
 
-                    # 호수 필터
-                    m = _HO.search(cleaned)
-                    if require_unit and not m:
-                        continue
-                    unit = f"제{m.group(1)}호" if m else None
+            # 다음 헤더 블록도 계속 탐색
+            i += 1
 
-                    rows.append({
-                        "page": pno,
-                        "raw": cell_raw,
-                        "text": cleaned,
-                        "unit": unit,
-                    })
-                    addr_set.add(cleaned)
+    return {"pages": sorted(set(pages_hit)), "addresses": _stable_unique(addresses)}
 
-    return {
-        "pages": pages_hit,
-        "rows": rows,
-        "addresses": sorted(addr_set),
-    }
 
-# ------------------------- 라우트 -------------------------
+# ============ Flask 라우트 ============
 @app.route("/analyze", methods=["POST"])
 def analyze():
-    # 'files' 또는 'file' 어느 쪽이든 수용
+    # 파일 처리
     uploads = []
     if "files" in request.files:
         uploads = request.files.getlist("files")
     elif "file" in request.files:
         uploads = [request.files["file"]]
-
     if not uploads:
-        return jsonify(ok=False, message="PDF 파일이 없습니다. (필드: files 또는 file)"), 400
+        return jsonify(ok=False, message="PDF 파일이 없습니다."), 400
     if len(uploads) > 1:
         return jsonify(ok=False, message="PDF는 1개만 업로드하세요."), 400
 
@@ -648,65 +459,34 @@ def analyze():
     except Exception as e:
         return jsonify(ok=False, message=f"PDF 열기 실패: {e}"), 400
 
-    # 1) 텍스트 추출
-    pages = extract_pages_text_textonly(doc)
-    full_text = "\n\n---PAGEBREAK---\n\n".join(pages)
+    try:
+        joint_info = extract_joint_collateral_addresses_follow(data)
+    except Exception as e:
+        import traceback;
+        traceback.print_exc()
+        return jsonify(ok=False, message=f"분석 실패: {e}"), 500
 
-    # 2) (선택) 텍스트 기반 테이블
-    tables = extract_tables_textbased(data)
-
-    # 3) 네 기존 최소 파서
-    parsed = simple_parse(full_text)
-
-    # 4) 요약 생성
-    subject_addr = extract_subject_address(full_text)
-
-    eul_text = parsed.get("eulgu_raw") if isinstance(parsed, dict) else None
-    if not eul_text:
-        eul_text = extract_eulgu_block(full_text)
-
-    mortgages = parse_mortgages_from_eulgu(eul_text)
-
-    total_max_claim_active = sum(m["max_claim_won"] or 0 for m in mortgages if not m["cancelled"])
-    joint_addresses = extract_joint_collateral_units(data, require_unit=True, must_have_bracket=True)
-
-    print(mortgages)
-    print(subject_addr)
-    print(total_max_claim_active)
-    print(joint_addresses)
-
-
-
+    print(doc)
     return jsonify(
         ok=True,
         pageCount=len(doc),
-        textPreview=full_text[:2000],
-        parsed=parsed,
-        tables_textbased=tables,
-        summary=dict(
-            subject_address=subject_addr,
-            mortgages=mortgages,                 # [{order_no, registered_at, max_claim_won, joint_list_id, cancelled, raw}]
-            total_active_max_claim=total_max_claim_active,
-            joint_collateral_addresses=joint_addresses
-        )
+        jointCollateralPages=joint_info["pages"],
+        jointCollateralAddresses=joint_info["addresses"]
     ), 200
-
-
-
-
 
 
 # 좌표를 통한 네이버 부동산 실시간 크롤링
 # --- Playwright 설정 ---
-USER_DATA_DIR = "./.chrome-profile"   # 쿠키/지문 유지
-HEADLESS = False                      # 먼저 창 띄워서 확인 후 True로 전환 가능
+USER_DATA_DIR = "./.chrome-profile"  # 쿠키/지문 유지
+HEADLESS = False  # 먼저 창 띄워서 확인 후 True로 전환 가능
 LIST_SEL_CANDS = [
     "div.item_list.item_list--article",
     "div.item_list--article",
     "div.article_list",  # 예비
 ]
-API_SOFT_WAIT_MS = 1200          # 800~1500 권장 (너무 느리면 900로)
-MAX_CLICK = 20                   # 클릭할 카드 수 상한
+API_SOFT_WAIT_MS = 1200  # 800~1500 권장 (너무 느리면 900로)
+MAX_CLICK = 20  # 클릭할 카드 수 상한
+
 
 def _pick_scroll_box(page) -> str:
     # scrollHeight > clientHeight 인 첫 요소 선택
@@ -724,6 +504,7 @@ def _pick_scroll_box(page) -> str:
             pass
     return LIST_SEL_CANDS[0]
 
+
 def scroll_list_to_bottom(page, pause_ms=700, max_stall=2):
     sel = _pick_scroll_box(page)
     stall = 0
@@ -731,7 +512,7 @@ def scroll_list_to_bottom(page, pause_ms=700, max_stall=2):
 
     # 컨테이너에 포커스(키보드 스크롤 백업용)
     try:
-        page.locator(sel).click(position={"x":10,"y":10}, timeout=1000)
+        page.locator(sel).click(position={"x": 10, "y": 10}, timeout=1000)
     except:
         pass
 
@@ -761,11 +542,13 @@ def scroll_list_to_bottom(page, pause_ms=700, max_stall=2):
     # 스크롤 후 카드 수집
     return page.query_selector_all("div.item, div.item_list--article div.item")
 
+
 def get_env_proxy():
-    for k in ("HTTPS_PROXY","https_proxy","HTTP_PROXY","http_proxy"):
+    for k in ("HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"):
         v = os.environ.get(k)
         if v: return {"server": v}
     return None
+
 
 def _launch_ctx(p):
     proxy_cfg = get_env_proxy()
@@ -779,8 +562,8 @@ def _launch_ctx(p):
         ignore_https_errors=True,
         args=[
             "--disable-blink-features=AutomationControlled",
-            "--no-first-run","--no-default-browser-check",
-            "--disable-dev-shm-use","--no-sandbox",
+            "--no-first-run", "--no-default-browser-check",
+            "--disable-dev-shm-use", "--no-sandbox",
         ],
     )
     # 약식 스텔스
@@ -790,8 +573,9 @@ def _launch_ctx(p):
       Object.defineProperty(navigator, 'languages', {get: () => ['ko-KR','ko','en-US','en']});
       window.chrome = window.chrome || { runtime: {} };
     """)
-    ctx.set_extra_http_headers({"Accept-Language":"ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"})
+    ctx.set_extra_http_headers({"Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"})
     return ctx
+
 
 def _goto_offices(page, lat: float, lng: float):
     root = "https://new.land.naver.com"
@@ -813,6 +597,7 @@ DETAIL_PATTERNS = [
     re.compile(r"https://new\.land\.naver\.com/api/.*/detail"),
 ]
 
+
 def _soft_wait_detail(page: Page, q: deque, prev_len: int, wait_ms: int) -> Optional[Dict[str, Any]]:
     deadline = time.time() + wait_ms / 1000.0
     while time.time() < deadline:
@@ -821,18 +606,20 @@ def _soft_wait_detail(page: Page, q: deque, prev_len: int, wait_ms: int) -> Opti
         page.wait_for_timeout(40)  # 짧게 양보
     return None
 
+
 def _is_api(url: str) -> bool:
     return "https://new.land.naver.com/api/" in url
 
+
 def _is_detail(url: str) -> bool:
     return _is_api(url) and any(p.search(url) for p in DETAIL_PATTERNS)
+
 
 def crawl_viewport(lat: float, lng: float,
                    radius_m: int = 800,
                    category: str = "offices",
                    filters: Optional[Dict[str, Any]] = None,
                    limit_detail_fetch: Optional[int] = 60) -> Dict[str, Any]:
-
     with sync_playwright() as p:
         ctx = _launch_ctx(p)
         page = ctx.new_page()
@@ -885,15 +672,15 @@ def crawl_viewport(lat: float, lng: float,
             # 디테일 패널 DOM 파싱 (항상 시도)
             page.wait_for_timeout(200)  # 패널 렌더 여유
             try:
-                dom_data = scrape_detail_panel(page)   # 또는 scrape_detail_panel_raw(page)
+                dom_data = scrape_detail_panel(page)  # 또는 scrape_detail_panel_raw(page)
             except Exception:
                 dom_data = {}
 
             detail_hits.append({
-                "url":    (hit["url"] if hit else None),
+                "url": (hit["url"] if hit else None),
                 "status": (hit["status"] if hit else None),
-                "json":   (hit["data"] if hit else None),
-                "dom":    dom_data,
+                "json": (hit["data"] if hit else None),
+                "dom": dom_data,
             })
 
             page.wait_for_timeout(120 + int(random.random() * 120))
@@ -912,16 +699,19 @@ def crawl_viewport(lat: float, lng: float,
                 "count_detail": len(detail_hits),
                 "source": "playwright_softwait(dom+api)",
             },
-            "items": detail_hits[:limit],   # limit=None이면 전부
+            "items": detail_hits[:limit],  # limit=None이면 전부
         }
+
 
 from playwright.sync_api import Page, Locator, TimeoutError as PWTimeout
 import re
+
 
 def wait_for_element(page: Page, selector: str, timeout: int = 6000) -> Locator:
     loc = page.locator(selector)
     loc.wait_for(state="visible", timeout=timeout)
     return loc
+
 
 def wait_for_elements(page: Page, selector: str, min_count: int = 1, timeout: int = 6000):
     page.wait_for_selector(selector, state="attached", timeout=timeout)
@@ -936,16 +726,19 @@ def wait_for_elements(page: Page, selector: str, min_count: int = 1, timeout: in
                 raise PWTimeout(f"Timeout waiting for {min_count}+ elements: {selector}")
     return [loc.nth(i) for i in range(loc.count())]
 
+
 def wait_for_child_element(parent: Locator, selector: str, timeout: int = 6000) -> Locator:
     child = parent.locator(selector)
     child.wait_for(state="visible", timeout=timeout)
     return child
+
 
 def text_or_none(loc: Locator, timeout: int = 3000) -> Optional[str]:
     try:
         return loc.inner_text(timeout=timeout).strip()
     except Exception:
         return None
+
 
 def get_by_header(page: Page, header_text: str) -> Optional[str]:
     """
@@ -964,6 +757,7 @@ def get_by_header(page: Page, header_text: str) -> Optional[str]:
 
     return text_or_none(row.locator("td").first)  # text_or_none: Optional[str] 반환
 
+
 def parse_deposit_monthly(price_value: Optional[str]) -> Tuple[Optional[int], Optional[int]]:
     if not price_value or "/" not in price_value:
         return None, None
@@ -971,12 +765,13 @@ def parse_deposit_monthly(price_value: Optional[str]) -> Tuple[Optional[int], Op
     clean = lambda s: int("".join(ch for ch in s if ch.isdigit())) if any(ch.isdigit() for ch in s) else None
     return clean(a), clean(b)
 
+
 def scrape_detail_panel(page: Page) -> dict:
     detail = {}
 
     # 가격 박스
     price_box = wait_for_element(page, "div.info_article_price")
-    detail["price_type"]  = text_or_none(price_box.locator(".type"))   # 예: "월세"
+    detail["price_type"] = text_or_none(price_box.locator(".type"))  # 예: "월세"
     detail["price_value"] = text_or_none(price_box.locator(".price"))  # 예: "4,000/230"
 
     dep, mon = parse_deposit_monthly(detail["price_value"])
@@ -997,7 +792,6 @@ def scrape_detail_panel(page: Page) -> dict:
         "화장실 수": ["화장실 수"],
     }
 
-
     for key, labels in candidates.items():
         val = None
         for lbl in labels:
@@ -1008,15 +802,15 @@ def scrape_detail_panel(page: Page) -> dict:
     # 중개업소(있을 경우)
     broker_box = page.locator("div.broker_info, div.article_broker_info").first
     if broker_box.count() > 0:
-        detail["broker_name"]    = text_or_none(broker_box.locator(".name, .broker_name"))
-        detail["broker_ceo"]     = text_or_none(broker_box.locator(".ceo, .broker_ceo"))
+        detail["broker_name"] = text_or_none(broker_box.locator(".name, .broker_name"))
+        detail["broker_ceo"] = text_or_none(broker_box.locator(".ceo, .broker_ceo"))
         detail["broker_address"] = text_or_none(broker_box.locator(".addr, .broker_address"))
-        detail["broker_phone"]   = text_or_none(broker_box.locator(".tel, .broker_phone"))
+        detail["broker_phone"] = text_or_none(broker_box.locator(".tel, .broker_phone"))
 
     print(detail)
 
-
     return detail
+
 
 # ── ㎡ 파싱: 문자열에서 "…㎡" 값들만 뽑아 '가장 작은 ㎡'를 전용면적으로 간주 ──
 # 예) "50㎡/38.6㎡(전용률80%)" → [50.0, 38.6] → 38.6
@@ -1034,10 +828,11 @@ def _extract_area_sqm(val: Optional[str]) -> Optional[float]:
         return round(float(m_py.group(1)) * 3.305785, 3)
     return None
 
+
 # ── 핵심: 월세만 필터 → 면적 뽑기 → 구간별 평균 월세 계산 ─────────────
 def avg_monthly_by_area(detail_hits: List[Dict[str, Any]]) -> Dict[str, float]:
-    per_sqm_vals: List[float] = []      # 만원/㎡
-    per_pyeong_vals: List[float] = []   # 만원/평
+    per_sqm_vals: List[float] = []  # 만원/㎡
+    per_pyeong_vals: List[float] = []  # 만원/평
 
     for it in detail_hits:
         d = it.get("dom") or {}
@@ -1056,12 +851,11 @@ def avg_monthly_by_area(detail_hits: List[Dict[str, Any]]) -> Dict[str, float]:
         area_str = d.get("전용면적")
         area = _extract_area_sqm(area_str)
 
-
         if monthly is None or area is None:
             continue
 
-        per_sqm = monthly / area                     # 만원/㎡
-        per_pyeong = monthly / (area / 3.305785)     # 만원/평
+        per_sqm = monthly / area  # 만원/㎡
+        per_pyeong = monthly / (area / 3.305785)  # 만원/평
 
         per_sqm_vals.append(per_sqm)
         per_pyeong_vals.append(per_pyeong)
@@ -1071,9 +865,11 @@ def avg_monthly_by_area(detail_hits: List[Dict[str, Any]]) -> Dict[str, float]:
 
     return {
         "count": len(per_sqm_vals),
-        "avg_per_sqm_manwon": _avg(per_sqm_vals),         # 만원/㎡
-        "avg_per_pyeong_manwon": _avg(per_pyeong_vals),   # 만원/평
+        "avg_per_sqm_manwon": _avg(per_sqm_vals),  # 만원/㎡
+        "avg_per_pyeong_manwon": _avg(per_pyeong_vals),  # 만원/평
     }
+
+
 # --- Flask 라우트 ---
 @app.route("/crawl", methods=["POST"])
 def api_crawl():
@@ -1081,13 +877,13 @@ def api_crawl():
     lat = float(payload.get("lat"))
     lng = float(payload.get("lng"))
     radius_m = payload.get("radius_m") or 800
-    category  = payload.get("category") or "offices"
+    category = payload.get("category") or "offices"
     limit_detail_fetch = int(payload.get("limit_detail_fetch") or 60)
 
     print(f"[CRAWL IN] lat={lat}, lng={lng}, r={radius_m}, cat={category}, limit={limit_detail_fetch}")
     try:
         # ★ 키워드 인자로 호출 (포지셔널로 넘기면 filters 자리에 박혀서 엉망됨)
-        res =   crawl_viewport(
+        res = crawl_viewport(
             lat, lng,
             radius_m=radius_m,
             category=category,
@@ -1102,6 +898,7 @@ def api_crawl():
     except Exception as e:
         print(f"[CRAWL ERR] {e}")
         return jsonify(ok=False, error="crawl_failed", message=str(e)), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False, threaded=False)
