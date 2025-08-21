@@ -22,4 +22,6 @@ public class DueAlert {
     private LocalDateTime applyStart;
     // 신청까지 남은 일수
     private int daysUtil;
+    // 팝업 메세지
+    private String msg;
 }
