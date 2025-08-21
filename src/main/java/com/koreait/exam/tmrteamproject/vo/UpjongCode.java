@@ -18,15 +18,14 @@ import java.time.LocalDateTime;
 @SuperBuilder
 @ToString(callSuper = true)
 public class UpjongCode {
+
     @Id
     @Column(name = "upjong_cd")
     private String upjongCd;
-
     @Column(name = "upjong_nm")
     private String upjongNm;
     @Column(name = "reg_date")
     private LocalDateTime regDate;
     @Column(name = "update_date")
     private LocalDateTime updateDate;
-
 }

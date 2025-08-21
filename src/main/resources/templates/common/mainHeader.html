@@ -1,12 +1,12 @@
 <header th:fragment="header" xmlns:th="http://www.thymeleaf.org">
     <meta charset="UTF-8">
 
-    <div class="w-full h-[380px] box-border"
+    <div id="header-id" class="w-full h-[380px] box-border"
          style="background-image: url('/images/헤더 영역 이미지.png'); background-size: cover; background-position: center;">
         <div id="header-wrapper"
-             class="w-full h-[100px] hover:bg-white flex items-start justify-between">
+             class="w-full h-[100px] hover:bg-white flex items-start justify-between text-center">
 
-            <div class="w-[240px] h-[100px] flex justify-start items-start">
+            <div class="w-[240px] h-[100px] flex justify-start items-center">
                 <a href="../home/main" class="h-full flex items-center">
                     <img src="/images/로고.png"
                          class="object-contain cursor-pointer"/>
@@ -14,36 +14,63 @@
             </div>
 
             <nav class="w-[60%] text-center">
-                <ul class="flex justify-center items-center relative">
-                    <li>
+                <ul id="nav-list" class="flex justify-center items-center relative space-x-4">
+                    <!-- 상권 분석 -->
+                    <li class="relative group w-[240px]">
                         <a href="../map/commercialZoneMap"
-                           class="flex justify-center items-center w-[240px] h-[100px] relative cursor-pointer">
+                           class="flex justify-center items-center w-full h-[100px] cursor-pointer">
                             <p class="text-[22px] text-black">상권 분석</p>
                         </a>
+                        <ul class="sub-menu absolute items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
+                            <li>
+                                <a href="../map/correlationMap"
+                                   class="block px-4 py-2 hover:underline">위험도 분석 상관관계</a>
+                            </li>
+                        </ul>
                     </li>
-                    <li>
-                        <div class="flex justify-center items-center w-[240px] h-[100px] relative">
-                            <p class="text-[22px] text-black">부동산 매물</p>
-                        </div>
+
+                    <!-- 부동산 매물 -->
+                    <li class="flex justify-center items-center w-[240px] h-[100px] relative">
+                        <p class="text-[22px] text-black">부동산 매물</p>
                     </li>
-                    <li id="menu-bar">
-                        <div class="flex justify-center items-center w-[240px] h-[100px] relative cursor-point">
+
+                    <!-- 상가 청약 -->
+                    <li class="relative group w-[240px]">
+                        <div class="flex justify-center items-center w-full h-[100px] cursor-pointer">
                             <p class="text-[22px] text-black">상가 청약</p>
                         </div>
-
-                        <!-- 하단 텍스트 메뉴 -->
-                        <div id="sub-menubar"
-                             class="absolute hidden flex-col items-center top-full left-1/2 transform -translate-x-1/2 opacity-0 transition-opacity duration-300 text-center bg-gray-300">
-                            <a href="#" class="hover:underline">청약 알림</a>
-                            <a href="#" class="hover:underline">공고문</a>
-                            <a href="../member/conditionalLogout" class="hover:underline">로그아웃</a>
-                        </div>
+                        <ul class="sub-menu absolute flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
+                            <li><a href="#" class="block px-4 py-2 hover:underline">청약 알림</a></li>
+                            <li><a href="#" class="block px-4 py-2 hover:underline">공고문</a></li>
+                            <li><a href="../member/conditionalLogout" class="block px-4 py-2 hover:underline">로그아웃</a></li>
+                        </ul>
                     </li>
+
+                    <!-- 로그인 -->
                     <li>
                         <a href="../member/joinAndLogin"
                            class="flex justify-center items-center w-[240px] h-[100px] relative cursor-pointer">
                             <p class="text-[22px] text-black">로그인</p>
                         </a>
+                    </li>
+
+                    <li>
+                        <div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
+                                <g fill="none" stroke="#9990e1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                                    <path stroke-dasharray="4" stroke-dashoffset="4" d="M12 3v2">
+                                        <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.2s" values="4;0"/>
+                                    </path>
+                                    <path fill="#9990e1" fill-opacity="0" stroke-dasharray="28" stroke-dashoffset="28" d="M12 5c-3.31 0 -6 2.69 -6 6l0 6c-1 0 -2 1 -2 2h8M12 5c3.31 0 6 2.69 6 6l0 6c1 0 2 1 2 2h-8">
+                                        <animate fill="freeze" attributeName="fill-opacity" begin="0.9s" dur="0.5s" values="0;1"/>
+                                        <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.2s" dur="0.4s" values="28;0"/>
+                                    </path>
+                                    <path stroke-dasharray="8" stroke-dashoffset="8" d="M10 20c0 1.1 0.9 2 2 2c1.1 0 2 -0.9 2 -2">
+                                        <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.6s" dur="0.2s" values="8;0"/>
+                                    </path>
+                                </g>
+                            </svg>
+                        </div>
                     </li>
                 </ul>
             </nav>
@@ -82,9 +109,9 @@
             <!-- 다섯 번째 아이콘 -->
             <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="68" height="68" viewBox="0 0 24 24">
-                    <g fill="none" stroke="#C5D54A" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                    <g fill="none" stroke="#9990e1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
                         <path d="M12 3v2" />
-                        <path fill="#C5D54A" d="M12 5c-3.31 0 -6 2.69 -6 6l0 6c-1 0 -2 1 -2 2h8M12 5c3.31 0 6 2.69 6 6l0 6c1 0 2 1 2 2h-8" />
+                        <path fill="#9990e1" d="M12 5c-3.31 0 -6 2.69 -6 6l0 6c-1 0 -2 1 -2 2h8M12 5c3.31 0 6 2.69 6 6l0 6c1 0 2 1 2 2h-8" />
                         <path d="M10 20c0 1.1 0.9 2 2 2c1.1 0 2 -0.9 2 -2" />
                     </g>
                 </svg>
@@ -93,33 +120,40 @@
     </div>
 
     <script>
+        const headerId = document.getElementById('header-id');
         const header = document.getElementById('header-wrapper');
-        const menuBar = document.getElementById('menu-bar');
-        const subMenu = document.getElementById('sub-menubar');
+        const navList = document.getElementById('nav-list');
+        const subMenus = document.querySelectorAll('.sub-menu');
 
         let hoverTimeout;
 
         const expandHeader = () => {
             clearTimeout(hoverTimeout);
+            headerId.classList.remove('h-[100px]');
+            headerId.classList.add('h-[250px]');
             header.classList.remove('h-[100px]');
             header.classList.add('h-[250px]');
-            subMenu.classList.remove('opacity-0', 'hidden');
-            subMenu.classList.add('opacity-100', 'flex');
+            subMenus.forEach(menu => {
+                menu.classList.remove('hidden');
+                menu.classList.add('flex');
+            });
         };
 
         const collapseHeader = () => {
             hoverTimeout = setTimeout(() => {
+                headerId.classList.remove('h-[250px]');
+                headerId.classList.add('h-[100px]');
                 header.classList.remove('h-[250px]');
                 header.classList.add('h-[100px]');
-                subMenu.classList.remove('flex', 'opacity-100');
-                subMenu.classList.add('hidden', 'opacity-0');
-            }, 100); // 짧은 시간 주는 건 사용자의 빠른 이동 방지용
+                subMenus.forEach(menu => {
+                    menu.classList.remove('flex');
+                    menu.classList.add('hidden');
+                });
+            }, 100);
         };
 
-        menuBar.addEventListener('mouseenter', expandHeader);
-        menuBar.addEventListener('mouseleave', collapseHeader);
-        subMenu.addEventListener('mouseenter', expandHeader);
-        subMenu.addEventListener('mouseleave', collapseHeader);
+        navList.addEventListener('mouseenter', expandHeader);
+        navList.addEventListener('mouseleave', collapseHeader);
     </script>
 
 </header>
