@@ -1,5 +1,6 @@
 package com.koreait.exam.tmrteamproject.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.koreait.exam.tmrteamproject.service.PropertyService;
 import com.koreait.exam.tmrteamproject.vo.AdminDong;
 import com.koreait.exam.tmrteamproject.vo.PropertyFile;
@@ -119,7 +120,7 @@ public class PropertyController {
 
     @GetMapping("/test")
     @ResponseBody
-    public String test(Model model) {
+    public String test(Model model) throws JsonProcessingException {
         propertyService.resolveAreaFromLine("대전광역시 동구 천동 515 외 1필지 천동하늘빌딩 제1층 제103호");
         return "property/selectJuso";
     }
