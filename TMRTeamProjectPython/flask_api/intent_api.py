@@ -386,17 +386,45 @@ def extract_joint_collateral_addresses_follow(
                 if addr_idx is None:
                     continue
 
+
             # 데이터 행 스캔
+            results = []
+
             for r in tb[header_row_idx+1:]:
+                serial = (r[0] or "").strip() if r else ""
                 row_text = " ".join((c or "") for c in r)
-                if _CANCEL_RX.search(row_text):
-                    continue  # 해지/말소 포함 행 제외
+
+                # 주소 셀
                 cell = r[addr_idx] if addr_idx < len(r) else None
                 if not cell or not str(cell).strip():
                     continue
                 cleaned = _norm_ws(_BRACKETS.sub(" ", str(cell)))
-                if cleaned:
-                    hits.append(cleaned)
+                if not cleaned:
+                    continue
+
+                if serial == "":
+                    # 독립된 결과 추가 X → 직전 결과와 merge
+                    if results:
+                        results[-1]["address"] = f"{results[-1]['address']} {cleaned}"
+                        # status 는 직전 결과 유지 (normal/cancelled)
+                    continue
+
+                if not serial.isdigit():
+                    continue
+
+                # 새 일련번호 시작 → 새로운 결과 객체
+                status = "normal"
+                if _CANCEL_RX.search(row_text):
+                    status = "cancelled"
+
+                results.append({
+                    "serial": serial,
+                    "address": cleaned,
+                    "status": status
+                })
+
+            print(results)
+
         return hits
 
     pages_hit, addresses = [], []
@@ -419,13 +447,18 @@ def extract_joint_collateral_addresses_follow(
                 addresses.extend(addrs)
 
             # 이어지는 페이지: 헤더 없이도 추정
+            # follow loop만 교체
             follow, j = 0, i + 1
             while j < len(pdf.pages) and follow < max_follow:
-                more = _pick_addresses_from_tables(_extract_tables_on(pdf.pages[j]), require_header=False)
-                if not more:
-                    break
-                pages_hit.append(j + 1)
-                addresses.extend(more)
+                tables_j = _extract_tables_on(pdf.pages[j])      # 표 존재 여부 먼저 확인
+                if not tables_j:
+                    break                                        # 표 자체가 없으면 종료
+
+                more = _pick_addresses_from_tables(tables_j, require_header=False)
+                if more:                                         # 주소가 있으면 그 페이지만 기록
+                    pages_hit.append(j + 1)
+                    addresses.extend(more)
+
                 follow += 1
                 j += 1
 
