@@ -9,7 +9,7 @@ import pickle
 import mecab_ko
 import pymysql
 import io, os, uuid, tempfile
-import cv2, numpy as np, pytesseract, re
+import cv2, numpy as np, re
 import re, time, random, hashlib
 from collections import deque
 from playwright.sync_api import sync_playwright, Page
@@ -356,8 +356,9 @@ def extract_joint_collateral_addresses_follow(
         scores = [col_score(i) for i in range(cols)]
         return max(range(cols), key=lambda i: scores[i])
 
-    def _pick_addresses_from_tables(tables, require_header: bool):
+    def _pick_addresses_from_tables(tables, require_header: bool, prev_last=None):
         hits = []
+
         for tb in tables:
             if not tb or not tb[0]:
                 continue
@@ -366,7 +367,6 @@ def extract_joint_collateral_addresses_follow(
             header_row_idx = 0
 
             if require_header:
-                # 헤더는 상단 5행 안에서 탐색
                 for r_idx, row in enumerate(tb[:5]):
                     header = [(_ or "").strip() for _ in (row or [])]
                     header_txt = " ".join(header)
@@ -378,57 +378,45 @@ def extract_joint_collateral_addresses_follow(
                             addr_idx = None
                         break
                 if addr_idx is None:
-                    # 헤더가 있어야 한다면 이 표는 스킵
                     continue
             else:
-                # 이어지는 페이지: 헤더 없어도 주소열 추정
                 addr_idx = _guess_addr_col(tb)
                 if addr_idx is None:
                     continue
 
-
-            # 데이터 행 스캔
-            results = []
-
+            # 행 스캔 (hits만 사용)
             for r in tb[header_row_idx+1:]:
                 serial = (r[0] or "").strip() if r else ""
                 row_text = " ".join((c or "") for c in r)
-                # 주소 셀
+
                 cell = r[addr_idx] if addr_idx < len(r) else None
                 if not cell or not str(cell).strip():
                     continue
                 cleaned = _norm_ws(_BRACKETS.sub(" ", str(cell)))
                 if not cleaned:
                     continue
-                print(r)
+
+                # 빈 일련번호: 직전 항목에 merge
                 if serial == "":
-                    print("실행됨")
-                    # merge
-                    print(results)
-                    if results:
-                        print("실행됨2")
-                        results[-1]["address"] = f"{results[-1]['address']} {cleaned}"
-                        # 현재 행이 해지/말소 표시라면 직전 결과의 status 갱신
+                    target = hits[-1] if hits else prev_last
+                    if target is not None:
+                        target["address"] += " " + cleaned
                         if _CANCEL_RX.search(row_text):
-                            results[-1]["status"] = "cancelled"
+                            target["status"] = "cancelled"
+                    # 붙일 대상이 전혀 없으면 고아 라인 → 스킵
                     continue
 
                 if not serial.isdigit():
                     continue
 
-                # 새 일련번호 시작 → 새로운 결과 객체
-                status = "normal"
-                if _CANCEL_RX.search(row_text):
-                    status = "cancelled"
+                status = "cancelled" if _CANCEL_RX.search(row_text) else "normal"
+                hits.append({"serial": serial, "address": cleaned, "status": status})
 
-                results.append({
-                    "serial": serial,
-                    "address": cleaned,
-                    "status": status
-                })
-
-
+        # 디버깅 (원하면 유지)
+        print("pick hits:", hits)
         return hits
+
+
 
     pages_hit, addresses = [], []
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
@@ -436,39 +424,40 @@ def extract_joint_collateral_addresses_follow(
         while i < len(pdf.pages):
             page = pdf.pages[i]
 
-            # 시작 페이지는 【공동담보목록】이 있는 페이지만
             found, header_top = _find_header_top(page)
             if must_have_bracket and not found:
                 i += 1
                 continue
 
             crop = (0, header_top, page.width, page.height)
-            # 시작 페이지: 헤더 필요
-            addrs = _pick_addresses_from_tables(_extract_tables_on(page, crop), require_header=True)
+
+            # 시작 페이지
+            prev_last = addresses[-1] if addresses else None
+            addrs = _pick_addresses_from_tables(_extract_tables_on(page, crop), require_header=True, prev_last=prev_last)
             if addrs:
                 pages_hit.append(i + 1)
                 addresses.extend(addrs)
 
-            # 이어지는 페이지: 헤더 없이도 추정
-            # follow loop만 교체
+            # 이어지는 페이지
             follow, j = 0, i + 1
             while j < len(pdf.pages) and follow < max_follow:
-                tables_j = _extract_tables_on(pdf.pages[j])      # 표 존재 여부 먼저 확인
+                tables_j = _extract_tables_on(pdf.pages[j])
                 if not tables_j:
-                    break                                        # 표 자체가 없으면 종료
+                    break
 
-                more = _pick_addresses_from_tables(tables_j, require_header=False)
-                if more:                                         # 주소가 있으면 그 페이지만 기록
+                prev_last = addresses[-1] if addresses else None
+                more = _pick_addresses_from_tables(tables_j, require_header=False, prev_last=prev_last)
+                if more:
                     pages_hit.append(j + 1)
                     addresses.extend(more)
 
                 follow += 1
                 j += 1
 
-            # 다음 헤더 블록도 계속 탐색
             i += 1
 
-    return {"pages": sorted(set(pages_hit)), "addresses": _stable_unique(addresses)}
+    # 여기부터는 addresses가 [ {serial, address, status}, ... ]
+    return {"pages": sorted(set(pages_hit)), "addresses": addresses}
 
 
 # ============ Flask 라우트 ============
