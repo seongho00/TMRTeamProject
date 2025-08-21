@@ -1,11 +1,3 @@
-// correlationMap.js
-// 업종 UI가 안 뜨는 문제 + 위험도 패널 미표시 문제 해결본
-// - UPJONGS 로드 → 업종 리스트/검색 즉시 렌더
-// - 업종은 "이름" 기준 검색/선택, 필요시 입력값에서 (코드)도 보조 파싱
-// - 행정동은 select 값(이름)으로 찾고, 내부 처리에선 코드/이름 모두 대응
-// 참고 원본: 사용자 제공 파일들  :contentReference[oaicite:1]{index=1}  :contentReference[oaicite:2]{index=2}
-
-/* ================= 전역/상태 ================= */
 let map;
 let currentPolygon = null;
 let emdPolygons = [], emdOverlayList = [];
@@ -20,9 +12,8 @@ const COLOR_DEFAULT = "#D3D3D3";
 // 업종 선택 상태
 window.selectedUpjongName = null; // 이름 우선
 window.selectedUpjongCd   = null; // 코드 보조
-window.autoSelectedEmdCd  = null; // 지도 클릭으로 자동 지정
+window.autoSelectedEmdNm  = null; // 지도 클릭으로 자동 지정
 
-/* ================= 유틸 ================= */
 // 숫자/퍼센트 포맷
 const fmtNum = v => (v == null || isNaN(v)) ? "-" : Number(v).toLocaleString();
 const fmtPct = v => (v == null || isNaN(v)) ? "-" : (Number(v)*100).toFixed(1)+"%";
@@ -39,20 +30,16 @@ function parseUpjongCdFromInput(inputValue){
 // GeoJSON 키 호환
 function getEmdCode(p){ return p?.ADSTRD_CD || p?.행정동_코드 || p?.adm_cd || null; }
 function getEmdName(p){ return p?.ADSTRD_NM || p?.행정동_명 || p?.adm_nm || null; }
-function getSggCode(p){ return p?.SIGUNGU_CD || p?.시군구_코드 || p?.sgg_cd || null; }
 function getSggName(p){ return p?.SIGUNGU_NM || p?.시군구_명 || p?.sgg_nm || null; }
 
 // 위험도 항목 키 추출
-function pickCodeField(obj){
-    return obj?.["서비스_업종_코드"] ?? obj?.["업종_코드"] ?? obj?.["코드"] ?? obj?.["upjongCd"] ?? null;
-}
 function pickNameField(obj){
     return obj?.["서비스_업종_코드_명"] ?? obj?.["업종명"] ?? obj?.["이름"] ?? obj?.["upjongNm"] ?? null;
 }
 
-/* ================= 초기화 ================= */
+// 초기화
 document.addEventListener("DOMContentLoaded", () => {
-    // 1) 맵 초기화
+    // 맵 초기화
     kakao.maps.load(() => {
         map = new kakao.maps.Map(document.getElementById('map'), {
             center: new kakao.maps.LatLng(37.5665, 126.9780),
@@ -72,11 +59,11 @@ document.addEventListener("DOMContentLoaded", () => {
         kakao.maps.event.addListener(map, 'click', evt => handleMapClick(evt.latLng));
     });
 
-    // 2) 지역 셀렉트 바인딩
+    // 지역 셀렉트 바인딩
     $(document).on('change', '#sggSelect', onSggChange);
     $(document).on('change', '#emdSelect', onEmdChange);
 
-    // 3) 업종 소스/피커 초기화 (이게 안되면 리스트/자동완성이 안 뜸)
+    // 업종 소스/피커 초기화
     initUpjongSource();
 });
 
@@ -153,7 +140,7 @@ function centerOf(path){
     return new kakao.maps.LatLng(lat,lng);
 }
 
-/* ================= 지도 클릭 → select 동기화 ================= */
+/* ================= 지도 클릭 -> select 동기화 ================= */
 function handleMapClick(latLng){
     const targets = currentLevel >= 7 ? sggPolygons : emdPolygons;
     for (let i=0;i<targets.length;i++){
@@ -200,7 +187,6 @@ function handleMapClick(latLng){
     }
 }
 
-/* ================= 업종 위험도 (이름 기준) ================= */
 // 업종 이름으로 레코드 찾기
 function getRiskRecordForUpjongByName(props, upjongName){
     const items = Array.isArray(props?.업종별_위험도) ? props.업종별_위험도 : [];
@@ -264,12 +250,13 @@ function renderRiskPanel(emdValue, upjongName){
 
 /* ================= 확인 버튼 ================= */
 function searchInfoByRegionAndUpjong(){
+    // 지역 값
     const sgg = document.getElementById('sggSelect')?.value || '';
     const emd = document.getElementById('emdSelect')?.value || '';
-    const inputVal = (document.getElementById('upjongSearch')?.value || '').trim();
 
-    // 업종 이름 우선 결정
-    const upjongNm = window.selectedUpjongName || inputVal || null;
+    // 업종 값: 버튼 클릭 선택 > 검색창 입력(엔터/포커스아웃)
+    const inputVal = (document.getElementById('upjongSearch')?.value || '').trim();
+    const upjongNm = (window.selectedUpjongName || inputVal || null);
 
     if (!sgg || !emd){ alert('지역을 선택해줘.'); return; }
     if (!upjongNm){ alert('업종 이름을 입력하거나 선택해줘.'); return; }
@@ -367,129 +354,74 @@ function colorOnlySelectedEmdByUpjong(emdValue, upjongName) {
     });
 }
 
-/* ================= 업종 소스/피커 ================= */
-async function initUpjongSource(){
-    try {
-        // 백엔드가 제공: [{upjongCd, upjongNm}, ...]
-        const res = await fetch('/usr/map/api/upjong');
-        const json = await res.json();
-        window.UPJONGS = Array.isArray(json) ? json : [];
-    } catch(e) {
-        // 폴백 데이터
-        window.UPJONGS = [
-            {upjongCd:'CS100001', upjongNm:'한식음식점'},
-            {upjongCd:'CS100010', upjongNm:'커피-음료'},
-            {upjongCd:'CS100007', upjongNm:'치킨전문점'},
-            {upjongCd:'CS200028', upjongNm:'미용실'},
-            {upjongCd:'CS300002', upjongNm:'편의점'},
-        ];
-    }
-    initUpjongPicker();
-}
+/* ================= 업종 선택/검색 초기화 =================
+   - 업종 버튼(.upjong-btn) 클릭 시 window.selectedUpjongName 설정
+   - 선택된 버튼은 시각적으로 강조
+   - 검색창(#upjongSearch)에서 엔터 또는 포커스아웃 시 선택값 반영
+   - 자동완성 드롭다운(#upjongSearchDrop)은 소스 연동 시 확장
+======================================================== */
+function initUpjongSource(){
+    const $list = document.getElementById('upjongList');
+    const $input = document.getElementById('upjongSearch');
+    const SELECTED_CLASS = 'upjong-selected';
 
-function initUpjongPicker(){
-    const $groups = document.getElementById('upjongGroups');
-    const $list   = document.getElementById('upjongList');
-    const $search = document.getElementById('upjongSearch');
-    const $drop   = document.getElementById('upjongSearchDrop');
+    // 스타일 주입(선택 강조)
+    const style = document.createElement('style');
+    style.textContent = `
+        .${SELECTED_CLASS}{ background:#eef2ff; border-color:#6366f1; }
+    `;
+    document.head.appendChild(style);
 
-    // 최초 렌더
-    renderList('all','');
+    // 업종 버튼 클릭
+    if ($list){
+        $list.addEventListener('click', (e) => {
+            const btn = e.target.closest('.upjong-btn');
+            if (!btn) return;
 
-    // 탭 클릭
-    $groups?.addEventListener('click', (e)=>{
-        const btn = e.target.closest('button[data-group]');
-        if(!btn) return;
-        [...$groups.querySelectorAll('.chip')].forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        renderList(btn.dataset.group, $search?.value?.trim() || '');
-    });
+            // 전체 선택 해제
+            $list.querySelectorAll('.upjong-btn').forEach(b => b.classList.remove(SELECTED_CLASS));
 
-    // 검색 자동완성
-    let tId = null;
-    $search?.addEventListener('input', (e)=>{
-        clearTimeout(tId);
-        tId = setTimeout(()=>{
-            const q = e.target.value.trim();
-            if(!q){
-                $drop?.classList.add('hidden');
-                const active = document.querySelector('#upjongGroups .active')?.dataset.group || 'all';
-                renderList(active, '');
-                return;
+            // 현재 선택 표시
+            btn.classList.add(SELECTED_CLASS);
+
+            // 전역 선택값 갱신
+            const nm = btn.getAttribute('data-nm') || btn.textContent || '';
+            window.selectedUpjongName = nm.trim();
+            window.selectedUpjongCd = null; // 필요 시 확장
+
+            // 입력창 동기화
+            if ($input){
+                $input.value = window.selectedUpjongName;
             }
-            const hits = filterBy('all', q).slice(0,20);
-            if ($drop){
-                $drop.innerHTML = hits.map(it => `
-          <button type="button" class="w-full text-left px-3 py-2 hover:bg-gray-50"
-                  data-cd="${it.upjongCd}" data-nm="${it.upjongNm}">
-            <span class="text-gray-500 mr-2">${hl(it.upjongCd, q)}</span>${hl(it.upjongNm, q)}
-          </button>
-        `).join('');
-                $drop.classList.toggle('hidden', hits.length===0);
-            }
-        }, 120);
-    });
-
-    // 자동완성 선택
-    $drop?.addEventListener('click', (e)=>{
-        const b = e.target.closest('button[data-cd]');
-        if(!b) return;
-        pick({upjongCd:b.dataset.cd, upjongNm:b.dataset.nm});
-        $drop.classList.add('hidden');
-    });
-
-    // 리스트 선택
-    $list?.addEventListener('click', (e)=>{
-        const b = e.target.closest('button[data-cd]');
-        if(!b) return;
-        pick({upjongCd:b.dataset.cd, upjongNm:b.dataset.nm});
-    });
-
-    // 선택 공용
-    function pick(item){
-        const ui = document.querySelector('.upjongInput:not(.hidden)') || document.querySelector('.upjongInput');
-        if (ui) ui.value = `${item.upjongNm} (${item.upjongCd})`; // 입력창에 이름(코드) 표시
-        window.selectedUpjongName = item.upjongNm;
-        window.selectedUpjongCd   = item.upjongCd;
-
-        const box = document.getElementById('riskResult');
-        if (box) box.classList.add('hidden');
-        if (typeof clearEmdColors === 'function') clearEmdColors();
-    }
-
-    // 리스트 렌더
-    function renderList(group, query){
-        const data = filterBy(group, query);
-        if ($list){
-            $list.innerHTML = data.map(it => `
-        <button type="button" class="upjong-btn" data-cd="${it.upjongCd}" data-nm="${it.upjongNm}">
-          <div class="text-xs text-gray-500">${it.upjongCd}</div>
-          <div>${hl(it.upjongNm, query)}</div>
-        </button>
-      `).join('') || `<div class="text-gray-500 col-span-2">결과가 없습니다.</div>`;
-        }
-    }
-
-    // 필터(이름 우선)
-    function filterBy(group, query){
-        const q = norm(query);
-        const src = Array.isArray(window.UPJONGS) ? window.UPJONGS : [];
-        return src.filter(it=>{
-            const cd = String(it.upjongCd||'');
-            const nm = String(it.upjongNm||'');
-            const inGroup = group==='all' ? true : cd.startsWith(group);
-            if(!inGroup) return false;
-            if(!q) return true;
-            return norm(nm).includes(q) || cd.toLowerCase().includes(q.toLowerCase());
         });
     }
-}
 
-/* ================= 하이라이트 유틸 ================= */
-function hl(text, q){
-    if(!q) return text;
-    const t = text.toString();
-    const i = t.toLowerCase().indexOf(q.toLowerCase());
-    if(i<0) return t;
-    return t.substring(0,i) + `<span class="hit">${t.substring(i, i+q.length)}</span>` + t.substring(i+q.length);
+    // 검색창 엔터 시 선택값 고정
+    if ($input){
+        $input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter'){
+                const val = ($input.value || '').trim();
+                if (val){
+                    window.selectedUpjongName = val;
+                    window.selectedUpjongCd = parseUpjongCdFromInput(val);
+                    // 리스트 강조 해제(직접 입력 우선)
+                    if ($list){
+                        $list.querySelectorAll('.upjong-btn').forEach(b => b.classList.remove(SELECTED_CLASS));
+                    }
+                }
+            }
+        });
+
+        // 포커스아웃 시에도 값 반영
+        $input.addEventListener('blur', () => {
+            const val = ($input.value || '').trim();
+            if (val){
+                window.selectedUpjongName = val;
+                window.selectedUpjongCd = parseUpjongCdFromInput(val);
+                if ($list){
+                    $list.querySelectorAll('.upjong-btn').forEach(b => b.classList.remove(SELECTED_CLASS));
+                }
+            }
+        });
+    }
 }
