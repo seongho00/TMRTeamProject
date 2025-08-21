@@ -39,16 +39,23 @@
             </div>
 
             <!-- 그룹 탭 -->
-            <div class="majorSelector flex flex-col justify-center items-center w-[407px] overflow-hidden gap-[12px]">
-                <div id="upjongGroups" class="flex gap-2">
-                    <button type="button" data-group="all" class="chip active">전체</button>
-                    <button type="button" data-group="CS100" class="chip">음식</button>
-                    <button type="button" data-group="CS300" class="chip">소매</button>
-                    <button type="button" data-group="CS200" class="chip">서비스</button>
-                </div>
-
+            <div class="flex flex-col justify-center items-center w-[407px] overflow-hidden gap-[12px]">
                 <!-- 업종 리스트 -->
-                <div id="upjongList" class="grid grid-cols-2 gap-2 h-56 overflow-auto border rounded p-2 bg-white"></div>
+                <div id="upjongList" class="grid grid-cols-2 gap-2 h-56 overflow-auto border rounded p-2 bg-white">
+                    <!-- 비어있을 때 메시지 -->
+                    <div th:if="${upjongNames.isEmpty()}" class="col-span-2 text-center text-gray-500 py-6">
+                        업종 결과가 없어
+                    </div>
+
+                    <!-- 업종 버튼 렌더링 -->
+                    <button
+                            th:each="nm : ${upjongNames}"
+                            type="button"
+                            class="upjong-btn w-full text-left px-3 py-2 rounded border hover:bg-gray-50"
+                            th:text="${nm}"
+                            th:attr="data-nm=${nm}">
+                    </button>
+                </div>
 
                 <!-- 기존 코드 호환용 hidden input -->
                 <input class="upjongInput hidden">
