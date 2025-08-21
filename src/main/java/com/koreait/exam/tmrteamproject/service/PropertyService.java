@@ -7,8 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
@@ -36,7 +35,7 @@ import org.springframework.beans.factory.annotation.Value;
 public class PropertyService {
 
     @Value("${bldrgst.apiKey}")
-    private String hubKey;
+    private String bldrgstKey;
 
     @Value("${address.confmKey}")
     private String jusoKey;
@@ -81,8 +80,15 @@ public class PropertyService {
             InputStreamResource resource;
             try {
                 resource = new InputStreamResource(f.getInputStream()) {
-                    @Override public String getFilename() { return filename; }
-                    @Override public long contentLength() { return length; }
+                    @Override
+                    public String getFilename() {
+                        return filename;
+                    }
+
+                    @Override
+                    public long contentLength() {
+                        return length;
+                    }
                 };
             } catch (IOException e) {
                 throw new RuntimeException("업로드 파일 스트림 열기 실패: " + filename, e);
@@ -94,7 +100,9 @@ public class PropertyService {
         }
 
         if (extra != null) {
-            extra.forEach((k, v) -> { if (v != null) mb.part(k, v); });
+            extra.forEach((k, v) -> {
+                if (v != null) mb.part(k, v);
+            });
         }
 
         var parts = mb.build();
@@ -128,9 +136,10 @@ public class PropertyService {
             var is = f.getInputStream();
             byte[] buf = is.readNBytes(1024);
             for (int i = 0; i <= buf.length - 4; i++) {
-                if (buf[i] == '%' && buf[i+1] == 'P' && buf[i+2] == 'D' && buf[i+3] == 'F') return true;
+                if (buf[i] == '%' && buf[i + 1] == 'P' && buf[i + 2] == 'D' && buf[i + 3] == 'F') return true;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return false;
     }
 
@@ -141,23 +150,50 @@ public class PropertyService {
 
         // 2) 동/호 힌트 추출 (등기부가 “제1층 제103호”처럼 오는 케이스 처리)
         String dongNm = extractDong(cleaned); // “제1동/1동/동1” → 1
-        String hoNm   = extractHo(cleaned);   // “제103호/103호” → 103
+        String hoNm = extractHo(cleaned);   // “제103호/103호” → 103
         // 층(층수)은 HUB 파라미터로 쓰지 않으므로 무시
 
         String juso = simplifyToLegalLot(cleaned);
 
         // 1) JUSO 조회 (Map으로 받기)
         Map<String, String> j = jusoLookupAsMap(juso);
+
+
         String admCd = j.get("admCd");
         String sigunguCd = admCd.substring(0, 5);
-        String bjdongCd  = admCd.substring(5, 10);
-        String bun       = z4(j.get("lnbrMnnm"));
-        String ji        = z4(j.get("lnbrSlno"));
-        String platGbCd  = "1".equals(j.get("mtYn")) ? "1" : "0";
+        String bjdongCd = admCd.substring(5, 10);
+        String bun = "0515";
+        String ji = z4(j.get("lnbrSlno"));
+        String platGbCd = "1".equals(j.get("mtYn")) ? "1" : "0";
 
 
-        System.out.println(admCd);
+        // 3) HUB getBrExposPubuseAreaInfo 호출 (전유=1, 주건축물=0)
+        Map<String, String> q = new LinkedHashMap<>();
+        q.put("serviceKey", bldrgstKey);
+        q.put("sigunguCd", sigunguCd);
+        q.put("bjdongCd", bjdongCd);
+        q.put("platGbCd", platGbCd);
+        q.put("bun", bun);
+        q.put("ji", ji);
+        q.put("_type", "json");
+        if (dongNm != null) q.put("dongNm", String.valueOf(dongNm));
+        if (hoNm != null) q.put("hoNm", String.valueOf(hoNm));
 
+        List<Map<String, Object>> items = callBldRgst(
+                "https://apis.data.go.kr/1613000/BldRgstHubService/getBrExposPubuseAreaInfo", q);
+
+        System.out.println(items);
+        // 4) 결과 합산(보통 1건)
+        double sum = 0.0;
+        for (Map<String, Object> it : items) {
+            Object area = it.get("area");
+            if (area != null) {
+                try {
+                    sum += Double.parseDouble(String.valueOf(area));
+                } catch (Exception ignore) {
+                }
+            }
+        }
 
     }
 
@@ -173,8 +209,6 @@ public class PropertyService {
     private String extractDong(String s) {
         // "제1동", "1동", "동1" 모두 처리
         var m = Pattern.compile("(?:제)?\\s*(\\d+)\\s*동").matcher(s);
-        if (m.find()) return m.group(1);
-        m = Pattern.compile("동\\s*(\\d+)").matcher(s);
         if (m.find()) return m.group(1);
         return null;
     }
@@ -226,24 +260,24 @@ public class PropertyService {
         org.springframework.http.ResponseEntity<String> respEntity =
                 rest.postForEntity(url, req, String.class);
         String body = respEntity.getBody();
-        System.out.println("JUSO POST " + url + " -> " + respEntity.getStatusCodeValue());
-        System.out.println("👉 응답 원문: " + body);
 
         if (body == null) throw new IllegalStateException("JUSO 응답 body가 null");
 
         java.util.Map<String, Object> resp;
         try {
             resp = new com.fasterxml.jackson.databind.ObjectMapper()
-                    .readValue(body, new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {});
+                    .readValue(body, new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {
+                    });
         } catch (Exception e) {
             throw new IllegalStateException("JUSO 응답 파싱 실패", e);
         }
 
         // 4) 공통부/결과 파싱
         java.util.Map<String, Object> results = asMap(resp.get("results"));
-        java.util.Map<String, Object> common  = asMap(results.get("common"));
-        String errorCode  = str(common.get("errorCode"));   // "0" 정상
-        String errorMsg   = str(common.get("errorMessage"));
+        System.out.println(results);
+        java.util.Map<String, Object> common = asMap(results.get("common"));
+        String errorCode = str(common.get("errorCode"));   // "0" 정상
+        String errorMsg = str(common.get("errorMessage"));
         String totalCount = str(common.get("totalCount"));
 
         if (errorCode != null && !"0".equals(errorCode)) {
@@ -257,12 +291,78 @@ public class PropertyService {
 
         java.util.Map<String, Object> first = asMap(jusoList.get(0));
         java.util.Map<String, String> out = new java.util.HashMap<>();
-        out.put("admCd",    str(first.get("admCd")));
+        out.put("admCd", str(first.get("admCd")));
         out.put("lnbrMnnm", str(first.get("lnbrMnnm")));
         out.put("lnbrSlno", str(first.get("lnbrSlno")));
-        out.put("mtYn",     str(first.get("mtYn")));
+        out.put("mtYn", str(first.get("mtYn")));
         return out;
     }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> callBldRgst(String endpoint, Map<String, String> params) {
+        params.putIfAbsent("numOfRows", "100");
+        params.putIfAbsent("pageNo", "1");
+        params.putIfAbsent("_type", "json");
+
+        // URL 빌드
+        String serviceKey = params.remove("serviceKey"); // 분리
+
+        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(endpoint);
+        params.forEach(ub::queryParam);
+        ub.queryParam("serviceKey", serviceKey);
+
+        boolean encodedKey = serviceKey.contains("%");
+        String url = encodedKey
+                ? ub.build(true).toUriString()                 // ✅ 이미 인코딩된 값 보존 (재인코딩 금지)
+                : ub.encode(StandardCharsets.UTF_8).toUriString(); // 일반키면 한 번만 인코딩
+
+        try {
+            // 👇 브라우저처럼 헤더 추가
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.ACCEPT, "application/json");
+            headers.set(HttpHeaders.USER_AGENT, "Mozilla/5.0");
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<Map> resp = rest.exchange(url, HttpMethod.GET, entity, Map.class);
+            Map<String, Object> root = resp.getBody();
+            if (root == null) return List.of();
+
+            Map<String, Object> response = (Map<String, Object>) root.get("response");
+            if (response == null) return List.of();
+
+            Map<String, Object> body  = (Map<String, Object>) response.get("body");
+            Map<String, Object> items = (Map<String, Object>) body.get("items");
+            Object itemObj = items.get("item");
+
+            List<Map<String, Object>> list = new ArrayList<>();
+            if (itemObj instanceof Map) {
+                list.add((Map<String, Object>) itemObj);
+            } else if (itemObj instanceof List) {
+                for (Object o : (List<?>) itemObj) list.add((Map<String, Object>) o);
+            }
+            return list;
+        } catch (Exception e) {
+            log.error("BldRgst 호출 실패: {}", e.getMessage(), e);
+            return List.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> extractBldItems(Map<String, Object> root) {
+        Map<String, Object> response = (Map<String, Object>) root.getOrDefault("response", Map.of());
+        Map<String, Object> body = (Map<String, Object>) response.getOrDefault("body", Map.of());
+        Map<String, Object> items = (Map<String, Object>) body.getOrDefault("items", Map.of());
+        Object itemObj = items.get("item");
+        List<Map<String, Object>> list = new ArrayList<>();
+        if (itemObj instanceof Map) {
+            list.add((Map<String, Object>) itemObj);
+        } else if (itemObj instanceof List) {
+            for (Object o : (List<?>) itemObj) list.add((Map<String, Object>) o);
+        }
+        return list;
+    }
+
 
 
     /* ------------ 캐스팅/파싱 헬퍼 ------------ */
@@ -284,8 +384,12 @@ public class PropertyService {
 
     private double toDouble(Object o, double def) {
         if (o == null) return def;
-        try { return Double.parseDouble(String.valueOf(o)); }
-        catch (Exception e) { return def; }
+        try {
+            return Double.parseDouble(String.valueOf(o));
+        } catch (Exception e) {
+            return def;
+        }
     }
+
 
 }
