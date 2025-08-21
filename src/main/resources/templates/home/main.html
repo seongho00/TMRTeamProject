@@ -5,8 +5,16 @@
 </head>
 <body>
 <header th:replace="common/mainHeader::header"></header>
+
+<script th:inline="javascript">
+    window.LOGIN_MEMBER_ID = /*[[${#authentication?.principal?.member?.id}]]*/ null;
+</script>
+
 <div class="relative w-full h-[440px] bg-[#E94876]"></div>
 <div class="relative w-full h-[900px] bg-white"></div>
+
+<script src="/js/main.js"></script>
+
 <footer th:replace="common/footer::footer"></footer>
 </body>
 </html>
