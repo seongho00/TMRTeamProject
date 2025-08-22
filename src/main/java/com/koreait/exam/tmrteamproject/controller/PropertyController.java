@@ -135,8 +135,10 @@ public class PropertyController {
         double areaWeight = currentArea / sum;
 
         // 10) 가중치에 따른 채권금액 계산
-
         Long weightedValue = Math.round(sumAmountKRW * areaWeight);
+
+        // 11) 평균월세 가져오기
+        
         System.out.println(weightedValue);
 
         return ResponseEntity.ok(result);
