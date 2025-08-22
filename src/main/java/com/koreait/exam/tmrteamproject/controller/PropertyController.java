@@ -106,7 +106,9 @@ public class PropertyController {
 
             if (status.equals("cancelled")) continue;
 
-            sumAmountKRW += (long) mortgage.get("amountKRW");
+            Number amount = (Number) mortgage.get("amountKRW");
+            sumAmountKRW += amount.longValue();
+
         }
 
         // 7) 분석된 주소마다 면적 구해오기
@@ -128,17 +130,14 @@ public class PropertyController {
         // 8) 현재주소 면적 가져오기
         double currentArea = propertyService.resolveAreaFromLine((String) result.get("jointCollateralCurrentAddress"));
         sum += currentArea;
-        // 9) 가중치 계산
-        System.out.println(sum);
-        System.out.println(currentArea);
 
+        // 9) 가중치 계산
         double areaWeight = currentArea / sum;
 
-        System.out.println(areaWeight);
-        System.out.println(sumAmountKRW);
+        // 10) 가중치에 따른 채권금액 계산
 
-
-
+        Long weightedValue = Math.round(sumAmountKRW * areaWeight);
+        System.out.println(weightedValue);
 
         return ResponseEntity.ok(result);
     }
