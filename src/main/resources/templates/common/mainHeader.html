@@ -55,9 +55,10 @@
                         </a>
                     </li>
 
-                    <!-- 알림 아이콘 -->
+                    <!-- 알림 아이콘 + 팝업 -->
                     <li id="notif-wrapper" class="relative">
-                        <a href="../home/notifications" id="notif-icon" class="cursor-pointer">
+                        <!-- 알림벨 버튼 -->
+                        <button id="notif-icon" type="button" class="cursor-pointer select-none">
                             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
                                 <g fill="none" stroke="#9990e1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
                                     <path stroke-dasharray="4" stroke-dashoffset="4" d="M12 3v2">
@@ -74,7 +75,10 @@
                                     </path>
                                 </g>
                             </svg>
-                        </a>
+                        </button>
+
+                        <!-- 팝업 알림함 불러오기 -->
+                        <div th:replace="common/subscription :: subscription"></div>
                     </li>
                 </ul>
             </nav>
@@ -163,6 +167,42 @@
 
         navList.addEventListener('mouseenter', expandHeader);
         navList.addEventListener('mouseleave', collapseHeader);
+
+        // 알림 팝업 토글 + 외부 클릭 닫기
+        const notifIcon = document.getElementById('notif-icon');
+        const notifPopover = document.getElementById('notif-popover');
+        const notifClose = document.getElementById('notif-close');
+        const wrapper = document.getElementById('notif-wrapper');
+
+        // 더보기 토글(팝업 내부)
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.more-btn')) {
+                const btn = e.target.closest('.more-btn');
+                const panel = btn.parentElement.querySelector('.more-panel');
+                const icon = btn.querySelector('svg path');
+                const hidden = panel.classList.contains('hidden');
+
+                panel.classList.toggle('hidden');
+
+                if (icon) icon.setAttribute('d', hidden ? 'M7 14l5-5 5 5z' : 'M7 10l5 5 5-5z');
+            }
+        });
+
+        // 아이콘 클릭 → 팝업 열기/닫기
+        notifIcon.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            // 페이지 이동 방지
+            notifPopover.classList.toggle('hidden');
+        });
+
+        // 닫기 버튼
+        notifClose.addEventListener('click', () => notifPopover.classList.add('hidden'));
+
+        // 바깥 클릭 시 닫기
+        document.addEventListener('click', (e) => {
+            if (!wrapper.contains(e.target)) notifPopover.classList.add('hidden');
+        });
     </script>
 
 </header>
