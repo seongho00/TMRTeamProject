@@ -2,7 +2,6 @@ package com.koreait.exam.tmrteamproject.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.koreait.exam.tmrteamproject.service.PropertyService;
-import com.koreait.exam.tmrteamproject.vo.AdminDong;
 import com.koreait.exam.tmrteamproject.vo.PropertyFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -94,9 +93,21 @@ public class PropertyController {
         MultipartFile thePdf = pdfOnly.get(0);
         Map<String, Object> result = propertyService.analyzeWithPythonDirect(List.of(thePdf), extra);
 
-        System.out.println(result);
         // 6) 분석된 주소에서 normal인 것만 빼오기
         Map<String, Object> filteredResult = propertyService.printNormalAddresses(result);
+
+        // 6-1) 채권최고액 가져오기
+        List<Map<String, Object>> mortgages =
+                (List<Map<String, Object>>) result.get("mortgageInfo");
+
+        long sumAmountKRW = 0;
+        for (Map<String, Object> mortgage : mortgages) {
+            String status = (String) mortgage.get("status");
+
+            if (status.equals("cancelled")) continue;
+
+            sumAmountKRW += (long) mortgage.get("amountKRW");
+        }
 
         // 7) 분석된 주소마다 면적 구해오기
         List<Map<String, Object>> normals = (List<Map<String, Object>>) filteredResult.get("normalAddresses");
@@ -124,6 +135,10 @@ public class PropertyController {
         double areaWeight = currentArea / sum;
 
         System.out.println(areaWeight);
+        System.out.println(sumAmountKRW);
+
+
+
 
         return ResponseEntity.ok(result);
     }

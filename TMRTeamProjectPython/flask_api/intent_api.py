@@ -299,6 +299,96 @@ def _stable_unique(seq):
             seen.add(x); out.append(x)
     return out
 
+_WS = re.compile(r"\s+")
+_MONEY = re.compile(r"금?\s*([0-9,]+)\s*원")
+
+# '말소/해지' 플래그만 확인
+_CANCEL_FLAG_RX   = re.compile(r"(말소|해지)")
+# 보조: purpose 텍스트에서 "1번 근저당권 설정" 같은 표기를 파싱 (순위번호 칸이 비었을 때만 사용)
+_CANCEL_TARGET_RX = re.compile(r"(\d+)\s*번")
+# 취소 대상 번호들: "제1번", "1번", "1,2번", "1번·2번" 등에서 모두 추출
+_RANK_LIST_RX = re.compile(r"(?:제?\s*)(\d+)\s*번")
+
+def _one_line(s: str) -> str:
+    return _WS.sub(" ", (s or "").strip())
+
+def _parse_amount_num(text: str):
+    m = _MONEY.search(text or "")
+    if not m:
+        return None
+    try:
+        return int(m.group(1).replace(",", ""))
+    except:
+        return None
+
+def extract_mortgage_info(pdf_bytes: bytes):
+    """
+    【을구】에서 근저당권 '설정'만 수집하고,
+    '말소/해지' 행은 '해당 행의 순위번호'를 취소 대상으로 간주.
+    반환: [{"rankNo": int, "amountKRW": int|None, "status": "normal|cancelled"} ...]
+    """
+    title_rx = re.compile(r"【\s*을\s*구\s*】")
+
+    mortgages_by_rank = {}   # rankNo -> {"rankNo", "amountKRW", "status"}
+    cancel_ranks = set()     # 말소/해지로 지목된 순위번호들
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for page in pdf.pages:
+            txt = page.extract_text() or ""
+            if not title_rx.search(txt):
+                continue
+
+            tables = page.extract_tables() or []
+            for tb in tables:
+                if not tb:
+                    continue
+
+                # 헤더 위치 추정
+                col_rank = col_purpose = col_amount = None
+                for row in tb[:5]:
+                    cells = [(_one_line(c) if c else "") for c in (row or [])]
+                    for i, c in enumerate(cells):
+                        if col_rank is None    and (c in ("순위번호","순위")):    col_rank = i
+                        if col_purpose is None and ("등기" in c and "목적" in c):  col_purpose = i
+                        if col_amount is None  and ("채권최고액" in c):            col_amount = i
+                if col_rank   is None: col_rank = 0
+                if col_purpose is None: col_purpose = 1
+                if col_amount is None:  col_amount = 4
+
+                for row in tb:
+                    if not row or len(row) <= max(col_rank, col_purpose, col_amount):
+                        continue
+
+                    rank_raw   = _one_line(row[col_rank])
+                    purpose    = _one_line(row[col_purpose])
+                    amount_txt = _one_line(row[col_amount])
+
+                    # --- 1) 말소/해지 행: 텍스트 안의 "…번"들만 취소 대상으로 수집 ---
+                    if _CANCEL_FLAG_RX.search(purpose):
+                        nums = _RANK_LIST_RX.findall(purpose)  # ["1","2",...]
+                        for n in nums:
+                            cancel_ranks.add(int(n))
+                        continue  # 말소행 자체는 수집 안 함
+
+                    # --- 근저당권 '설정'만 수집 ---
+                    if ("근저당권" in purpose) and ("설정" in purpose):
+                        # 순위번호 열이 숫자여야 설정행으로 인정
+                        if rank_raw.isdigit():
+                            row_rank = int(rank_raw)
+                            mortgages_by_rank[row_rank] = {
+                                "rankNo": row_rank,
+                                "amountKRW": _parse_amount_num(amount_txt),
+                                "status": "normal",
+                            }
+
+    # 말소 대상 순위를 취소 처리
+    for r in cancel_ranks:
+        if r in mortgages_by_rank:
+            mortgages_by_rank[r]["status"] = "cancelled"
+
+    # 설정행만 정렬해서 반환
+    return sorted(mortgages_by_rank.values(), key=lambda x: x["rankNo"])
+
 def extract_joint_collateral_addresses_follow(
         pdf_bytes: bytes,
         must_have_bracket: bool = True,
@@ -421,8 +511,6 @@ def extract_joint_collateral_addresses_follow(
                 status = "cancelled" if _CANCEL_RX.search(row_text) else "normal"
                 hits.append({"serial": serial, "address": cleaned, "status": status})
 
-        # 디버깅 (원하면 유지)
-        print("pick hits:", hits)
         return hits
 
 
@@ -499,18 +587,19 @@ def analyze():
 
     try:
         joint_info = extract_joint_collateral_addresses_follow(data)
+        mortgage_info = extract_mortgage_info(data)
     except Exception as e:
         import traceback;
         traceback.print_exc()
         return jsonify(ok=False, message=f"분석 실패: {e}"), 500
 
-    print(doc)
     return jsonify(
         ok=True,
         pageCount=len(doc),
         jointCollateralPages=joint_info["pages"],
         jointCollateralAddresses=joint_info["addresses"],
-        jointCollateralCurrentAddress= joint_info["currentAddress"]
+        jointCollateralCurrentAddress= joint_info["currentAddress"],
+        mortgageInfo = mortgage_info
     ), 200
 
 
