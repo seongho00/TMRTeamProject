@@ -39,12 +39,9 @@ public class UsrHomeController {
 
             for (ScheduleInterest scheduleInterest : scheduleInterests) {
                 lhSupplySchedules.add(lhSupplyScheduleService.findById(scheduleInterest.getScheduleId()));
-
             }
-
-            model.addAttribute("loginMemberId", loginMember.getId());
-            System.out.println(loginMember.getId());
         }
+
         System.out.println(lhSupplySchedules);
         model.addAttribute("lhSupplySchedules", lhSupplySchedules);
         return "home/main";
