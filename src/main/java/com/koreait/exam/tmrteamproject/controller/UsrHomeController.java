@@ -39,17 +39,16 @@ public class UsrHomeController {
 
             for (ScheduleInterest scheduleInterest : scheduleInterests) {
                 lhSupplySchedules.add(lhSupplyScheduleService.findById(scheduleInterest.getScheduleId()));
-
             }
-
         }
+
         System.out.println(lhSupplySchedules);
         model.addAttribute("lhSupplySchedules", lhSupplySchedules);
         return "home/main";
     }
 
-    @GetMapping("/test")
-    public String test() {
-        return "home/test";
+    @GetMapping("/notifications")
+    public String notifications() {
+        return "home/notifications";
     }
 }
