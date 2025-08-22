@@ -47,7 +47,7 @@ public class PropertyController {
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng
-    ) {
+    ) throws JsonProcessingException {
         // 1) 들어온 파일 모으기 (file 또는 files)
         List<MultipartFile> all = new ArrayList<>();
         if (file != null && !file.isEmpty()) all.add(file);
@@ -94,7 +94,7 @@ public class PropertyController {
         MultipartFile thePdf = pdfOnly.get(0);
         Map<String, Object> result = propertyService.analyzeWithPythonDirect(List.of(thePdf), extra);
 
-
+        System.out.println(result);
         // 6) 분석된 주소에서 normal인 것만 빼오기
         Map<String, Object> filteredResult = propertyService.printNormalAddresses(result);
 
@@ -105,14 +105,25 @@ public class PropertyController {
             System.out.println("✅ normal 주소 없음");
         }
 
+        double sum = 0.0;
         for (Map<String, Object> addr : normals) {
             String address = (String) addr.get("address");
-            String serial = (String) addr.get("serial");
-            String status = (String) addr.get("status");
 
-            System.out.printf("주소: %s, 순번: %s, 상태: %s%n", address, serial, status);
+            double area = propertyService.resolveAreaFromLine(address);
+
+            sum += area;
         }
 
+        // 8) 현재주소 면적 가져오기
+        double currentArea = propertyService.resolveAreaFromLine((String) result.get("jointCollateralCurrentAddress"));
+        sum += currentArea;
+        // 9) 가중치 계산
+        System.out.println(sum);
+        System.out.println(currentArea);
+
+        double areaWeight = currentArea / sum;
+
+        System.out.println(areaWeight);
 
         return ResponseEntity.ok(result);
     }

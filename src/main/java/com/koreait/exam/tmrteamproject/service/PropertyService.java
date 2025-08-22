@@ -154,7 +154,7 @@ public class PropertyService {
     }
 
 
-    public void resolveAreaFromLine(String raw) throws JsonProcessingException {
+    public double resolveAreaFromLine(String raw) throws JsonProcessingException {
         // 1) 전처리: ‘외 n필지’, 대괄호 태그 제거, 공백 정리
         String cleaned = cleanup(raw);
 
@@ -193,11 +193,9 @@ public class PropertyService {
                 "https://apis.data.go.kr/1613000/BldRgstHubService/getBrExposPubuseAreaInfo", q
         );
 
-        System.out.println(items);
 
         // ✅ totalCount==0 이거나 결과 없음 → fallback 실행
         if (items.isEmpty()) {
-            System.out.println("실행됨");
             String[] parsed = parseBunJi(raw); // [bun, ji]
             if (parsed != null) {
                 bun = z4(parsed[0]);
@@ -239,7 +237,7 @@ public class PropertyService {
         }
 
         log.info("총 면적 합계: {}", sum);
-
+        return sum;
     }
 
     private String[] parseBunJi(String addr) {
