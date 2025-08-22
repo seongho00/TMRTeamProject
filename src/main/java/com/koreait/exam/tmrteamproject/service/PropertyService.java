@@ -23,6 +23,7 @@ import org.springframework.web.util.UriUtils;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -174,7 +175,6 @@ public class PropertyService {
         String ji = z4(j.get("lnbrSlno"));
         String platGbCd = "1".equals(j.get("mtYn")) ? "1" : "0";
 
-
         // 3) HUB getBrExposPubuseAreaInfo 호출 (전유=1, 주건축물=0)
         // 3) 파라미터 구성
         Map<String, String> q = new LinkedHashMap<>();
@@ -183,7 +183,7 @@ public class PropertyService {
         q.put("platGbCd", platGbCd);
         q.put("bun", bun);
         q.put("ji", ji);
-        if (dongNm != null) q.put("dongNm", dongNm);
+//        if (dongNm != null) q.put("dongNm", dongNm);
         if (hoNm != null) q.put("hoNm", hoNm);
         q.put("numOfRows", "100");
         q.put("pageNo", "1");
@@ -290,7 +290,6 @@ public class PropertyService {
 
         // 4) 공통부/결과 파싱
         java.util.Map<String, Object> results = asMap(resp.get("results"));
-        System.out.println(results);
         java.util.Map<String, Object> common = asMap(results.get("common"));
         String errorCode = str(common.get("errorCode"));   // "0" 정상
         String errorMsg = str(common.get("errorMessage"));
@@ -337,13 +336,32 @@ public class PropertyService {
 
         } else {
             // raw 키 → 빌더가 전체 UTF-8 인코딩
-            ub.queryParam("serviceKey", bldrgstKey);
-            params.forEach((k, v) -> {
-                if (v != null && !v.isBlank()) ub.queryParam(k, v);
+            ub.queryParam("serviceKey", UriUtils.encode(bldrgstKey, StandardCharsets.UTF_8));
+            params.forEach((k,v) -> {
+                if (v != null && !v.isBlank()) {
+                    ub.queryParam(k, v);
+                }
             });
-            String url = ub.encode(java.nio.charset.StandardCharsets.UTF_8).toUriString();
+            String url = ub.build(true).toUriString();  // 여기서는 build(true)
             logUrlMasked(url);
-            String xml = rest.getForObject(url, String.class);
+
+            // ✅ 헤더 세팅
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Accept", "application/xml");
+            headers.set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            headers.set("User-Agent", "Mozilla/5.0");
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            ResponseEntity<String> response = rest.exchange(
+                    URI.create(url),   // 이미 인코딩된 url을 URI로 고정
+                    HttpMethod.GET,
+                    entity,
+                    String.class
+            );
+            System.out.println(response);
+            String xml = response.getBody();
+            System.out.println(xml);
+
             return parseBldRgstXml(xml);
         }
     }
@@ -397,7 +415,7 @@ public class PropertyService {
 
     private void logUrlMasked(String url) {
         if (log.isInfoEnabled()) {
-            log.info("BldRgst GET {}", url.replaceFirst("(serviceKey=)[^&]+", "$1****"));
+            log.info("BldRgst GET {}", url);
         }
     }
 
