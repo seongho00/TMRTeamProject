@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -21,6 +22,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Controller
@@ -30,6 +32,7 @@ import java.util.*;
 public class PropertyController {
 
     private final PropertyService propertyService;
+
 
     @GetMapping("/upload")
     public String uploadForm() {
@@ -87,9 +90,30 @@ public class PropertyController {
         if (lat != null) extra.put("lat", String.valueOf(lat));
         if (lng != null) extra.put("lng", String.valueOf(lng));
 
-        // 5) 정상 처리
+        // 5) 파이썬에 파일 보내고 분석 결과 받기
         MultipartFile thePdf = pdfOnly.get(0);
         Map<String, Object> result = propertyService.analyzeWithPythonDirect(List.of(thePdf), extra);
+
+
+        // 6) 분석된 주소에서 normal인 것만 빼오기
+        Map<String, Object> filteredResult = propertyService.printNormalAddresses(result);
+
+        // 7) 분석된 주소마다 면적 구해오기
+        List<Map<String, Object>> normals = (List<Map<String, Object>>) filteredResult.get("normalAddresses");
+
+        if (normals == null || normals.isEmpty()) {
+            System.out.println("✅ normal 주소 없음");
+        }
+
+        for (Map<String, Object> addr : normals) {
+            String address = (String) addr.get("address");
+            String serial = (String) addr.get("serial");
+            String status = (String) addr.get("status");
+
+            System.out.printf("주소: %s, 순번: %s, 상태: %s%n", address, serial, status);
+        }
+
+
         return ResponseEntity.ok(result);
     }
 
@@ -115,13 +139,6 @@ public class PropertyController {
     @GetMapping("/selectJuso")
     public String commercialZoneMap(Model model) {
 
-        return "property/selectJuso";
-    }
-
-    @GetMapping("/test")
-    @ResponseBody
-    public String test(Model model) throws JsonProcessingException {
-        propertyService.resolveAreaFromLine("대전광역시 동구 천동 515 외 1필지 천동하늘빌딩 제1층 제103호");
         return "property/selectJuso";
     }
 

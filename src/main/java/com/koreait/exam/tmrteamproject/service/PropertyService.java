@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 
@@ -470,4 +471,32 @@ public class PropertyService {
     }
 
 
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> printNormalAddresses(Map<String, Object> result) {
+        List<Map<String, Object>> addresses =
+                (List<Map<String, Object>>) result.get("jointCollateralAddresses");
+
+        if (addresses == null) {
+            return Map.of(
+                    "ok", false,
+                    "message", "jointCollateralAddresses 없음"
+            );
+        }
+
+        // normal만 필터링
+        List<Map<String, Object>> normals = addresses.stream()
+                .filter(addr -> "normal".equalsIgnoreCase((String) addr.get("status")))
+                .toList();
+
+        // 결과 맵 반환
+        Map<String, Object> filtered = new HashMap<>();
+        filtered.put("ok", true);
+        filtered.put("normalCount", normals.size());
+        filtered.put("normalAddresses", normals);
+
+        // 로그 찍기
+        System.out.println("✅ 정상(normal) 주소 추출 = " + normals);
+
+        return filtered;
+    }
 }
