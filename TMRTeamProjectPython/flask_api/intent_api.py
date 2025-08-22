@@ -305,11 +305,20 @@ def extract_joint_collateral_addresses_follow(
         max_follow: int = 6,
 ):
     """
-    【공동담보목록】에서 '부동산에 관한 권리의 표시' 주소만 추출.
+    【공동담보목록】에서 '부동산에 관한 권리의 표시' 주소만 추출. + [집합건물] 현재주소 추가
     - 첫 페이지: 헤더(부동산/표시) 반드시 찾고 그 열만 사용
     - 이어지는 페이지: 헤더가 없어도 주소열을 '텍스트량/한글+숫자량' 스코어로 추정
     - 같은 행에 '해지/말소/기말소' 포함되면 제외
     """
+
+    # [집합건물] 뒤 주소 추출
+    def _extract_current_address(pdf):
+        for page in pdf.pages:
+            txt = page.extract_text() or ""
+            m = re.search(r"\[집합건물\]\s*(.+)", txt)
+            if m:
+                return _norm_ws(m.group(1))
+        return None
 
     def _find_header_top(page):
         txt = page.extract_text() or ""
@@ -420,6 +429,10 @@ def extract_joint_collateral_addresses_follow(
 
     pages_hit, addresses = [], []
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+
+        # 현재주소 먼저 뽑기
+        current_addr = _extract_current_address(pdf)
+
         i = 0
         while i < len(pdf.pages):
             page = pdf.pages[i]
@@ -457,7 +470,7 @@ def extract_joint_collateral_addresses_follow(
             i += 1
 
     # 여기부터는 addresses가 [ {serial, address, status}, ... ]
-    return {"pages": sorted(set(pages_hit)), "addresses": addresses}
+    return {"pages": sorted(set(pages_hit)), "addresses": addresses, "currentAddress": current_addr}
 
 
 # ============ Flask 라우트 ============
@@ -496,7 +509,8 @@ def analyze():
         ok=True,
         pageCount=len(doc),
         jointCollateralPages=joint_info["pages"],
-        jointCollateralAddresses=joint_info["addresses"]
+        jointCollateralAddresses=joint_info["addresses"],
+        jointCollateralCurrentAddress= joint_info["currentAddress"]
     ), 200
 
 
@@ -926,4 +940,4 @@ def api_crawl():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False, threaded=False)
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False, threaded=False)
