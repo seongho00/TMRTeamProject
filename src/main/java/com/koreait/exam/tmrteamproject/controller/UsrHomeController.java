@@ -50,11 +50,6 @@ public class UsrHomeController {
         return "home/main";
     }
 
-    @GetMapping("/test")
-    public String test() {
-        return "home/test";
-    }
-
     @GetMapping("/notifications")
     public String notifications() {
         return "home/notifications";

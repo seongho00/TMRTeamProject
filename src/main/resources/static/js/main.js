@@ -2,14 +2,6 @@
 let lastAlert = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    const icon = document.getElementById('notif-icon');
-
-    // 아이콘 클릭 시 알림 페이지 이동
-    if (icon) {
-        icon.addEventListener('click', () => {
-            window.location.href = '/notifications';
-        });
-    }
 
     // STOMP 연결 및 구독
     const socket = new SockJS('/ws');
@@ -26,9 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     const p = JSON.parse(frame.body); // DueAlert 구조
                     lastAlert = p;
-
-                    // TODO: 알림 뱃지 업데이트 로직 추가 가능
-                    // ex) document.getElementById("notif-badge").classList.remove("hidden");
                 } catch (e) {
                     lastAlert = { name: '일정 알림', msg: frame.body };
                 }
