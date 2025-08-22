@@ -137,11 +137,19 @@ public class PropertyController {
 
 
     @GetMapping("/selectJuso")
-    public String commercialZoneMap(Model model) {
+    public String selectJuso(Model model) {
 
         return "property/selectJuso";
     }
 
+    @GetMapping("/test")
+    @ResponseBody
+    public String test(Model model) throws JsonProcessingException {
+
+        propertyService.resolveAreaFromLine("대전광역시 동구 천동 515 외 1필지 천동하늘빌딩 제1동 제1층 제101호");
+
+        return "";
+    }
 
 }
 
