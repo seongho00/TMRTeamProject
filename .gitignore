@@ -58,4 +58,5 @@ root_*.png
 # Gradle cache (잠금파일 포함)
 .gradle/
 
-TMRTeamProjectPython/flask_api/intent_bert_model/model.safetensors
+# BERT 모델 파일 무시
+TMRTeamProjectPython/flask_api/intent_bert_model/
