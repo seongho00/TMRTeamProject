@@ -30,6 +30,7 @@ import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -167,11 +168,10 @@ public class PropertyService {
         // 1) JUSO 조회 (Map으로 받기)
         Map<String, String> j = jusoLookupAsMap(juso);
 
-
         String admCd = j.get("admCd");
         String sigunguCd = admCd.substring(0, 5);
         String bjdongCd = admCd.substring(5, 10);
-        String bun = "0515";
+        String bun = z4(j.get("lnbrMnnm"));
         String ji = z4(j.get("lnbrSlno"));
         String platGbCd = "1".equals(j.get("mtYn")) ? "1" : "0";
 
@@ -193,17 +193,46 @@ public class PropertyService {
                 "https://apis.data.go.kr/1613000/BldRgstHubService/getBrExposPubuseAreaInfo", q
         );
 
-        // 5) 면적 합산 (필드명이 'area', 'pubuseArea', 'exposPubuseArea' 등으로 올 수 있음)
-        String[] areaKeys = {"area", "pubuseArea", "exposPubuseArea"};
+        System.out.println(items);
+
+        // ✅ totalCount==0 이거나 결과 없음 → fallback 실행
+        if (items.isEmpty()) {
+            System.out.println("실행됨");
+            String[] parsed = parseBunJi(raw); // [bun, ji]
+            if (parsed != null) {
+                bun = z4(parsed[0]);
+                ji = z4(parsed[1]);
+
+                q.put("bun", bun);
+                q.put("ji", ji);
+
+                items = callBldRgst(
+                        "https://apis.data.go.kr/1613000/BldRgstHubService/getBrExposPubuseAreaInfo", q
+                );
+
+            }
+        }
+
+        // 5) 면적 합산 (필드명이 'area')
+        String[] areaKeys = {"area"};
         double sum = 0.0;
+
         for (Map<String, Object> it : items) {
-            for (String k : areaKeys) {
-                Object v = it.get(k);
-                if (v != null) {
-                    try {
-                        sum += Double.parseDouble(String.valueOf(v));
-                        break;
-                    } catch (Exception ignore) {
+            // exposPubuseGbCdNm 값 확인
+            Object gbNm = it.get("exposPubuseGbCdNm");
+            if (gbNm == null) continue;
+            String gb = String.valueOf(gbNm).trim();
+
+            // ✅ 전유인 경우만 합산
+            if ("전유".equals(gb)) {
+                for (String k : areaKeys) {
+                    Object v = it.get(k);
+                    if (v != null) {
+                        try {
+                            sum += Double.parseDouble(String.valueOf(v));
+                            break;
+                        } catch (NumberFormatException ignore) {
+                        }
                     }
                 }
             }
@@ -211,6 +240,22 @@ public class PropertyService {
 
         log.info("총 면적 합계: {}", sum);
 
+    }
+
+    private String[] parseBunJi(String addr) {
+        // "515-2" → bun=515, ji=2
+        Matcher m1 = Pattern.compile("(\\d+)-(\\d+)").matcher(addr);
+        if (m1.find()) {
+            return new String[]{m1.group(1), m1.group(2)};
+        }
+
+        // "515번지" or "515 " → bun=515, ji=0
+        Matcher m2 = Pattern.compile("(\\d+)").matcher(addr);
+        if (m2.find()) {
+            return new String[]{m2.group(1), "0"};
+        }
+
+        return null; // 못 찾으면 null
     }
 
     private String cleanup(String s) {
@@ -337,7 +382,7 @@ public class PropertyService {
         } else {
             // raw 키 → 빌더가 전체 UTF-8 인코딩
             ub.queryParam("serviceKey", UriUtils.encode(bldrgstKey, StandardCharsets.UTF_8));
-            params.forEach((k,v) -> {
+            params.forEach((k, v) -> {
                 if (v != null && !v.isBlank()) {
                     ub.queryParam(k, v);
                 }
@@ -352,15 +397,13 @@ public class PropertyService {
             headers.set("User-Agent", "Mozilla/5.0");
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
-            ResponseEntity<String> response = rest.exchange(
-                    URI.create(url),   // 이미 인코딩된 url을 URI로 고정
+            ResponseEntity<byte[]> response = rest.exchange(
+                    URI.create(url),
                     HttpMethod.GET,
                     entity,
-                    String.class
+                    byte[].class
             );
-            System.out.println(response);
-            String xml = response.getBody();
-            System.out.println(xml);
+            String xml = new String(response.getBody(), StandardCharsets.UTF_8);
 
             return parseBldRgstXml(xml);
         }
@@ -376,15 +419,15 @@ public class PropertyService {
             com.fasterxml.jackson.databind.JsonNode cmm = findCmmMsgHeader(root);
             if (cmm != null) {
                 String reason = cmm.path("returnReasonCode").asText(null);
-                String auth   = cmm.path("returnAuthMsg").asText(null);
-                String err    = cmm.path("errMsg").asText(null);
+                String auth = cmm.path("returnAuthMsg").asText(null);
+                String err = cmm.path("errMsg").asText(null);
                 throw new IllegalStateException("BldRgst 인증/요청 오류: code=" + reason + ", auth=" + auth + ", msg=" + err);
             }
 
             // 2) 정상 헤더(<response><header>)
             com.fasterxml.jackson.databind.JsonNode header = root.path("response").path("header");
             String resultCode = header.path("resultCode").asText(null);
-            String resultMsg  = header.path("resultMsg").asText(null);
+            String resultMsg = header.path("resultMsg").asText(null);
 
             if ("00".equals(resultCode)) {
                 // ok
