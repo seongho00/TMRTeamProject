@@ -2,6 +2,7 @@ package com.koreait.exam.tmrteamproject.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.koreait.exam.tmrteamproject.service.AddressService;
+import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.PropertyService;
 import com.koreait.exam.tmrteamproject.vo.AddressPickReq;
 import com.koreait.exam.tmrteamproject.vo.NormalizedAddress;
@@ -9,6 +10,7 @@ import com.koreait.exam.tmrteamproject.vo.PropertyFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Address;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -22,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -36,7 +39,7 @@ public class PropertyController {
 
     private final PropertyService propertyService;
     private final AddressService addressService;
-
+    private final KakaoOAuthService kakaoOAuthService;
 
     @GetMapping("/upload")
     public String uploadForm() {
@@ -169,16 +172,21 @@ public class PropertyController {
 
         double avgMonthlyPerM2 = addressService.calculateAverageMonthly(response);
 
-
-        System.out.println("avgMonthlyPerM2 : " + avgMonthlyPerM2);
-
         // 12) 예상 선순위보증금 계산
         // 선임차 환산보증금 + 채권금액
         // 선임차 환산보증금 : 지역 평균 월세 * 전유면적
         double seniorityTotal = avgMonthlyPerM2 * currentArea * 100 + weightedValue;
 
+        long rounded = Math.round(seniorityTotal);
 
-        System.out.println(seniorityTotal);
+        // 한국 원화 기준 포맷
+        NumberFormat formatter = NumberFormat.getCurrencyInstance(Locale.KOREA);
+        String formatted = formatter.format(rounded);
+
+        System.out.println(formatted); // → ₩17,857,978
+
+
+        // 주소를 좌표로 변환
 
         return ResponseEntity.ok(result);
     }
@@ -211,8 +219,7 @@ public class PropertyController {
     @GetMapping("/test")
     @ResponseBody
     public String test(Model model) throws JsonProcessingException {
-
-        propertyService.resolveAreaFromLine("대전광역시 동구 천동 515 외 1필지 천동하늘빌딩 제1동 제1층 제101호");
+        kakaoOAuthService.searchActualUsage(127.447033947 , 36.316349615);
 
         return "";
     }
