@@ -23,4 +23,5 @@ public class NormalizedAddress {
     private Double entX;
     private Double entY;
     private String crs;    // "EPSG:5179" 등 표기
+
 }

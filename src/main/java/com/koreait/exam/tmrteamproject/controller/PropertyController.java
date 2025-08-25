@@ -13,6 +13,7 @@ import okhttp3.Address;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -151,24 +152,22 @@ public class PropertyController {
 
         // 2) PropertyService 유틸로 전처리
         String cleaned = propertyService.cleanup(currentAddress);
-        String normalizedAddr = propertyService.simplifyToLegalLot(cleaned);
+        String normalizedCurrentAddr = propertyService.simplifyToLegalLot(cleaned);
 
         // AddressService로 검색
-        List<NormalizedAddress> list = addressService.search(normalizedAddr, 1, 5);
+        List<NormalizedAddress> list = addressService.search(normalizedCurrentAddr, 1, 5);
         System.out.println(list);
 
         Map<String, Object> response = new HashMap<>();
-        if (!list.isEmpty()) {
-            NormalizedAddress n = list.get(0);
+        NormalizedAddress n = list.get(0);
 
-            // AddressPickReq 생성
-            AddressPickReq req = new AddressPickReq();
-            req.setSelected(n);
+        // AddressPickReq 생성
+        AddressPickReq req = new AddressPickReq();
+        req.setSelected(n);
 
-            // ✅ 최종: confirm + geocode + crawl 한번에 실행
-            response = addressService.confirmGeoAndCrawl(req);
+        // ✅ 최종: confirm + geocode + crawl 한번에 실행
+        response = addressService.confirmGeoAndCrawl(req);
 
-        }
 
         double avgMonthlyPerM2 = addressService.calculateAverageMonthly(response);
         double avgDepositPerM2 = addressService.calculateAverageDeposit(response);
@@ -187,11 +186,10 @@ public class PropertyController {
 
 
         // 시세 괴리 리스크
-        int dailyRate = 123; // 사용자 입력값
+        int monthlyRent = 123; // 사용자 입력값
         int deposit = 123; // 사용자 입력값
-        double unit_rent = dailyRate / currentArea;
+        double unit_rent = monthlyRent / currentArea;
         double unit_deposit = deposit / currentArea;
-
 
         // 괴리율 계산
         double rentGapRatio = (unit_rent - avgMonthlyPerM2) / avgMonthlyPerM2;
@@ -203,6 +201,41 @@ public class PropertyController {
 
         System.out.println("rentRist : " + rentRisk);
         System.out.println("depositRisk : " + depositRisk);
+
+
+        // 13) 담보가치 계산
+        // 연 임대수익 / 임대수익률
+        // 연 임대수익 : 월세 * 12 + 보증금 * 0.02(환산율)
+        double annualRentalIncome = monthlyRent * 12 + deposit * 0.02;
+
+        List<Map<String, Object>> items = propertyService.fetchBldRgstItems(currentAddress);
+        Map<String, Object> realItem = items.get(0);
+        double totalArea = propertyService.resolveAreaFromLine(currentAddress);
+
+        String regstrGbCdNm = realItem.get("regstrGbCdNm").toString();
+        String mainPurpsCdNm = realItem.get("mainPurpsCdNm").toString();
+        System.out.println(realItem);
+
+        // 상가종류 분류
+        String buildingType = "";
+
+        if (regstrGbCdNm.equals("집합")) {
+            buildingType = "집합";
+        } else if (mainPurpsCdNm.contains("업무시설") || mainPurpsCdNm.contains("오피스텔") || mainPurpsCdNm.contains("사무소")) {
+            buildingType = "오피스";
+        } else if (totalArea < 1000 && (int) realItem.get("flrNo") <= 2) {
+            buildingType = "소규모";
+        } else {
+            buildingType = "중대형";
+        }
+
+
+        // 임대수익률 가져오기
+        double rentalYield = propertyService.getRentYield(n.siNm, buildingType, 1, 10);
+
+        // 담보가치 계산
+        double collateralValue = annualRentalIncome / rentalYield;
+
 
         return ResponseEntity.ok(result);
     }

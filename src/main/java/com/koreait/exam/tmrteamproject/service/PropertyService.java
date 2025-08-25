@@ -2,18 +2,14 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.koreait.exam.tmrteamproject.repository.PropertyFileRepository;
-import com.koreait.exam.tmrteamproject.vo.PropertyFile;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.*;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -24,15 +20,10 @@ import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 
@@ -60,8 +51,9 @@ public class PropertyService {
     private final WebClient pythonClient;
 
     private final RestTemplate rest = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();  // ✅ 추가
 
-    public String getRentYield(String region, String type, int page, int perPage) {
+    public double getRentYield(String region, String type, int page, int perPage) {
         RestTemplate restTemplate = new RestTemplate();
 
         String statblId = BuildingType.getStatblIdByName(type);
@@ -79,10 +71,23 @@ public class PropertyService {
                 .build(true)                                          // 자동 인코딩
                 .toUriString();
 
-        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
-        return response.getBody();
+        try {
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            JsonNode root = objectMapper.readTree(response.getBody());
+
+            // row[0].DTA_VAL 추출
+            JsonNode rows = root.path("SttsApiTblData").get(1).path("row");
+            if (rows.isArray() && rows.size() > 0) {
+                return rows.get(0).path("DTA_VAL").asDouble();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return -1;
     }
 
+    @Getter
     public enum RegionCode {
         SEOUL("서울", "500002"),
         BUSAN("부산", "500003"),
@@ -110,12 +115,9 @@ public class PropertyService {
             this.clsId = clsId;
         }
 
-        public String getName() { return name; }
-        public String getClsId() { return clsId; }
-
         public static String getClsIdByName(String name) {
             for (RegionCode rc : values()) {
-                if (name.contains(rc.name())) {
+                if (name.contains(rc.getName())) {
                     return rc.getClsId();
                 }
             }
@@ -123,6 +125,7 @@ public class PropertyService {
         }
     }
 
+    @Getter
     public enum BuildingType {
         SMALL_SHOP("소규모", "T246253134913401"),
         OFFICE("오피스", "T245883135037859"),
@@ -136,9 +139,6 @@ public class PropertyService {
             this.name = name;
             this.statblId = statblId;
         }
-
-        public String getName() { return name; }
-        public String getStatblId() { return statblId; }
 
         public static String getStatblIdByName(String input) {
             for (BuildingType bt : values()) {
@@ -246,6 +246,39 @@ public class PropertyService {
 
 
     public double resolveAreaFromLine(String raw) throws JsonProcessingException {
+        List<Map<String, Object>> items = fetchBldRgstItems(raw);
+
+        System.out.println(items);
+        // 5) 면적 합산 (필드명이 'area')
+        String[] areaKeys = {"area"};
+        double sum = 0.0;
+
+        for (Map<String, Object> it : items) {
+            // exposPubuseGbCdNm 값 확인
+            Object gbNm = it.get("exposPubuseGbCdNm");
+            if (gbNm == null) continue;
+            String gb = String.valueOf(gbNm).trim();
+
+            // ✅ 전유인 경우만 합산
+            if ("전유".equals(gb)) {
+                for (String k : areaKeys) {
+                    Object v = it.get(k);
+                    if (v != null) {
+                        try {
+                            sum += Double.parseDouble(String.valueOf(v));
+                            break;
+                        } catch (NumberFormatException ignore) {
+                        }
+                    }
+                }
+            }
+        }
+
+        log.info("총 면적 합계: {}", sum);
+        return sum;
+    }
+
+    public List<Map<String, Object>> fetchBldRgstItems(String raw) {
         // 1) 전처리: ‘외 n필지’, 대괄호 태그 제거, 공백 정리
         String cleaned = cleanup(raw);
 
@@ -284,7 +317,6 @@ public class PropertyService {
                 "https://apis.data.go.kr/1613000/BldRgstHubService/getBrExposPubuseAreaInfo", q
         );
 
-
         // ✅ totalCount==0 이거나 결과 없음 → fallback 실행
         if (items.isEmpty()) {
             String[] parsed = parseBunJi(raw); // [bun, ji]
@@ -301,34 +333,8 @@ public class PropertyService {
 
             }
         }
-        System.out.println(items);
-        // 5) 면적 합산 (필드명이 'area')
-        String[] areaKeys = {"area"};
-        double sum = 0.0;
 
-        for (Map<String, Object> it : items) {
-            // exposPubuseGbCdNm 값 확인
-            Object gbNm = it.get("exposPubuseGbCdNm");
-            if (gbNm == null) continue;
-            String gb = String.valueOf(gbNm).trim();
-
-            // ✅ 전유인 경우만 합산
-            if ("전유".equals(gb)) {
-                for (String k : areaKeys) {
-                    Object v = it.get(k);
-                    if (v != null) {
-                        try {
-                            sum += Double.parseDouble(String.valueOf(v));
-                            break;
-                        } catch (NumberFormatException ignore) {
-                        }
-                    }
-                }
-            }
-        }
-
-        log.info("총 면적 합계: {}", sum);
-        return sum;
+        return items;
     }
 
     public String[] parseBunJi(String addr) {
