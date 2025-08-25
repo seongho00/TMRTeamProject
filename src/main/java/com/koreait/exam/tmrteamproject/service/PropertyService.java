@@ -240,7 +240,7 @@ public class PropertyService {
         return sum;
     }
 
-    private String[] parseBunJi(String addr) {
+    public String[] parseBunJi(String addr) {
         // "515-2" → bun=515, ji=2
         Matcher m1 = Pattern.compile("(\\d+)-(\\d+)").matcher(addr);
         if (m1.find()) {
@@ -256,7 +256,7 @@ public class PropertyService {
         return null; // 못 찾으면 null
     }
 
-    private String cleanup(String s) {
+    public String cleanup(String s) {
         String x = s;
         x = x.replaceAll("【.*?】", "");
         x = x.replaceAll("\\[.*?\\]", "");
@@ -286,7 +286,7 @@ public class PropertyService {
         return String.format("%04d", Integer.parseInt(t));
     }
 
-    private String simplifyToLegalLot(String s) {
+    public String simplifyToLegalLot(String s) {
         // "대전광역시 동구 천동 515 ..." → "대전광역시 동구 천동 515"
         var m = Pattern.compile("(.+?\\s[가-힣]+동)\\s(\\d+)(?:-\\d+)?").matcher(s);
         if (m.find()) return m.group(1) + " " + m.group(2);

@@ -1,10 +1,14 @@
 package com.koreait.exam.tmrteamproject.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.koreait.exam.tmrteamproject.service.AddressService;
 import com.koreait.exam.tmrteamproject.service.PropertyService;
+import com.koreait.exam.tmrteamproject.vo.AddressPickReq;
+import com.koreait.exam.tmrteamproject.vo.NormalizedAddress;
 import com.koreait.exam.tmrteamproject.vo.PropertyFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Address;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -31,6 +35,7 @@ import java.util.stream.Collectors;
 public class PropertyController {
 
     private final PropertyService propertyService;
+    private final AddressService addressService;
 
 
     @GetMapping("/upload")
@@ -138,8 +143,45 @@ public class PropertyController {
         Long weightedValue = Math.round(sumAmountKRW * areaWeight);
 
         // 11) 평균월세 가져오기
-        
-        System.out.println(weightedValue);
+        // 현재 주소 가져오기
+        String currentAddress = (String) result.get("jointCollateralCurrentAddress");
+
+        // 2) PropertyService 유틸로 전처리
+        String cleaned = propertyService.cleanup(currentAddress);
+        String normalizedAddr = propertyService.simplifyToLegalLot(cleaned);
+
+        // AddressService로 검색
+        List<NormalizedAddress> list = addressService.search(normalizedAddr, 1, 5);
+        System.out.println(list);
+
+        Map<String, Object> response = new HashMap<>();
+        if (!list.isEmpty()) {
+            NormalizedAddress n = list.get(0);
+
+            // AddressPickReq 생성
+            AddressPickReq req = new AddressPickReq();
+            req.setSelected(n);
+
+            // ✅ 최종: confirm + geocode + crawl 한번에 실행
+            response = addressService.confirmGeoAndCrawl(req);
+
+        }
+
+        addressService.calculateAverageMonthly(response);
+
+        response.get("address");
+
+
+
+        Long avgMonthlyPerM2 = 123L;
+
+        // 12) 예상 선순위보증금 계산
+        // 선임차 환산보증금 + 채권금액
+        // 선임차 환산보증금 : 지역 평균 월세 * 전유면적
+        double seniorityTotal = avgMonthlyPerM2 * currentArea + weightedValue;
+
+
+        System.out.println(seniorityTotal);
 
         return ResponseEntity.ok(result);
     }
