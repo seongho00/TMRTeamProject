@@ -354,4 +354,41 @@ public class AddressService {
     }
 
 
+    @SuppressWarnings("unchecked")
+    public double calculateAverageDeposit(Map<String, Object> response) {
+        Map<String, Object> crawl = (Map<String, Object>) response.get("crawl");
+        if (crawl == null) return 0;
+
+        List<Map<String, Object>> items = (List<Map<String, Object>>) crawl.get("items");
+        if (items == null || items.isEmpty()) return 0;
+
+        double totalDeposit = 0;
+        double totalArea = 0;
+
+        for (Map<String, Object> item : items) {
+            Map<String, Object> dom = (Map<String, Object>) item.get("dom");
+            if (dom == null) continue;
+
+            // "월세"만 대상으로
+            String priceType = (String) dom.get("price_type");
+            if (!"월세".equals(priceType)) continue;
+
+            // 월세
+            Object depositObj = dom.get("deposit");
+            if (depositObj == null) continue;
+            double deposit = Double.parseDouble(depositObj.toString());
+
+            // 관리비 포함
+//            monthly += parseManagementFee(dom.get("관리비"));
+
+            // 전용면적 파싱 (예: "45.87㎡/30.94㎡(전용률67%)")
+            double area = parseArea(dom.get("전용면적"));
+            if (area <= 0) continue;
+
+            totalDeposit += (deposit * area);
+            totalArea += area;
+        }
+
+        return totalArea > 0 ? totalDeposit / totalArea : 0;
+    }
 }

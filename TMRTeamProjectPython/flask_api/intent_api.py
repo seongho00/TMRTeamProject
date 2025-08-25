@@ -571,7 +571,55 @@ def extract_joint_collateral_addresses_follow(
     # 여기부터는 addresses가 [ {serial, address, status}, ... ]
     return {"pages": sorted(set(pages_hit)), "addresses": addresses, "currentAddress": current_addr}
 
+_OWNER_CHANGE_RX = re.compile(r"소유권.*이전")
+_CO_OWNER_RX     = re.compile(r"공유")
 
+# 갑구 분석
+def extract_gabu_info(pdf_bytes: bytes):
+    """
+    【갑구】에서 소유권 변경 이력, 공동소유 여부 추출
+    반환:
+    {
+        "ownerChangeCount": int,
+        "ownerChangeDetails": [ ... ],
+        "coOwners": bool
+    }
+    """
+    title_rx = re.compile(r"【\s*갑\s*구\s*】")
+    owner_changes = []
+    co_owners = False
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for page in pdf.pages:
+            txt = page.extract_text() or ""
+            if not title_rx.search(txt):
+                continue
+
+            tables = page.extract_tables() or []
+            for tb in tables:
+                if not tb:
+                    continue
+
+                for row in tb:
+                    cells = [(_one_line(c) if c else "") for c in (row or [])]
+                    if not cells:
+                        continue
+                    purpose = cells[1] if len(cells) > 1 else ""   # 등기목적
+                    right_holder = cells[2] if len(cells) > 2 else ""  # 권리자/기타사항
+
+                    # 소유권 이전 탐지
+                    if _OWNER_CHANGE_RX.search(purpose):
+                        owner_changes.append(purpose)
+
+                    # 공유자 여부 탐지
+                    if _CO_OWNER_RX.search(right_holder):
+                        co_owners = True
+
+    return {
+        "ownerChangeCount": len(owner_changes),
+        "ownerChangeDetails": owner_changes,
+        "coOwners": co_owners
+    }
 # ============ Flask 라우트 ============
 @app.route("/analyze", methods=["POST"])
 def analyze():
@@ -599,6 +647,7 @@ def analyze():
     try:
         joint_info = extract_joint_collateral_addresses_follow(data)
         mortgage_info = extract_mortgage_info(data)
+        gabu_info = extract_gabu_info(data)
     except Exception as e:
         import traceback;
         traceback.print_exc()
@@ -612,6 +661,7 @@ def analyze():
         jointCollateralCurrentAddress= joint_info["currentAddress"],
         mortgageInfo = mortgage_info["mortgages"],
         mortgageRiskFlags=mortgage_info["riskFlags"],  # 가압류/압류/가처분
+        gabuInfo=gabu_info
     ), 200
 
 
