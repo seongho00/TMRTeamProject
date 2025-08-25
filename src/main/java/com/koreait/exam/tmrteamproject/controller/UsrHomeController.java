@@ -14,6 +14,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,8 +31,10 @@ public class UsrHomeController {
     @GetMapping("/main")
     public String homeMain(@AuthenticationPrincipal MemberContext memberContext, Model model) {
 
-        // 화면 리스트용: 관심일정 전체
-        List<LhSupplySchedule> lhSupplySchedules = new ArrayList<>();
+        List<LhSupplySchedule> nowLhSupplySchedules = new ArrayList<>();
+        List<LhSupplySchedule> yesterdayLhSupplySchedules = new ArrayList<>();
+        List<LhSupplySchedule> lastLhSupplySchedules = new ArrayList<>();
+        LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
         if (memberContext != null) {
             Member loginedMember = memberContext.getMember(); // 로그인된 member
@@ -38,21 +42,34 @@ public class UsrHomeController {
             if (loginedMember != null) {
                 List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginedMember.getId());
 
+                // 날짜 설정 다시 고치기
                 for (ScheduleInterest scheduleInterest : scheduleInterests) {
-                    lhSupplySchedules.add(lhSupplyScheduleService.findById(scheduleInterest.getScheduleId()));
+                    LhSupplySchedule schedule = lhSupplyScheduleService.findById(scheduleInterest.getScheduleId());
+
+                    LocalDate startDate = schedule.getApplyStart().toLocalDate();
+
+                    if(startDate.isBefore(now)) {
+                        lastLhSupplySchedules.add(schedule);
+                    } else {
+                        nowLhSupplySchedules.add(schedule);
+                    }
                 }
             }
         }
 
-        // 모델 바인딩
-        model.addAttribute("lhSupplySchedules", lhSupplySchedules);
+        model.addAttribute("nowLhSupplySchedules", nowLhSupplySchedules);
+        model.addAttribute("yesterdayLhSupplySchedules", yesterdayLhSupplySchedules);
+        model.addAttribute("lastLhSupplySchedules", lastLhSupplySchedules);
         return "home/main";
     }
 
     @GetMapping("/notifications")
     public String notifications(@AuthenticationPrincipal MemberContext memberContext, Model model) {
 
-        List<LhSupplySchedule> lhSupplySchedules = new ArrayList<>();
+        List<LhSupplySchedule> nowLhSupplySchedules = new ArrayList<>();
+        List<LhSupplySchedule> yesterdayLhSupplySchedules = new ArrayList<>();
+        List<LhSupplySchedule> lastLhSupplySchedules = new ArrayList<>();
+        LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
         if (memberContext != null) {
             Member loginedMember = memberContext.getMember(); // 로그인된 member
@@ -60,14 +77,24 @@ public class UsrHomeController {
             if (loginedMember != null) {
                 List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginedMember.getId());
 
+                // 날짜 설정 다시 고치기
                 for (ScheduleInterest scheduleInterest : scheduleInterests) {
-                    lhSupplySchedules.add(lhSupplyScheduleService.findById(scheduleInterest.getScheduleId()));
+                    LhSupplySchedule schedule = lhSupplyScheduleService.findById(scheduleInterest.getScheduleId());
+
+                    LocalDate startDate = schedule.getApplyStart().toLocalDate();
+
+                    if(startDate.isBefore(now)) {
+                        lastLhSupplySchedules.add(schedule);
+                    } else {
+                        nowLhSupplySchedules.add(schedule);
+                    }
                 }
             }
         }
 
-        System.out.println(lhSupplySchedules);
-        model.addAttribute("lhSupplySchedules", lhSupplySchedules);
+        model.addAttribute("nowLhSupplySchedules", nowLhSupplySchedules);
+        model.addAttribute("yesterdayLhSupplySchedules", yesterdayLhSupplySchedules);
+        model.addAttribute("lastLhSupplySchedules", lastLhSupplySchedules);
         return "home/notifications";
     }
 }

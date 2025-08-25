@@ -123,7 +123,7 @@ public class SecurityConfig {
             if (saved != null) {
                 response.sendRedirect(saved.getRedirectUrl());
             } else {
-                response.sendRedirect("/usr/home/main?showInterest=1");
+                response.sendRedirect("/usr/home/main");
             }
         };
     }
