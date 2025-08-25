@@ -244,7 +244,7 @@ public class PropertyController {
     @GetMapping("/test")
     @ResponseBody
     public String test(Model model) throws JsonProcessingException {
-        kakaoOAuthService.searchActualUsage(127.447033947, 36.316349615);
+        System.out.println(propertyService.getRentYield("대전광역시", "소규모상가", 1, 10));
 
         return "";
     }
