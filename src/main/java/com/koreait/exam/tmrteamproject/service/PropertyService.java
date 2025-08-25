@@ -210,7 +210,7 @@ public class PropertyService {
 
             }
         }
-
+        System.out.println(items);
         // 5) 면적 합산 (필드명이 'area')
         String[] areaKeys = {"area"};
         double sum = 0.0;

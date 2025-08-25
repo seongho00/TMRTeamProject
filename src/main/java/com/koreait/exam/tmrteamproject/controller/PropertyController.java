@@ -171,7 +171,7 @@ public class PropertyController {
         }
 
         double avgMonthlyPerM2 = addressService.calculateAverageMonthly(response);
-
+        double avgDepositPerM2 = addressService.calculateAverageDeposit(response);
         // 12) 예상 선순위보증금 계산
         // 선임차 환산보증금 + 채권금액
         // 선임차 환산보증금 : 지역 평균 월세 * 전유면적
@@ -186,9 +186,34 @@ public class PropertyController {
         System.out.println(formatted); // → ₩17,857,978
 
 
-        // 주소를 좌표로 변환
+        // 시세 괴리 리스크
+        int dailyRate = 123; // 사용자 입력값
+        int deposit = 123; // 사용자 입력값
+        double unit_rent = dailyRate / currentArea;
+        double unit_deposit = deposit / currentArea;
+
+
+        // 괴리율 계산
+        double rentGapRatio = (unit_rent - avgMonthlyPerM2) / avgMonthlyPerM2;
+        double depositGapRatio = (unit_deposit - avgDepositPerM2) / avgDepositPerM2;
+
+        // 4. 리스크 레벨
+        String rentRisk = getRiskLevel(rentGapRatio);
+        String depositRisk = getRiskLevel(depositGapRatio);
+
+        System.out.println("rentRist : " + rentRisk);
+        System.out.println("depositRisk : " + depositRisk);
 
         return ResponseEntity.ok(result);
+    }
+
+    // 리스크 등급 계산
+    public static String getRiskLevel(double gapRatio) {
+        double absGap = Math.abs(gapRatio);
+        if (absGap <= 0.1) return "정상";      // ±10% 이내
+        else if (absGap <= 0.2) return "주의"; // ±20% 이내
+        else if (absGap <= 0.3) return "위험"; // ±30% 이내
+        else return "고위험";
     }
 
     private boolean isPdfByHeader(MultipartFile f) {
@@ -219,7 +244,7 @@ public class PropertyController {
     @GetMapping("/test")
     @ResponseBody
     public String test(Model model) throws JsonProcessingException {
-        kakaoOAuthService.searchActualUsage(127.447033947 , 36.316349615);
+        kakaoOAuthService.searchActualUsage(127.447033947, 36.316349615);
 
         return "";
     }
