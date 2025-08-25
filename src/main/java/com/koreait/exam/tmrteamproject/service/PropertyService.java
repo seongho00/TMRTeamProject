@@ -50,6 +50,9 @@ public class PropertyService {
     @Value("${address.confmKey}")
     private String jusoKey;
 
+    @Value("${rOne.apiKey}")
+    private String rOneApiKey;
+
 
     // ✅ PDF만 허용
     private static final Set<String> ALLOWED = Set.of(MediaType.APPLICATION_PDF_VALUE);
@@ -58,6 +61,24 @@ public class PropertyService {
 
     private final RestTemplate rest = new RestTemplate();
 
+    public String getRentYield(String region, String type, int page, int perPage) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        // URL 생성
+        String url = UriComponentsBuilder
+                .fromHttpUrl("https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do")
+                .queryParam("STATBL_ID", "T246253134913401")             // 통계표 ID (예시)
+                .queryParam("DTACYCLE_CD", "YY")                      // 주기: 매년
+                .queryParam("WRTTIME_IDTFR_ID", "2024")              // 년도 구분
+                .queryParam("Type", "json")                          // 응답 타입
+                .queryParam("ITM_ID", "100002")
+                .queryParam("CLS_ID", "500007")
+                .build(true)                                          // 자동 인코딩
+                .toUriString();
+
+        ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+        return response.getBody();
+    }
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> analyzeWithPythonDirect(List<MultipartFile> files, Map<String, String> extra) {
@@ -558,4 +579,6 @@ public class PropertyService {
 
         return filtered;
     }
+
+
 }

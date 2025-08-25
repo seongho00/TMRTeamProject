@@ -69,3 +69,7 @@ bldrgst:
   apiKey: CtMWbR+mYCIwYQmPYdFuMiP4LsJ6aVV3CcbyZUXI5bGiblyS1OilOVAYopA9VxwIcRyQ7pT/ADS7FzuMVs3uEw==
   apiKeyEncoded: false  # ← 인코딩된 키를 쓴다는 표시
 
+# R-ONE API
+rOne:
+  apiKey: 11ff00dfd57d4af28c5d3c16ed576fc1
+
