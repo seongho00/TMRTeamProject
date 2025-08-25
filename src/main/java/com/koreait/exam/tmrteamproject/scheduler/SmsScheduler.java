@@ -27,7 +27,7 @@ public class SmsScheduler {
     private final ScheduleInterestRepository scheduleInterestRepository;
     private final MemberRepository memberRepository;
 
-    @Scheduled(cron = "0 0 11 * * *") // 시간설정
+    @Scheduled(cron = "0 0 10 * * *") // 시간설정
     public void checkAndSendSms() {
         LocalDate today = LocalDate.now();
 
