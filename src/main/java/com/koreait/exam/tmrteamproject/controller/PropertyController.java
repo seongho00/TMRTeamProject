@@ -176,13 +176,13 @@ public class PropertyController {
         // 선임차 환산보증금 : 지역 평균 월세 * 전유면적
         double seniorityTotal = avgMonthlyPerM2 * currentArea * 100 + weightedValue;
 
-        long rounded = Math.round(seniorityTotal);
+        long seniorityTotalRounded = Math.round(seniorityTotal);
 
         // 한국 원화 기준 포맷
         NumberFormat formatter = NumberFormat.getCurrencyInstance(Locale.KOREA);
-        String formatted = formatter.format(rounded);
+        String seniorityTotalFormatted = formatter.format(seniorityTotalRounded);
 
-        System.out.println(formatted); // → ₩17,857,978
+        System.out.println(seniorityTotalFormatted); // → ₩17,857,978
 
 
         // 시세 괴리 리스크
@@ -236,6 +236,20 @@ public class PropertyController {
         // 담보가치 계산
         double collateralValue = annualRentalIncome / rentalYield;
 
+        // 14) 채권보증금 리스크 계산
+        // 채권 최고액 + 예산 선순위보증금 금액 / 담보가치
+        double riskRatio = (sumAmountKRW + seniorityTotalRounded) / collateralValue;
+
+        System.out.println("riskRatio : " + riskRatio);
+
+        // 15) 근저당권 기반 위험
+        // 채권최고액 / 담보가치
+        // < 0.5 : 양호
+        // 0.5~ 1.0 : 경계
+        // >= 1.0 : 깡통매물
+        double debtRatio  = sumAmountKRW / collateralValue;
+
+        System.out.println("근저당권 기반 위험 : " + debtRatio);
 
         return ResponseEntity.ok(result);
     }
