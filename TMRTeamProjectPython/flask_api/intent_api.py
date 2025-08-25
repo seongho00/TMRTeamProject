@@ -309,6 +309,8 @@ _CANCEL_TARGET_RX = re.compile(r"(\d+)\s*번")
 # 취소 대상 번호들: "제1번", "1번", "1,2번", "1번·2번" 등에서 모두 추출
 _RANK_LIST_RX = re.compile(r"(?:제?\s*)(\d+)\s*번")
 
+_RISK_FLAG_RX = re.compile(r"(가압류|가처분|압류)")
+
 def _one_line(s: str) -> str:
     return _WS.sub(" ", (s or "").strip())
 
@@ -331,6 +333,7 @@ def extract_mortgage_info(pdf_bytes: bytes):
 
     mortgages_by_rank = {}   # rankNo -> {"rankNo", "amountKRW", "status"}
     cancel_ranks = set()     # 말소/해지로 지목된 순위번호들
+    risks = []
 
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for page in pdf.pages:
@@ -381,14 +384,22 @@ def extract_mortgage_info(pdf_bytes: bytes):
                                 "status": "normal",
                             }
 
+                    if _RISK_FLAG_RX.search(purpose):
+                        risks.append({
+                            "rankNo": int(rank_raw) if rank_raw.isdigit() else None,
+                            "purpose": purpose
+                        })
+
     # 말소 대상 순위를 취소 처리
     for r in cancel_ranks:
         if r in mortgages_by_rank:
             mortgages_by_rank[r]["status"] = "cancelled"
 
     # 설정행만 정렬해서 반환
-    return sorted(mortgages_by_rank.values(), key=lambda x: x["rankNo"])
-
+    return {
+        "mortgages": sorted(mortgages_by_rank.values(), key=lambda x: x["rankNo"]),
+        "riskFlags": risks
+    }
 def extract_joint_collateral_addresses_follow(
         pdf_bytes: bytes,
         must_have_bracket: bool = True,
@@ -599,7 +610,8 @@ def analyze():
         jointCollateralPages=joint_info["pages"],
         jointCollateralAddresses=joint_info["addresses"],
         jointCollateralCurrentAddress= joint_info["currentAddress"],
-        mortgageInfo = mortgage_info
+        mortgageInfo = mortgage_info["mortgages"],
+        mortgageRiskFlags=mortgage_info["riskFlags"],  # 가압류/압류/가처분
     ), 200
 
 

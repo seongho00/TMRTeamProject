@@ -273,10 +273,10 @@ public class AddressService {
         NormalizedAddress n = confirm(req);
         try {
             n = geocodeByVWorld(n);
+            System.out.println("n의 값 : " + n);
         } catch (Exception e) {
             log.warn("Geocoding failed for {}: {}", n.getAddressKey(), e.getMessage());
         }
-
         Map<String, Object> crawl = Map.of("ok", false, "error", "skip", "message", "no geocode");
         if (n.getLat() != null && n.getLon() != null) {
             // 필요 시 radius/category/limit 을 파라미터로 받을 수도 있음. 일단 기본값으로 호출
@@ -352,5 +352,6 @@ public class AddressService {
             return 0;
         }
     }
+
 
 }
