@@ -429,18 +429,17 @@ conn = pymysql.connect(
 )
 cursor = conn.cursor()
 
+# update_date 제거! 체크 확인 바람
 UPSERT_SQL = """
-             INSERT INTO lh_supply_schedule
-             (name, apply_start, apply_end, result_time, contract_start, contract_end)
-             VALUES (%s, %s, %s, %s, %s, %s)
-                 ON DUPLICATE KEY UPDATE
-                                      apply_end=VALUES(apply_end),
-                                      result_time=VALUES(result_time),
-                                      contract_start=VALUES(contract_start),
-                                      contract_end=VALUES(contract_end),
-                                      update_date=CURRENT_TIMESTAMP \
+                INSERT INTO lh_supply_schedule
+                (name, apply_start, apply_end, result_time, contract_start, contract_end)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                apply_end=VALUES(apply_end),
+                result_time=VALUES(result_time),
+                contract_start=VALUES(contract_start),
+                contract_end=VALUES(contract_end)
              """
-
 
 def save_schedule(name, parsed):
     cursor.execute(UPSERT_SQL, (

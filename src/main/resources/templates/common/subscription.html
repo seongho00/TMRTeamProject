@@ -26,38 +26,51 @@
             <!-- 날짜 구분선 -->
             <div class="relative flex items-center my-2">
                 <div class="flex-1 h-px bg-gray-200"></div>
-                <div class="px-3 text-xs text-gray-500">오늘</div>
+                <div class="px-3 text-xs text-gray-500"
+                     th:text="|오늘 ${#temporals.format(T(java.time.LocalDateTime).now(), 'yy년 MM월 dd일 (E)', T(java.util.Locale).KOREAN)}|">
+                </div>
                 <div class="flex-1 h-px bg-gray-200"></div>
             </div>
 
-            <!-- 알림 카드(축약형) -->
-            <article class="bg-white rounded-2xl shadow-sm border border-gray-100">
-                <div class="flex items-start gap-3 p-4">
-                    <div class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600">
-                        <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current"><path d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v4H3V5a1 1 0 0 1 1-1h3V2zm14 8v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9h18zM7 14h4v4H7v-4z"/></svg>
-                    </div>
-                    <div class="flex-1">
-                        <div class="text-[12px] text-gray-500">(설명)</div>
-                        <h4 class="mt-0.5 text-[14px] font-semibold leading-snug">제목</h4>
-                        <p class="mt-1 text-[13px] text-gray-600 line-clamp-2">내용</p>
-                        <button class="mt-2 text-[12px] text-gray-700 font-semibold flex items-center gap-1 more-btn">
-                            더보기
-                            <svg width="14" height="14" viewBox="0 0 24 24" class="fill-current"><path d="M7 10l5 5 5-5z"/></svg>
-                        </button>
-                        <div class="hidden mt-2 text-[13px] text-gray-600 leading-relaxed more-panel">
-                            상세 내용이 들어갈 영역. 외부 링크나 버튼 배치 가능.
+            <!-- 알림 목록 -->
+            <div class="max-h-[460px] overflow-auto bg-[#f7f8fa] px-3 py-3">
+                <div class="space-y-4">
+
+                    <!-- 관심일정 반복 -->
+                    <article th:each="schedule : ${lhSupplySchedules}"
+                             class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                        <div class="flex items-start gap-3 p-4">
+                            <div class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600">
+                                <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current">
+                                    <path d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v4H3V5a1 1 0 0 1 1-1h3V2zm14 8v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9h18zM7 14h4v4H7v-4z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-[12px] text-gray-500">관심 일정</div>
+                                <h4 class="mt-0.5 text-[14px] font-semibold leading-snug"
+                                    th:text="${schedule.name}">일정 제목</h4>
+                                <p class="mt-1 text-[13px] text-gray-600"
+                                   th:text="|신청 기간: ${#temporals.format(schedule.applyStart, 'yyyy년 MM월 dd일')} ~ ${#temporals.format(schedule.applyEnd, 'yyyy년 MM월 dd일')}|">
+                                    기간
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="self-center text-gray-300">
-                        <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current"><path d="M9 6l6 6-6 6"/></svg>
-                    </div>
+                    </article>
+
+                    <!-- 관심일정이 없을 때 -->
+                    <p th:if="${#lists.isEmpty(lhSupplySchedules)}"
+                       class="text-center text-gray-500 py-4">
+                        관심 등록된 일정이 없습니다.
+                    </p>
                 </div>
-            </article>
+            </div>
 
             <!-- 이전 날짜 예시 -->
             <div class="relative flex items-center my-3">
                 <div class="flex-1 h-px bg-gray-200"></div>
-                <div class="px-3 text-xs text-gray-500">어제</div>
+                <div class="px-3 text-xs text-gray-500"
+                     th:text="|어제 ${#temporals.format(T(java.time.LocalDateTime).now().minusDays(1), 'yy년 MM월 dd일 (E)', T(java.util.Locale).KOREAN)}|">
+                </div>
                 <div class="flex-1 h-px bg-gray-200"></div>
             </div>
 

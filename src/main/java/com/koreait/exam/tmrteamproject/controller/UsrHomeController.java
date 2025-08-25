@@ -28,27 +28,46 @@ public class UsrHomeController {
 
     @GetMapping("/main")
     public String homeMain(@AuthenticationPrincipal MemberContext memberContext, Model model) {
-        Member loginMember = null;
+
+        // 화면 리스트용: 관심일정 전체
         List<LhSupplySchedule> lhSupplySchedules = new ArrayList<>();
+
         if (memberContext != null) {
-            loginMember = memberContext.getMember();
-        }
+            Member loginedMember = memberContext.getMember(); // 로그인된 member
 
-        if (loginMember != null) {
-            List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginMember.getId());
+            if (loginedMember != null) {
+                List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginedMember.getId());
 
-            for (ScheduleInterest scheduleInterest : scheduleInterests) {
-                lhSupplySchedules.add(lhSupplyScheduleService.findById(scheduleInterest.getScheduleId()));
+                for (ScheduleInterest scheduleInterest : scheduleInterests) {
+                    lhSupplySchedules.add(lhSupplyScheduleService.findById(scheduleInterest.getScheduleId()));
+                }
             }
         }
 
-        System.out.println(lhSupplySchedules);
+        // 모델 바인딩
         model.addAttribute("lhSupplySchedules", lhSupplySchedules);
         return "home/main";
     }
 
     @GetMapping("/notifications")
-    public String notifications() {
+    public String notifications(@AuthenticationPrincipal MemberContext memberContext, Model model) {
+
+        List<LhSupplySchedule> lhSupplySchedules = new ArrayList<>();
+
+        if (memberContext != null) {
+            Member loginedMember = memberContext.getMember(); // 로그인된 member
+
+            if (loginedMember != null) {
+                List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginedMember.getId());
+
+                for (ScheduleInterest scheduleInterest : scheduleInterests) {
+                    lhSupplySchedules.add(lhSupplyScheduleService.findById(scheduleInterest.getScheduleId()));
+                }
+            }
+        }
+
+        System.out.println(lhSupplySchedules);
+        model.addAttribute("lhSupplySchedules", lhSupplySchedules);
         return "home/notifications";
     }
 }
