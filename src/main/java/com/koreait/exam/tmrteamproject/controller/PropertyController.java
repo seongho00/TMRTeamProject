@@ -53,9 +53,15 @@ public class PropertyController {
     public ResponseEntity<?> handleUpload(
             @RequestPart(value = "file", required = false) MultipartFile file,
             @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @RequestParam("deposit") int deposit,
+            @RequestParam("monthlyRent") int monthlyRent,
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng
     ) throws JsonProcessingException {
+        // 0) (만원)으로 들어온 데이터 10,000 곱해주기
+        deposit *= 10000;
+        monthlyRent *= 10000;
+        
         // 1) 들어온 파일 모으기 (file 또는 files)
         List<MultipartFile> all = new ArrayList<>();
         if (file != null && !file.isEmpty()) all.add(file);
@@ -186,8 +192,6 @@ public class PropertyController {
 
 
         // 시세 괴리 리스크
-        int monthlyRent = 123; // 사용자 입력값
-        int deposit = 123; // 사용자 입력값
         double unit_rent = monthlyRent / currentArea;
         double unit_deposit = deposit / currentArea;
 
