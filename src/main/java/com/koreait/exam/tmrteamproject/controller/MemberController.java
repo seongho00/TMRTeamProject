@@ -113,7 +113,7 @@ public class MemberController {
         Authentication auth = new UsernamePasswordAuthenticationToken(memberContext, null, memberContext.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
-        return "redirect:../home/main?showInterest=1";
+        return "redirect:../home/main";
     }
 
     @GetMapping("/loginNaver")
