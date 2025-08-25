@@ -167,18 +167,15 @@ public class PropertyController {
 
         }
 
-        addressService.calculateAverageMonthly(response);
-
-        response.get("address");
+        double avgMonthlyPerM2 = addressService.calculateAverageMonthly(response);
 
 
-
-        Long avgMonthlyPerM2 = 123L;
+        System.out.println("avgMonthlyPerM2 : " + avgMonthlyPerM2);
 
         // 12) 예상 선순위보증금 계산
         // 선임차 환산보증금 + 채권금액
         // 선임차 환산보증금 : 지역 평균 월세 * 전유면적
-        double seniorityTotal = avgMonthlyPerM2 * currentArea + weightedValue;
+        double seniorityTotal = avgMonthlyPerM2 * currentArea * 100 + weightedValue;
 
 
         System.out.println(seniorityTotal);
