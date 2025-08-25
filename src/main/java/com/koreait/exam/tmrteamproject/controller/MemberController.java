@@ -55,11 +55,9 @@ public class MemberController {
         return "member/joinAndLogin";
     }
 
-
     @PostMapping("/createAccount")
     @ResponseBody
     public String createAccount(String name, String loginPw, String email, String phoneNum) {
-
 
         // 겹치는 이메일 있는지 확인
         ResultData checkDupMemberRd = memberService.checkDupMemberByEmail(email);
@@ -115,13 +113,11 @@ public class MemberController {
         Authentication auth = new UsernamePasswordAuthenticationToken(memberContext, null, memberContext.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
-        return "redirect:../home/main";
+        return "redirect:../home/main?showInterest=1";
     }
-
 
     @GetMapping("/loginNaver")
     public String loginNaver() {
-
 
         String redirectURI = "http://localhost:8080/usr/member/naverCallback";
         SecureRandom random = new SecureRandom();
