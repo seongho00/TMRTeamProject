@@ -64,20 +64,90 @@ public class PropertyService {
     public String getRentYield(String region, String type, int page, int perPage) {
         RestTemplate restTemplate = new RestTemplate();
 
+        String statblId = BuildingType.getStatblIdByName(type);
+        String clsId = RegionCode.getClsIdByName(region);
+
         // URL 생성
         String url = UriComponentsBuilder
                 .fromHttpUrl("https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do")
-                .queryParam("STATBL_ID", "T246253134913401")             // 통계표 ID (예시)
+                .queryParam("STATBL_ID", statblId)             // 통계표 ID (예시)
                 .queryParam("DTACYCLE_CD", "YY")                      // 주기: 매년
                 .queryParam("WRTTIME_IDTFR_ID", "2024")              // 년도 구분
                 .queryParam("Type", "json")                          // 응답 타입
-                .queryParam("ITM_ID", "100002")
-                .queryParam("CLS_ID", "500007")
+                .queryParam("ITM_ID", "100002")                   // 소득수익률
+                .queryParam("CLS_ID", clsId)                 // 지역코드
                 .build(true)                                          // 자동 인코딩
                 .toUriString();
 
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
         return response.getBody();
+    }
+
+    public enum RegionCode {
+        SEOUL("서울", "500002"),
+        BUSAN("부산", "500003"),
+        DAEGU("대구", "500004"),
+        INCHEON("인천", "500005"),
+        GWANGJU("광주", "500006"),
+        DAEJEON("대전", "500007"),
+        ULSAN("울산", "500008"),
+        SEJONG("세종", "500009"),
+        GYEONGGI("경기", "500010"),
+        GANGWON("강원", "500011"),
+        CHUNGBUK("충북", "500012"),
+        CHUNGNAM("충남", "500013"),
+        JEONBUK("전북", "500014"),
+        JEONNAM("전남", "500015"),
+        GYEONGBUK("경북", "500016"),
+        GYEONGNAM("경남", "500017"),
+        JEJU("제주", "500018");
+
+        private final String name;
+        private final String clsId;
+
+        RegionCode(String name, String clsId) {
+            this.name = name;
+            this.clsId = clsId;
+        }
+
+        public String getName() { return name; }
+        public String getClsId() { return clsId; }
+
+        public static String getClsIdByName(String name) {
+            for (RegionCode rc : values()) {
+                if (name.contains(rc.name())) {
+                    return rc.getClsId();
+                }
+            }
+            throw new IllegalArgumentException("지역명을 찾을 수 없습니다: " + name);
+        }
+    }
+
+    public enum BuildingType {
+        SMALL_SHOP("소규모", "T246253134913401"),
+        OFFICE("오피스", "T245883135037859"),
+        LARGE_SHOP("중대형", "T242083134887473"),
+        COMPLEX_SHOP("집합", "T246393134978815");
+
+        private final String name;
+        private final String statblId;
+
+        BuildingType(String name, String statblId) {
+            this.name = name;
+            this.statblId = statblId;
+        }
+
+        public String getName() { return name; }
+        public String getStatblId() { return statblId; }
+
+        public static String getStatblIdByName(String input) {
+            for (BuildingType bt : values()) {
+                if (input.contains(bt.getName())) {  // contains 매칭
+                    return bt.getStatblId();
+                }
+            }
+            throw new IllegalArgumentException("상가 유형을 찾을 수 없습니다: " + input);
+        }
     }
 
     @SuppressWarnings("unchecked")
