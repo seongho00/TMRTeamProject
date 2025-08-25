@@ -27,6 +27,19 @@
     <p class="text-xs text-gray-400 mt-2">허용 형식: PDF (최대 20MB)</p>
 </div>
 
+<!-- 보증금, 월세 데이터 받기 -->
+<div class="mt-4">
+    <label class="block text-sm font-medium text-gray-700">보증금 (만원)</label>
+    <input id="deposit" type="number" name="deposit" min="0"
+           class="mt-1 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
+</div>
+
+<div class="mt-4">
+    <label class="block text-sm font-medium text-gray-700">월세 (만원)</label>
+    <input id="monthlyRent" type="number" name="monthlyRent" min="0"
+           class="mt-1 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
+</div>
+
 <!-- 미리보기 -->
 <div id="thumbs" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6"></div>
 
@@ -97,6 +110,13 @@
         resp.textContent = "업로드 중...";
         const form = new FormData();
         form.append("file", selectedFile);
+
+        // 사용자 입력값 추가
+        const deposit = document.getElementById("deposit").value || 0;
+        const monthlyRent = document.getElementById("monthlyRent").value || 0;
+        form.append("deposit", deposit);
+        form.append("monthlyRent", monthlyRent);
+
 
         try {
             const r = await fetch("/usr/property/upload", { method: "POST", body: form });
