@@ -26,6 +26,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
@@ -232,8 +233,6 @@ public class AddressService {
             log.warn("Geocoding failed for {}: {}", n.getAddressKey(), e.getMessage());
             // 필요시 n.setX(null); n.setY(null);
         }
-        // 3) (선택) DB 저장까지 원샷
-        // return repository.save(n);
         return n;
 
     }
@@ -257,7 +256,8 @@ public class AddressService {
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(payload)
                     .retrieve()
-                    .bodyToMono(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {})
+                    .bodyToMono(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {
+                    })
                     .block();
         } catch (Exception ex) {
             log.warn("Viewport crawl failed: {}", ex.toString());
@@ -291,4 +291,66 @@ public class AddressService {
                 "crawl", crawl
         );
     }
+
+    @SuppressWarnings("unchecked")
+    public double calculateAverageMonthly(Map<String, Object> response) {
+        Map<String, Object> crawl = (Map<String, Object>) response.get("crawl");
+        if (crawl == null) return 0;
+
+        List<Map<String, Object>> items = (List<Map<String, Object>>) crawl.get("items");
+        if (items == null || items.isEmpty()) return 0;
+
+        double totalMonthly = 0;
+        double totalArea = 0;
+
+        for (Map<String, Object> item : items) {
+            Map<String, Object> dom = (Map<String, Object>) item.get("dom");
+            if (dom == null) continue;
+
+            // "월세"만 대상으로
+            String priceType = (String) dom.get("price_type");
+            if (!"월세".equals(priceType)) continue;
+
+            // 월세
+            Object monthlyObj = dom.get("monthly");
+            if (monthlyObj == null) continue;
+            double monthly = Double.parseDouble(monthlyObj.toString());
+
+            // 관리비 포함
+//            monthly += parseManagementFee(dom.get("관리비"));
+
+            // 전용면적 파싱 (예: "45.87㎡/30.94㎡(전용률67%)")
+            double area = parseArea(dom.get("전용면적"));
+            if (area <= 0) continue;
+
+            totalMonthly += (monthly * area);
+            totalArea += area;
+        }
+
+        return totalArea > 0 ? totalMonthly / totalArea : 0;
+    }
+
+    private double parseArea(Object areaObj) {
+        if (areaObj == null) return 0;
+        String s = areaObj.toString().trim();
+
+        // "45.87㎡/30.94㎡(전용률67%)" -> 30.94
+        Matcher m = Pattern.compile("([0-9\\.]+)㎡/([0-9\\.]+)㎡").matcher(s);
+        if (m.find()) {
+            return Double.parseDouble(m.group(2)); // 전용면적(뒤쪽 값)을 반환
+        }
+
+        // 혹시 "/" 없는 단일 값일 경우 대비
+        Matcher m2 = Pattern.compile("([0-9\\.]+)㎡").matcher(s);
+        if (m2.find()) {
+            return Double.parseDouble(m2.group(1));
+        }
+
+        try {
+            return Double.parseDouble(s);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
 }
