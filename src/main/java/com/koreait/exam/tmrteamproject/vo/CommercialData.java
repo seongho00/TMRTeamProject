@@ -4,15 +4,12 @@ import com.opencsv.bean.CsvBindByName;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.Entity;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @SuperBuilder
 @ToString(callSuper = true)
 public class CommercialData {
-
 
     @CsvBindByName(column = "행정동_코드")
     private String emdCode;

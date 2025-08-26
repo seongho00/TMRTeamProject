@@ -1,10 +1,6 @@
 package com.koreait.exam.tmrteamproject.controller;
 
-import com.koreait.exam.tmrteamproject.repository.LhApplyInfoRepository;
-import com.koreait.exam.tmrteamproject.repository.LhSupplyScheduleRepository;
-import com.koreait.exam.tmrteamproject.repository.ScheduleInterestRepository;
 import com.koreait.exam.tmrteamproject.security.MemberContext;
-import com.koreait.exam.tmrteamproject.service.LhApplyInfoService;
 import com.koreait.exam.tmrteamproject.service.LhSupplyScheduleService;
 import com.koreait.exam.tmrteamproject.service.ScheduleInterestService;
 import com.koreait.exam.tmrteamproject.vo.LhSupplySchedule;
@@ -18,6 +14,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,28 +30,71 @@ public class UsrHomeController {
 
     @GetMapping("/main")
     public String homeMain(@AuthenticationPrincipal MemberContext memberContext, Model model) {
-        Member loginMember = null;
-        List<LhSupplySchedule> lhSupplySchedules = new ArrayList<>();
+
+        List<LhSupplySchedule> nowLhSupplySchedules = new ArrayList<>();
+        List<LhSupplySchedule> yesterdayLhSupplySchedules = new ArrayList<>();
+        List<LhSupplySchedule> lastLhSupplySchedules = new ArrayList<>();
+        LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
+
         if (memberContext != null) {
-            loginMember = memberContext.getMember();
-        }
+            Member loginedMember = memberContext.getMember(); // 로그인된 member
 
-        if (loginMember != null) {
-            List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginMember.getId());
+            if (loginedMember != null) {
+                List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginedMember.getId());
 
-            for (ScheduleInterest scheduleInterest : scheduleInterests) {
-                lhSupplySchedules.add(lhSupplyScheduleService.findById(scheduleInterest.getScheduleId()));
+                // 날짜 설정 다시 고치기
+                for (ScheduleInterest scheduleInterest : scheduleInterests) {
+                    LhSupplySchedule schedule = lhSupplyScheduleService.findById(scheduleInterest.getScheduleId());
 
+                    LocalDate startDate = schedule.getApplyStart().toLocalDate();
+
+                    if(startDate.isBefore(now)) {
+                        lastLhSupplySchedules.add(schedule);
+                    } else {
+                        nowLhSupplySchedules.add(schedule);
+                    }
+                }
             }
-
         }
-        System.out.println(lhSupplySchedules);
-        model.addAttribute("lhSupplySchedules", lhSupplySchedules);
+
+        model.addAttribute("nowLhSupplySchedules", nowLhSupplySchedules);
+        model.addAttribute("yesterdayLhSupplySchedules", yesterdayLhSupplySchedules);
+        model.addAttribute("lastLhSupplySchedules", lastLhSupplySchedules);
         return "home/main";
     }
 
-    @GetMapping("/test")
-    public String test() {
-        return "home/test";
+    @GetMapping("/notifications")
+    public String notifications(@AuthenticationPrincipal MemberContext memberContext, Model model) {
+
+        List<LhSupplySchedule> nowLhSupplySchedules = new ArrayList<>();
+        List<LhSupplySchedule> yesterdayLhSupplySchedules = new ArrayList<>();
+        List<LhSupplySchedule> lastLhSupplySchedules = new ArrayList<>();
+        LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
+
+        if (memberContext != null) {
+            Member loginedMember = memberContext.getMember(); // 로그인된 member
+
+            if (loginedMember != null) {
+                List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginedMember.getId());
+
+                // 날짜 설정 다시 고치기
+                for (ScheduleInterest scheduleInterest : scheduleInterests) {
+                    LhSupplySchedule schedule = lhSupplyScheduleService.findById(scheduleInterest.getScheduleId());
+
+                    LocalDate startDate = schedule.getApplyStart().toLocalDate();
+
+                    if(startDate.isBefore(now)) {
+                        lastLhSupplySchedules.add(schedule);
+                    } else {
+                        nowLhSupplySchedules.add(schedule);
+                    }
+                }
+            }
+        }
+
+        model.addAttribute("nowLhSupplySchedules", nowLhSupplySchedules);
+        model.addAttribute("yesterdayLhSupplySchedules", yesterdayLhSupplySchedules);
+        model.addAttribute("lastLhSupplySchedules", lastLhSupplySchedules);
+        return "home/notifications";
     }
 }

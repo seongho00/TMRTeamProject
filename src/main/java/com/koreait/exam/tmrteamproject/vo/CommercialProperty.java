@@ -63,6 +63,4 @@ public class CommercialProperty extends BaseEntity {
 
     @Column(name = "broker_phone")
     private String brokerPhone;
-
-
 }

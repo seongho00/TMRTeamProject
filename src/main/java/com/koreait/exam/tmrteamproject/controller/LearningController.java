@@ -28,9 +28,4 @@ public class LearningController {
         int saved = learningService.setSaved(data);
         return saved + "건 저장됨";
     }
-
-    @GetMapping("/test")
-    public String test() {
-        return "map/test";
-    }
 }

@@ -1,14 +1,16 @@
 package com.koreait.exam.tmrteamproject.vo;
 
-
-import com.fasterxml.jackson.databind.ser.Serializers;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import static javax.persistence.GenerationType.IDENTITY;
 
 @Entity
 @Getter
@@ -17,8 +19,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @SuperBuilder
 @ToString(callSuper = true)
-public class LhSupplySchedule extends BaseEntity {
+public class LhSupplySchedule {
 
+    @Id
+    @GeneratedValue(strategy = IDENTITY)
+    private Long id;
     private String name;
     @Column(name = "apply_start")
     private LocalDateTime applyStart;
