@@ -155,6 +155,9 @@ def extract_upjong_code_map():
             cursor.execute(sql)
             rows = cursor.fetchall()
             name_to_code = {r['upjong_nm']: r['upjong_cd'] for r in rows}
+
+            print(name_to_code)
+
             return name_to_code
     except Exception as e:
         print("❌ 업종 코드 로딩 실패:", e)
@@ -197,6 +200,7 @@ def analyze_input(user_input, intent, valid_emd_list):
         # 업종
         if t in upjong_keywords:
             entities["upjong_cd"] = upjong_keywords[t]
+            entities["upjong_nm"] = t
             entities["raw_upjong"] = t
         else:
             # 매칭 안 되어도 업종 단어 같으면 원문만 기록(간단 예시)
@@ -214,7 +218,7 @@ def analyze_input(user_input, intent, valid_emd_list):
         missing.append("region")  # 지역(시/구/동 중 하나)
 
     # 다른 의무 파라미터가 필요하면 여기에 조건 추가(예: intent별 필수 성별 등)
-
+    print(entities)
     return entities, missing
 
 
@@ -302,7 +306,6 @@ age_keywords = {
 
 valid_emd_list = extract_emd_nm_list()
 upjong_keywords = extract_upjong_code_map()
-
 # 의도별 요구 파라미터 정의
 # intent: 0=매출, 1=유동인구, 2=위험도, 3=청약(예시)
 INTENT_REQUIRED = {

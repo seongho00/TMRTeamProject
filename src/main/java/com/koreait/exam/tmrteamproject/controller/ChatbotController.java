@@ -1,9 +1,6 @@
 package com.koreait.exam.tmrteamproject.controller;
 
-import com.koreait.exam.tmrteamproject.service.AdminDongService;
-import com.koreait.exam.tmrteamproject.service.ChatBotService;
-import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
-import com.koreait.exam.tmrteamproject.service.RiskScoreService;
+import com.koreait.exam.tmrteamproject.service.*;
 import com.koreait.exam.tmrteamproject.vo.*;
 import com.koreait.exam.tmrteamproject.vo.FlaskResult;
 import com.koreait.exam.tmrteamproject.vo.PopulationSummary;
@@ -31,6 +28,8 @@ public class ChatbotController {
     private AdminDongService adminDongService;
     @Autowired
     private RiskScoreService riskScoreService;
+    @Autowired
+    private UpjongCodeService upjongCodeService;
 
     @GetMapping("/chat")
     public String chat() {
@@ -62,13 +61,15 @@ public class ChatbotController {
                 return ResultData.from("F-3", "동 이름이 여러 구에 있어요. 정확한 위치를 선택하세요.", "adminDong 데이터", adminDongs);
             }
         }
-        
+
         // 서울만 하니까 서울로 고정
         flaskResult.setSido("서울특별시");
-
-        // 행정동 코드 가져오기
-        AdminDong adminDong = adminDongService.findAdminDongBySggNmAndEmdNm(flaskResult.getSigungu(), flaskResult.getEmd());
-        String emdCd = adminDong.getEmdCd();
+        // 행정동 적었으면 행정동 코드 가져오기
+        String emdCd = "";
+        if (flaskResult.getEmd() != null) {
+            AdminDong adminDong = adminDongService.findAdminDongBySggNmAndEmdNm(flaskResult.getSigungu(), flaskResult.getEmd());
+            emdCd = adminDong.getEmdCd();
+        }
 
         switch (intent) {
             case 0:
@@ -76,11 +77,16 @@ public class ChatbotController {
 
                 System.out.println("매출 분석 요청");
 
-                // 지역 분류 + 업종별 데이터 가져오기
+                if (flaskResult.getUpjong_nm() == null) {
+                    return ResultData.from("F-4", "어떤 업종의 매출을 알고 싶으신가요?");
+                }
                 // DB에 넣어놔야하긴 해 + 과거 데이터도 넣을건가?
+                if (!emdCd.isEmpty()) {
+                    chatBotService.getSalesData(emdCd, flaskResult.getUpjong_nm());
+                }
 
+                return ResultData.from("S-1", "매출액 데이터 출력", "flaskResult", flaskResult);
 
-                break;
 
             case 1:
                 // 지역 분류
@@ -103,11 +109,15 @@ public class ChatbotController {
             case 3:
                 // 청약 관련 로직
                 System.out.println("청약 조회 요청");
-                break;
+
+                chatBotService.getLhSupplySchedule();
+
+
+                return ResultData.from("S-4", "청약 데이터 출력", "flaskResult", flaskResult);
 
         }
 
-        return ResultData.from("F-1", "데이터 요청 실패");
+        return ResultData.from("F-A", "데이터 요청 실패");
     }
 
 
