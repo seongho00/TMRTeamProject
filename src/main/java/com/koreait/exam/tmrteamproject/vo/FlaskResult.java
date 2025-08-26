@@ -13,7 +13,7 @@ import lombok.experimental.SuperBuilder;
 @ToString(callSuper = true)
 public class FlaskResult{
 
-    private String intent;
+    private int intent;
     private double confidence;
     private String sido;
     private String sigungu;
@@ -21,4 +21,5 @@ public class FlaskResult{
     private String gender;
     private String ageGroup;
     private String message;
+    private String upjong_nm;
 }
