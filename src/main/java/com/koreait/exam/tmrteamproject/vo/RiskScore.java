@@ -2,10 +2,9 @@ package com.koreait.exam.tmrteamproject.vo;
 
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.springframework.data.annotation.Id;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
+import javax.persistence.*;
+
 
 @Getter
 @Setter
@@ -13,13 +12,14 @@ import javax.persistence.Entity;
 @AllArgsConstructor
 @SuperBuilder
 @ToString(callSuper = true)
+@Entity
+@Table(name = "risk_score")
 public class RiskScore {
 
     @Id
     @Column(name = "emd_cd")
     private String emdCd;
 
-    @Id
     @Column(name = "upjong_cd")
     private String upjongCd;
 
