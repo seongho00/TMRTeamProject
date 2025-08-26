@@ -55,6 +55,22 @@ CREATE TABLE upjong_code (
                              minor_nm VARCHAR(100)
 );
 
+CREATE TABLE risk_score (
+                            emd_cd         VARCHAR(20)  NOT NULL,
+                            upjong_cd      VARCHAR(20)  NOT NULL,
+                            reg_date       DATETIME     NOT NULL,
+                            update_date    DATETIME     NOT NULL,
+                            risk_raw       DECIMAL(6,4) NOT NULL,   -- 소수 정밀도 확보(예: -0.4000 ~ 0.2000)
+                            risk_label     INT          NULL,
+                            risk7_label    VARCHAR(10)  NULL,
+                            risk_pred      INT          NULL,
+                            risk100_all    DECIMAL(5,1) NULL,
+                            risk100_by_biz DECIMAL(5,1) NULL,
+                            PRIMARY KEY (emd_cd, upjong_cd),
+                            KEY idx_risk_score_upjong (upjong_cd)
+)
+SELECT * FROM upjong_code;
+
 /* LH청약플러스 상가 공고 정보 */
 CREATE TABLE `lh_apply_info` (
                                  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
