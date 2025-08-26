@@ -1,6 +1,7 @@
 package com.koreait.exam.tmrteamproject.config;
 
 import com.koreait.exam.tmrteamproject.service.CustomUserDetailsService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +18,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -26,6 +29,7 @@ import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
+@Slf4j
 public class SecurityConfig {
 
     @Autowired
@@ -45,8 +49,8 @@ public class SecurityConfig {
                 .formLogin((login) -> login
                         .loginPage("/usr/member/joinAndLogin") // 사용자 정의 로그인 페이지
                         .loginProcessingUrl("/usr/member/doLogin")
-                        .defaultSuccessUrl("/usr/home/main") // 로그인 성공 시 이동
-                        .failureHandler(customFailureHandler())  // ✅ 여기가 핵심
+                        .successHandler(loginSuccessHandler()) // 성공 핸들러
+                        .failureHandler(customFailureHandler())  // 여기가 핵심
                         .permitAll()
                 )
                 .logout((logout) -> logout
@@ -75,8 +79,8 @@ public class SecurityConfig {
 
                 String errorMsg = "로그인 실패";
 
-                System.out.println("❗ exception = " + exception.getClass());
-                System.out.println("❗ cause = " + exception.getCause());
+                System.out.println("exception = " + exception.getClass());
+                System.out.println("cause = " + exception.getCause());
 
                 if (exception instanceof UsernameNotFoundException) {
                     errorMsg = "가입된 이메일이 없습니다.";
@@ -95,7 +99,7 @@ public class SecurityConfig {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder);
-        authProvider.setHideUserNotFoundExceptions(false); // ✅ 이거 설정해야 UsernameNotFoundException 그대로 던짐
+        authProvider.setHideUserNotFoundExceptions(false); // 이거 설정해야 UsernameNotFoundException 그대로 던짐
         return authProvider;
     }
 
@@ -103,5 +107,24 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    // 로그인 성공 핸들러
+    @Bean
+    public AuthenticationSuccessHandler loginSuccessHandler() {
+
+        return (request, response, authentication) -> {
+            System.out.println("로그인 여부 : 로그인 되었습니다.");
+            log.info("로그인 되었습니다!");
+
+            var cache = new HttpSessionRequestCache();
+            var saved = cache.getRequest(request, response);
+
+            if (saved != null) {
+                response.sendRedirect(saved.getRedirectUrl());
+            } else {
+                response.sendRedirect("/usr/home/main");
+            }
+        };
     }
 }

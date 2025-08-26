@@ -1,6 +1,5 @@
 package com.koreait.exam.tmrteamproject.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -8,11 +7,9 @@ import com.koreait.exam.tmrteamproject.entity.LhApplyInfo;
 import com.koreait.exam.tmrteamproject.repository.LhApplyInfoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,11 +30,6 @@ public class LhApplyInfoService {
             .registerModule(new JavaTimeModule())
             .setDateFormat(new SimpleDateFormat("yyyy-MM-dd"))
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    
-
-    public boolean isLoading() {
-        return loading.get();
-    }
 
     @Transactional
     public void refreshFromCrawler() {
@@ -45,20 +37,16 @@ public class LhApplyInfoService {
             try {
                 Path json = Paths.get( "TMRTeamProjectPython", "python_LH_crawler", "data", "lh_data.json")
                         .normalize().toAbsolutePath();
-
                 log.info("[LH] user.dir={} / json={}", System.getProperty("user.dir"), json);
-
                 List<LhApplyInfo> crawledList = mapper.readValue(
                         json.toFile(),
                         new com.fasterxml.jackson.core.type.TypeReference<List<LhApplyInfo>>() {}
                 );
                 log.info("[LH] {}건의 크롤링 데이터를 읽었습니다.", crawledList.size());
-
                 for (LhApplyInfo newInfo : crawledList) {
                     upsert(newInfo);
                 }
                 log.info("[LH] {}건 적재/업데이트 완료", crawledList.size());
-
             } catch (IOException e) {
                 log.error("JSON 파일 읽기 또는 처리 중 에러", e);
             } finally {

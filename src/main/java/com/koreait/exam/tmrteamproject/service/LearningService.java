@@ -24,8 +24,9 @@ public class LearningService {
                 .serviceTypeName(d.getServiceTypeName())
                 .riskScore(d.getRiskScore())
                 .riskLabel(d.getRiskLabel())
+                .riskLevel(d.getRiskLevel())
                 .predictedRiskLabel(d.getPredictedRiskLabel())
-                .riskLabel7(d.getRiskLabel7())
+                .predictedConfidence(d.getPredictedConfidence())
                 .build()
         ).collect(Collectors.toList());
         learningRepository.saveAll(entities);

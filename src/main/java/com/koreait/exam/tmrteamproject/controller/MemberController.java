@@ -4,7 +4,6 @@ import com.koreait.exam.tmrteamproject.security.MemberContext;
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.MemberService;
 import com.koreait.exam.tmrteamproject.service.NaverOAuthService;
-import com.koreait.exam.tmrteamproject.service.SolapiSmsService;
 import com.koreait.exam.tmrteamproject.util.Ut;
 import com.koreait.exam.tmrteamproject.vo.Member;
 import com.koreait.exam.tmrteamproject.vo.ResultData;
@@ -56,11 +55,9 @@ public class MemberController {
         return "member/joinAndLogin";
     }
 
-
     @PostMapping("/createAccount")
     @ResponseBody
     public String createAccount(String name, String loginPw, String email, String phoneNum) {
-
 
         // 겹치는 이메일 있는지 확인
         ResultData checkDupMemberRd = memberService.checkDupMemberByEmail(email);
@@ -119,10 +116,8 @@ public class MemberController {
         return "redirect:../home/main";
     }
 
-
     @GetMapping("/loginNaver")
     public String loginNaver() {
-
 
         String redirectURI = "http://localhost:8080/usr/member/naverCallback";
         SecureRandom random = new SecureRandom();
@@ -215,6 +210,4 @@ public class MemberController {
         return ResultData.from("S-1", "구글 로그인 성공", "구글 멤버", member);
 
     }
-
-
 }

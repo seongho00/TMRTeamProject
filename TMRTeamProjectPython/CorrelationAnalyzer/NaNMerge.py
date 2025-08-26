@@ -9,6 +9,7 @@ sp_dir = "C:/Users/admin/Downloads/Seoul_Data_Special"
 
 # 연도별 분기 리스트 정의
 quarters_by_year = {
+    2022: [20221, 20222, 20223, 20224],
     2023: [20231, 20232, 20233, 20234],
     2024: [20241, 20242, 20243, 20244],
     2025: [20251]
@@ -36,6 +37,9 @@ for year, quarters in quarters_by_year.items():
 
         # 결측치 제거 당월매출금액이 NaN만
         merged_cleaned = merged.dropna(subset=['당월_매출_금액'])
+
+        # 남아 있는 NaN값 전부 0으로 채우기
+        merged_cleaned = merged_cleaned.fillna(0)
         print(f"[{quarter}] 결측치 제거 후 행 수: {len(merged_cleaned)}")
 
         # 저장
