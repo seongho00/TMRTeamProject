@@ -375,6 +375,24 @@ pref = ['행정동_코드_명','서비스_업종_코드_명','실제_위험도',
 ordered = [c for c in pref if c in out.columns] + [c for c in out.columns if c not in pref]
 out = out[ordered]
 
+# 위험도 점수 정규화 (0~100, 7 이상은 계산에서만 제외)
+mask_lt = out["위험도_점수"] < 7
+mask_ge = out["위험도_점수"] >= 7
+
+# min/max는 18 미만 데이터만 사용
+min_v = out.loc[mask_lt, "위험도_점수"].min()
+max_v = out.loc[mask_lt, "위험도_점수"].max()
+denom = (max_v - min_v) if max_v != min_v else 1
+
+# 결과 컬럼 초기화
+out["risk100_all"] = np.nan
+
+# 7 이상은 계산 제외 + 결과엔 원본 점수 그대로
+out.loc[mask_lt, "risk100_all"] = ((df.loc[mask_lt, "위험도_점수"] - min_v) / denom * 100).round(1)
+out.loc[mask_ge, "risk100_all"] = 100
+
+print(out.columns)
+
 # 저장 (DB 저장)
 try:
     print(out.columns)
@@ -383,6 +401,10 @@ try:
 
 except Exception as e:
     print(e)
+
+save_path = os.path.join(OUT_DIR, "risk_pred_20251.csv")
+out.to_csv(save_path, index=False, encoding="utf-8-sig")
+print(f"\n저장 완료: {save_path}")
 
 # 미리보기
 print("\n=== 결과 상위 10행 ===")
