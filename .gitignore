@@ -14,11 +14,10 @@ target/
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea/
+.idea
 *.iws
 *.iml
 *.ipr
-out/
 
 ### NetBeans ###
 /nbproject/private/
@@ -26,9 +25,6 @@ out/
 /dist/
 /nbdist/
 /.nb-gradle/
-
-### Gradle ###
-.gradle/
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
@@ -38,3 +34,29 @@ build/
 
 # Firebase service account key (DO NOT COMMIT)
 src/main/resources/firebase-adminsdk.json
+src/main/resources/*.json
+
+# Chrome/Playwright 프로필 및 캐시류 전부 제외
+**/.chrome-profile/
+**/Default/Cache/
+**/Default/Code Cache/
+**/Default/Session Storage/
+**/Default/Local Storage/
+**/Default/shared_proto_db/
+**/Default/GCM Store/
+**/Default/Extension State/
+
+# 크롤러 산출물/리포트
+playwright-report/
+test-results/
+trace.zip
+*.png
+naver_land_api_*.json
+snapshot_*.png
+root_*.png
+
+# Gradle cache (잠금파일 포함)
+.gradle/
+
+# BERT 모델 파일 무시
+TMRTeamProjectPython/flask_api/intent_bert_model/

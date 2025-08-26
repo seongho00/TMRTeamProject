@@ -1,7 +1,6 @@
 package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.AdminDongRepository;
-import com.koreait.exam.tmrteamproject.repository.MemberRepository;
 import com.koreait.exam.tmrteamproject.repository.PopulationStatRepository;
 import com.koreait.exam.tmrteamproject.vo.*;
 import lombok.RequiredArgsConstructor;
@@ -9,9 +8,6 @@ import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-
-import javax.xml.transform.Result;
-import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor

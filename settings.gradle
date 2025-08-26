@@ -1,1 +1,18 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+dependencyResolutionManagement {
+    // 모듈 쪽 repositories 무시하고 여기 것만 쓰기
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        mavenCentral()
+        // 정말 필요한 추가 저장소가 있으면 여기에만 추가
+        // maven { url 'https://repo.osgeo.org/repository/release/' }
+    }
+}
+
 rootProject.name = 'TMRTeamProject'

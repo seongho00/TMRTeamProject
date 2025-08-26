@@ -20,9 +20,11 @@ public class PdfFileController {
     @GetMapping("/upload")
     @ResponseBody
     public ResultData upload() {
-        String foldPath = "C:/Users/user/Desktop/TeamProject/test/";
-        pdfFileService.saveAllPdfsFromFolder(foldPath);
+        String foldPath = "C:/Users/user/Desktop/TeamProject/SimpAnly/";
 
-        return ResultData.from("S-1", "모든 pdf 파일 저장 완료");
+        // 비동기 실행으로 바꾸기
+        pdfFileService.savePdfsAsync(foldPath);
+
+        return ResultData.from("S-1", "PDF 저장 작업이 백그라운드에서 실행됩니다.");
     }
 }

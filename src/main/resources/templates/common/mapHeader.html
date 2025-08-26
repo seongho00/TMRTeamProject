@@ -1,0 +1,93 @@
+<header th:fragment="header" xmlns:th="http://www.thymeleaf.org">
+    <meta charset="UTF-8">
+
+    <div id="header-id" class="w-full h-[100px] box-border fixed top-0 left-0 z-50 bg-white transition-all duration-300">
+        <div id="header-wrapper" class="w-full h-[100px] flex items-start justify-between transition-all duration-300">
+            <div class="w-[240px] h-[100px] flex justify-start items-start">
+                <a href="../home/main" class="h-full flex items-center">
+                    <img src="/images/로고.png" class="object-contain cursor-pointer" />
+                </a>
+            </div>
+
+            <nav class="w-[60%] text-center">
+                <ul id="nav-list" class="flex justify-center items-center relative space-x-4">
+                    <!-- 상권 분석 -->
+                    <li class="relative group w-[240px]">
+                        <a href="../map/commercialZoneMap"
+                           class="flex justify-center items-center w-full h-[100px] cursor-pointer">
+                            <p class="text-[22px] text-black">상권 분석</p>
+                        </a>
+                        <ul class="sub-menu absolute items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
+                            <li>
+                                <a href="../map/correlationMap"
+                                   class="block px-4 py-2 hover:underline">위험도 분석 상관관계</a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- 부동산 매물 -->
+                    <li class="flex justify-center items-center w-[240px] h-[100px] relative">
+                        <p class="text-[22px] text-black">부동산 매물</p>
+                    </li>
+
+                    <!-- 상가 청약 -->
+                    <li class="relative group w-[240px]">
+                        <div class="flex justify-center items-center w-full h-[100px] cursor-pointer">
+                            <p class="text-[22px] text-black">상가 청약</p>
+                        </div>
+                        <ul class="sub-menu absolute flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
+                            <li><a href="#" class="block px-4 py-2 hover:underline">청약 알림</a></li>
+                            <li><a href="#" class="block px-4 py-2 hover:underline">공고문</a></li>
+                            <li><a href="../member/conditionalLogout" class="block px-4 py-2 hover:underline">로그아웃</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- 로그인 -->
+                    <li>
+                        <a href="../member/joinAndLogin"
+                           class="flex justify-center items-center w-[240px] h-[100px] relative cursor-pointer">
+                            <p class="text-[22px] text-black">로그인</p>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <script>
+        const headerId = document.getElementById('header-id');
+        const header = document.getElementById('header-wrapper');
+        const navList = document.getElementById('nav-list');
+        const subMenus = document.querySelectorAll('.sub-menu');
+
+        let hoverTimeout;
+
+        const expandHeader = () => {
+            clearTimeout(hoverTimeout);
+            headerId.classList.remove('h-[100px]');
+            headerId.classList.add('h-[250px]');
+            header.classList.remove('h-[100px]');
+            header.classList.add('h-[250px]');
+            subMenus.forEach(menu => {
+                menu.classList.remove('hidden');
+                menu.classList.add('flex');
+            });
+        };
+
+        const collapseHeader = () => {
+            hoverTimeout = setTimeout(() => {
+                headerId.classList.remove('h-[250px]');
+                headerId.classList.add('h-[100px]');
+                header.classList.remove('h-[250px]');
+                header.classList.add('h-[100px]');
+                subMenus.forEach(menu => {
+                    menu.classList.remove('flex');
+                    menu.classList.add('hidden');
+                });
+            }, 100);
+        };
+
+        navList.addEventListener('mouseenter', expandHeader);
+        navList.addEventListener('mouseleave', collapseHeader);
+    </script>
+</header>

@@ -20,12 +20,20 @@ public class TradeAreaController {
     private final TradeAreaService tradeAreaService;
 
     @GetMapping("/pdfread")
-    public String pdfread(String fileName, Model model) {
-        // fileName이 없으면 최신 10개 파일 목록 보여주기
+    public String pdfread(Model model) {
+        tradeAreaService.processAndSaveAllTradeAreas(); // 전체 분석 및 저장 수행
+
+        model.addAttribute("message", "PDF 분석 및 저장이 완료되었습니다.");
+        return "trade/pdfread"; // 완료 메시지를 표시할 뷰
+    }
+
+    @GetMapping("/pdfread/detail")
+    public String pdfreadDetail(String fileName, Model model) {
+
         if (fileName == null || fileName.isBlank()) {
             List<String> fileList = tradeAreaService.getRecentFileName();
             model.addAttribute("fileList", fileList);
-            return "trade/select_file";  // 사용자가 파일 선택하는 페이지
+            return "trade/select_file";
         }
 
         // PDF 텍스트 추출
@@ -35,7 +43,6 @@ public class TradeAreaController {
         TradeArea tradeArea = tradeAreaService.parseAndSaveTradeArea(pdfText, fileName);
 
         model.addAttribute("pdfText", pdfText);
-        model.addAttribute("images", tradeAreaService.extractImagesFromDbPdf(fileName));
         model.addAttribute("tradeArea", tradeArea);
         model.addAttribute("fileName", fileName);
 

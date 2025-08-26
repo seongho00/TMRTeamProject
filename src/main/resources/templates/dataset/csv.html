@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head::head">
+    <meta charset="UTF-8">
+</head>
+<body>
+<header th:replace="common/mapHeader::header"></header>
+
+<!-- 정보 패널 -->
+<h2 th:text="${message}">작업을 시작했습니다.</h2>
+<p>이 페이지는 즉시 표시되며, 데이터 저장은 서버에서 백그라운드로 실행됩니다.</p>
+
+<script>
+    const mapContainer = document.getElementById('map');
+    const mapOption = {
+        center: new kakao.maps.LatLng(37.566826, 126.9786567),
+        level: 6
+    };
+    const map = new kakao.maps.Map(mapContainer, mapOption);
+</script>
+<footer th:replace="common/footer::footer"></footer>
+</body>
+</html>
