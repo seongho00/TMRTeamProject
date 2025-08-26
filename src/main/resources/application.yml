@@ -16,7 +16,7 @@ spring:
     url: jdbc:mysql://localhost:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: 1234
+    password:
   jpa:
     show-sql: true
     hibernate:
