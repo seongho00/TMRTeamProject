@@ -32,4 +32,8 @@ public class LearningService {
         learningRepository.saveAll(entities);
         return entities.size();
     }
+
+    public Learning findAllByHjdCo(String emdCd) {
+        return learningRepository.findAllByHjdCo(emdCd);
+    }
 }

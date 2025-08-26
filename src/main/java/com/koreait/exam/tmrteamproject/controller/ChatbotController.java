@@ -2,8 +2,7 @@ package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.service.AdminDongService;
 import com.koreait.exam.tmrteamproject.service.ChatBotService;
-import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
-import com.koreait.exam.tmrteamproject.service.RiskScoreService;
+import com.koreait.exam.tmrteamproject.service.LearningService;
 import com.koreait.exam.tmrteamproject.vo.*;
 import com.koreait.exam.tmrteamproject.vo.FlaskResult;
 import com.koreait.exam.tmrteamproject.vo.PopulationSummary;
@@ -30,7 +29,7 @@ public class ChatbotController {
     @Autowired
     private AdminDongService adminDongService;
     @Autowired
-    private RiskScoreService riskScoreService;
+    private LearningService learningService;
 
     @GetMapping("/chat")
     public String chat() {
@@ -95,7 +94,7 @@ public class ChatbotController {
 
             case 2:
                 // 상권 위험도 예측 로직
-                RiskScore riskScore = riskScoreService.findAllByEmdCd(emdCd);
+                Learning learning = learningService.findAllByHjdCo(emdCd);
 
                 System.out.println("위험도 예측 요청");
                 break;
@@ -109,6 +108,4 @@ public class ChatbotController {
 
         return ResultData.from("F-1", "데이터 요청 실패");
     }
-
-
 }
