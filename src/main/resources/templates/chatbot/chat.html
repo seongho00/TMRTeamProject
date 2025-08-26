@@ -8,17 +8,47 @@
     }
 
     function sendMessage() {
-        const message = $("#chatbotText").val();
+        let message = $("#chatbotText").val();
         const $chatBox = $("#chat-box");
         $.ajax({
             type: "POST",
             url: "sendMessage",
             data: {message: message},
             success: function (data) {
+                if (data.resultCode === "F-3") {
+                    const candidates = data.data1;
 
+                    // 기존 표시 영역 비우기
+                    $("#candidateContainer").empty();
 
-                const populationSummary = data.data1;
-                const flaskResult = data.data2;
+                    // 안내 메시지 표시
+                    $("#candidateContainer").append(
+                        `<p>${data.msg || "동 이름이 여러 구에 있어요. 정확한 위치를 선택하세요."}</p>`
+                    );
+
+                    // 후보 버튼 생성
+                    candidates.forEach(function (c) {
+                        const label = [c.sidoNm, c.sggNm, c.emdNm ?? c.emd].filter(Boolean).join(" ");
+
+                        $("<button>")
+                            .text(label)
+                            .addClass("candidate-btn")
+                            .on("click", function () {
+                                // 현재 success 스코프의 message는 바깥 변수라 혼동될 수 있으니 새로 구성
+                                const newMessage = $("#chatbotText").val() + " " + c.sggNm;
+
+                                // 입력창 업데이트 후 재호출
+                                $("#chatbotText").val(newMessage);
+                                $("#candidateContainer").empty();   // 후보 UI 정리
+                                sendMessage();                      // ✅ 기존 함수 재사용
+                            })
+                            .appendTo("#candidateContainer");
+                    });
+                    return;
+                }
+                console.log(data)
+                const flaskResult = data.data1;
+                const populationSummary = data.data2;
                 const sido = flaskResult.sido;
                 const sigungu = flaskResult.sigungu;
                 const emd = flaskResult.emd;
@@ -28,20 +58,20 @@
                 console.log(emd);
 
                 const regionText = [sido, sigungu, emd]
-                    .filter(val => val && val !== "None")
+                    .filter(val => val && val !== "")
                     .join(" ");
                 // 데이터 가져와서 지역도 보여주기
 
-                if (flaskResult.gender === "None" && flaskResult.ageGroup === "None") {
+                if (flaskResult.gender === "" && flaskResult.ageGroup === "") {
                     // 성별도 없고, 나이대도 없을 때 → 전체 인구 출력
                     $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 전체 유동인구는 ${populationSummary.total}명입니다.</div>`);
-                } else if (flaskResult.gender !== "None" && flaskResult.ageGroup === "None") {
+                } else if (flaskResult.gender !== "" && flaskResult.ageGroup === "") {
                     // 성별만 있을 때
                     const genderKor = flaskResult.gender === "male" ? "남성" : "여성";
                     const genderValue = flaskResult.gender === "male" ? populationSummary.male : populationSummary.female;
 
                     $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 ${genderKor} 유동인구는 ${genderValue}명입니다.</div>`);
-                } else if (flaskResult.gender === "None" && flaskResult.ageGroup !== "None") {
+                } else if (flaskResult.gender === "" && flaskResult.ageGroup !== "") {
                     // 나이대만 있을 때
                     const convertAgeKey = (ageGroup) => ageGroup?.replace("age_", "age");
 
@@ -100,11 +130,31 @@
         });
     }
 </script>
+<style>
+    .candidate-btn {
+        display: block;
+        width: 500px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        text-align: left;
+        border: 1px solid #d1d5db; /* 회색 테두리 */
+        border-radius: 8px;
+        background-color: white;
+        color: #374151; /* 진한 회색 글씨 */
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .candidate-btn:hover {
+        background-color: #eff6ff; /* 연한 파란 배경 */
+        border-color: #60a5fa; /* 파란 테두리 */
+    }
+</style>
 
 <h1> 챗봇 테스트 </h1>
 
 
-<div></div>
 <button onClick="sendMessage();">보내기</button>
 
 <div
