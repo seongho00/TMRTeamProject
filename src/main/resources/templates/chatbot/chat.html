@@ -3,7 +3,7 @@
 <head th:replace="common/head::head"></head> <!-- ✅ 공백 제거 -->
 
 <script>
-    function showChatBot() {
+    function toggleChatBotUI() {
         $(".chatbot").toggleClass('hidden');
     }
 
@@ -103,12 +103,12 @@
 
 <h1> 챗봇 테스트 </h1>
 
-<input type="text" id="chatbotText">
-<div id="chat-box"></div>
+
+<div></div>
 <button onClick="sendMessage();">보내기</button>
 
 <div
-        class="flex flex-col justify-between items-center w-[350px] h-[600px] overflow-hidden rounded-[10px] bg-[#7aaec1] border border-black"
+        class="chatbot fixed bottom-20 right-5 flex flex-col justify-between items-center w-[350px] h-[600px] overflow-hidden rounded-[10px] bg-[#7aaec1] border border-black"
 >
     <div
             class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] relative overflow-hidden border-t-0 border-r-0 border-b border-l-0 border-black"
@@ -121,26 +121,28 @@
 
         <i class="fa-solid fa-xmark fa-2x flex-grow-0 flex-shrink-0 rounded-tr-[25px] object-cover"></i>
     </div>
-    <div
-            class="flex flex-col justify-start items-start self-stretch flex-grow w-[350px] h-[450px] overflow-hidden gap-2.5 p-2.5"
+    <div id="chat-box"
+         class="flex flex-col justify-start items-start self-stretch flex-grow w-[350px] h-[450px] overflow-hidden gap-2.5 p-2.5"
     ></div>
     <div
-            class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] relative overflow-hidden"
+            class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] relative overflow-hidden border-t border-black "
     >
-        <div
-                class="flex justify-center items-center flex-grow relative overflow-hidden gap-2.5 py-[25px] bg-white"
-        >
-            <p class="flex-grow-0 flex-shrink-0 w-[280px] h-[50px] text-xl text-left text-black">
-                무엇이든 물어보세요
-            </p>
-        </div>
-        <div class="w-[50px] flex justify-center items-center">
-            <i class="fa-solid fa-arrow-right fa-2x flex-grow-0 flex-shrink-0 rounded-[512px] object-cover"></i>
-        </div>
+        <form id="chatForm" onsubmit="sendMessage(); return false;" class="flex w-full">
+            <input
+                    type="text"
+                    id="chatbotText"
+                    class="flex justify-center items-center flex-grow relative overflow-hidden gap-2.5 py-[25px] bg-white "
+                    placeholder="무엇이든 물어보세요"
+                    autocomplete="off"
+            >
+            <button type="submit" class="cursor-pointer w-[50px] flex justify-center items-center">
+                <i class="fa-solid fa-arrow-right fa-2x flex-grow-0 flex-shrink-0 rounded-[512px] object-cover"></i>
+            </button>
+        </form>
     </div>
 </div>
 
-<img onClick="showChatBot();"
+<img onClick="toggleChatBotUI();"
      src="/images/상담봇_아이콘.png"
      class="w-[50px] h-[50px] rounded-[202.5px] object-cover border border-black fixed bottom-5 right-5 cursor-pointer"
 />
