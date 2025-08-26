@@ -1,13 +1,9 @@
 package com.koreait.exam.tmrteamproject.controller;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseToken;
 import com.koreait.exam.tmrteamproject.security.MemberContext;
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.MemberService;
 import com.koreait.exam.tmrteamproject.service.NaverOAuthService;
-import com.koreait.exam.tmrteamproject.service.SolapiSmsService;
 import com.koreait.exam.tmrteamproject.util.Ut;
 import com.koreait.exam.tmrteamproject.vo.Member;
 import com.koreait.exam.tmrteamproject.vo.ResultData;
@@ -16,8 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,11 +25,7 @@ import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-
-import org.springframework.security.core.userdetails.User;
 
 @Controller
 @RequestMapping("usr/member")
@@ -65,11 +55,9 @@ public class MemberController {
         return "member/joinAndLogin";
     }
 
-
     @PostMapping("/createAccount")
     @ResponseBody
     public String createAccount(String name, String loginPw, String email, String phoneNum) {
-
 
         // 겹치는 이메일 있는지 확인
         ResultData checkDupMemberRd = memberService.checkDupMemberByEmail(email);
@@ -128,10 +116,8 @@ public class MemberController {
         return "redirect:../home/main";
     }
 
-
     @GetMapping("/loginNaver")
     public String loginNaver() {
-
 
         String redirectURI = "http://localhost:8080/usr/member/naverCallback";
         SecureRandom random = new SecureRandom();
@@ -224,6 +210,4 @@ public class MemberController {
         return ResultData.from("S-1", "구글 로그인 성공", "구글 멤버", member);
 
     }
-
-
 }

@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.Map;
 
 @Service
 public class KakaoOAuthService {
@@ -128,5 +131,27 @@ public class KakaoOAuthService {
         }
 
         return member;
+    }
+
+    public Map<String, Object> searchActualUsage(double lat, double lon) {
+        String url = UriComponentsBuilder
+                .fromHttpUrl("https://dapi.kakao.com/v2/local/search/category.json")
+                .queryParam("category_group_code", "FD6")  // 예: 음식점
+                .queryParam("x", lon)
+                .queryParam("y", lat)
+                .queryParam("radius", 0) // 반경 50m
+                .queryParam("sort", "distance")
+                .build(true)
+                .toUriString();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "KakaoAK " + kakaoClientId);
+
+        RestTemplate rest = new RestTemplate();
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<Map> res = rest.exchange(url, HttpMethod.GET, entity, Map.class);
+        System.out.println(res.getBody());
+        return res.getBody(); // 여기 안에 place_name, category_group_name, address_name 등 들어있음
     }
 }

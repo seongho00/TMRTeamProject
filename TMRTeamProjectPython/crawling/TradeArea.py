@@ -1,15 +1,15 @@
-import requests
-import pymysql
-import time
 import os
 import random
 import re
+import time
 
+import pymysql
+import requests
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
@@ -37,31 +37,34 @@ chrome_options.add_argument("--disable-gpu")  # GPU 비활성화 (윈도우에�
 conn = pymysql.connect(
     host="localhost",
     user="root",
-    password="",
-    db="tmrteamproject",
+    password="1234",
+    db="TMRTeamProject",
     charset="utf8mb4"
 )
 cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM admin_dong WHERE sgg_nm = '동구' AND emd_nm = '산내동';")
+cursor.execute("SELECT * FROM admin_dong;")
 dong_rows = cursor.fetchall()
 
 cursor.execute("SELECT * FROM upjong_code;")
 upjong_rows = cursor.fetchall()
 
 for dong in dong_rows:
-    sido_nm = dong[2]
+    admi_nm = dong[0]
+    emd_cd = dong[1]
+    emd_nm = dong[2]
+    sgg_cd = dong[3]
     sgg_nm = dong[4]
-    emd_cd = dong[5]
-    emd_nm = dong[6]
+    sido_nm = dong[6]
 
     simple_loc = f"{sido_nm} {sgg_nm} {emd_nm}"
     print(f"[동 시작] {simple_loc} ({emd_cd})")
 
     for upjong in upjong_rows:
-        major_cd = upjong[0]
-        middle_cd = upjong[2]
-        minor_cd = upjong[4]
+        minor_cd = upjong[0]
+        major_cd = upjong[1]
+        middle_cd = upjong[3]
+        middle_nm = upjong[4]
         minor_nm = upjong[5]
 
         try:
@@ -144,7 +147,7 @@ for dong in dong_rows:
             driver = webdriver.Chrome(options=chrome_options)
             driver.get(report_url)
 
-            wait = WebDriverWait(driver, 10)
+            wait = WebDriverWait(driver, 5)
 
             # "저장" 버튼 클릭 (클래스: btnSAVEAS)
             try:
@@ -153,7 +156,7 @@ for dong in dong_rows:
                 save_btn.click()
                 print("[1] 저장 버튼 클릭")
 
-                confirm_button = WebDriverWait(driver, 10).until(
+                confirm_button = WebDriverWait(driver, 5).until(
                     EC.element_to_be_clickable((By.XPATH, "/html/body/div[2]/div[3]/div/button[2]"))
                 )
                 confirm_button.click()

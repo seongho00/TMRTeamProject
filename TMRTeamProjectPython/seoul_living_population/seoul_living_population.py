@@ -2,7 +2,6 @@ import pandas as pd
 import os
 import zipfile
 
-
 # ZIP 파일 경로
 folder_path = 'C:/Users/admin/Desktop/팀플 자료/서울 생활인구'
 output_folder = "C:/Users/admin/Desktop/서울 데이터 결과"

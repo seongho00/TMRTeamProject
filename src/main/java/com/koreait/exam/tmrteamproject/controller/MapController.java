@@ -1,11 +1,8 @@
 package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.service.AdminDongService;
-import com.koreait.exam.tmrteamproject.service.MapService;
-import com.koreait.exam.tmrteamproject.service.MemberService;
 import com.koreait.exam.tmrteamproject.service.UpjongCodeService;
 import com.koreait.exam.tmrteamproject.vo.AdminDong;
-import com.koreait.exam.tmrteamproject.vo.UpjongCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +21,10 @@ import java.util.List;
 public class MapController {
 
     @Autowired
-    private MapService mapService;
-    @Autowired
     private AdminDongService adminDongService;
+
     @Autowired
     private UpjongCodeService upjongCodeService;
-
 
     @GetMapping("/commercialZoneMap")
     public String commercialZoneMap(Model model) {
@@ -45,66 +40,25 @@ public class MapController {
     @ResponseBody
     public List<AdminDong> getEmdsBySggNm(String sgg) {
 
-        List<AdminDong> adminDong = adminDongService.getAdminDongsBySggNm(sgg);
-
-        return adminDong;
+        return adminDongService.getAdminDongsBySggNm(sgg);
     }
+
     @GetMapping("/getSggByEmd")
     @ResponseBody
     public List<AdminDong> getSggByEmd(String sgg) {
 
-        List<AdminDong> adminDong = adminDongService.getAdminDongsBySggNm(sgg);
-
-        return adminDong;
+        return adminDongService.getAdminDongsBySggNm(sgg);
     }
 
+    // 위험도 페이지
+    @GetMapping("/correlationMap")
+    public String correlationMap(Model model) {
 
-    @GetMapping("/getMiddleCategories")
-    @ResponseBody
-    public List<UpjongCode> getMiddleCategories(String majorCd) {
+        List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
 
-        List<UpjongCode> upjongCode = upjongCodeService.getGroupedUpjongCodesByMajorCd(majorCd);
+        model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
+        model.addAttribute("upjongNames", upjongCodeService.getAllNames());
 
-        return upjongCode;
+        return "map/correlationMap";
     }
-
-    @GetMapping("/getMinorCategories")
-    @ResponseBody
-    public List<UpjongCode> getMinorCategories(String middleCd) {
-
-        List<UpjongCode> upjongCode = upjongCodeService.getUpjongCodesByMiddleCd(middleCd);
-
-        return upjongCode;
-    }
-
-
-    @GetMapping("/getUpjongCodeByMinorCd")
-    @ResponseBody
-    public UpjongCode getUpjongCodeByMinorCd(String minorCd) {
-
-        UpjongCode upjongCode = upjongCodeService.getUpjongCodeByMinorCd(minorCd);
-        return upjongCode;
-    }
-
-    @GetMapping("/searchUpjong")
-    @ResponseBody
-    public List<UpjongCode> searchUpjong(String keyword) {
-        System.out.println(keyword);
-        List<UpjongCode> upjongCode = upjongCodeService.getUpjongCodeByKeyword(keyword);
-        System.out.println(upjongCode);
-        return upjongCode;
-    }
-
-
-    @GetMapping("/searchInfoByRegionAndUpjong")
-    @ResponseBody
-    public String searchInfoByRegionAndUpjong(String sgg, String emd, String upjong) {
-
-        System.out.println(sgg);
-        System.out.println(emd);
-        System.out.println(upjong);
-
-        return "";
-    }
-
 }

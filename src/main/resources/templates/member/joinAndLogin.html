@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="common/head::head"></head> <!-- ✅ 공백 제거 -->
+<head th:replace="common/head::head"></head>
+
 <script>
-
-
     // 비밀번호 눈 누르면 보이게하기
     function showPassword(el) {
         const $icon = $(el);
@@ -257,28 +256,17 @@
     }
 </style>
 
-<div
-        class="flex flex-col justify-center items-center w-screen h-screen overflow-hidden gap-2.5 px-[75px] py-[50px] bg-white"
->
-    <div
-            class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[1326px] h-[884px] relative "
-            style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.25));"
-    >
+<div class="flex flex-col justify-center items-center w-screen h-screen overflow-hidden gap-2.5 px-[75px] py-[50px] bg-white">
+    <div class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[1326px] h-[884px] relative"
+         style="filter: drop-shadow(4px 4px 4px rgba(0,0,0,0.25));">
         <img src="/images/로그인 배경사진.png" class="flex-grow-0 flex-shrink-0 w-[1326px] h-[883px] object-cover"/>
-        <div
-                class="hidden joinDiv flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 h-[883px] w-[607px] absolute left-[719px] top-0 overflow-hidden gap-[30px] py-[11px] rounded-tl-3xl rounded-bl-3xl bg-white"
-                style="box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.25);"
-        >
-            <div
-                    class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[34px] relative p-2.5"
-            >
-                <a href="../home/main" class="cursor-pointer"><img
-                        src="/images/로고.png"
-                        class="flex-grow-0 flex-shrink-0 w-[140px] h-[55px] object-cover"
-                /></a>
-                <div
-                        class="flex justify-start items-center flex-grow-0 flex-shrink-0 relative overflow-hidden py-6"
-                >
+        <div class="hidden joinDiv flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 h-[883px] w-[607px] absolute left-[719px] top-0 overflow-hidden gap-[30px] py-[11px] rounded-tl-3xl rounded-bl-3xl bg-white"
+             style="box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.25);">
+            <div class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[34px] relative p-2.5">
+                <a href="../home/main" class="cursor-pointer">
+                    <img src="/images/로고.png" class="flex-grow-0 flex-shrink-0 w-[140px] h-[55px] object-cover"/>
+                </a>
+                <div class="flex justify-start items-center flex-grow-0 flex-shrink-0 relative overflow-hidden py-6">
 
                     <p class="flex-grow-0 flex-shrink-0 text-base text-left text-[#1a1717]/[0.53]">
                         English (UK)
@@ -314,46 +302,51 @@
                     </svg>
                 </div>
             </div>
-            <div
-                    class="flex justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-2.5 pl-[25px] pr-2.5 py-2.5"
-            >
+            <div class="flex justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-2.5 pl-[25px] pr-2.5 py-2.5">
                 <p class="flex-grow w-[572px] text-2xl font-bold text-left text-[#181818]">
                     Create Account
                 </p>
             </div>
-            <div
-                    class="flex justify-center items-center self-stretch flex-grow-0 flex-shrink-0 h-[91px] relative overflow-hidden gap-[45px] px-[29px] py-[13px]"
-            >
-                <a href="../member/loginKakao">
+            <div class="flex justify-center items-center h-[90px] gap-[10px]">
+                <!-- 카카오 -->
+                <a href="../member/loginKakao" class="flex-1 flex justify-center">
                     <img src="/images/카카오로그인.png"
-                         class="flex-grow-0 flex-shrink-0 w-[220px] h-[54px] object-cover cursor-pointer"
-                    />
+                         class="h-[40px] w-auto object-contain cursor-pointer" />
                 </a>
 
-                <a href="../member/loginNaver">
+                <!-- 네이버 -->
+                <a href="../member/loginNaver" class="flex-1 flex justify-center">
                     <img src="/images/네이버로그인.png"
-                         class="flex-grow-0 flex-shrink-0 w-[249px] h-[54px] object-cover cursor-pointer"
-                    />
+                         class="h-[40px] w-auto object-contain cursor-pointer" />
                 </a>
-                <div class="cursor-pointer flex" onclick="googleLogin();">
-                    <img src="/images/g-normal.png" width="30px">
-                    <span class="buttonText">Log in with Google</span>
+
+                <!-- 구글 -->
+                <div class="flex-1 flex justify-center">
+                    <button onclick="googleLogin()"
+                            class="flex items-center justify-center w-[183px] h-[40px] px-4 rounded border border-[#747775] bg-white shadow-sm cursor-pointer">
+                        <!-- 아이콘 -->
+                        <div class="w-4 h-4 mr-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="w-full h-full">
+                                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                                <path fill="none" d="M0 0h48v48H0z"></path>
+                            </svg>
+                        </div>
+                        <!-- 텍스트 -->
+                        <span class="flex-grow text-[14px] leading-[20px] font-['Roboto',_arial,_sans-serif] align-top text-[#1f1f1f]">Sign in with Google</span>
+                    </button>
                 </div>
             </div>
-            <div
-                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[91px] relative gap-2.5 p-2.5 bg-white"
-            >
+            <div class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[91px] relative gap-2.5 p-2.5 bg-white">
                 <p class="flex-grow w-[71px] text-2xl font-bold text-left text-[#1a1717]/[0.38]">-OR-</p>
             </div>
 
             <form action="createAccount" method="post" id="createAccountForm">
-                <div
-                        class="flex flex-col justify-start items-end flex-grow-0 flex-shrink-0 w-[546px] overflow-hidden gap-[40px] px-[22px] py-[13px]"
-                >
+                <div class="flex flex-col justify-start items-end flex-grow-0 flex-shrink-0 w-[546px] overflow-hidden gap-[40px] px-[22px] py-[13px]">
 
-                    <div
-                            class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative"
-                    >
+                    <div class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative">
                         <label>
                             <input type="text" placeholder="Full Name" autocomplete="off" name="name" id="name"
                                    class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-left text-2xl outline-none focus:outline-none focus:border-none"/>
@@ -376,14 +369,10 @@
                         <div class="nameCheck-msg text-red-500 mt-2 flex hidden w-[502px]"></div>
 
                     </div>
-                    <div
-                            class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative"
-                    >
+                    <div class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative">
                         <label>
                             <input type="text" placeholder="Email Address" autocomplete="off" name="email" id="email"
-                                   class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
-                            />
-
+                                   class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"/>
 
                             <svg
                                     id="emailLine"
@@ -401,13 +390,10 @@
                         </label>
                         <div class="emailCheck-msg text-red-500 mt-2 flex hidden w-[502px]"></div>
                     </div>
-                    <div
-                            class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative"
-                    >
+                    <div class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative">
                         <label>
                             <input type="password" placeholder="Password" name="loginPw" id="joinPw" autocomplete="off"
-                                   class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
-                            />
+                                   class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"/>
 
                             <svg
                                     id="passwordLine"
@@ -428,9 +414,7 @@
                            class="fa-solid fa-eye absolute top-0 right-0 text-2xl cursor-pointer"></i>
                     </div>
 
-                    <div
-                            class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative"
-                    >
+                    <div class="flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative">
                         <label>
                             <input type="text" placeholder="PhoneNumber" name="phoneNum" autocomplete="off"
                                    maxlength="13"
@@ -459,45 +443,30 @@
                 </div>
             </form>
             <button form="createAccountForm" onClick="handleSubmit(event);"
-                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[502px] h-12 relative gap-2.5 p-2.5 rounded-lg bg-[#279574] cursor-pointer"
-            >
-                <p
-                        class="flex-grow w-[482px] text-xl font-semibold text-center text-white ">
+                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[502px] h-12 relative gap-2.5 p-2.5 rounded-lg bg-[#279574] cursor-pointer">
+                <p class="flex-grow w-[482px] text-xl font-semibold text-center text-white ">
                     Create Account
                 </p>
             </button>
 
-
             <div onClick="toggleDiv();"
-                 class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] h-11 relative gap-2.5 p-2.5 cursor-pointer"
-            >
+                 class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] h-11 relative gap-2.5 p-2.5 cursor-pointer">
                 <p class="flex-grow w-[310px] text-xl font-medium text-center">
-          <span class="flex-grow w-[310px] text-xl font-medium text-center text-black/30"
-          >Already have an account ?</span
-          ><span class="flex-grow w-[310px] text-xl font-medium text-center text-black/[0.12]">
-          </span
-          ><span class="flex-grow w-[310px] text-xl font-medium text-center text-[#54beb8]"
-                >Sign Up</span
-                >
+                    <span class="flex-grow w-[310px] text-xl font-medium text-center text-black/30">Already have an account ?</span>
+                    <span class="flex-grow w-[310px] text-xl font-medium text-center text-black/[0.12]"></span>
+                    <span class="flex-grow w-[310px] text-xl font-medium text-center text-[#54beb8]">Sign Up</span>
                 </p>
             </div>
         </div>
 
-        <div
-                class="loginDiv flex flex-col justify-center items-center flex-grow-0 flex-shrink-0  w-[607px] absolute top-1/2 translate-y-[95px] left-[719px] top-2.5 overflow-hidden gap-[30px] py-[11px] rounded-tl-3xl rounded-bl-3xl bg-white"
-                style="box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.25);"
-        >
-            <div
-                    class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[34px] relative p-2.5"
-            >
-                <a href="../home/main" class="cursor-pointer"><img
-                        src="/images/로고.png"
-                        class="flex-grow-0 flex-shrink-0 w-[140px] h-[55px] object-cover"
-                /></a>
-                <div
-                        class="flex justify-start items-center flex-grow-0 flex-shrink-0 relative overflow-hidden py-6"
-                >
-
+        <div class="loginDiv flex flex-col justify-center items-center w-[607px] absolute translate-y-[95px] left-[719px] gap-[30px] py-[11px] top-2.5 rounded-tl-3xl rounded-bl-3xl bg-white"
+             style="box-shadow: 4px 4px 4px 0 rgba(0,0,0,0.25);">
+            <div class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[34px] relative p-2.5">
+                <a href="../home/main" class="cursor-pointer">
+                    <img src="/images/로고.png"
+                         class="flex-grow-0 flex-shrink-0 w-[140px] h-[55px] object-cover"/>
+                </a>
+                <div class="flex justify-start items-center flex-grow-0 flex-shrink-0 relative overflow-hidden py-6">
                     <p class="flex-grow-0 flex-shrink-0 text-base text-left text-[#1a1717]/[0.53]">
                         English (UK)
                     </p>
@@ -532,52 +501,54 @@
                     </svg>
                 </div>
             </div>
-            <div
-                    class="flex justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-2.5 pl-[25px] pr-2.5 py-2.5"
-            >
+            <div class="flex justify-start items-start self-stretch flex-grow-0 flex-shrink-0 relative gap-2.5 pl-[25px] pr-2.5 py-2.5">
                 <p class="flex-grow w-[572px] text-2xl font-bold text-left text-[#181818]">
                     Sign Up
                 </p>
             </div>
-            <div
-                    class="flex justify-center items-center self-stretch flex-grow-0 flex-shrink-0 h-[91px] relative overflow-hidden gap-[45px] px-[29px] py-[13px]"
-            >
-                <a href="../member/loginKakao">
+            <div class="flex justify-center items-center h-[90px] gap-[10px]">
+                <!-- 카카오 -->
+                <a href="../member/loginKakao" class="flex-1 flex justify-center">
                     <img src="/images/카카오로그인.png"
-                         class="flex-grow-0 flex-shrink-0 w-[220px] h-[54px] object-cover cursor-pointer"
-                    />
+                         class="h-[40px] w-auto object-contain cursor-pointer" />
                 </a>
 
-                <a href="../member/loginNaver">
+                <!-- 네이버 -->
+                <a href="../member/loginNaver" class="flex-1 flex justify-center">
                     <img src="/images/네이버로그인.png"
-                         class="flex-grow-0 flex-shrink-0 w-[249px] h-[54px] object-cover cursor-pointer"
-                    />
+                         class="h-[40px] w-auto object-contain cursor-pointer" />
                 </a>
-                <div class="cursor-pointer flex" onclick="googleLogin();">
-                    <img src="/images/g-normal.png" width="30px">
-                    <span class="buttonText">Log in with Google</span>
+
+                <!-- 구글 -->
+                <div class="flex-1 flex justify-center">
+                    <button onclick="googleLogin()"
+                            class="flex items-center justify-center w-[183px] h-[40px] px-4 rounded border border-[#747775] bg-white shadow-sm cursor-pointer">
+                        <!-- 아이콘 -->
+                        <div class="w-4 h-4 mr-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="w-full h-full">
+                                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                                <path fill="none" d="M0 0h48v48H0z"></path>
+                            </svg>
+                        </div>
+                        <!-- 텍스트 -->
+                        <span class="flex-grow text-[14px] leading-[20px] font-['Roboto',_arial,_sans-serif] align-top text-[#1f1f1f]">Sign in with Google</span>
+                    </button>
                 </div>
             </div>
-            <div
-                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[91px] relative gap-2.5 p-2.5 bg-white"
-            >
+            <div class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[91px] relative gap-2.5 p-2.5 bg-white">
                 <p class="flex-grow w-[71px] text-2xl font-bold text-left text-[#1a1717]/[0.38]">-OR-</p>
             </div>
             <form action="doLogin" method="post" id="loginForm">
-                <div
-                        class="flex flex-col justify-start items-end flex-grow-0 flex-shrink-0 w-[546px] overflow-hidden gap-[40px] px-[22px] py-[13px]"
-                >
+                <div class="flex flex-col justify-start items-end flex-grow-0 flex-shrink-0 w-[546px] overflow-hidden gap-[40px] px-[22px] py-[13px]">
 
-
-                    <div
-                            class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative"
-                    >
+                    <div class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative">
                         <label>
                             <input type="text" placeholder="Email Address" autocomplete="off" name="username"
                                    id="loginEmail"
-                                   class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
-                            />
-
+                                   class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"/>
 
                             <svg
                                     id="emailLine"
@@ -594,14 +565,11 @@
 
                         </label>
                     </div>
-                    <div
-                            class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative"
-                    >
+                    <div class=" flex flex-col justify-start items-start self-stretch flex-grow-0 flex-shrink-0 h-12 relative">
                         <label>
                             <input type="password" placeholder="Password" name="password" id="loginPw"
                                    autocomplete="off"
-                                   class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"
-                            />
+                                   class="self-stretch flex-grow-0 flex-shrink-0 w-[502px] text-xl text-left text-2xl outline-none focus:outline-none focus:border-none"/>
 
                             <svg
                                     id="passwordLine"
@@ -617,40 +585,29 @@
                             </svg>
 
                         </label>
-                        <i onClick="showPassword(this);"
-                           class="fa-solid fa-eye absolute top-0 right-0 text-2xl cursor-pointer"></i>
+                        <i onClick="showPassword(this);" class="fa-solid fa-eye absolute top-0 right-0 text-2xl cursor-pointer"></i>
                     </div>
-
-
                 </div>
             </form>
+
             <button form="loginForm" onClick="handleLoginSubmit(event);"
-                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[502px] h-12 relative gap-2.5 p-2.5 rounded-lg bg-[#279574] cursor-pointer"
-            >
-                <p
-                        class="flex-grow w-[482px] text-xl font-semibold text-center text-white ">
+                    class="flex justify-start items-start flex-grow-0 flex-shrink-0 w-[502px] h-12 relative gap-2.5 p-2.5 rounded-lg bg-[#279574] cursor-pointer">
+                <p class="flex-grow w-[482px] text-xl font-semibold text-center text-white ">
                     Sign Up
                 </p>
             </button>
 
-
             <div onClick="toggleDiv();"
-                 class="flex justify-center items-center flex-grow-0 flex-shrink-0  w-[400px] h-11 relative gap-2.5 p-2.5 cursor-pointer"
-            >
+                 class="flex justify-center items-center flex-grow-0 flex-shrink-0  w-[400px] h-11 relative gap-2.5 p-2.5 cursor-pointer">
                 <p class="flex-grow w-[310px] text-xl font-medium text-center">
-          <span class="flex-grow w-[310px] text-xl font-medium text-center text-black/30"
-          >Don't Have an Account?</span
-          ><span class="flex-grow w-[310px] text-xl font-medium text-center text-black/[0.12]">
-          </span
-          ><span class="flex-grow w-[310px] text-xl font-medium text-center text-[#54beb8]"
-                >Create Account</span
-                >
+                    <span class="flex-grow w-[310px] text-xl font-medium text-center text-black/30">Don't Have an Account?</span>
+                    <span class="flex-grow w-[310px] text-xl font-medium text-center text-black/[0.12]"></span>
+                    <span class="flex-grow w-[310px] text-xl font-medium text-center text-[#54beb8]">Create Account</span>
                 </p>
             </div>
         </div>
     </div>
 </div>
-
 
 <!-- 구글 로그인 -->
 <script type="module">
@@ -660,7 +617,6 @@
         GoogleAuthProvider,
         signInWithPopup
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
 
     // ✅ Firebase 설정
     const firebaseConfig = {
@@ -817,5 +773,3 @@
     };
 
 </script>
-
-

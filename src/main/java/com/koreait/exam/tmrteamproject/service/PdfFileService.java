@@ -3,10 +3,10 @@ package com.koreait.exam.tmrteamproject.service;
 import com.koreait.exam.tmrteamproject.repository.PdfFileRepository;
 import com.koreait.exam.tmrteamproject.vo.PdfFile;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
 
@@ -16,11 +16,18 @@ public class PdfFileService {
 
     private final PdfFileRepository pdfFileRepository;
 
-    public void saveAllPdfsFromFolder(String folderPath) {
-        File folder = new File(folderPath);
+    @Async
+    public void savePdfsAsync(String folderPath) {
+        long savedCount = pdfFileRepository.count();
+        if (savedCount >= 246 * 3) {
+            System.out.println("이미 저장 완료된 상태 (총 " + savedCount + "개), 실행 중단.");
+            return;
+        }
 
+        File folder = new File(folderPath);
         if (!folder.exists() || !folder.isDirectory()) {
-            throw new RuntimeException("폴더가 존재하지 않거나 디렉토리가 아닙니다: " + folderPath);
+            System.err.println("폴더가 존재하지 않거나 디렉토리가 아닙니다: " + folderPath);
+            return;
         }
 
         File[] files = folder.listFiles((dir, name) -> name.toLowerCase().endsWith(".pdf"));
@@ -29,15 +36,19 @@ public class PdfFileService {
             return;
         }
 
+        int count = 0;
         for (File file : files) {
+            if (count >= 246 * 3) {
+                System.out.println("246 * 3개 초과, 생략됨: " + file.getName());
+                break;
+            }
+
             try {
-                boolean exists = pdfFileRepository.existsByFileName(file.getName());
-                if (exists) {
+                if (pdfFileRepository.existsByFileName(file.getName())) {
                     System.out.println("이미 저장됨: " + file.getName());
                     continue;
                 }
 
-                // 예시: "대전광역시 서구 가수원동 편의점.pdf"
                 String fileName = file.getName().replace(".pdf", "");
                 String[] parts = fileName.split(" ");
 
@@ -55,11 +66,15 @@ public class PdfFileService {
 
                 pdfFileRepository.save(pdfFile);
                 System.out.println("저장 완료: " + file.getName());
+                count++;
 
-            } catch (IOException e) {
+            } catch (Exception e) {
                 System.err.println("저장 실패: " + file.getName());
                 e.printStackTrace();
             }
         }
+
+        System.out.println("총 저장 완료 수: " + count);
+        System.out.println("비동기 PDF 저장 작업 완료 (총 " + count + "개)");
     }
 }

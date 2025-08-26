@@ -6,8 +6,6 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import javax.persistence.Entity;
-
 @Getter
 @Setter
 @NoArgsConstructor
