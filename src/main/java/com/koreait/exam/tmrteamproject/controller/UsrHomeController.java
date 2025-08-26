@@ -31,8 +31,11 @@ public class UsrHomeController {
     @GetMapping("/main")
     public String homeMain(@AuthenticationPrincipal MemberContext memberContext, Model model) {
 
+        // 오늘
         List<LhSupplySchedule> nowLhSupplySchedules = new ArrayList<>();
+        // 어제
         List<LhSupplySchedule> yesterdayLhSupplySchedules = new ArrayList<>();
+        // 지난 날(이틀 전 부터)
         List<LhSupplySchedule> lastLhSupplySchedules = new ArrayList<>();
         LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
@@ -42,7 +45,6 @@ public class UsrHomeController {
             if (loginedMember != null) {
                 List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginedMember.getId());
 
-                // 날짜 설정 다시 고치기
                 for (ScheduleInterest scheduleInterest : scheduleInterests) {
                     LhSupplySchedule schedule = lhSupplyScheduleService.findById(scheduleInterest.getScheduleId());
 
@@ -66,8 +68,11 @@ public class UsrHomeController {
     @GetMapping("/notifications")
     public String notifications(@AuthenticationPrincipal MemberContext memberContext, Model model) {
 
+        // 오늘
         List<LhSupplySchedule> nowLhSupplySchedules = new ArrayList<>();
+        // 어제
         List<LhSupplySchedule> yesterdayLhSupplySchedules = new ArrayList<>();
+        // 지난 날(이틀 전 부터)
         List<LhSupplySchedule> lastLhSupplySchedules = new ArrayList<>();
         LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
@@ -77,7 +82,6 @@ public class UsrHomeController {
             if (loginedMember != null) {
                 List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginedMember.getId());
 
-                // 날짜 설정 다시 고치기
                 for (ScheduleInterest scheduleInterest : scheduleInterests) {
                     LhSupplySchedule schedule = lhSupplyScheduleService.findById(scheduleInterest.getScheduleId());
 
