@@ -81,7 +81,7 @@ from transformers import (
 
 # ✅ 2. 텍스트 전처리
 train_sentences = 매출_조회 + 유동인구_조회 + 위험도 + 청약_정보
-train_labels = [0]*len(매출_조회) + [1]*len(유동인구_조회) + [2]*len(위험도) + [3]*len(청약_정보)
+train_labels = [0] * len(매출_조회) + [1] * len(유동인구_조회) + [2] * len(위험도) + [3] * len(청약_정보)
 
 # ✅ 2. 라벨 인코딩
 le = LabelEncoder()
@@ -92,18 +92,18 @@ texts = train_sentences
 model_name = "klue/bert-base"
 tokenizer = BertTokenizer.from_pretrained(model_name)
 
-
 # ✅ 4. HuggingFace Dataset 생성
 data = Dataset.from_dict({"text": texts, "label": encoded_labels})
 
+
 def tokenize(batch):
     return tokenizer(batch["text"], truncation=True, padding="max_length", max_length=32)
+
 
 tokenized_data = data.map(tokenize, batched=True)
 
 # ✅ 5. 모델 정의
 model = BertForSequenceClassification.from_pretrained(model_name, num_labels=len(le.classes_))
-
 
 # ✅ 6. Trainer 학습 설정
 training_args = TrainingArguments(

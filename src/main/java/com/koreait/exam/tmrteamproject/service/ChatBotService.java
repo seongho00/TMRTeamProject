@@ -25,16 +25,18 @@ public class ChatBotService {
         try {
             String response = restTemplate.getForObject(flaskUrl, String.class);
             JSONObject json = new JSONObject(response);
-
             // ✅ 전체 파싱해서 원하는 항목 꺼내기
-            String intent = json.getString("intent");
+            int intent = json.getInt("intent");
             double confidence = json.getDouble("confidence");
-            String sido = json.optString("sido");
-            String sigungu = json.optString("sigungu");
-            String emd = json.optString("emd_nm");
-            String gender = json.optString("gender");
-            String ageGroup = json.optString("age_group");
-            String messageText = json.optString("message");
+            JSONObject entities = json.getJSONObject("entities");
+
+
+            String sido = entities.optString("sido");
+            String sigungu = entities.optString("sigungu");
+            String emd = entities.optString("emd_nm");
+            String gender = entities.optString("gender");
+            String ageGroup = entities.optString("age_group");
+            String messageText = entities.optString("message");
 
 
             FlaskResult flaskResult = FlaskResult.builder()
@@ -66,8 +68,8 @@ public class ChatBotService {
         String sigungu = flaskResult.getSigungu();
         String emd = flaskResult.getEmd();
 
-        if (sido.equals("대전")) {
-            sido = "대전광역시";
+        if (sido.equals("서울")) {
+            sido = "서울특별시";
         }
 
         System.out.println("sido: " + sido);
@@ -103,21 +105,50 @@ public class ChatBotService {
     }
 
 
-    public FlaskResult setFlaskResult(FlaskResult flaskResult) {
+
+
+    public FlaskResult analyzeRegion(FlaskResult flaskResult) {
+
+        String sido = flaskResult.getSido();
         String sigungu = flaskResult.getSigungu();
         String emd = flaskResult.getEmd();
 
-        if (!sigungu.equals("None")) {
-            flaskResult.setSido("대전광역시");
+        if (sido.equals("서울")) {
+            sido = "서울특별시";
         }
 
-        if (!emd.equals("None")) {
-            AdminDong adminDong = adminDongRepository.findRegionByEmdNm(emd);
-            flaskResult.setSido(adminDong.getSidoNm());
-            flaskResult.setSigungu(adminDong.getSggNm());
-            flaskResult.setEmd(adminDong.getEmdNm());
+        System.out.println("sido: " + sido);
+        System.out.println("sigungu: " + sigungu);
+        System.out.println("emd: " + emd);
+
+
+        // 지역 관련
+        if (!sido.equals("None") && !sigungu.equals("None") && !emd.equals("None")) {
+            // "대전 동구 효동"
+            return flaskResult;
+        } else if (!sido.equals("None") && !sigungu.equals("None")) {
+            // "대전 동구"
+            flaskResult.setSido("동구");
+
+            return flaskResult;
+        } else if (!sido.equals("None") && !emd.equals("None")) {
+            // "대전 효동"
+            return flaskResult;
+        } else if (!sigungu.equals("None") && !emd.equals("None")) {
+            // "동구 효동"
+            return flaskResult;
+        } else if (!sido.equals("None")) {
+            // "대전"
+            return flaskResult;
+        } else if (!sigungu.equals("None")) {
+            // "동구"
+            return flaskResult;
+        } else if (!emd.equals("None")) {
+            // "효동"
+            return flaskResult;
         }
 
-        return flaskResult;
+        return null;
+
     }
 }
