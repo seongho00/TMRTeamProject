@@ -27,7 +27,7 @@ public class ChatbotController {
     @Autowired
     private AdminDongService adminDongService;
     @Autowired
-    private RiskScoreService riskScoreService;
+    private LearningService learningService;
     @Autowired
     private UpjongCodeService upjongCodeService;
 
@@ -82,7 +82,7 @@ public class ChatbotController {
                 }
                 // DB에 넣어놔야하긴 해 + 과거 데이터도 넣을건가?
                 if (!emdCd.isEmpty()) {
-                    chatBotService.getSalesData(emdCd, flaskResult.getUpjong_nm());
+                    Long monthly = chatBotService.getSalesData(emdCd, flaskResult.getUpjong_nm());
                 }
 
                 return ResultData.from("S-1", "매출액 데이터 출력", "flaskResult", flaskResult);
@@ -100,11 +100,13 @@ public class ChatbotController {
                 return ResultData.from("S-2", "유동인구 데이터 출력", "flaskResult", flaskResult, "유동인구", populationSummary);
 
             case 2:
-                // 상권 위험도 예측 로직
-                RiskScore riskScore = riskScoreService.findAllByEmdCd(emdCd);
+
 
                 System.out.println("위험도 예측 요청");
-                break;
+                List<Learning> learning = learningService.findAllByEmdCd(emdCd);
+                // 상권 위험도 예측 로직
+
+                return ResultData.from("S-3", "위험도 데이터 출력", "flaskResult", flaskResult, "위험도 List", learning);
 
             case 3:
                 // 청약 관련 로직
