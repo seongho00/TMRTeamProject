@@ -78,8 +78,8 @@ public class ChatBotService {
     public void getLhSupplySchedule() {
     }
 
-    public void getSalesData(String emdCd, String upjongCd) {
+    public Long getSalesData(String emdCd, String upjongCd) {
         List<DataSet> dataSet = dataSaveRepository.findAllByAdminDongCodeAndServiceIndustryCode(emdCd, upjongCd);
-        dataSet.get(0).getMonthlySalesAmount();
+        return dataSet.get(0).getMonthlySalesAmount();
     }
 }
