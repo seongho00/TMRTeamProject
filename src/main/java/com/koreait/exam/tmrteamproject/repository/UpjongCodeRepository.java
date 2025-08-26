@@ -13,4 +13,6 @@ public interface UpjongCodeRepository extends JpaRepository<UpjongCode, String> 
 
     @Query("SELECT u.upjongNm FROM UpjongCode u WHERE u.upjongNm LIKE %:q% ORDER BY u.upjongCd")
     List<String>searchNames(String q);
+
+    String findUpjongCodeByUpjongNm(String upjongNm);
 }

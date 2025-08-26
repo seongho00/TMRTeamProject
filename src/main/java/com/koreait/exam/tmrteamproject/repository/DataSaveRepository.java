@@ -17,4 +17,6 @@ public interface DataSaveRepository extends JpaRepository<DataSet, Long> {
         WHERE CONCAT_WS('|', base_year_quarter_code, admin_dong_code, service_industry_code) IN (:keys)
         """, nativeQuery = true)
     List<String> findExistingKeys(@Param("keys") Collection<String> keys);
+
+    List<DataSet> findAllByAdminDongCodeAndServiceIndustryCode(String adminDongCode, String serviceIndustryCode);
 }
