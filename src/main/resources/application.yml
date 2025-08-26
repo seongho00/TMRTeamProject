@@ -24,6 +24,10 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 80MB
 
 logging:
   level:
@@ -51,3 +55,21 @@ solapi:
   apiKey: NCS8X6JXYL5LGJ0B
   apiSecret: OPMRNQJAWXRAEDUGNAOPOI8AZNRTTSCO
   sender: 01030417745
+
+# 주소 검색 API
+address:
+  confmKey: devU01TX0FVVEgyMDI1MDgyMTA5NDEzNzExNjA5NTk=  # 발급받은 승인키
+
+# 지오코딩 API
+vworld:
+  key: 0D1E185A-F71A-3D74-AE65-579E01CC79CD
+
+# 건축물대장 API
+bldrgst:
+  apiKey: CtMWbR+mYCIwYQmPYdFuMiP4LsJ6aVV3CcbyZUXI5bGiblyS1OilOVAYopA9VxwIcRyQ7pT/ADS7FzuMVs3uEw==
+  apiKeyEncoded: false  # ← 인코딩된 키를 쓴다는 표시
+
+# R-ONE API
+rOne:
+  apiKey: 11ff00dfd57d4af28c5d3c16ed576fc1
+

@@ -130,3 +130,13 @@ CREATE TABLE schedule_interest (
                                    is_active TINYINT(1) NOT NULL DEFAULT 1
 
 )
+
+CREATE TABLE property_file (
+                               id BIGINT AUTO_INCREMENT PRIMARY KEY,   -- BaseEntity PK
+                               reg_date DATETIME NOT NULL,         -- 생성일 (BaseEntity)
+                               update_date DATETIME NOT NULL,        -- 수정일 (BaseEntity)
+
+                               file_name VARCHAR(255) NOT NULL,        -- 업로드된 파일 이름
+                               file_type VARCHAR(100) NOT NULL,        -- MIME 타입 (예: image/png)
+                               data LONGTEXT                           -- Base64 인코딩된 파일 데이터
+)
