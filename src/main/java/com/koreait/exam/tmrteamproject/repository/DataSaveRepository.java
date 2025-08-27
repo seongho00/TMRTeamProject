@@ -37,4 +37,42 @@ public interface DataSaveRepository extends JpaRepository<DataSet, Long> {
                     "ORDER BY MAX(d.total_floating_population) DESC", // ⚡️ 중요
             nativeQuery = true)
     List<DataSet> findGroupedByAdminDong(@Param("quarter") String quarter);
+
+
+    @Query(value =
+            "SELECT d.* " +
+                    "FROM data_set d " +
+                    "WHERE d.base_year_quarter_code = :quarter " +
+                    "GROUP BY d.admin_dong_code " +
+                    "ORDER BY MAX(d.female_floating_population) DESC",
+            nativeQuery = true)
+    List<DataSet> findGroupedByAdminDongOrderByFemale(@Param("quarter") String quarter);
+
+    @Query(value =
+            "SELECT d.* " +
+                    "FROM data_set d " +
+                    "WHERE d.base_year_quarter_code = :quarter " +
+                    "GROUP BY d.admin_dong_code " +
+                    "ORDER BY MAX(d.male_floating_population) DESC",
+            nativeQuery = true)
+    List<DataSet> findGroupedByAdminDongOrderByMale(@Param("quarter") String quarter);
+
+    @Query(value =
+            "SELECT d.* " +
+                    "FROM data_set d " +
+                    "WHERE d.base_year_quarter_code = :quarter " +
+                    "GROUP BY d.admin_dong_code " +
+                    "ORDER BY MAX(d.age10floating_population) DESC",
+            nativeQuery = true)
+    List<DataSet> findGroupedOrderByAge10(@Param("quarter") String quarter);
+    @Query(value = "SELECT d.* FROM data_set d GROUP BY d.admin_dong_code ORDER BY MAX(d.age20floating_population) DESC", nativeQuery = true)
+    List<DataSet> findGroupedOrderByAge20(@Param("quarter") String quarter);
+    @Query(value = "SELECT d.* FROM data_set d GROUP BY d.admin_dong_code ORDER BY MAX(d.age30floating_population) DESC", nativeQuery = true)
+    List<DataSet> findGroupedOrderByAge30(@Param("quarter") String quarter);
+    @Query(value = "SELECT d.* FROM data_set d GROUP BY d.admin_dong_code ORDER BY MAX(d.age40floating_population) DESC", nativeQuery = true)
+    List<DataSet> findGroupedOrderByAge40(@Param("quarter") String quarter);
+    @Query(value = "SELECT d.* FROM data_set d GROUP BY d.admin_dong_code ORDER BY MAX(d.age50floating_population) DESC", nativeQuery = true)
+    List<DataSet> findGroupedOrderByAge50(@Param("quarter") String quarter);
+    @Query(value = "SELECT d.* FROM data_set d GROUP BY d.admin_dong_code ORDER BY MAX(d.age60plus_floating_population) DESC", nativeQuery = true)
+    List<DataSet> findGroupedOrderByAge60Plus(@Param("quarter") String quarter);
 }
