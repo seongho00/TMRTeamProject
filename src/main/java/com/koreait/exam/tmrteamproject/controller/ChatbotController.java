@@ -94,7 +94,6 @@ public class ChatbotController {
             case 1:
                 // 지역 분류
                 System.out.println(flaskResult);
-                PopulationSummary populationSummary = chatBotService.getPopulationSummary(flaskResult);
 
                 // 해당 지역 data 가져오기
                 DataSet dataSet = dataSaveService.findAllByEmdCdAndBaseYearQuarterCode(emdCd);
@@ -117,10 +116,12 @@ public class ChatbotController {
                 long rounded = Math.round(percentile);
                 System.out.println(rounded);
 
+
+
                 // 지역 검색
                 System.out.println("유동인구 조회 요청");
 
-                return ResultData.from("S-2", "유동인구 데이터 출력", "flaskResult", flaskResult, "유동인구", populationSummary);
+                return ResultData.from("S-2", "유동인구 데이터 출력", "flaskResult", flaskResult, "유동인구", dataSet, "상위 계산", rounded);
 
             case 2:
 

@@ -48,82 +48,168 @@
                 }
                 console.log(data)
                 const flaskResult = data.data1;
-                const populationSummary = data.data2;
                 const sido = flaskResult.sido;
                 const sigungu = flaskResult.sigungu;
                 const emd = flaskResult.emd;
+
+                const regionText = [sido, sigungu, emd]
+                    .filter(val => val && val !== "")
+                    .join(" ");
+
+                // 유동인구 대답
+                if (data.resultCode === "S-2") {
+                    const dataSet = data.data2;
+                    const percentile = data.data3
+                    console.log(dataSet)
+
+                    if (flaskResult.gender === "" && flaskResult.ageGroup === "") {
+                        // 성별도 없고, 나이대도 없을 때 → 전체 인구 출력
+                        $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 전체 유동인구는 ${dataSet.totalFloatingPopulation}명입니다.</div>`);
+                        $chatBox.append(`
+                          <div class="bot-msg">
+                            <b>챗봇:</b> ${regionText}은(는) 서울 전체 지역 중 <b>상위 ${percentile}%</b>에 해당합니다 🚀
+                          </div>
+                        `);
+
+
+                        // ===== Chart.js 추가 부분 =====
+                        // 기존 차트 제거
+                        if (window.populationChart) {
+                            window.populationChart.destroy();
+                        }
+                        if (window.genderChart) {
+                            window.genderChart.destroy();
+                        }
+
+                        // 차트 나올 container 설정
+
+                        $("#chartContainer").remove();
+                        $chatBox.append(`
+                          <div id="chartContainer">
+                              <canvas id="genderChart"></canvas>
+                              <canvas id="populationChart"></canvas>
+                          </div>
+                        `);
+
+                        // ===== 1. 성별 원형 차트 =====
+                        const genderCtx = document.getElementById("genderChart").getContext("2d");
+                        window.genderChart = new Chart(genderCtx, {
+                            type: "doughnut",   // pie 로도 가능
+                            data: {
+                                labels: ["남성", "여성"],
+                                datasets: [{
+                                    label: regionText + " 성별 유동인구",
+                                    data: [
+                                        dataSet.maleFloatingPopulation,
+                                        dataSet.femaleFloatingPopulation
+                                    ],
+                                    backgroundColor: ["#36A2EB", "#FF6384"]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    title: { display: true, text: regionText + " 성별 유동인구" }
+                                }
+                            }
+                        });
+
+                        // ===== 2. 연령대 막대 차트 =====
+                        const ageCtx = document.getElementById("populationChart").getContext("2d");
+                        window.populationChart = new Chart(ageCtx, {
+                            type: "bar",
+                            data: {
+                                labels: ["10대", "20대", "30대", "40대", "50대", "60대"],
+                                datasets: [{
+                                    label: regionText + " 연령대별 유동인구",
+                                    data: [
+                                        dataSet.age10FloatingPopulation,
+                                        dataSet.age20FloatingPopulation,
+                                        dataSet.age30FloatingPopulation,
+                                        dataSet.age40FloatingPopulation,
+                                        dataSet.age50FloatingPopulation,
+                                        dataSet.age60PlusFloatingPopulation
+                                    ],
+                                    backgroundColor: "#4CAF50"
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: { display: false },
+                                    title: { display: true, text: regionText + " 연령대별 유동인구" }
+                                }
+                            }
+                        });
+
+
+                    } else if (flaskResult.gender !== "" && flaskResult.ageGroup === "") {
+                        // 성별만 있을 때
+                        const genderKor = flaskResult.gender === "male" ? "남성" : "여성";
+                        const genderValue = flaskResult.gender === "male" ? populationSummary.male : populationSummary.female;
+
+                        $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 ${genderKor} 유동인구는 ${genderValue}명입니다.</div>`);
+                    } else if (flaskResult.gender === "" && flaskResult.ageGroup !== "") {
+                        // 나이대만 있을 때
+                        const convertAgeKey = (ageGroup) => ageGroup?.replace("age_", "age");
+
+                        const ageGroupMap = {
+                            "age_10": "10대",
+                            "age_20": "20대",
+                            "age_30": "30대",
+                            "age_40": "40대",
+                            "age_50": "50대",
+                            "age_60": "60대"
+                        };
+
+                        const rawAgeGroup = flaskResult.ageGroup;         // 예: "age_20"
+                        const ageKor = ageGroupMap[rawAgeGroup];          // 예: "20대"
+                        const ageKey = convertAgeKey(rawAgeGroup);        // 예: "age20"
+                        const ageValue = populationSummary?.[ageKey];     // 올바르게 접근
+
+                        $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 ${ageKor} 유동인구는 ${ageValue}명입니다.</div>`);
+                    } else {
+                        // 성별 + 나이대 모두 있을 때 → 조합 데이터는 없으므로 따로 안내
+                        const genderKor = flaskResult.gender === "male" ? "남성" : "여성";
+                        const genderValue = flaskResult.gender === "male" ? populationSummary.male : populationSummary.female;
+
+                        const convertAgeKey = (ageGroup) => ageGroup?.replace("age_", "age");
+
+                        const ageGroupMap = {
+                            "age10": "10대",
+                            "age20": "20대",
+                            "age30": "30대",
+                            "age40": "40대",
+                            "age50": "50대",
+                            "age60": "60대"
+                        };
+
+                        const ageKey = convertAgeKey(flaskResult.ageGroup);  // "age_20" → "age20"
+                        const ageKor = ageGroupMap[ageKey];
+                        const ageValue = populationSummary?.[ageKey];
+
+                        console.log("flaskResult.ageGroup:", flaskResult.ageGroup);
+                        console.log("변환된 ageKey:", ageKey);
+                        console.log("ageKor:", ageKor);
+                        console.log("populationSummary keys:", Object.keys(populationSummary));
+
+                        $chatBox.append(`<div class="bot-msg"><b>챗봇:</b>"${regionText}의 ${ageKor} ${genderKor}"에 대한 정확한 인구수는 제공되지 않지만,<br>
+                    각각의 통계는 다음과 같습니다 😊 <br>
+                    👉 ${ageKor} 인구: ${ageValue}명<br>
+                    👉 ${genderKor} 인구: ${genderValue}명</div>`);
+                    }
+
+                }
 
                 console.log(sido);
                 console.log(sigungu);
                 console.log(emd);
 
-                const regionText = [sido, sigungu, emd]
-                    .filter(val => val && val !== "")
-                    .join(" ");
-                // 데이터 가져와서 지역도 보여주기
-
-                if (flaskResult.gender === "" && flaskResult.ageGroup === "") {
-                    // 성별도 없고, 나이대도 없을 때 → 전체 인구 출력
-                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 전체 유동인구는 ${populationSummary.total}명입니다.</div>`);
-                } else if (flaskResult.gender !== "" && flaskResult.ageGroup === "") {
-                    // 성별만 있을 때
-                    const genderKor = flaskResult.gender === "male" ? "남성" : "여성";
-                    const genderValue = flaskResult.gender === "male" ? populationSummary.male : populationSummary.female;
-
-                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 ${genderKor} 유동인구는 ${genderValue}명입니다.</div>`);
-                } else if (flaskResult.gender === "" && flaskResult.ageGroup !== "") {
-                    // 나이대만 있을 때
-                    const convertAgeKey = (ageGroup) => ageGroup?.replace("age_", "age");
-
-                    const ageGroupMap = {
-                        "age_10": "10대",
-                        "age_20": "20대",
-                        "age_30": "30대",
-                        "age_40": "40대",
-                        "age_50": "50대",
-                        "age_60": "60대"
-                    };
-
-                    const rawAgeGroup = flaskResult.ageGroup;         // 예: "age_20"
-                    const ageKor = ageGroupMap[rawAgeGroup];          // 예: "20대"
-                    const ageKey = convertAgeKey(rawAgeGroup);        // 예: "age20"
-                    const ageValue = populationSummary?.[ageKey];     // 올바르게 접근
-
-                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 ${ageKor} 유동인구는 ${ageValue}명입니다.</div>`);
-                } else {
-                    // 성별 + 나이대 모두 있을 때 → 조합 데이터는 없으므로 따로 안내
-                    const genderKor = flaskResult.gender === "male" ? "남성" : "여성";
-                    const genderValue = flaskResult.gender === "male" ? populationSummary.male : populationSummary.female;
-
-                    const convertAgeKey = (ageGroup) => ageGroup?.replace("age_", "age");
-
-                    const ageGroupMap = {
-                        "age10": "10대",
-                        "age20": "20대",
-                        "age30": "30대",
-                        "age40": "40대",
-                        "age50": "50대",
-                        "age60": "60대"
-                    };
-
-                    const ageKey = convertAgeKey(flaskResult.ageGroup);  // "age_20" → "age20"
-                    const ageKor = ageGroupMap[ageKey];
-                    const ageValue = populationSummary?.[ageKey];
-
-                    console.log("flaskResult.ageGroup:", flaskResult.ageGroup);
-                    console.log("변환된 ageKey:", ageKey);
-                    console.log("ageKor:", ageKor);
-                    console.log("populationSummary keys:", Object.keys(populationSummary));
-
-                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b>"${regionText}의 ${ageKor} ${genderKor}"에 대한 정확한 인구수는 제공되지 않지만,<br>
-                    각각의 통계는 다음과 같습니다 😊 <br>
-                    👉 ${ageKor} 인구: ${ageValue}명<br>
-                    👉 ${genderKor} 인구: ${genderValue}명</div>`);
-                }
 
                 $("#chatbotText").val("");  // 입력창 비우기
                 $chatBox.scrollTop($chatBox[0].scrollHeight); // 스크롤 하단으로
-            },
+            }
+            ,
             error: function () {
                 $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> 오류가 발생했습니다.</div>`);
             }
@@ -152,31 +238,7 @@
     }
 </style>
 
-<canvas id="salesChart" width="400" height="200"></canvas>
 
-<script>
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    const salesChart = new Chart(ctx, {
-        type: 'bar',   // bar, line, pie, doughnut, radar 등 가능
-        data: {
-            labels: ['1월', '2월', '3월', '4월', '5월'],
-            datasets: [{
-                label: '매출액 (만원)',
-                data: [120, 190, 300, 500, 200],
-                borderWidth: 1,
-                backgroundColor: 'rgba(54, 162, 235, 0.6)'
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-</script>
 
 
 <button onClick="sendMessage();">보내기</button>
@@ -196,7 +258,7 @@
         <i class="fa-solid fa-xmark fa-2x flex-grow-0 flex-shrink-0 rounded-tr-[25px] object-cover"></i>
     </div>
     <div id="chat-box"
-         class="flex flex-col justify-start items-start self-stretch flex-grow w-[350px] h-[450px] overflow-hidden gap-2.5 p-2.5"
+         class="flex flex-col justify-start items-start self-stretch flex-grow w-[350px] h-[450px] overflow-auto gap-2.5 p-2.5"
     ></div>
     <div
             class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] relative overflow-hidden border-t border-black "
