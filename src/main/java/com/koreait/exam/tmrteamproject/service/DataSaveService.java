@@ -2,6 +2,7 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.DataSaveRepository;
 import com.koreait.exam.tmrteamproject.vo.DataSet;
+import com.koreait.exam.tmrteamproject.vo.UpjongCode;
 import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
 import lombok.RequiredArgsConstructor;
@@ -342,7 +343,7 @@ public class DataSaveService {
                 .build();
     }
 
-    public DataSet findAllByEmdCdAndBaseYearQuarterCode(String emdCd) {
+    public DataSet findAllByAdminDongCodeAndBaseYearQuarterCodeGroupByAdminDongCode(String emdCd) {
         return dataSaveRepository.findAllByAdminDongCodeAndBaseYearQuarterCodeGroupByAdminDongCode(emdCd, "20251");
     }
 
@@ -368,5 +369,11 @@ public class DataSaveService {
 
     public List<DataSet> findGroupedByAdminDongOrderByMale() {
         return dataSaveRepository.findGroupedByAdminDongOrderByMale("20251");
+    }
+
+
+
+    public List<DataSet> findAllByEmdCdAndUpjongCodeGroupByAdminDongCode(String emdCd, String upjongCode) {
+        return dataSaveRepository.findAllByEmdCdAndUpjongCodeGroupByAdminDongCode(emdCd, upjongCode);
     }
 }

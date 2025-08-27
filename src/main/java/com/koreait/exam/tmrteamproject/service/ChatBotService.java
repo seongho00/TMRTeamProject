@@ -39,6 +39,7 @@ public class ChatBotService {
             String gender = entities.optString("gender");
             String ageGroup = entities.optString("age_group");
             String messageText = entities.optString("message");
+            String upjong_nm = entities.optString("upjong_nm");
 
 
             FlaskResult flaskResult = FlaskResult.builder()
@@ -50,6 +51,7 @@ public class ChatBotService {
                     .gender(gender)
                     .ageGroup(ageGroup)
                     .message(messageText)
+                    .upjong_nm(upjong_nm)
                     .build();
 
             // ✅ 디버깅용 로그

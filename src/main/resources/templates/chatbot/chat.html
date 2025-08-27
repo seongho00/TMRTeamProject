@@ -15,6 +15,8 @@
             url: "sendMessage",
             data: {message: message},
             success: function (data) {
+
+                // 여러 개의 시군구가 있을 시
                 if (data.resultCode === "F-3") {
                     const candidates = data.data1;
 
@@ -46,6 +48,37 @@
                     });
                     return;
                 }
+
+                // 업종 선택을 해야할 시
+                if (data.resultCode === "F-4") {
+                    const upjongs = data.data1;
+                    const message = data.data2;
+
+                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b>아래에서 업종을 선택하면 매출 데이터를 보여드릴게요.</div>`);
+
+                    let btnHtml = '<div class="grid grid-cols-2 gap-2 mt-2 max-h-64 overflow-y-auto pr-2">';
+                    upjongs.forEach(u => {
+                        btnHtml += `<button
+                          class="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 candidate-upjong"
+                          data-upjong="${u.upjongCd}">
+                          ${u.upjongNm}
+                        </button>`;
+                    });
+                    btnHtml += '</div>';
+
+                    $chatBox.append(btnHtml);
+
+                    // 버튼 클릭 이벤트 등록
+                    $(".candidate-upjong").on("click", function () {
+                        const selectedCd = $(this).data("upjong");
+                        const selectedNm = $(this).text();
+                        $("#chatbotText").val(message + " " + selectedNm.trim()); // 입력창 갱신
+                        sendMessage(); // 다시 서버로 요청
+                    });
+
+                    return;
+                }
+
                 console.log(data)
                 const flaskResult = data.data1;
                 const sido = flaskResult.sido;
@@ -55,6 +88,12 @@
                 const regionText = [sido, sigungu, emd]
                     .filter(val => val && val !== "")
                     .join(" ");
+
+                // 매출액 대답
+                id(data.resultCode === "S-1")
+                {
+                    
+                }
 
                 // 유동인구 대답
                 if (data.resultCode === "S-2") {
@@ -160,7 +199,7 @@
                         options: {
                             responsive: true,
                             plugins: {
-                                title: { display: true, text: regionText + " 성별 유동인구" }
+                                title: {display: true, text: regionText + " 성별 유동인구"}
                             }
                         }
                     });
@@ -187,8 +226,8 @@
                         options: {
                             responsive: true,
                             plugins: {
-                                legend: { display: false },
-                                title: { display: true, text: regionText + " 연령대별 유동인구" }
+                                legend: {display: false},
+                                title: {display: true, text: regionText + " 연령대별 유동인구"}
                             }
                         }
                     });
@@ -231,7 +270,6 @@
         border-color: #60a5fa; /* 파란 테두리 */
     }
 </style>
-
 
 
 <div
