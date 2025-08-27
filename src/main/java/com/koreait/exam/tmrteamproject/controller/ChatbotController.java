@@ -157,7 +157,7 @@ public class ChatbotController {
             case 3:
                 // 청약 관련 로직
                 System.out.println("청약 조회 요청");
-
+                // 페이지 안내 정도?
                 chatBotService.getLhSupplySchedule();
 
 
