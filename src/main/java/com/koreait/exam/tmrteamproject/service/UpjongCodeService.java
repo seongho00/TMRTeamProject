@@ -31,4 +31,9 @@ public class UpjongCodeService {
         return upjongCodeRepository.searchNames(q);
     }
 
+    public List<UpjongCode> findAllByUpjongNm(String upjongNm) {
+        return upjongCodeRepository.findAllByUpjongNm(upjongNm);
+
+
+    }
 }

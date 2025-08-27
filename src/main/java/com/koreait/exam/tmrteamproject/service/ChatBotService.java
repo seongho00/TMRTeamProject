@@ -2,7 +2,6 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.AdminDongRepository;
 import com.koreait.exam.tmrteamproject.repository.DataSaveRepository;
-import com.koreait.exam.tmrteamproject.repository.PopulationStatRepository;
 import com.koreait.exam.tmrteamproject.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
@@ -18,7 +17,6 @@ import java.util.List;
 public class ChatBotService {
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final PopulationStatRepository populationStatRepository;
     private final AdminDongRepository adminDongRepository;
     private final DataSaveRepository dataSaveRepository;
 
@@ -66,20 +64,7 @@ public class ChatBotService {
         }
     }
 
-    public PopulationSummary getPopulationSummary(FlaskResult flaskResult) {
-        return null;
-    }
-
-
-    public FlaskResult analyzeRegion(FlaskResult flaskResult) {
-        return null;
-    }
-
     public void getLhSupplySchedule() {
     }
 
-    public Long getSalesData(String emdCd, String upjongCd) {
-        List<DataSet> dataSet = dataSaveRepository.findAllByAdminDongCodeAndServiceIndustryCode(emdCd, upjongCd);
-        return dataSet.get(0).getMonthlySalesAmount();
-    }
 }
