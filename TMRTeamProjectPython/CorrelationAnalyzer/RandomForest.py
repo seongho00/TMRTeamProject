@@ -11,6 +11,8 @@ from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.utils import compute_class_weight
 from tqdm import tqdm
 
+from PythonJPA.Send import send_to_server
+
 # 파일 경로 설정
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.abspath(
@@ -373,7 +375,15 @@ pref = ['행정동_코드_명','서비스_업종_코드_명','실제_위험도',
 ordered = [c for c in pref if c in out.columns] + [c for c in out.columns if c not in pref]
 out = out[ordered]
 
-# 저장
+# 저장 (DB 저장)
+try:
+    print(out.columns)
+    send_to_server(out)
+    print("DB 저장 완료")
+
+except Exception as e:
+    print(e)
+
 save_path = os.path.join(OUT_DIR, "risk_pred_20251.csv")
 out.to_csv(save_path, index=False, encoding="utf-8-sig")
 print(f"\n저장 완료: {save_path}")
