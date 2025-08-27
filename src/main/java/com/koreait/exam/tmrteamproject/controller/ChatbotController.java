@@ -82,20 +82,11 @@ public class ChatbotController {
             case 0:
                 // 매출 관련 조회 로직
                 System.out.println("매출 분석 요청");
-                System.out.println("실햄됨");
-                // 업종 데이터가 없을 시
+
+                // 업종 종류 보여주기
                 if (flaskResult.getUpjong_nm() == null) {
-                    return ResultData.from("F-4", "어떤 업종의 매출을 알고 싶으신가요?");
-                }
-
-                String userInput = flaskResult.getUpjong_nm();
-
-                List<UpjongCode> allUpjongCodes = upjongCodeService.findAll(); // 전체 업종명 조회
-
-                System.out.println(allUpjongCodes);
-                
-                if (allUpjongCodes.isEmpty()) {
-                    return ResultData.from("F-5", "업종 데이터가 준비되지 않았습니다.");
+                    List<UpjongCode> upjongCodes = upjongCodeService.findAll();
+                    return ResultData.from("F-4", "업종 선택 필요", "업종 종류", upjongCodes);
                 }
 
 
