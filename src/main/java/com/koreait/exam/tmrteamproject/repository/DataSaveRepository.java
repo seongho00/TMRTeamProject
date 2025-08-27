@@ -1,6 +1,7 @@
 package com.koreait.exam.tmrteamproject.repository;
 
 import com.koreait.exam.tmrteamproject.vo.DataSet;
+import com.koreait.exam.tmrteamproject.vo.UpjongCode;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,10 +13,10 @@ import java.util.Set;
 public interface DataSaveRepository extends JpaRepository<DataSet, Long> {
 
     @Query(value = """
-        SELECT CONCAT_WS('|', base_year_quarter_code, admin_dong_code, service_industry_code) AS k
-        FROM data_set
-        WHERE CONCAT_WS('|', base_year_quarter_code, admin_dong_code, service_industry_code) IN (:keys)
-        """, nativeQuery = true)
+            SELECT CONCAT_WS('|', base_year_quarter_code, admin_dong_code, service_industry_code) AS k
+            FROM data_set
+            WHERE CONCAT_WS('|', base_year_quarter_code, admin_dong_code, service_industry_code) IN (:keys)
+            """, nativeQuery = true)
     List<String> findExistingKeys(@Param("keys") Collection<String> keys);
 
     List<DataSet> findAllByAdminDongCodeAndServiceIndustryCode(String adminDongCode, String serviceIndustryCode);
@@ -27,7 +28,7 @@ public interface DataSaveRepository extends JpaRepository<DataSet, Long> {
             "LIMIT 1",
             nativeQuery = true)
     DataSet findAllByAdminDongCodeAndBaseYearQuarterCodeGroupByAdminDongCode(@Param("emdCd") String emdCd,
-                                             @Param("quarter") String quarter);
+                                                                             @Param("quarter") String quarter);
 
     @Query(value =
             "SELECT d.* " +
@@ -65,14 +66,25 @@ public interface DataSaveRepository extends JpaRepository<DataSet, Long> {
                     "ORDER BY MAX(d.age10floating_population) DESC",
             nativeQuery = true)
     List<DataSet> findGroupedOrderByAge10(@Param("quarter") String quarter);
+
     @Query(value = "SELECT d.* FROM data_set d GROUP BY d.admin_dong_code ORDER BY MAX(d.age20floating_population) DESC", nativeQuery = true)
     List<DataSet> findGroupedOrderByAge20(@Param("quarter") String quarter);
+
     @Query(value = "SELECT d.* FROM data_set d GROUP BY d.admin_dong_code ORDER BY MAX(d.age30floating_population) DESC", nativeQuery = true)
     List<DataSet> findGroupedOrderByAge30(@Param("quarter") String quarter);
+
     @Query(value = "SELECT d.* FROM data_set d GROUP BY d.admin_dong_code ORDER BY MAX(d.age40floating_population) DESC", nativeQuery = true)
     List<DataSet> findGroupedOrderByAge40(@Param("quarter") String quarter);
+
     @Query(value = "SELECT d.* FROM data_set d GROUP BY d.admin_dong_code ORDER BY MAX(d.age50floating_population) DESC", nativeQuery = true)
     List<DataSet> findGroupedOrderByAge50(@Param("quarter") String quarter);
+
     @Query(value = "SELECT d.* FROM data_set d GROUP BY d.admin_dong_code ORDER BY MAX(d.age60plus_floating_population) DESC", nativeQuery = true)
     List<DataSet> findGroupedOrderByAge60Plus(@Param("quarter") String quarter);
+
+    @Query(value = "SELECT * FROM data_set d " +
+            "WHERE d.admin_dong_code = :emdCd " +
+            "AND d.service_industry_code = :upjongCode ",
+            nativeQuery = true)
+    List<DataSet> findAllByEmdCdAndUpjongCodeGroupByAdminDongCode(@Param("emdCd") String emdCd, @Param("upjongCode") String upjongCode);
 }

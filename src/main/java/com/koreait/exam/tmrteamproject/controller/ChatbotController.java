@@ -57,7 +57,7 @@ public class ChatbotController {
 
         int intent = flaskResult.getIntent();
 
-        if (flaskResult.getEmd() == null) {
+        if (flaskResult.getEmd().isEmpty()) {
             return ResultData.from("F-2", "행정동을 입력하지 않으셨어요 정확한 분석을 위해 행정동을 입력해주세요. 예: '서울 종로구 사직동' 처럼 말해 주세요.");
         }
 
@@ -82,17 +82,21 @@ public class ChatbotController {
             case 0:
                 // 매출 관련 조회 로직
                 System.out.println("매출 분석 요청");
-
+                System.out.println(flaskResult);
                 // 업종 종류 보여주기
-                if (flaskResult.getUpjong_nm() == null) {
+                if (flaskResult.getUpjong_nm().isEmpty()) {
                     List<UpjongCode> upjongCodes = upjongCodeService.findAll();
-                    return ResultData.from("F-4", "업종 선택 필요", "업종 종류", upjongCodes);
+                    return ResultData.from("F-4", "업종 선택 필요", "업종 종류", upjongCodes, "메세지 원본", message);
                 }
 
 
-                // DB에 넣어놔야하긴 해 + 과거 데이터도 넣을건가?
+                // 업종 이름을 통해 업종 데이터 가져오기
+                UpjongCode upjongCode = upjongCodeService.findAllByUpjongNm(flaskResult.getUpjong_nm()).get(0);
 
-                return ResultData.from("S-1", "매출액 데이터 출력", "flaskResult", flaskResult);
+                // 지역 및 업종을 통해 dataSet 가져오기
+                List<DataSet> upjongDataSet = dataSaveService.findAllByEmdCdAndUpjongCodeGroupByAdminDongCode(emdCd, upjongCode.getUpjongCd());
+
+                return ResultData.from("S-1", "매출액 데이터 출력", "flaskResult", flaskResult, "업종 데이터", upjongCode, "매출액 데이터", upjongDataSet);
 
 
             case 1:
@@ -100,7 +104,7 @@ public class ChatbotController {
                 System.out.println("유동인구 조회 요청");
 
                 // 해당 지역 data 가져오기
-                DataSet dataSet = dataSaveService.findAllByEmdCdAndBaseYearQuarterCode(emdCd);
+                DataSet dataSet = dataSaveService.findAllByAdminDongCodeAndBaseYearQuarterCodeGroupByAdminDongCode(emdCd);
 
                 // 모든 지역 data 가져오기
                 List<DataSet> AllDataSets;
