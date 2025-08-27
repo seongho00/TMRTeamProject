@@ -30,6 +30,9 @@ public class ChatbotController {
     private LearningService learningService;
     @Autowired
     private UpjongCodeService upjongCodeService;
+    @Autowired
+    private DataSaveService dataSaveService;
+
 
     @GetMapping("/chat")
     public String chat() {
@@ -93,8 +96,28 @@ public class ChatbotController {
                 System.out.println(flaskResult);
                 PopulationSummary populationSummary = chatBotService.getPopulationSummary(flaskResult);
 
-                // 지역 검색
+                // 해당 지역 data 가져오기
+                DataSet dataSet = dataSaveService.findAllByEmdCdAndBaseYearQuarterCode(emdCd);
 
+                // 모든 지역 data 가져오기
+                List<DataSet> AllDataSets = dataSaveService.findGroupedByAdminDong();
+
+                // 현재 지역 상위 몇 프로인지 계산하기
+                int total = AllDataSets.size();
+
+                // 랭킹 찾기 (내림차순 정렬된 상태라 index+1 = 순위)
+                int rank = 0;
+                for (int i = 0; i < total; i++) {
+                    if (AllDataSets.get(i).getAdminDongCode().equals(emdCd)) {
+                        rank = i + 1;
+                        break;
+                    }
+                }
+                double percentile = (double) rank / total * 100;
+                long rounded = Math.round(percentile);
+                System.out.println(rounded);
+
+                // 지역 검색
                 System.out.println("유동인구 조회 요청");
 
                 return ResultData.from("S-2", "유동인구 데이터 출력", "flaskResult", flaskResult, "유동인구", populationSummary);
@@ -105,6 +128,7 @@ public class ChatbotController {
                 System.out.println("위험도 예측 요청");
                 List<Learning> learning = learningService.findAllByEmdCd(emdCd);
                 // 상권 위험도 예측 로직
+
 
                 return ResultData.from("S-3", "위험도 데이터 출력", "flaskResult", flaskResult, "위험도 List", learning);
 

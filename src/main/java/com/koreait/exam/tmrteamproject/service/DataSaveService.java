@@ -2,6 +2,7 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.DataSaveRepository;
 import com.koreait.exam.tmrteamproject.vo.DataSet;
+import com.koreait.exam.tmrteamproject.vo.Learning;
 import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
 import lombok.RequiredArgsConstructor;
@@ -340,5 +341,13 @@ public class DataSaveService {
                 .age50SalesCount(getL(row,"연령대_50_매출_건수"))
                 .age60PlusSalesCount(getL(row,"연령대_60_이상_매출_건수"))
                 .build();
+    }
+
+    public DataSet findAllByEmdCdAndBaseYearQuarterCode(String emdCd) {
+        return dataSaveRepository.findAllByAdminDongCodeAndBaseYearQuarterCodeGroupByAdminDongCode(emdCd, "20251");
+    }
+
+    public List<DataSet> findGroupedByAdminDong() {
+        return dataSaveRepository.findGroupedByAdminDong("20251");
     }
 }
