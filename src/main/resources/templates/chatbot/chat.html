@@ -100,10 +100,20 @@
                     } else if (flaskResult.gender !== "" && flaskResult.ageGroup === "") {
                         // 성별만 있을 때
                         $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 ${genderKor} 유동인구는 ${genderValue}명입니다.</div>`);
+                        $chatBox.append(`
+                          <div class="bot-msg">
+                            <b>챗봇:</b> ${regionText}의 ${genderKor} 유동인구는 서울 전체 지역 중 <b>상위 ${percentile}%</b>에 해당합니다 🚀
+                          </div>
+                        `);
                     } else if (flaskResult.gender === "" && flaskResult.ageGroup !== "") {
                         // 나이대만 있을 때
 
                         $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 ${ageKor} 유동인구는 ${ageValue}명입니다.</div>`);
+                        $chatBox.append(`
+                          <div class="bot-msg">
+                            <b>챗봇:</b> ${regionText}의 ${ageKor} 유동인구는 서울 전체 지역 중 <b>상위 ${percentile}%</b>에 해당합니다 🚀
+                          </div>
+                        `);
                     } else {
                         // 성별 + 나이대 모두 있을 때 → 조합 데이터는 없으므로 따로 안내
 

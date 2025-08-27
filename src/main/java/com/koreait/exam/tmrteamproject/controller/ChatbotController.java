@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -99,7 +100,24 @@ public class ChatbotController {
                 DataSet dataSet = dataSaveService.findAllByEmdCdAndBaseYearQuarterCode(emdCd);
 
                 // 모든 지역 data 가져오기
-                List<DataSet> AllDataSets = dataSaveService.findGroupedByAdminDong();
+                List<DataSet> AllDataSets = new ArrayList<>();
+                // 나이, 연령대 입력 없을 시
+                if (!flaskResult.getGender().isEmpty() && flaskResult.getAgeGroup().isEmpty()) {
+                    // 성별만 입력 시
+                    if (flaskResult.getGender().equals("female")) {
+                        AllDataSets = dataSaveService.findGroupedByAdminDongOrderByFemale();
+                    } else {
+                        AllDataSets = dataSaveService.findGroupedByAdminDongOrderByMale();
+                    }
+                } else if (flaskResult.getGender().isEmpty() && !flaskResult.getAgeGroup().isEmpty()) {
+                    // 연령대만 입력 시
+                    AllDataSets = dataSaveService.findGroupedByAdminDongOrderByAge(flaskResult.getAgeGroup());
+
+                } else {
+                    // 그 외
+                    AllDataSets = dataSaveService.findGroupedByAdminDong();
+
+                }
 
                 // 현재 지역 상위 몇 프로인지 계산하기
                 int total = AllDataSets.size();
@@ -112,10 +130,9 @@ public class ChatbotController {
                         break;
                     }
                 }
+
                 double percentile = (double) rank / total * 100;
                 long rounded = Math.round(percentile);
-                System.out.println(rounded);
-
 
 
                 // 지역 검색

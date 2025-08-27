@@ -2,7 +2,6 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.DataSaveRepository;
 import com.koreait.exam.tmrteamproject.vo.DataSet;
-import com.koreait.exam.tmrteamproject.vo.Learning;
 import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
 import lombok.RequiredArgsConstructor;
@@ -349,5 +348,25 @@ public class DataSaveService {
 
     public List<DataSet> findGroupedByAdminDong() {
         return dataSaveRepository.findGroupedByAdminDong("20251");
+    }
+
+    public List<DataSet> findGroupedByAdminDongOrderByAge(String ageGroup) {
+        return switch (ageGroup) {
+            case "age_10" -> dataSaveRepository.findGroupedOrderByAge10("20251");
+            case "age_20" -> dataSaveRepository.findGroupedOrderByAge20("20251");
+            case "age_30" -> dataSaveRepository.findGroupedOrderByAge30("20251");
+            case "age_40" -> dataSaveRepository.findGroupedOrderByAge40("20251");
+            case "age_50" -> dataSaveRepository.findGroupedOrderByAge50("20251");
+            case "age_60" -> dataSaveRepository.findGroupedOrderByAge60Plus("20251");
+            default -> null;
+        };
+    }
+
+    public List<DataSet> findGroupedByAdminDongOrderByFemale() {
+        return dataSaveRepository.findGroupedByAdminDongOrderByFemale("20251");
+    }
+
+    public List<DataSet> findGroupedByAdminDongOrderByMale() {
+        return dataSaveRepository.findGroupedByAdminDongOrderByMale("20251");
     }
 }
