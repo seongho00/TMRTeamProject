@@ -27,9 +27,15 @@ public class LearningService {
                 .riskLevel(d.getRiskLevel())
                 .predictedRiskLabel(d.getPredictedRiskLabel())
                 .predictedConfidence(d.getPredictedConfidence())
+                .risk100All(d.getRisk100All())
+                .risk100ByBiz(d.getRisk100ByBiz())
                 .build()
         ).collect(Collectors.toList());
         learningRepository.saveAll(entities);
         return entities.size();
+    }
+
+    public Learning findAllByHjdCo(String emdCd) {
+        return learningRepository.findAllByHjdCo(emdCd);
     }
 }
