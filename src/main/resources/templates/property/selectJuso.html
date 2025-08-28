@@ -2,128 +2,127 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="common/head::head"></head>
 
-
 <div style="max-width:680px;margin:20px auto;font-family:sans-serif;">
-  <h3>주소 검색</h3>
-  <form id="searchForm">
-    <input id="q" name="keyword" placeholder="예) 마포구 백범로 35" style="width:70%;padding:8px;">
-    <button type="submit">검색</button>
-  </form>
+    <h3>주소 검색</h3>
+    <form id="searchForm">
+        <input id="q" name="keyword" placeholder="예) 마포구 백범로 35" style="width:70%;padding:8px;">
+        <button type="submit">검색</button>
+    </form>
 
-  <div id="results" style="margin-top:12px;"></div>
+    <div id="results" style="margin-top:12px;"></div>
 
-  <div id="pickArea" style="display:none;margin-top:16px;padding:12px;border:1px solid #ddd;border-radius:8px;">
-    <div><strong>선택한 주소</strong></div>
-    <div id="picked"></div>
-    <div style="margin-top:8px;display:flex;gap:8px;">
-      <input id="dong" placeholder="동 (예: 101동)" style="flex:1;padding:8px;">
-      <input id="ho" placeholder="호 (예: 202호)" style="flex:1;padding:8px;">
+    <div id="pickArea" style="display:none;margin-top:16px;padding:12px;border:1px solid #ddd;border-radius:8px;">
+        <div><strong>선택한 주소</strong></div>
+        <div id="picked"></div>
+        <div style="margin-top:8px;display:flex;gap:8px;">
+            <input id="dong" placeholder="동 (예: 101동)" style="flex:1;padding:8px;">
+            <input id="ho" placeholder="호 (예: 202호)" style="flex:1;padding:8px;">
+        </div>
+        <button id="confirmBtn" style="margin-top:10px;">확정</button>
+        <div id="confirmRes" style="margin-top:8px;color:green;"></div>
     </div>
-    <button id="confirmBtn" style="margin-top:10px;">확정</button>
-    <div id="confirmRes" style="margin-top:8px;color:green;"></div>
-  </div>
 </div>
 
 <script>
-  const resultsEl = document.getElementById('results');
-  const pickArea  = document.getElementById('pickArea');
-  const pickedEl  = document.getElementById('picked');
-  let selectedItem = null;
+    const resultsEl = document.getElementById('results');
+    const pickArea = document.getElementById('pickArea');
+    const pickedEl = document.getElementById('picked');
+    let selectedItem = null;
 
-  // 검색
-  document.getElementById('searchForm').addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    const q = document.getElementById('q').value.trim();
-    if (!q) return;
-    resultsEl.innerHTML = '검색중...';
+    // 검색
+    document.getElementById('searchForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const q = document.getElementById('q').value.trim();
+        if (!q) return;
+        resultsEl.innerHTML = '검색중...';
 
-    // POST form (x-www-form-urlencoded) → /usr/address/search
-    const form = new URLSearchParams();
-    form.append('keyword', q);
-    form.append('page', '1');
-    form.append('size', '10');
+        // POST form (x-www-form-urlencoded) → /usr/address/search
+        const form = new URLSearchParams();
+        form.append('keyword', q);
+        form.append('page', '1');
+        form.append('size', '10');
 
-    const res = await fetch('/usr/address/search', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: form.toString()
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(()=>({error: res.statusText}));
-      resultsEl.innerHTML = `<div style="color:red;">${err.error||'검색 실패'}</div>`;
-      return;
-    }
-    const items = await res.json();
-    if (!items.length) {
-      resultsEl.innerHTML = '<div>결과 없음. 더 구체적으로 입력해 보세요.</div>';
-      return;
-    }
+        const res = await fetch('/usr/address/search', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: form.toString()
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({error: res.statusText}));
+            resultsEl.innerHTML = `<div style="color:red;">${err.error || '검색 실패'}</div>`;
+            return;
+        }
+        const items = await res.json();
+        if (!items.length) {
+            resultsEl.innerHTML = '<div>결과 없음. 더 구체적으로 입력해 보세요.</div>';
+            return;
+        }
 
-    // 리스트 렌더
-    resultsEl.innerHTML = items.map((it, idx)=>`
+        // 리스트 렌더
+        resultsEl.innerHTML = items.map((it, idx) => `
     <div style="padding:8px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;">
-      <div style="font-weight:600;">${it.roadAddr||''}</div>
-      <div style="font-size:12px;color:#666;">${it.jibunAddr||''}</div>
-      <div style="font-size:11px;color:#999;">법정동코드 ${it.lawdCd||'-'} · 지번 ${it.jibunMain||'-'}-${it.jibunSub||0}</div>
+      <div style="font-weight:600;">${it.roadAddr || ''}</div>
+      <div style="font-size:12px;color:#666;">${it.jibunAddr || ''}</div>
+      <div style="font-size:11px;color:#999;">법정동코드 ${it.lawdCd || '-'} · 지번 ${it.jibunMain || '-'}-${it.jibunSub || 0}</div>
       <button data-idx="${idx}" class="pickBtn" style="margin-top:6px;">이 주소 선택</button>
     </div>
   `).join('');
 
-    // 선택 이벤트 바인딩
-    document.querySelectorAll('.pickBtn').forEach(btn=>{
-      btn.addEventListener('click', (ev)=>{
-        const idx = Number(ev.target.getAttribute('data-idx'));
-        selectedItem = items[idx];
-        pickedEl.innerHTML = `
-        <div style="font-weight:600;">${selectedItem.roadAddr||''}</div>
-        <div style="font-size:12px;color:#666;">${selectedItem.jibunAddr||''}</div>
-        <div style="font-size:11px;color:#999;">키: ${selectedItem.addressKey||'-'}</div>
+        // 선택 이벤트 바인딩
+        document.querySelectorAll('.pickBtn').forEach(btn => {
+            btn.addEventListener('click', (ev) => {
+                const idx = Number(ev.target.getAttribute('data-idx'));
+                selectedItem = items[idx];
+                pickedEl.innerHTML = `
+        <div style="font-weight:600;">${selectedItem.roadAddr || ''}</div>
+        <div style="font-size:12px;color:#666;">${selectedItem.jibunAddr || ''}</div>
+        <div style="font-size:11px;color:#999;">키: ${selectedItem.addressKey || '-'}</div>
       `;
-        pickArea.style.display = 'block';
-        document.getElementById('dong').focus();
-      });
+                pickArea.style.display = 'block';
+                document.getElementById('dong').focus();
+            });
+        });
     });
-  });
 
-  // 확정
-  document.getElementById('confirmBtn').addEventListener('click', async ()=>{
-    if (!selectedItem) return;
-    const dong = document.getElementById('dong').value;
-    const ho   = document.getElementById('ho').value;
+    // 확정
+    document.getElementById('confirmBtn').addEventListener('click', async () => {
+        if (!selectedItem) return;
+        const dong = document.getElementById('dong').value;
+        const ho = document.getElementById('ho').value;
 
-    const payload = {
-      selected: selectedItem,
-      dong, ho
-    };
+        const payload = {
+            selected: selectedItem,
+            dong, ho
+        };
 
-    const res = await fetch('/usr/address/confirm', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(()=>({error: res.statusText}));
-      document.getElementById('confirmRes').style.color = 'red';
-      document.getElementById('confirmRes').innerText = err.error || '확정 실패';
-      return;
-    }
-    const confirmed = await res.json();
-    document.getElementById('confirmRes').style.color = 'green';
-    document.getElementById('confirmRes').innerText =
+        const res = await fetch('/usr/address/confirm', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({error: res.statusText}));
+            document.getElementById('confirmRes').style.color = 'red';
+            document.getElementById('confirmRes').innerText = err.error || '확정 실패';
+            return;
+        }
+        const confirmed = await res.json();
+        document.getElementById('confirmRes').style.color = 'green';
+        document.getElementById('confirmRes').innerText =
             `확정 완료! addressKey = ${confirmed.addressKey} , ${confirmed.entX} , ${confirmed.entY}`;
 
 
-    const res2 = await fetch('/usr/address/confirm-crawl', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload) // 서버가 selected/dong/ho로 좌표 재확정 후 파이썬 호출
-    });
-    const crawl = await res2.json();
-    if (!res2.ok || crawl.ok === false) {
-      // 크롤 실패만 별도 표시하고 끝
-      console.warn('crawl failed', crawl);
-      return;
-    }
+        const res2 = await fetch('/usr/address/confirm-crawl', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload) // 서버가 selected/dong/ho로 좌표 재확정 후 파이썬 호출
+        });
+        const crawl = await res2.json();
+        if (!res2.ok || crawl.ok === false) {
+            // 크롤 실패만 별도 표시하고 끝
+            console.warn('crawl failed', crawl);
+            return;
+        }
 
-  });
+    });
 </script>
