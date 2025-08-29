@@ -24,7 +24,7 @@
                         <div class="ring-center">
                             <div class="absolute inset-4 rounded-full bg-white grid place-items-center text-center">
                                 <p class="text-sm text-gray-500">분기별 평균</p>
-                                <p class="text-xl font-semibold" th:text="${dashboard.getTotalFloatingPopulation()}"></p>
+                                <p class="text-xl font-semibold" th:text="${@fmt.peopleCompact(dashboard.getTotalFloatingPopulation())}"></p>
                             </div>
                         </div>
                     </div>
@@ -37,7 +37,7 @@
                         <div class="ring-center">
                             <div class="absolute inset-4 rounded-full bg-white grid place-items-center text-center">
                                 <p class="text-sm text-gray-500">분기별 평균</p>
-                                <p class="text-xl font-semibold">000원</p>
+                                <p class="text-xl font-semibold" th:text="${@fmt.krwCompact(dashboard.getMonthlySalesAmount())}"></p>
                             </div>
                         </div>
                     </div>
