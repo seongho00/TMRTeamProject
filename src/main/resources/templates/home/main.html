@@ -11,9 +11,8 @@
         <div class="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-8 items-start">
             <!-- 왼쪽 타이틀 -->
             <div class="space-y-4">
-                <h1 class="text-2xl font-semibold leading-tight">
-                    서울특별시 @@구 @@동
-                </h1>
+                <h1 class="text-2xl font-semibold leading-tight" th:text="${dashboard.getAdminDongName()}"></h1>
+                <p class="text-lg font-semibold leading-tight" th:text="'분기' + ${dashboard.getBaseYearQuarterCode()}"></p>
                 <p class="text-lg/7 text-white/80">상권 정보</p>
             </div>
 
@@ -24,8 +23,8 @@
                     <div class="relative w-60 h-60 mx-auto rounded-full grid place-items-center bg-[conic-gradient(#007bff_calc(68_*1%),_#e5e7eb_0)]">
                         <div class="ring-center">
                             <div class="absolute inset-4 rounded-full bg-white grid place-items-center text-center">
-                                <p class="text-sm text-gray-500">일 평균</p>
-                                <p class="text-xl font-semibold">10만명</p>
+                                <p class="text-sm text-gray-500">분기별 평균</p>
+                                <p class="text-xl font-semibold" th:text="${dashboard.getTotalFloatingPopulation()}"></p>
                             </div>
                         </div>
                     </div>
