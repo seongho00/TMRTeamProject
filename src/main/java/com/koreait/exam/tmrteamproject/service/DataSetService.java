@@ -1,6 +1,7 @@
 package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.DataSetRepository;
+import com.koreait.exam.tmrteamproject.vo.AdminDong;
 import com.koreait.exam.tmrteamproject.vo.DashBoard;
 import com.koreait.exam.tmrteamproject.vo.DataSet;
 import com.opencsv.CSVReaderHeaderAware;
@@ -355,12 +356,18 @@ public class DataSetService {
         // 분기중에 한개만 뽑기
         DataSet ds = list.get(0);
 
+        // 퍼센트(옵션): 같은 분기 내 최대 대비 비율이라면 별도 리포지토리 메서드 필요
+        int footPercent = 0;
+        int salesPercent = 0;
+
         return DashBoard.builder()
                 .baseYearQuarterCode(ds.getBaseYearQuarterCode())
                 .adminDongCode(ds.getAdminDongCode())
                 .adminDongName(ds.getAdminDongName())
                 .totalFloatingPopulation(ds.getTotalFloatingPopulation())
                 .monthlySalesAmount(ds.getMonthlySalesAmount())
+                .footPercent(footPercent)
+                .salesPercent(salesPercent)
                 .build();
     }
 }
