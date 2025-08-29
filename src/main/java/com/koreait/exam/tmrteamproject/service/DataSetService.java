@@ -1,6 +1,8 @@
 package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.DataSetRepository;
+import com.koreait.exam.tmrteamproject.vo.AdminDong;
+import com.koreait.exam.tmrteamproject.vo.DashBoard;
 import com.koreait.exam.tmrteamproject.vo.DataSet;
 import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
@@ -342,42 +344,30 @@ public class DataSetService {
                 .build();
     }
 
-    /*
-    // DB에 저장된 데이터 Map 반환
-    public Map<String, Object> getDashboardData(String adminDongCode) {
-        List<DataSet> list = dataSetRepository.findAllByOrderByBaseYearQuarterCodeDesc(adminDongCode);
+
+    // DB에 저장된 데이터 찾기
+    public DashBoard getDashboardData(String adminDongCode) {
+        List<DataSet> list = dataSetRepository.findByAdminDongCodeAndBaseYearQuarterCode(adminDongCode, "20251");
 
         if (list.isEmpty()) {
-            throw new RuntimeException("데이터 없음");
+            throw new RuntimeException("해당 행정동 데이터 없음");
         }
 
-        // 인덱스 범위 내에서 무작위
-        DataSet dataSet = list.get(new Random().nextInt(list.size()));
+        // 분기중에 한개만 뽑기
+        DataSet ds = list.get(0);
 
-        // 같은 분기 기준 최대값
-        Long maxFoot = dataSetRepository.findMaxFloatingByQuarter(dataSet.getBaseYearQuarterCode());
-        Long maxSales = dataSetRepository.findMaxSalesByQuarter(dataSet.getBaseYearQuarterCode());
+        // 퍼센트(옵션): 같은 분기 내 최대 대비 비율이라면 별도 리포지토리 메서드 필요
+        int footPercent = 0;
+        int salesPercent = 0;
 
-        // 퍼센트 계산
-        int footPercent = toPercent(dataSet.getTotalFloatingPopulation(), maxFoot);
-        int salesPercent = toPercent(dataSet.getMonthlySalesAmount(), maxSales);
-
-        // 모델 바인딩용 데이터 묶기
-        Map<String, Object> map = new HashMap<>();
-        map.put("data", dataSet);            // 엔티티 자체(행정동명/분기/원시값 접근)
-        map.put("footPercent", footPercent);
-        map.put("salesPercent", salesPercent);
-        return map;
+        return DashBoard.builder()
+                .baseYearQuarterCode(ds.getBaseYearQuarterCode())
+                .adminDongCode(ds.getAdminDongCode())
+                .adminDongName(ds.getAdminDongName())
+                .totalFloatingPopulation(ds.getTotalFloatingPopulation())
+                .monthlySalesAmount(ds.getMonthlySalesAmount())
+                .footPercent(footPercent)
+                .salesPercent(salesPercent)
+                .build();
     }
-
-    // 퍼센트 계산 유틸 (0, null 제외)
-    private int toPercent(Long value, Long max) {
-        if (value == null || max == null || max == 0) return 0;
-        double r = (double) value / (double) max * 100.0;
-        int p = (int) Math.round(r);
-        if (p < 0) p = 0;
-        if (p > 100) p = 100;
-        return p;
-    }
-    */
 }

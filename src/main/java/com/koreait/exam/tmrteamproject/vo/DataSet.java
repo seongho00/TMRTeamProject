@@ -13,6 +13,7 @@ import javax.persistence.Entity;
 @SuperBuilder
 @ToString(callSuper = true)
 public class DataSet extends BaseEntity {
+
     // 기준_년분기_코드
     private String baseYearQuarterCode;
     // 행정동_코드

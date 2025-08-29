@@ -245,7 +245,7 @@ function renderRiskPanel(emdValue, upjongName){
         ${label} (${stage})
       </div>
       <div><b>위험도 점수:</b> ${score}</div>
-      <div><b>업종별 위험도 점수</b>${dscore}</div>
+      <div><b>업종별 위험도 점수:</b> ${dscore}</div>
       <div><b>예측 신뢰도:</b> ${conf}</div>
     </div>`;
 }
