@@ -17,15 +17,5 @@ public interface DataSetRepository extends JpaRepository<DataSet, Long> {
         """, nativeQuery = true)
     List<String> findExistingKeys(@Param("keys") Collection<String> keys);
 
-    /*
-    // 같은 분기 내 최대 유동인구
-    @Query("select max(d.totalFloatingPopulation) from DataSet d where d.baseYearQuarterCode = :baseYearQuarterCode")
-    Long findMaxFloatingByQuarter(@Param("baseYearQuarterCode") String baseYearQuarterCode);
-
-    // 같은 분기 내 최대 당월 매출금액
-    @Query("select max(d.monthlySalesAmount) from DataSet d where d.baseYearQuarterCode = :baseYearQuarterCode")
-    Long findMaxSalesByQuarter(@Param("baseYearQuarterCode") String baseYearQuarterCode);
-
-    List<DataSet> findAllByOrderByBaseYearQuarterCodeDesc(String baseYearQuarterCode);
-     */
+    List<DataSet> findByAdminDongCodeAndBaseYearQuarterCode(String adminDongCode, String baseYearQuarterCode);
 }
