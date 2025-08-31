@@ -35,7 +35,7 @@ TRAIN_FILES = [
 ]
 TEST_FILE = "서울_데이터_병합_20251.csv"
 
-OUT_DIR = "C:/Users/admin/Downloads/Seoul_RandomForest"
+OUT_DIR = "C:/Users/qjvpd/Downloads/Seoul_RandomForest"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # 변수 목록
