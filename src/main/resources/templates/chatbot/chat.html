@@ -90,9 +90,66 @@
                     .join(" ");
 
                 // 매출액 대답
-                id(data.resultCode === "S-1")
-                {
-                    
+                if (data.resultCode === "S-1") {
+                    const upjongCode = data.data2;
+                    const dataSets = data.data3;
+
+
+                    // 차트용 배열
+                    const labels = [];       // 분기 (20241, 20242 ...)
+                    const salesValues = [];  // 매출액
+
+                    dataSets.forEach(data => {
+                        labels.push(data.baseYearQuarterCode);   // 또는 item.baseYearQuarterCode 같은 키
+                        salesValues.push(data.monthlySalesAmount); // 매출액 컬럼명 맞게 수정
+                    });
+
+                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${upjongCode.upjongNm}의 매출액 데이터입니다.</div>`);
+                    // $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${upjongCode.upjongNm}의 매출액 데이터입니다.</div>`);
+
+
+                    if (window.salesChart) {
+                        window.salesChart.destroy();
+                    }
+                    // 차트 container 초기화 후 다시 추가
+                    $("#chartContainer").remove();
+                    $chatBox.append(`
+                      <div id="chartContainer">
+                          <canvas id="salesChart"></canvas>
+                      </div>
+                    `);
+
+                    // Chart.js (Line 차트 예시)
+                    const ctx = document.getElementById("salesChart").getContext("2d");
+
+                    new Chart(ctx, {
+                        type: "line", // 또는 "bar"
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: "분기별 매출액",
+                                data: salesValues,
+                                borderColor: "rgba(54, 162, 235, 1)",
+                                backgroundColor: "rgba(54, 162, 235, 0.2)",
+                                fill: true,
+                                tension: 0.3
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toLocaleString() + " 원"; // 1,000 단위 구분
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+
                 }
 
                 // 유동인구 대답
@@ -233,10 +290,6 @@
                     });
 
                 }
-
-                console.log(sido);
-                console.log(sigungu);
-                console.log(emd);
 
 
                 $("#chatbotText").val("");  // 입력창 비우기

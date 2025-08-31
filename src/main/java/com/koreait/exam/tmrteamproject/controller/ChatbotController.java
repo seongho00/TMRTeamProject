@@ -95,7 +95,6 @@ public class ChatbotController {
 
                 // 지역 및 업종을 통해 dataSet 가져오기
                 List<DataSet> upjongDataSet = dataSaveService.findAllByEmdCdAndUpjongCodeGroupByAdminDongCode(emdCd, upjongCode.getUpjongCd());
-
                 return ResultData.from("S-1", "매출액 데이터 출력", "flaskResult", flaskResult, "업종 데이터", upjongCode, "매출액 데이터", upjongDataSet);
 
 
