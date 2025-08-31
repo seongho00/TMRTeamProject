@@ -21,6 +21,8 @@ public class DashBoard {
     private Long totalFloatingPopulation;
     // 당월_매출_금액
     private Long monthlySalesAmount;
+    // 점포_수
+    private Long storeCount;
 
     // 마스터에서 가져온 행정구역 명칭
     private String sidoNm;                // 시도명
