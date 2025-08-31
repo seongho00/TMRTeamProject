@@ -20,7 +20,8 @@
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                 <!-- 유동인구 -->
                 <section class="rounded-2xl bg-white text-gray-900 p-6 lg:p-8">
-                    <div class="relative w-60 h-60 mx-auto rounded-full grid place-items-center bg-[conic-gradient(#007bff_calc(68_*1%),_#e5e7eb_0)]">
+                    <div class="relative w-60 h-60 mx-auto rounded-full grid place-items-center"
+                         th:style="'background: conic-gradient(#007bff ' + ${dashboard.getFootPercent()} + '%, #e5e7eb 0);'">
                         <div class="ring-center">
                             <div class="absolute inset-4 rounded-full bg-white grid place-items-center text-center">
                                 <p class="text-sm text-gray-500">분기별 평균</p>
@@ -33,7 +34,8 @@
 
                 <!-- 평균 매출액 -->
                 <section class="rounded-2xl bg-white text-gray-900 p-6 lg:p-8">
-                    <div class="relative w-60 h-60 mx-auto rounded-full grid place-items-center bg-[conic-gradient(#007bff_calc(68_*1%),_#e5e7eb_0)]">
+                    <div class="relative w-60 h-60 mx-auto rounded-full grid place-items-center"
+                         th:style="'background: conic-gradient(#007bff ' + ${dashboard.getSalesPercent()} + '%, #e5e7eb 0);'">
                         <div class="ring-center">
                             <div class="absolute inset-4 rounded-full bg-white grid place-items-center text-center">
                                 <p class="text-sm text-gray-500">분기별 평균</p>
@@ -44,16 +46,17 @@
                     <h3 class="mt-6 text-center text-lg font-semibold">평균 매출액</h3>
                 </section>
 
-                <!-- 메인 -->
-                <section class="rounded-2xl bg-white text-gray-900 p-6 lg:p-8 flex items-center justify-center">
-                    <div class="text-center space-y-2">
-                        <p class="text-lg font-semibold">메인</p>
-                        <a href="../map/correlationMap">
-                            <button class="mt-2 inline-flex items-center rounded-xl bg-gray-900 px-4 py-2 text-white hover:bg-gray-800">
-                                이동
-                            </button>
-                        </a>
+                <!-- 업소수 -->
+                <section class="rounded-2xl bg-white text-gray-900 p-6 lg:p-8">
+                    <div class="relative w-60 h-60 mx-auto rounded-full grid place-items-center bg-[conic-gradient(#007bff_calc(68_*1%),_#e5e7eb_0)]">
+                        <div class="ring-center">
+                            <div class="absolute inset-4 rounded-full bg-white grid place-items-center text-center">
+                                <p class="text-sm text-gray-500">업종 수</p>
+                                <p class="text-xl font-semibold" th:text="${dashboard.getStoreCount()}"></p>
+                            </div>
+                        </div>
                     </div>
+                    <h3 class="mt-6 text-center text-lg font-semibold">업종 수</h3>
                 </section>
             </div>
         </div>
