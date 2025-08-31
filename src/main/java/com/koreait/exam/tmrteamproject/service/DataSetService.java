@@ -366,6 +366,7 @@ public class DataSetService {
                 .adminDongName(ds.getAdminDongName())
                 .totalFloatingPopulation(ds.getTotalFloatingPopulation())
                 .monthlySalesAmount(ds.getMonthlySalesAmount())
+                .storeCount(ds.getStoreCount())
                 .footPercent(footPercent)
                 .salesPercent(salesPercent)
                 .build();
