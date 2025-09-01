@@ -35,7 +35,6 @@ TRAIN_FILES = [
 ]
 TEST_FILE = "서울_데이터_병합_20251.csv"
 
-
 # 변수 목록
 selected_features = [
     '점포_수', '개업_율', '폐업_률', '프랜차이즈_점포_수',
