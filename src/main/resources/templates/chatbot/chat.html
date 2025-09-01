@@ -79,7 +79,6 @@
                     return;
                 }
 
-                console.log(data)
                 const flaskResult = data.data1;
                 const sido = flaskResult.sido;
                 const sigungu = flaskResult.sigungu;
@@ -105,8 +104,6 @@
                     });
 
                     $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${upjongCode.upjongNm}의 매출액 데이터입니다.</div>`);
-                    // $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${upjongCode.upjongNm}의 매출액 데이터입니다.</div>`);
-
 
                     if (window.salesChart) {
                         window.salesChart.destroy();
@@ -123,7 +120,7 @@
                     const ctx = document.getElementById("salesChart").getContext("2d");
 
                     new Chart(ctx, {
-                        type: "line", // 또는 "bar"
+                        type: "bar", // 또는 "bar"
                         data: {
                             labels: labels,
                             datasets: [{
@@ -141,8 +138,8 @@
                                 y: {
                                     beginAtZero: true,
                                     ticks: {
-                                        callback: function(value) {
-                                            return value.toLocaleString() + " 원"; // 1,000 단위 구분
+                                        callback: function (value) {
+                                            return (value / 100000000).toLocaleString() + " 억";
                                         }
                                     }
                                 }
@@ -287,6 +284,29 @@
                                 title: {display: true, text: regionText + " 연령대별 유동인구"}
                             }
                         }
+                    });
+
+                }
+
+
+                // 청약 데이터 출력 로직
+                if (data.resultCode === "S-4") {
+                    const lhSupplyInfos = data.data2;
+
+                    console.log(lhSupplyInfos);
+
+                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> 현재 모집 중인 청약 데이터 리스트입니다. </div>`);
+
+                    lhSupplyInfos.forEach(lhSupplyInfo => {
+                        $chatBox.append(`
+                            <div class="bot-msg">
+                                <b>챗봇:</b><br>
+                                📌 아파트명: ${lhSupplyInfo.aptNm}<br>
+                                🗓 공급 시작일: ${lhSupplyInfo.startDate}<br>
+                                🗓 공급 종료일: ${lhSupplyInfo.endDate}<br>
+                                📍 지역: ${lhSupplyInfo.region || "정보 없음"}
+                            </div>
+                        `);
                     });
 
                 }

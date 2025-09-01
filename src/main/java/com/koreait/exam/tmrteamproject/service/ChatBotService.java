@@ -66,7 +66,5 @@ public class ChatBotService {
         }
     }
 
-    public void getLhSupplySchedule() {
-    }
 
 }
