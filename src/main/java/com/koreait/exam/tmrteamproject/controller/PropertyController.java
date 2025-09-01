@@ -7,6 +7,7 @@ import com.koreait.exam.tmrteamproject.service.PropertyService;
 import com.koreait.exam.tmrteamproject.vo.AddressPickReq;
 import com.koreait.exam.tmrteamproject.vo.NormalizedAddress;
 import com.koreait.exam.tmrteamproject.vo.PropertyFile;
+import com.koreait.exam.tmrteamproject.vo.ResultData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Address;
@@ -175,7 +176,8 @@ public class PropertyController {
         response = addressService.confirmGeoAndCrawl(req);
 
 
-        double avgMonthlyPerM2 = addressService.calculateAverageMonthly(response);
+        ResultData avgMonthlyRd = addressService.calculateAverageMonthly(response, currentArea);
+        double avgMonthlyPerM2 = (double) avgMonthlyRd.getData2();
         double avgDepositPerM2 = addressService.calculateAverageDeposit(response);
         // 12) 예상 선순위보증금 계산
         // 선임차 환산보증금 + 채권금액
@@ -251,7 +253,7 @@ public class PropertyController {
         // < 0.5 : 양호
         // 0.5~ 1.0 : 경계
         // >= 1.0 : 깡통매물
-        double debtRatio  = sumAmountKRW / collateralValue;
+        double debtRatio = sumAmountKRW / collateralValue;
 
         System.out.println("근저당권 기반 위험 : " + debtRatio);
 
