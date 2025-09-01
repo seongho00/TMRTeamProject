@@ -345,28 +345,24 @@ public class DataSetService {
     }
 
 
-    // DB에 저장된 데이터 찾기
+    // DB에 저장된 데이터 찾기 (null 허용)
     public DashBoard getDashboardData(String adminDongCode) {
         List<DataSet> list = dataSetRepository.findByAdminDongCodeAndBaseYearQuarterCode(adminDongCode, "20251");
 
-        if (list.isEmpty()) {
-            throw new RuntimeException("해당 행정동 데이터 없음");
-        }
-
         // 분기중에 한개만 뽑기
-        DataSet ds = list.get(0);
+        DataSet ds = list.isEmpty() ? null : list.get(0);
 
         // 퍼센트(옵션): 같은 분기 내 최대 대비 비율이라면 별도 리포지토리 메서드 필요
         int footPercent = 0;
         int salesPercent = 0;
 
         return DashBoard.builder()
-                .baseYearQuarterCode(ds.getBaseYearQuarterCode())
-                .adminDongCode(ds.getAdminDongCode())
-                .adminDongName(ds.getAdminDongName())
-                .totalFloatingPopulation(ds.getTotalFloatingPopulation())
-                .monthlySalesAmount(ds.getMonthlySalesAmount())
-                .storeCount(ds.getStoreCount())
+                .baseYearQuarterCode(ds != null ? ds.getBaseYearQuarterCode() : null)
+                .adminDongCode(ds != null ? ds.getAdminDongCode() : null)
+                .adminDongName(ds != null ? ds.getAdminDongName() : null)
+                .totalFloatingPopulation(ds != null ? ds.getTotalFloatingPopulation() : null)
+                .monthlySalesAmount(ds != null ? ds.getMonthlySalesAmount() : null)
+                .storeCount(ds != null ? ds.getStoreCount() : null)
                 .footPercent(footPercent)
                 .salesPercent(salesPercent)
                 .build();
