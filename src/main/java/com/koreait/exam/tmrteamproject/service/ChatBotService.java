@@ -1,7 +1,7 @@
 package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.AdminDongRepository;
-import com.koreait.exam.tmrteamproject.repository.PopulationStatRepository;
+import com.koreait.exam.tmrteamproject.repository.DataSetRepository;
 import com.koreait.exam.tmrteamproject.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
@@ -9,14 +9,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ChatBotService {
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final PopulationStatRepository populationStatRepository;
     private final AdminDongRepository adminDongRepository;
+    private final DataSetRepository dataSaveRepository;
 
 
     public ResultData analyzeMessage(String message) {
@@ -37,6 +39,7 @@ public class ChatBotService {
             String gender = entities.optString("gender");
             String ageGroup = entities.optString("age_group");
             String messageText = entities.optString("message");
+            String upjong_nm = entities.optString("upjong_nm");
 
 
             FlaskResult flaskResult = FlaskResult.builder()
@@ -48,6 +51,7 @@ public class ChatBotService {
                     .gender(gender)
                     .ageGroup(ageGroup)
                     .message(messageText)
+                    .upjong_nm(upjong_nm)
                     .build();
 
             // ✅ 디버깅용 로그
@@ -62,93 +66,5 @@ public class ChatBotService {
         }
     }
 
-    public PopulationSummary getPopulationSummary(FlaskResult flaskResult) {
 
-        String sido = flaskResult.getSido();
-        String sigungu = flaskResult.getSigungu();
-        String emd = flaskResult.getEmd();
-
-        if (sido.equals("서울")) {
-            sido = "서울특별시";
-        }
-
-        System.out.println("sido: " + sido);
-        System.out.println("sigungu: " + sigungu);
-        System.out.println("emd: " + emd);
-
-
-        // 지역 관련
-        if (!sido.equals("None") && !sigungu.equals("None") && !emd.equals("None")) {
-            // "대전 동구 효동"
-            return populationStatRepository.findBySidoAndSigunguAndEmd(sido, sigungu, emd);
-        } else if (!sido.equals("None") && !sigungu.equals("None")) {
-            // "대전 동구"
-            return populationStatRepository.findBySidoAndSigungu(sido, sigungu);
-        } else if (!sido.equals("None") && !emd.equals("None")) {
-            // "대전 효동"
-            return populationStatRepository.findBySidoAndEmd(sido, emd).get(0);
-        } else if (!sigungu.equals("None") && !emd.equals("None")) {
-            // "동구 효동"
-            return populationStatRepository.findBySigunguAndEmd(sigungu, emd);
-        } else if (!sido.equals("None")) {
-            // "대전"
-            return populationStatRepository.findBySido(sido);
-        } else if (!sigungu.equals("None")) {
-            // "동구"
-            return populationStatRepository.findBySigungu(sigungu);
-        } else if (!emd.equals("None")) {
-            // "효동"
-            return populationStatRepository.findByEmd(emd).get(0);
-        }
-
-        return null;
-    }
-
-
-
-
-    public FlaskResult analyzeRegion(FlaskResult flaskResult) {
-
-        String sido = flaskResult.getSido();
-        String sigungu = flaskResult.getSigungu();
-        String emd = flaskResult.getEmd();
-
-        if (sido.equals("서울")) {
-            sido = "서울특별시";
-        }
-
-        System.out.println("sido: " + sido);
-        System.out.println("sigungu: " + sigungu);
-        System.out.println("emd: " + emd);
-
-
-        // 지역 관련
-        if (!sido.equals("None") && !sigungu.equals("None") && !emd.equals("None")) {
-            // "대전 동구 효동"
-            return flaskResult;
-        } else if (!sido.equals("None") && !sigungu.equals("None")) {
-            // "대전 동구"
-            flaskResult.setSido("동구");
-
-            return flaskResult;
-        } else if (!sido.equals("None") && !emd.equals("None")) {
-            // "대전 효동"
-            return flaskResult;
-        } else if (!sigungu.equals("None") && !emd.equals("None")) {
-            // "동구 효동"
-            return flaskResult;
-        } else if (!sido.equals("None")) {
-            // "대전"
-            return flaskResult;
-        } else if (!sigungu.equals("None")) {
-            // "동구"
-            return flaskResult;
-        } else if (!emd.equals("None")) {
-            // "효동"
-            return flaskResult;
-        }
-
-        return null;
-
-    }
 }
