@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="common/head::head"></head>
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="common/head::head"></head>
 
-<h1 class="text-2xl font-bold mb-2">등기부 PDF 업로드</h1>
+<header th:replace="common/mapHeader::header"></header>
+<div class="h-[100px]"></div>
+<h1 class="text-2xl font-bold mb-2">등기부등본 분석</h1>
 <p class="text-sm text-gray-500 mb-4">원본 PDF 1개를 업로드하세요. (최대 20MB)</p>
 
 <!-- Dropzone -->
-<div id="drop" class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer bg-white">
+<div id="drop"
+     class="flex flex-col justify-center items-center border-2 border-dashed border-gray-300 rounded-xl mr-6 ml-6 p-6 bg-white h-[300px]">
     <p class="font-medium text-gray-700">여기에 PDF를 끌어다 놓거나</p>
     <p class="text-gray-500">아래 버튼으로 선택하세요</p>
 
@@ -17,37 +17,73 @@
     <input id="file" type="file" name="file" accept="application/pdf" class="hidden"/>
 
     <div class="flex justify-center gap-3 mt-4">
-        <button id="pick" type="button" class="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700">PDF 선택</button>
-        <button id="upload" type="button" disabled
-                class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50">
-            업로드
+        <button id="pick" type="button" class="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700">PDF 선택
         </button>
+
     </div>
 
     <p class="text-xs text-gray-400 mt-2">허용 형식: PDF (최대 20MB)</p>
 </div>
 
 <!-- 보증금, 월세 데이터 받기 -->
-<div class="mt-4">
-    <label class="block text-sm font-medium text-gray-700">보증금 (만원)</label>
-    <input id="deposit" type="number" name="deposit" min="0"
-           class="mt-1 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
-</div>
-
-<div class="mt-4">
-    <label class="block text-sm font-medium text-gray-700">월세 (만원)</label>
-    <input id="monthlyRent" type="number" name="monthlyRent" min="0"
-           class="mt-1 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
+<div class="mt-4 flex justify-center gap-4">
+    <div>
+        <label class="block text-sm font-medium text-gray-700">보증금 (만원)</label>
+        <input id="deposit" type="number"
+               class="w-32 border border-gray-300 bg-white rounded-md px-2 py-1 no-spin
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500"/>
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700">월세 (만원)</label>
+        <input id="monthlyRent" type="number"
+               class="w-32 border border-gray-300 bg-white rounded-md px-2 py-1 no-spin
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500"/>
+    </div>
 </div>
 
 <!-- 미리보기 -->
 <div id="thumbs" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6"></div>
 
-<!-- 서버 응답 -->
-<h3 class="text-lg font-semibold mt-6">서버 응답</h3>
-<pre id="resp" class="bg-gray-900 text-blue-100 p-3 rounded-lg text-sm whitespace-pre-wrap"></pre>
+
+<button id="upload" type="button" disabled
+        class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50">
+    분석하기
+</button>
+
+
+<style>
+    .no-spin::-webkit-inner-spin-button,
+    .no-spin::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .no-spin {
+        -moz-appearance: textfield;
+    }
+</style>
 
 <script>
+    const depositInput = document.getElementById("deposit");
+    const monthlyRentInput = document.getElementById("monthlyRent");
+    const uploadBtn = document.getElementById("upload");
+
+    // 입력값 검사 함수
+    function checkInputs() {
+        const deposit = depositInput.value.trim();
+        const monthlyRent = monthlyRentInput.value.trim();
+
+        if (selectedFile && deposit !== "" && monthlyRent !== "") {
+            uploadBtn.disabled = false;
+        } else {
+            uploadBtn.disabled = true;
+        }
+    }
+
+    // 인풋 이벤트 등록
+    depositInput.addEventListener("input", checkInputs);
+    monthlyRentInput.addEventListener("input", checkInputs);
+
     let selectedFile = null;
     const MAX_MB = 20;
 
@@ -57,10 +93,10 @@
         const thumbs = document.getElementById("thumbs");
         thumbs.innerHTML = "";
         if (!selectedFile) {
-            document.getElementById("upload").disabled = true;
+            uploadBtn.disabled = true;
             return;
         }
-        const sizeMB = (selectedFile.size / (1024*1024)).toFixed(2);
+        const sizeMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
         const card = document.createElement("div");
         card.className = "border rounded-lg p-2 bg-white shadow";
         card.innerHTML = `
@@ -71,11 +107,15 @@
         <span class="text-xs text-gray-400">(${sizeMB}MB)</span>
       </div>`;
         thumbs.appendChild(card);
-        document.getElementById("upload").disabled = false;
+        checkInputs();
     }
 
     function setPdf(file) {
-        if (!file) { selectedFile = null; showPreview(); return; }
+        if (!file) {
+            selectedFile = null;
+            showPreview();
+            return;
+        }
         if (!isPdf(file)) {
             alert("PDF만 업로드할 수 있습니다.");
             selectedFile = null;
@@ -93,33 +133,46 @@
     }
 
     document.getElementById("pick").addEventListener("click", () => document.getElementById("file").click());
-    document.getElementById("file").addEventListener("change", function () { setPdf(this.files?.[0]); });
+    document.getElementById("file").addEventListener("change", function () {
+        setPdf(this.files?.[0]);
+    });
 
     const drop = document.getElementById("drop");
-    drop.addEventListener("dragenter", e => { e.preventDefault(); drop.classList.add("border-blue-500"); });
-    drop.addEventListener("dragover",  e => { e.preventDefault(); });
-    drop.addEventListener("dragleave", e => { e.preventDefault(); drop.classList.remove("border-blue-500"); });
-    drop.addEventListener("drop",      e => {
-        e.preventDefault(); drop.classList.remove("border-blue-500");
+    drop.addEventListener("dragenter", e => {
+        e.preventDefault();
+        drop.classList.add("border-blue-500");
+    });
+    drop.addEventListener("dragover", e => {
+        e.preventDefault();
+    });
+    drop.addEventListener("dragleave", e => {
+        e.preventDefault();
+        drop.classList.remove("border-blue-500");
+    });
+    drop.addEventListener("drop", e => {
+        e.preventDefault();
+        drop.classList.remove("border-blue-500");
         const file = e.dataTransfer.files?.[0];
         setPdf(file);
     });
 
     document.getElementById("upload").addEventListener("click", async () => {
+        // 사용자 입력값 추가
+        const deposit = document.getElementById("deposit").value || 0;
+        const monthlyRent = document.getElementById("monthlyRent").value || 0;
+
         const resp = document.getElementById("resp");
         resp.textContent = "업로드 중...";
         const form = new FormData();
         form.append("file", selectedFile);
 
-        // 사용자 입력값 추가
-        const deposit = document.getElementById("deposit").value || 0;
-        const monthlyRent = document.getElementById("monthlyRent").value || 0;
+
         form.append("deposit", deposit);
         form.append("monthlyRent", monthlyRent);
 
 
         try {
-            const r = await fetch("/usr/property/upload", { method: "POST", body: form });
+            const r = await fetch("/usr/property/upload", {method: "POST", body: form});
             const json = await r.json();
             resp.textContent = JSON.stringify(json, null, 2);
         } catch (err) {
