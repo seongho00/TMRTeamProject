@@ -88,5 +88,22 @@ public interface DataSetRepository extends JpaRepository<DataSet, Long> {
             nativeQuery = true)
     List<DataSet> findAllByEmdCdAndUpjongCodeGroupByAdminDongCode(@Param("emdCd") String emdCd, @Param("upjongCode") String upjongCode);
 
+    // 행정동 + 분기 데이터 가져오기
     List<DataSet> findByAdminDongCodeAndBaseYearQuarterCode(String adminDongCode, String baseYearQuarterCode);
+
+    // 퍼센트용 계산 구하기
+    @Query("select max(d.totalFloatingPopulation) " +
+            "from DataSet d " +
+            "where d.baseYearQuarterCode = :code")
+    Long findMaxFloatingByQuarter(@Param("code") String baseYearQuarterCode);
+
+    @Query("select max(d.monthlySalesAmount) " +
+            "from DataSet d " +
+            "where d.baseYearQuarterCode = :code")
+    Long findMaxSalesByQuarter(@Param("code") String baseYearQuarterCode);
+
+    @Query("select max(d.storeCount) " +
+            "from DataSet d " +
+            "where d.baseYearQuarterCode = :code")
+    Integer findMaxStoreCountByQuarter(@Param("code") String baseYearQuarterCode);
 }
