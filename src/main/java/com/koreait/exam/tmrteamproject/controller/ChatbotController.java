@@ -159,15 +159,6 @@ public class ChatbotController {
                 // 업종 이름을 통해 업종 데이터 가져오기
                 upjongCode = upjongCodeService.findAllByUpjongNm(flaskResult.getUpjong_nm()).get(0);
 
-                // 업종 종류 보여주기
-                if (flaskResult.getUpjong_nm().isEmpty()) {
-                    List<UpjongCode> upjongCodes = upjongCodeService.findAll();
-                    return ResultData.from("F-4", "업종 선택 필요", "업종 종류", upjongCodes, "메세지 원본", message);
-                }
-
-                // 업종 이름을 통해 업종 데이터 가져오기
-                upjongCode = upjongCodeService.findAllByUpjongNm(flaskResult.getUpjong_nm()).get(0);
-
                 // 지역, 업종코드를 통해 위험도 데이터 가져오기
                 List<Learning> riskDataSet = learningService.findAllByEmdCdAndUpjongCodeGroupByAdminDongCode(emdCd, upjongCode.getUpjongCd());
 
