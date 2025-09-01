@@ -8,4 +8,6 @@ import java.util.List;
 public interface LearningRepository extends JpaRepository<Learning, Long> {
 
     Learning findAllByHjdCo(String hjdCo);
+
+    List<Learning> findAllByHJDCoAndServiceTypeCode(String hjdCo, String serviceTypeCode);
 }
