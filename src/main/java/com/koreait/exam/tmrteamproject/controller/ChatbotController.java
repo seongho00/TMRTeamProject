@@ -2,6 +2,9 @@ package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.entity.LhApplyInfo;
 import com.koreait.exam.tmrteamproject.service.*;
+import com.koreait.exam.tmrteamproject.service.AdminDongService;
+import com.koreait.exam.tmrteamproject.service.ChatBotService;
+import com.koreait.exam.tmrteamproject.service.LearningService;
 import com.koreait.exam.tmrteamproject.vo.*;
 import com.koreait.exam.tmrteamproject.vo.FlaskResult;
 import com.koreait.exam.tmrteamproject.vo.ResultData;
@@ -35,7 +38,7 @@ public class ChatbotController {
     @Autowired
     private UpjongCodeService upjongCodeService;
     @Autowired
-    private DataSaveService dataSaveService;
+    private DataSetService dataSaveService;
     @Autowired
     private LhApplyInfoService lhApplyInfoService;
 
@@ -150,14 +153,10 @@ public class ChatbotController {
                 return ResultData.from("S-2", "유동인구 데이터 출력", "flaskResult", flaskResult, "유동인구", dataSet, "상위 계산", rounded);
 
             case 2:
-
-
-                System.out.println("위험도 예측 요청");
-                List<Learning> learning = learningService.findAllByEmdCd(emdCd);
                 // 상권 위험도 예측 로직
 
 
-                return ResultData.from("S-3", "위험도 데이터 출력", "flaskResult", flaskResult, "위험도 List", learning);
+                return ResultData.from("S-3", "위험도 데이터 출력", "flaskResult", flaskResult);
 
             case 3:
                 // 청약 관련 로직
@@ -172,6 +171,4 @@ public class ChatbotController {
 
         return ResultData.from("F-A", "데이터 요청 실패");
     }
-
-
 }
