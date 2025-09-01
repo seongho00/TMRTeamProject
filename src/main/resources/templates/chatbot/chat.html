@@ -4,12 +4,33 @@
 
 <script>
     function toggleChatBotUI() {
-        $(".chatbot").toggleClass('hidden');
+        const $chatbot = $("#chatBotUI");
+        console.log("실행됨");
+
+        if ($chatbot.hasClass("translate-y-8")) {
+            // 보이기: 제자리 + 보이도록
+            $chatbot.removeClass("translate-y-8 opacity-0")
+                .addClass("translate-y-0 opacity-100");
+        } else {
+            // 숨기기: 아래로 슬라이드 + 안 보이게
+            $chatbot.removeClass("translate-y-0 opacity-100")
+                .addClass("translate-y-8 opacity-0");
+        }
     }
 
     function sendMessage() {
         let message = $("#chatbotText").val();
         const $chatBox = $("#chat-box");
+
+        if (message === "") return; // 빈 값이면 무시
+
+        // 사용자 메시지를 채팅창에 추가
+        $chatBox.append(`
+            <div class="user-msg self-end bg-blue-100 p-2 rounded-lg mb-1 max-w-[80%]">
+                <b>나:</b> ${message}
+            </div>
+        `);
+
         $.ajax({
             type: "POST",
             url: "sendMessage",
@@ -305,16 +326,22 @@
                     // 단계별 색상 정의
                     function getRiskBadge(level) {
                         switch (level) {
-                            case 1: return `<span class="badge text-green-500">1단계 (안전)</span>`;
-                            case 2: return `<span class="badge text-yellow-400">2단계 (주의)</span>`;
-                            case 3: return `<span class="badge text-orange-500">3단계 (경계)</span>`;
-                            case 4: return `<span class="badge text-red-500">4단계 (위험)</span>`;
-                            case 5: return `<span class="badge text-red-800 font-bold animate-pulse">5단계 (매우 위험)</span>`;
-                            default: return `<span class="badge">정보 없음</span>`;
+                            case 1:
+                                return `<span class="badge text-green-500">1단계 (안전)</span>`;
+                            case 2:
+                                return `<span class="badge text-yellow-400">2단계 (주의)</span>`;
+                            case 3:
+                                return `<span class="badge text-orange-500">3단계 (경계)</span>`;
+                            case 4:
+                                return `<span class="badge text-red-500">4단계 (위험)</span>`;
+                            case 5:
+                                return `<span class="badge text-red-800 font-bold animate-pulse">5단계 (매우 위험)</span>`;
+                            default:
+                                return `<span class="badge">정보 없음</span>`;
                         }
                     }
 
-                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b>"${regionText}"의 윟머도 점수는 다음과 같습니다.<br>
+                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b>"${regionText}"의 위험도 점수는 다음과 같습니다.<br>
                         👉 전체 업종 위험도 : ${riskData.risk100All}점<br>
                         👉 해당 업종 위험도 : ${riskData.risk100ByBiz}점<br>
                         👉 업종 위험도 단계 : ${getRiskBadge(riskLevel)}<br>
@@ -399,11 +426,13 @@
 </style>
 
 
-<div
-        class="chatbot fixed bottom-20 right-5 flex flex-col justify-between items-center w-[350px] h-[600px] overflow-hidden rounded-[10px] bg-[#7aaec1] border border-black"
+<div id="chatBotUI"
+     class="chatbot fixed bottom-20 right-5 flex flex-col justify-between items-center
+            w-[350px] h-[600px] overflow-hidden rounded-[10px] border border-black
+            transform translate-y-8 opacity-0 transition-all duration-400 ease-in-out"
 >
     <div
-            class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] relative overflow-hidden border-t-0 border-r-0 border-b border-l-0 border-black"
+            class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] relative overflow-hidden border-t-0 border-r-0 border-b border-l-0 border-black bg-[#7aaec1]"
     >
         <img
                 src="/images/상담봇_미니ver.png"
@@ -411,7 +440,8 @@
         />
         <p class="flex-grow-0 flex-shrink-0 w-[250px] text-xl text-center text-black">터마루 상담봇</p>
 
-        <i class="fa-solid fa-xmark fa-2x flex-grow-0 flex-shrink-0 rounded-tr-[25px] object-cover"></i>
+        <i class="fa-solid fa-xmark fa-2x flex-grow-0 flex-shrink-0 rounded-tr-[25px] object-cover cursor-pointer"
+           onclick="toggleChatBotUI()"></i>
     </div>
     <div id="chat-box"
          class="flex flex-col justify-start items-start self-stretch flex-grow w-[350px] h-[450px] overflow-auto gap-2.5 p-2.5"
