@@ -403,12 +403,17 @@ public class AddressService {
 
 
     @SuppressWarnings("unchecked")
-    public double calculateAverageDeposit(Map<String, Object> response) {
+    public ResultData calculateAverageDeposit(Map<String, Object> response, double myArea) {
         Map<String, Object> crawl = (Map<String, Object>) response.get("crawl");
-        if (crawl == null) return 0;
+        if (crawl == null)  return ResultData.from("F-0", "크롤링 데이터 없음", null, 0);;
 
         List<Map<String, Object>> items = (List<Map<String, Object>>) crawl.get("items");
-        if (items == null || items.isEmpty()) return 0;
+        if (items == null || items.isEmpty())  return ResultData.from("F-0", "매물 없음", null, 0);;
+
+        String myBand;
+        if (myArea < 50) myBand = "small";
+        else if (myArea < 100) myBand = "medium";
+        else myBand = "large";
 
         double totalDeposit = 0;
         double totalArea = 0;
@@ -433,10 +438,37 @@ public class AddressService {
             double area = parseArea(dom.get("전용면적"));
             if (area <= 0) continue;
 
-            totalDeposit += (deposit * area);
+            // 같은 면적 구간만 비교
+            String band = area < 50 ? "small" : area < 100 ? "medium" : "large";
+            if (!band.equals(myBand)) continue;
+
+            totalDeposit += deposit;
             totalArea += area;
         }
 
-        return totalArea > 0 ? totalDeposit / totalArea : 0;
+        // 같은 구간이 없으면 전체 평균으로 fallback
+        if (totalArea == 0) {
+            for (Map<String, Object> item : items) {
+                Map<String, Object> dom = (Map<String, Object>) item.get("dom");
+                if (dom == null) continue;
+
+                String priceType = (String) dom.get("price_type");
+                if (!"월세".equals(priceType)) continue;
+
+                Object depositObj = dom.get("deposit");
+                if (depositObj == null) continue;
+                double deposit = Double.parseDouble(depositObj.toString()) * 10000; // 원 단위 변환
+
+                double area = parseArea(dom.get("전용면적"));
+                if (area <= 0) continue;
+
+                totalDeposit += deposit;
+                totalArea += area;
+            }
+
+            return ResultData.from("F-1", "⚠️ 같은 구간 매물이 없어 전체 평균으로 계산합니다.", "전체 평균 보증금 데이터", totalDeposit / totalArea);
+        }
+
+        return ResultData.from("S-1", "평균 보증금 조회 성공", "평균 보증금 데이터", totalDeposit / totalArea);
     }
 }
