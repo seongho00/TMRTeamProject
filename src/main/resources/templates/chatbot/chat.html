@@ -16,6 +16,12 @@
             data: {message: message},
             success: function (data) {
 
+                // 행정동 필요한 로직인데 없을 때
+                if (data.resultCode === "F-2") {
+                    // 안내 메시지 표시
+                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b>${data.msg}</div>`);
+                }
+
                 // 여러 개의 시군구가 있을 시
                 if (data.resultCode === "F-3") {
                     const candidates = data.data1;

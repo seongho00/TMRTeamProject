@@ -86,7 +86,8 @@ public class ChatbotController {
             emdCd = adminDong.getEmdCd();
         }
 
-        UpjongCode upjongCode = null;
+        UpjongCode upjongCode;
+
         switch (intent) {
             case 0:
                 // 매출 관련 조회 로직
