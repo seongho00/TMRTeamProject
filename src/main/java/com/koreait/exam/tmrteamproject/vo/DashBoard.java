@@ -29,6 +29,7 @@ public class DashBoard {
     private String sggNm;                 // 시군구명
     private String emdNm;                 // 행정동명
 
-    private int footPercent;          // 도넛 퍼센트(0~100)
-    private int salesPercent;         // 도넛 퍼센트(0~100)
+    private int footPercent;        // 도넛 퍼센트(0~100)
+    private int salesPercent;       // 도넛 퍼센트(0~100)
+    private int storPercent;        // 도넛 퍼센트(0~100)
 }

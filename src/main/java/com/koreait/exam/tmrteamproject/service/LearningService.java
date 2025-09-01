@@ -39,4 +39,8 @@ public class LearningService {
     public Learning findAllByHjdCo(String emdCd) {
         return learningRepository.findAllByHjdCo(emdCd);
     }
+
+    public List<Learning> findAllByEmdCdAndUpjongCodeGroupByAdminDongCode(String emdCd, String upjongCd) {
+        return learningRepository.findAllByHjdCoAndServiceTypeCode(emdCd, upjongCd);
+    }
 }
