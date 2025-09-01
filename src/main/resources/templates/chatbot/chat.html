@@ -295,6 +295,33 @@
                 }
 
 
+                // 위험도 데이터 출력 로직
+                if (data.resultCode === "S-3") {
+                    const riskData = data.data2[0];
+                    // 위험도 단계 (1~5)
+                    const riskLevel = parseInt(riskData.riskLevel.replace("단계", ""), 10);
+                    const predictedRiskLabel = riskData.predictedRiskLabel;
+
+                    // 단계별 색상 정의
+                    function getRiskBadge(level) {
+                        switch (level) {
+                            case 1: return `<span class="badge text-green-500">1단계 (안전)</span>`;
+                            case 2: return `<span class="badge text-yellow-400">2단계 (주의)</span>`;
+                            case 3: return `<span class="badge text-orange-500">3단계 (경계)</span>`;
+                            case 4: return `<span class="badge text-red-500">4단계 (위험)</span>`;
+                            case 5: return `<span class="badge text-red-800 font-bold animate-pulse">5단계 (매우 위험)</span>`;
+                            default: return `<span class="badge">정보 없음</span>`;
+                        }
+                    }
+
+                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b>"${regionText}"의 윟머도 점수는 다음과 같습니다.<br>
+                        👉 전체 업종 위험도 : ${riskData.risk100All}점<br>
+                        👉 해당 업종 위험도 : ${riskData.risk100ByBiz}점<br>
+                        👉 업종 위험도 단계 : ${getRiskBadge(riskLevel)}<br>
+                        👉 예상 위험도 단계 : ${getRiskBadge(predictedRiskLabel)}</div>`);
+
+                }
+
                 // 청약 데이터 출력 로직
                 if (data.resultCode === "S-4") {
                     const lhSupplyInfos = data.data2;
