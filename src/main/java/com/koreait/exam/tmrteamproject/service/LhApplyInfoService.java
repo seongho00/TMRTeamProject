@@ -74,4 +74,8 @@ public class LhApplyInfoService {
         return repo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid item Id:" + id));
     }
+
+    public List<LhApplyInfo> findAllByStatus() {
+        return repo.findAllByStatusNotContaining("접수마감");
+    }
 }

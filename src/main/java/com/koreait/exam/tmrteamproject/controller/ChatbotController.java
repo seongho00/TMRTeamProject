@@ -1,5 +1,6 @@
 package com.koreait.exam.tmrteamproject.controller;
 
+import com.koreait.exam.tmrteamproject.entity.LhApplyInfo;
 import com.koreait.exam.tmrteamproject.service.*;
 import com.koreait.exam.tmrteamproject.vo.*;
 import com.koreait.exam.tmrteamproject.vo.FlaskResult;
@@ -35,6 +36,8 @@ public class ChatbotController {
     private UpjongCodeService upjongCodeService;
     @Autowired
     private DataSaveService dataSaveService;
+    @Autowired
+    private LhApplyInfoService lhApplyInfoService;
 
 
     @GetMapping("/chat")
@@ -57,26 +60,29 @@ public class ChatbotController {
 
         int intent = flaskResult.getIntent();
 
-        if (flaskResult.getEmd().isEmpty()) {
-            return ResultData.from("F-2", "행정동을 입력하지 않으셨어요 정확한 분석을 위해 행정동을 입력해주세요. 예: '서울 종로구 사직동' 처럼 말해 주세요.");
-        }
+        String emdCd = null;
 
-        // 행정동만 입력 시 여러 개인지 검색
-        if (flaskResult.getSigungu().isEmpty() && !flaskResult.getEmd().isEmpty()) {
-            List<AdminDong> adminDongs = adminDongService.getAdminDongsByEmdNm(flaskResult.getEmd());
-            if (adminDongs.size() >= 2) {
-                return ResultData.from("F-3", "동 이름이 여러 구에 있어요. 정확한 위치를 선택하세요.", "adminDong 데이터", adminDongs);
-            } else if (flaskResult.getSigungu().isEmpty()) {
-                AdminDong adminDong = adminDongService.getAdminDongsByEmdNm(flaskResult.getEmd()).get(0);
-                flaskResult.setSigungu(adminDong.getSggNm());
+        if (intent != 3) {
+            if (flaskResult.getEmd().isEmpty()) {
+                return ResultData.from("F-2", "행정동을 입력하지 않으셨어요 정확한 분석을 위해 행정동을 입력해주세요. 예: '서울 종로구 사직동' 처럼 말해 주세요.");
             }
+
+            if (flaskResult.getSigungu().isEmpty()) {
+                List<AdminDong> adminDongs = adminDongService.getAdminDongsByEmdNm(flaskResult.getEmd());
+                if (adminDongs.size() >= 2) {
+                    return ResultData.from("F-3", "동 이름이 여러 구에 있어요. 정확한 위치를 선택하세요.", "adminDong 데이터", adminDongs);
+                } else if (flaskResult.getSigungu().isEmpty()) {
+                    AdminDong adminDong = adminDongService.getAdminDongsByEmdNm(flaskResult.getEmd()).get(0);
+                    flaskResult.setSigungu(adminDong.getSggNm());
+                }
+            }
+            // 서울만 하니까 서울로 고정
+            flaskResult.setSido("서울특별시");
+            // 행정동 코드 가져오기
+            AdminDong adminDong = adminDongService.findAdminDongBySggNmAndEmdNm(flaskResult.getSigungu(), flaskResult.getEmd());
+            emdCd = adminDong.getEmdCd();
         }
 
-        // 서울만 하니까 서울로 고정
-        flaskResult.setSido("서울특별시");
-        // 행정동 코드 가져오기
-        AdminDong adminDong = adminDongService.findAdminDongBySggNmAndEmdNm(flaskResult.getSigungu(), flaskResult.getEmd());
-        String emdCd = adminDong.getEmdCd();
 
         switch (intent) {
             case 0:
@@ -156,11 +162,11 @@ public class ChatbotController {
             case 3:
                 // 청약 관련 로직
                 System.out.println("청약 조회 요청");
-                // 페이지 안내 정도?
-                chatBotService.getLhSupplySchedule();
+                // 현재 공급중인 청약 데이터 가져오기
+                List<LhApplyInfo> lhApplyInfos = lhApplyInfoService.findAllByStatus();
 
 
-                return ResultData.from("S-4", "청약 데이터 출력", "flaskResult", flaskResult);
+                return ResultData.from("S-4", "청약 데이터 출력", "flaskResult", flaskResult, "청약 데이터", lhApplyInfos);
 
         }
 
