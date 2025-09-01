@@ -31,7 +31,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
 @Controller
 @RequestMapping("usr/property")
 @Slf4j
@@ -301,4 +300,3 @@ public class PropertyController {
     }
 
 }
-
