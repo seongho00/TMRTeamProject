@@ -31,6 +31,9 @@
             </div>
         `);
 
+        $("#chatbotText").val("");  // 입력창 비우기
+        $chatBox.scrollTop($chatBox[0].scrollHeight); // 스크롤 하단으로
+
         $.ajax({
             type: "POST",
             url: "sendMessage",
@@ -40,7 +43,7 @@
                 // 행정동 필요한 로직인데 없을 때
                 if (data.resultCode === "F-2") {
                     // 안내 메시지 표시
-                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b>${data.msg}</div>`);
+                    $chatBox.append(`<div class="bot-msg"><b>챗봇: </b>행정동을 입력하지 않으셨어요 정확한 분석을 위해 행정동을 입력해주세요. <br> 예: '서울 종로구 사직동' 처럼 말해 주세요.</div>`);
                 }
 
                 // 여러 개의 시군구가 있을 시
@@ -81,7 +84,7 @@
                     const upjongs = data.data1;
                     const message = data.data2;
 
-                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b>아래에서 업종을 선택하면 매출 데이터를 보여드릴게요.</div>`);
+                    $chatBox.append(`<div class="bot-msg"><b>챗봇: </b>아래에서 업종을 선택하면 매출 데이터를 보여드릴게요.</div>`);
 
                     let btnHtml = '<div class="grid grid-cols-2 gap-2 mt-2 max-h-64 overflow-y-auto pr-2">';
                     upjongs.forEach(u => {
@@ -130,7 +133,7 @@
                         salesValues.push(data.monthlySalesAmount); // 매출액 컬럼명 맞게 수정
                     });
 
-                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${upjongCode.upjongNm}의 매출액 데이터입니다.</div>`);
+                    $chatBox.append(`<div class="bot-msg"><b>챗봇: </b> ${upjongCode.upjongNm}의 매출액 데이터입니다.</div>`);
 
                     if (window.salesChart) {
                         window.salesChart.destroy();
@@ -228,7 +231,7 @@
                     } else if (flaskResult.gender === "" && flaskResult.ageGroup !== "") {
                         // 나이대만 있을 때
 
-                        $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 ${ageKor} 유동인구는 ${ageValue}명입니다.</div>`);
+                        $chatBox.append(`<div class="bot-msg"><b>챗봇: </b> ${regionText}의 ${ageKor} 유동인구는 ${ageValue}명입니다.</div>`);
                         $chatBox.append(`
                           <div class="bot-msg">
                             <b>챗봇:</b> ${regionText}의 ${ageKor} 유동인구는 서울 전체 지역 중 <b>상위 ${percentile}%</b>에 해당합니다 🚀
@@ -237,7 +240,7 @@
                     } else {
                         // 성별 + 나이대 모두 있을 때 → 조합 데이터는 없으므로 따로 안내
 
-                        $chatBox.append(`<div class="bot-msg"><b>챗봇:</b>"${regionText}의 ${ageKor} ${genderKor}"에 대한 정확한 인구수는 제공되지 않지만,<br>
+                        $chatBox.append(`<div class="bot-msg"><b>챗봇: </b>"${regionText}의 ${ageKor} ${genderKor}"에 대한 정확한 인구수는 제공되지 않지만,<br>
                     각각의 통계는 다음과 같습니다 😊 <br>
                     👉 ${ageKor} 인구: ${ageValue}명<br>
                     👉 ${genderKor} 인구: ${genderValue}명</div>`);
@@ -341,7 +344,7 @@
                         }
                     }
 
-                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b>"${regionText}"의 위험도 점수는 다음과 같습니다.<br>
+                    $chatBox.append(`<div class="bot-msg"><b>챗봇: </b>"${regionText}"의 위험도 점수는 다음과 같습니다.<br>
                         👉 전체 업종 위험도 : ${riskData.risk100All}점<br>
                         👉 해당 업종 위험도 : ${riskData.risk100ByBiz}점<br>
                         👉 업종 위험도 단계 : ${getRiskBadge(riskLevel)}<br>
@@ -357,7 +360,7 @@
 
                     let tableHtml = `
                         <div class="bot-msg">
-                            <b>챗봇:</b> 현재 모집 중인 청약 데이터 리스트입니다.<br><br>
+                            <b>챗봇: </b> 현재 모집 중인 청약 데이터 리스트입니다.<br><br>
                             <div class="overflow-x-auto">
                                 <table class="table table-zebra table-bordered w-full border border-gray-300">
                                     <thead>
@@ -393,8 +396,6 @@
                 }
 
 
-                $("#chatbotText").val("");  // 입력창 비우기
-                $chatBox.scrollTop($chatBox[0].scrollHeight); // 스크롤 하단으로
             }
             ,
             error: function () {
@@ -422,6 +423,15 @@
     .candidate-btn:hover {
         background-color: #eff6ff; /* 연한 파란 배경 */
         border-color: #60a5fa; /* 파란 테두리 */
+    }
+
+    .bot-msg {
+        background-color: #bbf7d0; /* Tailwind bg-red-400 */
+        color: #000000;
+        padding: 0.5rem; /* Tailwind p-2 */
+        border-radius: 0.5rem; /* Tailwind rounded-lg */
+        margin-bottom: 0.5rem; /* Tailwind mb-2 */
+        max-width: 80%; /* Tailwind max-w-[80%] */
     }
 </style>
 
