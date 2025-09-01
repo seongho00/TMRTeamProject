@@ -26,7 +26,7 @@ print(df.head())  # 또는 df.to_string(index=False)
 conn = pymysql.connect(
     host='localhost',
     user='root',
-    password='',  # 비밀번호 입력
+    password='1234',  # 비밀번호 입력
     database='TMRTeamProject',
     charset='utf8mb4'
 )

@@ -380,24 +380,60 @@ public class DataSetService {
 
     // DB에 저장된 데이터 찾기 (null 허용)
     public DashBoard getDashboardData(String adminDongCode) {
-        List<DataSet> list = dataSetRepository.findByAdminDongCodeAndBaseYearQuarterCode(adminDongCode, "20251");
+        String quarter = "20251";
+        List<DataSet> list = dataSetRepository.findByAdminDongCodeAndBaseYearQuarterCode(adminDongCode, quarter);
 
         // 분기중에 한개만 뽑기
         DataSet ds = list.isEmpty() ? null : list.get(0);
+        String displayQuarter = (ds != null) ? convertQuarterCode(ds.getBaseYearQuarterCode()) : null;
 
-        // 퍼센트(옵션): 같은 분기 내 최대 대비 비율이라면 별도 리포지토리 메서드 필요
-        int footPercent = 0;
-        int salesPercent = 0;
+        // 분기 전체에서 최대값 구하기
+        Long maxFloating = dataSetRepository.findMaxFloatingByQuarter(quarter);
+        Long maxSales    = dataSetRepository.findMaxSalesByQuarter(quarter);
+
+        // 현재 행정동 값
+        Long floatingVal = (ds != null ? ds.getTotalFloatingPopulation() : null);
+        Long salesVal    = (ds != null ? ds.getMonthlySalesAmount() : null);
+        Long storeVal = (ds != null ? ds.getStoreCount() : null);
+
+        // 안전 퍼센트 계산 (0 나눔 방지 + 최소 보정)
+        int footPercent  = calcPercent(floatingVal, maxFloating);
+        int salesPercent = calcPercent(salesVal, maxSales);
+        int storePercent = calcPercent(storeVal, dataSetRepository.findMaxStoreCountByQuarter(quarter));
 
         return DashBoard.builder()
-                .baseYearQuarterCode(ds != null ? ds.getBaseYearQuarterCode() : null)
+                .baseYearQuarterCode(displayQuarter)
                 .adminDongCode(ds != null ? ds.getAdminDongCode() : null)
                 .adminDongName(ds != null ? ds.getAdminDongName() : null)
-                .totalFloatingPopulation(ds != null ? ds.getTotalFloatingPopulation() : null)
-                .monthlySalesAmount(ds != null ? ds.getMonthlySalesAmount() : null)
-                .storeCount(ds != null ? ds.getStoreCount() : null)
+                .totalFloatingPopulation(floatingVal)
+                .monthlySalesAmount(salesVal)
+                .storeCount(storeVal)
                 .footPercent(footPercent)
                 .salesPercent(salesPercent)
+                .storPercent(storePercent)
                 .build();
+    }
+
+    // 퍼센트 계산 유틸
+    private int calcPercent(Number value, Number max) {
+        if (value == null || max == null) return 0;
+        double v = value.doubleValue();
+        double m = max.doubleValue();
+        if (m <= 0) return 0;
+
+        int pct = (int) Math.round((v / m) * 100.0);
+
+        // 너무 작아서 그래프가 아예 안 보이는 걸 방지 (최소 2%는 표시)
+        return (pct == 1) ? 2 : pct;
+    }
+
+    // 분기 정규화
+    private String convertQuarterCode(String code) {
+        if (code == null || code.length() != 5) return null;
+
+        String year = code.substring(0, 4);   // "2025"
+        String quarter = code.substring(4);   // "1"
+
+        return year + "년 " + quarter + "분기";
     }
 }

@@ -10,8 +10,6 @@ import com.koreait.exam.tmrteamproject.vo.FlaskResult;
 import com.koreait.exam.tmrteamproject.vo.ResultData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.text.similarity.FuzzyScore;
-import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,9 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 @Controller
 @RequestMapping("usr/chatbot")
@@ -155,6 +151,13 @@ public class ChatbotController {
 
             case 2:
                 // 상권 위험도 예측 로직
+                if (flaskResult.getUpjong_nm().isEmpty()) {
+                    List<UpjongCode> upjongCodes = upjongCodeService.findAll();
+                    return ResultData.from("F-4", "업종 선택 필요", "업종 종류", upjongCodes, "메세지 원본", message);
+                }
+
+                // 업종 이름을 통해 업종 데이터 가져오기
+                upjongCode = upjongCodeService.findAllByUpjongNm(flaskResult.getUpjong_nm()).get(0);
 
                 // 업종 종류 보여주기
                 if (flaskResult.getUpjong_nm().isEmpty()) {
@@ -164,7 +167,6 @@ public class ChatbotController {
 
                 // 업종 이름을 통해 업종 데이터 가져오기
                 upjongCode = upjongCodeService.findAllByUpjongNm(flaskResult.getUpjong_nm()).get(0);
-
 
                 // 지역, 업종코드를 통해 위험도 데이터 가져오기
                 List<Learning> riskDataSet = learningService.findAllByEmdCdAndUpjongCodeGroupByAdminDongCode(emdCd, upjongCode.getUpjongCd());

@@ -12,7 +12,7 @@
             <!-- 왼쪽 타이틀 -->
             <div class="space-y-4">
                 <h1 class="text-2xl font-semibold leading-tight" th:text="${dashboard.getAdminDongName() != null ? dashboard.getAdminDongName() : '행정동 미지정'}"></h1>
-                <p class="text-lg font-semibold leading-tight" th:text="'분기' + ${dashboard.getBaseYearQuarterCode() != null ? '분기' + dashboard.getBaseYearQuarterCode() : '분기 -'}"></p>
+                <p class="text-lg font-semibold leading-tight" th:text="${dashboard.getBaseYearQuarterCode() != null ? dashboard.getBaseYearQuarterCode() : '분기 -'}"></p>
                 <p class="text-lg/7 text-white/80">상권 정보</p>
             </div>
 
@@ -49,7 +49,7 @@
                 <!-- 업소수 -->
                 <section class="rounded-2xl bg-white text-gray-900 p-6 lg:p-8">
                     <div class="relative w-60 h-60 mx-auto rounded-full grid place-items-center"
-                         th:style="'background: conic-gradient(#007bff ' + (${dashboard.getStoreCount() != null ? dashboard.getStoreCount() : 0}) + '%, #e5e7eb 0);'">
+                         th:style="'background: conic-gradient(#007bff ' + (${dashboard.getStorPercent() != null ? dashboard.getStorPercent() : 0}) + '%, #e5e7eb 0);'">
                         <div class="ring-center">
                             <div class="absolute inset-4 rounded-full bg-white grid place-items-center text-center">
                                 <p class="text-sm text-gray-500">업종 수</p>
@@ -64,7 +64,93 @@
     </div>
 </div>
 
-<div class="relative w-full h-[900px] bg-white"></div>
+<div class="relative w-full bg-white">
+    <!-- 메인 섹션: 상권 분석 + 부동산 매물 카드 그리드 -->
+    <!-- Tailwind CSS 사용 가정 -->
+    <div class="mx-auto max-w-[1200px] px-6 py-16">
+
+        <!-- ===== 상단: 상권 분석하기 ===== -->
+        <header class="mb-10 text-center">
+            <!-- 제목 -->
+            <h2 class="text-3xl font-semibold tracking-tight">상권 분석하기</h2>
+            <!-- 부제목 -->
+            <p class="mt-2 text-sm text-gray-500">상세한 분석과 유용한 정보 보기</p>
+        </header>
+
+        <!-- 카드 3개 그리드 -->
+        <div class="grid grid-cols-1 gap-10 md:grid-cols-2 xl:grid-cols-3">
+            <!-- 카드 1 -->
+            <article class="flex flex-col items-center">
+                <!-- 이미지 박스(가로세로 비율 16:10, 플레이스홀더 회색 박스) -->
+                <div class="w-full aspect-[16/10] rounded-lg bg-gray-300"></div>
+                <!-- 버튼 -->
+                <button type="button"
+                        class="mt-4 rounded bg-gray-200 px-4 py-2 text-sm text-gray-800 hover:bg-gray-300">
+                    자세히 보기
+                </button>
+            </article>
+
+            <!-- 카드 2 -->
+            <article class="flex flex-col items-center">
+                <div class="w-full aspect-[16/10] rounded-lg bg-gray-300"></div>
+                <button type="button"
+                        class="mt-4 rounded bg-gray-200 px-4 py-2 text-sm text-gray-800 hover:bg-gray-300">
+                    자세히 보기
+                </button>
+            </article>
+
+            <!-- 카드 3 -->
+            <article class="flex flex-col items-center">
+                <div class="w-full aspect-[16/10] rounded-lg bg-gray-300"></div>
+                <button type="button"
+                        class="mt-4 rounded bg-gray-200 px-4 py-2 text-sm text-gray-800 hover:bg-gray-300">
+                    자세히 보기
+                </button>
+            </article>
+        </div>
+
+        <!-- 구분선 -->
+        <hr class="my-14 border-gray-300"/>
+
+        <!-- ===== 하단: 부동산 매물 ===== -->
+        <header class="mb-10 text-center">
+            <!-- 제목 -->
+            <h2 class="text-3xl font-semibold tracking-tight">부동산 매물</h2>
+            <!-- 부제목 -->
+            <p class="mt-2 text-sm text-gray-500">유용한 매물 보기</p>
+        </header>
+
+        <!-- 카드 3개 그리드 -->
+        <div class="grid grid-cols-1 gap-10 md:grid-cols-2 xl:grid-cols-3">
+            <!-- 카드 1 -->
+            <article class="flex flex-col items-center">
+                <div class="w-full aspect-[16/10] rounded-lg bg-gray-300"></div>
+                <button type="button"
+                        class="mt-4 rounded bg-gray-200 px-4 py-2 text-sm text-gray-800 hover:bg-gray-300">
+                    자세히 보기
+                </button>
+            </article>
+
+            <!-- 카드 2 -->
+            <article class="flex flex-col items-center">
+                <div class="w-full aspect-[16/10] rounded-lg bg-gray-300"></div>
+                <button type="button"
+                        class="mt-4 rounded bg-gray-200 px-4 py-2 text-sm text-gray-800 hover:bg-gray-300">
+                    자세히 보기
+                </button>
+            </article>
+
+            <!-- 카드 3 -->
+            <article class="flex flex-col items-center">
+                <div class="w-full aspect-[16/10] rounded-lg bg-gray-300"></div>
+                <button type="button"
+                        class="mt-4 rounded bg-gray-200 px-4 py-2 text-sm text-gray-800 hover:bg-gray-300">
+                    자세히 보기
+                </button>
+            </article>
+        </div>
+    </div>
+</div>
 
 <footer th:replace="common/footer::footer"></footer>
 </body>
