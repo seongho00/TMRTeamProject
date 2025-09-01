@@ -303,6 +303,8 @@ public class AddressService {
         double totalMonthly = 0;
         double totalArea = 0;
 
+        System.out.println("아이템들 : " + items);
+
         for (Map<String, Object> item : items) {
             Map<String, Object> dom = (Map<String, Object>) item.get("dom");
             if (dom == null) continue;
@@ -314,7 +316,7 @@ public class AddressService {
             // 월세
             Object monthlyObj = dom.get("monthly");
             if (monthlyObj == null) continue;
-            double monthly = Double.parseDouble(monthlyObj.toString());
+            double monthly = Double.parseDouble(monthlyObj.toString()) * 10000; // 원 단위 변환
 
             // 관리비 포함
 //            monthly += parseManagementFee(dom.get("관리비"));
@@ -325,6 +327,9 @@ public class AddressService {
 
             totalMonthly += (monthly * area);
             totalArea += area;
+            System.out.println("item : " + item);
+            System.out.println("totalMonthly : " + totalMonthly);
+            System.out.println("totalArea : " + totalArea);
         }
 
         return totalArea > 0 ? totalMonthly / totalArea : 0;
@@ -376,7 +381,7 @@ public class AddressService {
             // 월세
             Object depositObj = dom.get("deposit");
             if (depositObj == null) continue;
-            double deposit = Double.parseDouble(depositObj.toString());
+            double deposit = Double.parseDouble(depositObj.toString()) * 10000; // 원 단위 변환
 
             // 관리비 포함
 //            monthly += parseManagementFee(dom.get("관리비"));

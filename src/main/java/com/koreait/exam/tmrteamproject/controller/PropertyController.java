@@ -61,7 +61,7 @@ public class PropertyController {
         // 0) (만원)으로 들어온 데이터 10,000 곱해주기
         deposit *= 10000;
         monthlyRent *= 10000;
-        
+
         // 1) 들어온 파일 모으기 (file 또는 files)
         List<MultipartFile> all = new ArrayList<>();
         if (file != null && !file.isEmpty()) all.add(file);
@@ -221,7 +221,7 @@ public class PropertyController {
         System.out.println(realItem);
 
         // 상가종류 분류
-        String buildingType = "";
+        String buildingType;
 
         if (regstrGbCdNm.equals("집합")) {
             buildingType = "집합";
@@ -255,7 +255,20 @@ public class PropertyController {
 
         System.out.println("근저당권 기반 위험 : " + debtRatio);
 
-        return ResponseEntity.ok(result);
+        // 데이터 정리해서 보내기
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("ok", true);
+        responseData.put("seniorityTotalFormatted", seniorityTotalFormatted); // 예상 선순위보증금
+        responseData.put("rentRisk", rentRisk);       // 월세 시세괴리 단계
+        responseData.put("depositRisk", depositRisk); // 보증금 시세괴리 단계
+        responseData.put("riskRatio", riskRatio); // 채권보증금 리스크
+        responseData.put("debtRatio", debtRatio); // 근저당권 기반 위험
+        responseData.put("collateralValue", collateralValue);
+        responseData.put("avgMonthlyPerM2", avgMonthlyPerM2);
+        responseData.put("avgDepositPerM2", avgDepositPerM2);
+
+
+        return ResponseEntity.ok(responseData);
     }
 
     // 리스크 등급 계산
