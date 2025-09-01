@@ -50,7 +50,6 @@ src/main/resources/*.json
 playwright-report/
 test-results/
 trace.zip
-*.png
 naver_land_api_*.json
 snapshot_*.png
 root_*.png
