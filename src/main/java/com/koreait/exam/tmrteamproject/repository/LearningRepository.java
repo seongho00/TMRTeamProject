@@ -9,5 +9,5 @@ public interface LearningRepository extends JpaRepository<Learning, Long> {
 
     Learning findAllByHjdCo(String hjdCo);
 
-    List<Learning> findAllByHJDCoAndServiceTypeCode(String hjdCo, String serviceTypeCode);
+    List<Learning> findAllByHjdCoAndServiceTypeCode(String hjdCo, String serviceTypeCode);
 }
