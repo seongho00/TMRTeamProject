@@ -17,6 +17,7 @@ import javax.persistence.Id;
 @SuperBuilder
 @ToString(callSuper = true)
 public class AdminDong {
+
     @Id
     @Column(name = "admi_nm")
     private String admiNm;

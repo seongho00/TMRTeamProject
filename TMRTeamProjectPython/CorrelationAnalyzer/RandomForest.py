@@ -35,8 +35,6 @@ TRAIN_FILES = [
 ]
 TEST_FILE = "서울_데이터_병합_20251.csv"
 
-OUT_DIR = "C:/Users/qjvpd/Downloads/Seoul_RandomForest"
-os.makedirs(OUT_DIR, exist_ok=True)
 
 # 변수 목록
 selected_features = [
@@ -296,7 +294,6 @@ top_corr = corr_analysis(
     df_train_feat,
     target='당월_매출_금액',
     features=correlation_features,
-    out_path=os.path.join(OUT_DIR, "corr_top.csv"),
     top_k=30
 )
 
@@ -371,26 +368,39 @@ else:
     out['예측_신뢰도'] = np.nan
 
 # 정렬(선택)
-pref = ['행정동_코드_명','서비스_업종_코드_명','실제_위험도','예측_위험도','예측_신뢰도','위험도_점수','위험도_단계']
+pref = ['행정동_코드','행정동_코드_명','서비스_업종_코드','서비스_업종_코드_명','실제_위험도','예측_위험도','예측_신뢰도','위험도_점수','위험도_단계']
 ordered = [c for c in pref if c in out.columns] + [c for c in out.columns if c not in pref]
 out = out[ordered]
 
-# 저장 (DB 저장)
-try:
-    print(out.columns)
-    send_to_server(out)
-    print("DB 저장 완료")
 
+# 위험도 점수 정규화 (퍼센타일 방식, 0~100)
+df = out.copy()  # 원본 보존용 복사본
+
+# 전체 퍼센타일 스케일 (0 ~ 100)
+# 0~100 범위로 변환
+df["risk100_all"] = (df["위험도_점수"].rank(pct=True, method="average") * 100).round(1)
+
+# 업종별 퍼센타일 스케일
+# 같은 업종 안에서만 상대적인 순위(0~100)를 부여
+df["risk100_by_biz"] = (df.groupby("서비스_업종_코드")["위험도_점수"].transform(lambda g: g.rank(pct=True, method="average") * 100)).round(1)
+
+print("\n=== 결과 상위 10행 ===")
+print(df.head(10))
+
+# DB 저장
+try:
+    print(df.columns)
+    send_to_server(df)
+    print("DB 저장 완료")
 except Exception as e:
     print(e)
 
-save_path = os.path.join(OUT_DIR, "risk_pred_20251.csv")
-out.to_csv(save_path, index=False, encoding="utf-8-sig")
-print(f"\n저장 완료: {save_path}")
+# 분포 확인 (0~100 고르게 펴졌는지 체크)
+print("risk100_all 통계:\n", df["risk100_all"].describe())
+print("고유 값 개수:", df["risk100_all"].nunique())
 
-# 미리보기
-print("\n=== 결과 상위 10행 ===")
-print(out.head(10))
+# 퍼센타일 계산 이후
+out = df
 
 # 5단계 팔레트(낮음→높음)
 PALETTE_5 = {
@@ -471,7 +481,8 @@ def _build_service_list(df_group: pd.DataFrame) -> list:
             "예측_위험도": int(r["예측_위험도"]) if pd.notna(r.get("예측_위험도")) else None,
             "예측_위험도_라벨": LABEL_5.get(int(r["예측_위험도"]), None) if pd.notna(r.get("예측_위험도")) else None,
             "예측_신뢰도": float(r["예측_신뢰도"]) if pd.notna(r.get("예측_신뢰도")) else None,
-            "위험도_점수": float(r["위험도_점수"]) if pd.notna(r.get("위험도_점수")) else None,
+            "위험도_점수": float(r["risk100_all"]) if pd.notna(r.get("risk100_all")) else None,
+            "위험도_업종별_점수": float(r["risk100_by_biz"]) if pd.notna(r.get("risk100_by_biz")) else None,
             "위험도_단계": r.get("위험도_단계"),
             "color": color,
         }
@@ -480,6 +491,18 @@ def _build_service_list(df_group: pd.DataFrame) -> list:
     # 업종명 사전순 정렬 (필요 시 위험도 내림차순 정렬로 변경 가능)
     items.sort(key=lambda x: (x["서비스_업종_코드_명"] or ""))
     return items
+
+def _coerce_numeric_cols(df: pd.DataFrame, cols, ndigits=None):
+    for c in cols:
+        if c not in df.columns:
+            print(f"[WARN] 컬럼 없음: {c}")
+            df[c] = np.nan
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+        if ndigits is not None:
+            df[c] = df[c].round(ndigits)
+    # 진단 출력
+    print(df[cols].describe(include="all"))
+    print("NaN 비율:", df[cols].isna().mean().to_dict())
 
 def save_result_as_geojson(src_geojson_path: str, out_geojson_path: str, df_result: pd.DataFrame):
     # 경로 체크
@@ -560,4 +583,5 @@ def save_result_as_geojson(src_geojson_path: str, out_geojson_path: str, df_resu
     print(f"저장 완료: {out_geojson_path}")
 
 # 실행
+_coerce_numeric_cols(out, ["risk100_all", "risk100_by_biz"], ndigits=1)
 save_result_as_geojson(GEOJSON_SRC, GEOJSON_OUT, out)

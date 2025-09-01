@@ -24,6 +24,7 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
+    open-in-view: false
   servlet:
     multipart:
       max-file-size: 20MB
@@ -72,4 +73,3 @@ bldrgst:
 # R-ONE API
 rOne:
   apiKey: 11ff00dfd57d4af28c5d3c16ed576fc1
-

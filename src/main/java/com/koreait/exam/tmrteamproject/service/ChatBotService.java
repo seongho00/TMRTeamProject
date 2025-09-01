@@ -1,7 +1,7 @@
 package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.AdminDongRepository;
-import com.koreait.exam.tmrteamproject.repository.DataSaveRepository;
+import com.koreait.exam.tmrteamproject.repository.DataSetRepository;
 import com.koreait.exam.tmrteamproject.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
@@ -18,7 +18,7 @@ public class ChatBotService {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final AdminDongRepository adminDongRepository;
-    private final DataSaveRepository dataSaveRepository;
+    private final DataSetRepository dataSaveRepository;
 
 
     public ResultData analyzeMessage(String message) {
