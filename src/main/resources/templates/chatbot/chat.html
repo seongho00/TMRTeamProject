@@ -295,20 +295,41 @@
 
                     console.log(lhSupplyInfos);
 
-                    $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> 현재 모집 중인 청약 데이터 리스트입니다. </div>`);
+                    let tableHtml = `
+                        <div class="bot-msg">
+                            <b>챗봇:</b> 현재 모집 중인 청약 데이터 리스트입니다.<br><br>
+                            <div class="overflow-x-auto">
+                                <table class="table table-zebra table-bordered w-full border border-gray-300">
+                                    <thead>
+                                        <tr>
+                                            <th>공고 이름</th>
+                                            <th>지역</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
 
-                    lhSupplyInfos.forEach(lhSupplyInfo => {
-                        $chatBox.append(`
-                            <div class="bot-msg">
-                                <b>챗봇:</b><br>
-                                📌 아파트명: ${lhSupplyInfo.aptNm}<br>
-                                🗓 공급 시작일: ${lhSupplyInfo.startDate}<br>
-                                🗓 공급 종료일: ${lhSupplyInfo.endDate}<br>
-                                📍 지역: ${lhSupplyInfo.region || "정보 없음"}
-                            </div>
-                        `);
+                    lhSupplyInfos.forEach(lh => {
+                        tableHtml += `
+                            <tr>
+                                <td class="border border-gray-300">
+                                    <a href="/lh/${lh.id}" target="_blank" class="text-blue-600 hover:underline">
+                                        ${lh.title}
+                                    </a>
+                                </td>
+                                <td class="border border-gray-300">${lh.address.replace(/(특별시|광역시|특별자치시|특별자치도|도)/g, "") || "정보 없음"}</td>
+                            </tr>
+                        `;
                     });
 
+                    tableHtml += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+
+                    $chatBox.append(tableHtml);
                 }
 
 
