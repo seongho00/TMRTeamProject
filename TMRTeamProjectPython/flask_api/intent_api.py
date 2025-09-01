@@ -30,6 +30,15 @@ except Exception:
 from typing import Optional, Collection, List, Dict, Tuple, Any, Set
 from playwright.sync_api import sync_playwright, TimeoutError as PwTimeout
 
+# 업종 검색 관련 import
+import re
+import unicodedata
+
+try:
+    from rapidfuzz import process, fuzz
+    HAVE_RAPIDFUZZ = True
+except Exception:
+    HAVE_RAPIDFUZZ = False
 
 # ✅ 예측 함수
 def predict_intent(text, threshold=0.1):
@@ -155,6 +164,9 @@ def extract_upjong_code_map():
             cursor.execute(sql)
             rows = cursor.fetchall()
             name_to_code = {r['upjong_nm']: r['upjong_cd'] for r in rows}
+
+            print(name_to_code)
+
             return name_to_code
     except Exception as e:
         print("❌ 업종 코드 로딩 실패:", e)
@@ -162,11 +174,60 @@ def extract_upjong_code_map():
     finally:
         conn.close()
 
+def _normalize(s: str) -> str:
+    s = unicodedata.normalize("NFC", s)
+    # 환경에 따라 아래 둘 중 하나 사용
+    s = re.sub(r'[^0-9A-Za-z\u3131-\u318E\uAC00-\uD7A3]+', '', s)  # 권장 대안
+    # s = re.sub(r'[\s\p{P}\p{S}]+', '', s)
+    return s
+
+def find_upjong_pre_morph_from_map(
+        user_input: str,
+        name_to_code: dict[str, str],   # {"중국음식점":"CS1001", ...}
+        fuzzy_threshold: int = 60,
+        max_window_len: int = 12
+):
+    """
+    반환: (raw_phrase, mapped_name, mapped_code, score, method)
+    실패: (None, None, None, None, None)
+    """
+    text_norm = _normalize(user_input)
+    if not text_norm:
+        return (None, None, None, None, None)
+
+    # 정규화 인덱스
+    idx = { _normalize(nm): (nm, code) for nm, code in name_to_code.items() }
+
+    # 1) 공백무시 부분일치(가장 긴 매칭 우선)
+    best = None
+    for nm_norm, (nm, cd) in idx.items():
+        if nm_norm in text_norm:
+            cand = (nm, nm, cd, 100, "substring")
+            if not best or len(nm) > len(best[0]):
+                best = cand
+    if best:
+        return best
+
+    # 2) 퍼지 매칭(옵션)
+    if HAVE_RAPIDFUZZ:
+        keys = list(idx.keys())
+        BEST = (None, None, None, -1, "fuzzy")
+        Lmax = min(max_window_len, max((len(k) for k in keys), default=0))
+        for L in range(2, Lmax + 1):
+            for i in range(0, max(0, len(text_norm) - L + 1)):
+                sub = text_norm[i:i+L]
+                m = process.extractOne(sub, keys, scorer=fuzz.ratio)
+                if m and m[1] > BEST[3]:
+                    nm, cd = idx[m[0]]
+                    BEST = (sub, nm, cd, m[1], "fuzzy")
+        if BEST[3] >= fuzzy_threshold:
+            return BEST
+
+    return (None, None, None, None, None)
 
 # ✅ 의미 분석 함수
 def analyze_input(user_input, intent, valid_emd_list):
-    tokens = extract_nouns_with_age_merge(user_input)
-    print("추출된 명사:", tokens)
+
 
     entities = {
         "sido": None,
@@ -177,6 +238,18 @@ def analyze_input(user_input, intent, valid_emd_list):
         "upjong_cd": None,
         "raw_upjong": None,  # 매칭 안 되면 원문 보관
     }
+
+    # 업종 선매핑 (동의어 없이)
+    raw, nm, cd, score, method = find_upjong_pre_morph_from_map(
+        user_input, upjong_keywords, fuzzy_threshold=80
+    )
+    if cd:
+        entities["raw_upjong"] = raw or nm
+        entities["upjong_nm"]  = nm
+        entities["upjong_cd"]  = cd
+
+    tokens = extract_nouns_with_age_merge(user_input)
+    print("추출된 명사:", tokens)
 
     for t in tokens:
         # 시/도
@@ -195,13 +268,15 @@ def analyze_input(user_input, intent, valid_emd_list):
         if t in age_keywords:
             entities["age_group"] = age_keywords[t]
         # 업종
-        if t in upjong_keywords:
-            entities["upjong_cd"] = upjong_keywords[t]
-            entities["raw_upjong"] = t
-        else:
-            # 매칭 안 되어도 업종 단어 같으면 원문만 기록(간단 예시)
-            if t in ("카페","편의점","분식","패스트푸드","의류"):
+        if entities["upjong_cd"] is None:
+            if t in upjong_keywords:  # 기존 키워드 사전 (간단 매핑용)
+                entities["upjong_cd"] = upjong_keywords[t]
+                entities["upjong_nm"] = t
                 entities["raw_upjong"] = t
+            else:
+                # 일상어 힌트만 기록
+                if t in ("카페", "편의점", "분식", "패스트푸드", "의류", "중국집", "치킨집"):
+                    entities["raw_upjong"] = t
 
     # 지역 최소 단위 판정(하나라도 있으면 OK)
     has_region = bool(entities["emd_nm"] or entities["sigungu"] or entities["sido"])
@@ -214,7 +289,7 @@ def analyze_input(user_input, intent, valid_emd_list):
         missing.append("region")  # 지역(시/구/동 중 하나)
 
     # 다른 의무 파라미터가 필요하면 여기에 조건 추가(예: intent별 필수 성별 등)
-
+    print(entities)
     return entities, missing
 
 
@@ -302,7 +377,6 @@ age_keywords = {
 
 valid_emd_list = extract_emd_nm_list()
 upjong_keywords = extract_upjong_code_map()
-
 # 의도별 요구 파라미터 정의
 # intent: 0=매출, 1=유동인구, 2=위험도, 3=청약(예시)
 INTENT_REQUIRED = {

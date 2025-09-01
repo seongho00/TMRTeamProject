@@ -35,6 +35,7 @@ TRAIN_FILES = [
 ]
 TEST_FILE = "서울_데이터_병합_20251.csv"
 
+
 # 변수 목록
 selected_features = [
     '점포_수', '개업_율', '폐업_률', '프랜차이즈_점포_수',
@@ -370,6 +371,7 @@ else:
 pref = ['행정동_코드','행정동_코드_명','서비스_업종_코드','서비스_업종_코드_명','실제_위험도','예측_위험도','예측_신뢰도','위험도_점수','위험도_단계']
 ordered = [c for c in pref if c in out.columns] + [c for c in out.columns if c not in pref]
 out = out[ordered]
+
 
 # 위험도 점수 정규화 (퍼센타일 방식, 0~100)
 df = out.copy()  # 원본 보존용 복사본

@@ -14,4 +14,8 @@ public interface LhApplyInfoRepository extends JpaRepository<LhApplyInfo, Long> 
     Optional<LhApplyInfo> findBySiteNo(int siteNo);
 
     List<LhApplyInfo> findAllByOrderBySiteNoDesc();
+
+    List<LhApplyInfo> findAllByStatus(String status);
+
+    List<LhApplyInfo> findAllByStatusNotContaining(String status);
 }
