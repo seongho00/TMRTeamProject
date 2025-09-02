@@ -818,6 +818,7 @@ def analyze():
         traceback.print_exc()
         return jsonify(ok=False, message=f"분석 실패: {e}"), 500
 
+
     return jsonify(
         ok=True,
         pageCount=len(doc),
@@ -839,7 +840,7 @@ LIST_SEL_CANDS = [
     "div.item_list--article",
     "div.article_list",  # 예비
 ]
-API_SOFT_WAIT_MS = 1200  # 800~1500 권장 (너무 느리면 900로)
+API_SOFT_WAIT_MS = 800  # 800~1500 권장 (너무 느리면 900로)
 MAX_CLICK = 20  # 클릭할 카드 수 상한
 
 
@@ -934,7 +935,7 @@ def _launch_ctx(p):
 
 def _goto_offices(page, lat: float, lng: float):
     root = "https://new.land.naver.com"
-    path = f"/offices?ms={lat},{lng},17&a=SG&e=RETAIL"
+    path = f"/offices?ms={lat},{lng},19&a=SG&e=RETAIL"
     page.goto(root, wait_until="domcontentloaded", timeout=30000)
     try:
         page.evaluate("href => { location.href = href }", path)
@@ -1025,7 +1026,7 @@ def crawl_viewport(lat: float, lng: float,
             hit = _soft_wait_detail(page, api_detail_queue, before_len, API_SOFT_WAIT_MS)
 
             # 디테일 패널 DOM 파싱 (항상 시도)
-            page.wait_for_timeout(200)  # 패널 렌더 여유
+            page.wait_for_timeout(10)  # 패널 렌더 여유
             try:
                 dom_data = scrape_detail_panel(page)  # 또는 scrape_detail_panel_raw(page)
             except Exception:
@@ -1038,7 +1039,6 @@ def crawl_viewport(lat: float, lng: float,
                 "dom": dom_data,
             })
 
-            page.wait_for_timeout(120 + int(random.random() * 120))
 
         # 정리
         ctx.close()
