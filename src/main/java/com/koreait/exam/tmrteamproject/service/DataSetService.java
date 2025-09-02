@@ -388,10 +388,10 @@ public class DataSetService {
         String displayQuarter = (ds != null) ? convertQuarterCode(ds.getBaseYearQuarterCode()) : null;
 
         // 평균 유동인구 계산
-        Long maxFloating = Math.round(dataSetRepository.findAvgFloatingByQuarter(quarter, adminDongCode));
+        Long maxFloating = dataSetRepository.findAvgFloatingByQuarter(quarter, adminDongCode);
 
         // 평균 매출액 계산
-        Long avgSales = Math.round(dataSetRepository.findAvgSalesByQuarter(quarter, adminDongCode));
+        Long avgSales = dataSetRepository.findAvgSalesByQuarter(quarter, adminDongCode);
 
         // 점포수 합산
         Long sumStoreCount = dataSetRepository.findSumStoreCountByQuarter(quarter, adminDongCode);
