@@ -280,7 +280,9 @@ public class PropertyService {
 
     public List<Map<String, Object>> fetchBldRgstItems(String raw) {
         // 1) 전처리: ‘외 n필지’, 대괄호 태그 제거, 공백 정리
+        System.out.println("raw : " + raw);
         String cleaned = cleanup(raw);
+        System.out.println("cleaned :  " + cleaned);
 
         // 2) 동/호 힌트 추출 (등기부가 “제1층 제103호”처럼 오는 케이스 처리)
         String dongNm = extractDong(cleaned); // “제1동/1동/동1” → 1
@@ -290,7 +292,11 @@ public class PropertyService {
         String juso = simplifyToLegalLot(cleaned);
 
         // 1) JUSO 조회 (Map으로 받기)
+        System.out.println("juso" + juso);
+
         Map<String, String> j = jusoLookupAsMap(juso);
+
+        System.out.println("juso: " + j);
 
         String admCd = j.get("admCd");
         String sigunguCd = admCd.substring(0, 5);
@@ -323,7 +329,10 @@ public class PropertyService {
             if (parsed != null) {
                 bun = z4(parsed[0]);
                 ji = z4(parsed[1]);
+                System.out.println("실행됨");
 
+                System.out.println(bun);
+                System.out.println(ji);
                 q.put("bun", bun);
                 q.put("ji", ji);
 
@@ -384,8 +393,8 @@ public class PropertyService {
     }
 
     public String simplifyToLegalLot(String s) {
-        // "대전광역시 동구 천동 515 ..." → "대전광역시 동구 천동 515"
-        var m = Pattern.compile("(.+?\\s[가-힣]+동)\\s(\\d+)(?:-\\d+)?").matcher(s);
+        // "서울특별시 서초구 서초동 1317-16 ..." → "서울특별시 서초구 서초동 1317-16"
+        var m = Pattern.compile("(.+?\\s[가-힣]+동)\\s(\\d+(?:-\\d+)?)").matcher(s);
         if (m.find()) return m.group(1) + " " + m.group(2);
         return s;
     }
@@ -427,6 +436,8 @@ public class PropertyService {
         } catch (Exception e) {
             throw new IllegalStateException("JUSO 응답 파싱 실패", e);
         }
+
+        System.out.println(resp.toString());
 
         // 4) 공통부/결과 파싱
         java.util.Map<String, Object> results = asMap(resp.get("results"));

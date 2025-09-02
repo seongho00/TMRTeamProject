@@ -110,8 +110,9 @@ public class PropertyController {
         MultipartFile thePdf = pdfOnly.get(0);
         Map<String, Object> result = propertyService.analyzeWithPythonDirect(List.of(thePdf), extra);
 
-        // 6) 분석된 주소에서 normal인 것만 빼오기
+        // 6) 분석된 주소에서 normal인 것만 빼오기 (공동매물)
         Map<String, Object> filteredResult = propertyService.printNormalAddresses(result);
+
 
         // 6-1) 채권최고액 가져오기
         List<Map<String, Object>> mortgages =
@@ -130,19 +131,20 @@ public class PropertyController {
 
         // 7) 분석된 주소마다 면적 구해오기
         List<Map<String, Object>> normals = (List<Map<String, Object>>) filteredResult.get("normalAddresses");
+        double sum = 0.0;
 
         if (normals == null || normals.isEmpty()) {
             System.out.println("✅ normal 주소 없음");
+        } else {
+            for (Map<String, Object> addr : normals) {
+                String address = (String) addr.get("address");
+
+                double area = propertyService.resolveAreaFromLine(address);
+
+                sum += area;
+            }
         }
 
-        double sum = 0.0;
-        for (Map<String, Object> addr : normals) {
-            String address = (String) addr.get("address");
-
-            double area = propertyService.resolveAreaFromLine(address);
-
-            sum += area;
-        }
 
         // 8) 현재주소 면적 가져오기
         double currentArea = propertyService.resolveAreaFromLine((String) result.get("jointCollateralCurrentAddress"));
