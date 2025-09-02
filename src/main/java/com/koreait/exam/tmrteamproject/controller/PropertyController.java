@@ -194,7 +194,6 @@ public class PropertyController {
 
         System.out.println(seniorityTotalFormatted); // → ₩17,857,978
 
-
         // 시세 괴리 리스크
         double unit_rent = monthlyRent / currentArea;
         double unit_deposit = deposit / currentArea;
@@ -246,7 +245,7 @@ public class PropertyController {
 
         // 14) 채권보증금 리스크 계산
         // 채권 최고액 + 예산 선순위보증금 금액 / 담보가치
-        double riskRatio = (sumAmountKRW + seniorityTotalRounded) / collateralValue;
+        double riskRatio = (weightedValue + seniorityTotalRounded) / collateralValue;
 
         System.out.println("riskRatio : " + riskRatio);
 
@@ -255,9 +254,22 @@ public class PropertyController {
         // < 0.5 : 양호
         // 0.5~ 1.0 : 경계
         // >= 1.0 : 깡통매물
-        double debtRatio = sumAmountKRW / collateralValue;
+        double debtRatio = weightedValue / collateralValue;
 
         System.out.println("근저당권 기반 위험 : " + debtRatio);
+
+
+        double predictedMonthly = avgMonthlyPerM2 * currentArea;
+        double predictedDeposit = avgDepositPerM2 * currentArea;
+
+        // 예상 월세 계산
+        long avgMonthlyDisplay = Math.round(predictedMonthly / 1000.0) * 1000;
+        long avgDepositDisplay = Math.round(predictedDeposit / 10000.0) * 10000;
+
+        // 평균 m2당 월세
+        long MonthlyDisplayPerSqm = Math.round(avgMonthlyPerM2 / 1000.0) * 1000;
+        long DepositDisplayPerSqm = Math.round(avgDepositPerM2 / 1000.0) * 1000;
+
 
         // 데이터 정리해서 보내기
         Map<String, Object> responseData = new HashMap<>();
@@ -268,8 +280,10 @@ public class PropertyController {
         responseData.put("riskRatio", riskRatio); // 채권보증금 리스크
         responseData.put("debtRatio", debtRatio); // 근저당권 기반 위험
         responseData.put("collateralValue", collateralValue);
-        responseData.put("avgMonthlyPerM2", avgMonthlyPerM2);
-        responseData.put("avgDepositPerM2", avgDepositPerM2);
+        responseData.put("avgMonthlyDisplay", avgMonthlyDisplay);
+        responseData.put("avgDepositDisplay", avgDepositDisplay);
+        responseData.put("MonthlyDisplayPerSqm", MonthlyDisplayPerSqm);
+        responseData.put("DepositDisplayPerSqm", DepositDisplayPerSqm);
 
 
         return ResponseEntity.ok(responseData);
