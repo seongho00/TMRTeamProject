@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -163,7 +164,6 @@ public class PropertyController {
 
         // AddressService로 검색
         List<NormalizedAddress> list = addressService.search(normalizedCurrentAddr, 1, 5);
-        System.out.println(list);
 
         Map<String, Object> response = new HashMap<>();
         NormalizedAddress n = list.get(0);
@@ -192,8 +192,6 @@ public class PropertyController {
         NumberFormat formatter = NumberFormat.getCurrencyInstance(Locale.KOREA);
         String seniorityTotalFormatted = formatter.format(seniorityTotalRounded);
 
-        System.out.println(seniorityTotalFormatted); // → ₩17,857,978
-
         // 시세 괴리 리스크
         double unit_rent = monthlyRent / currentArea;
         double unit_deposit = deposit / currentArea;
@@ -206,10 +204,6 @@ public class PropertyController {
         String rentRisk = getRiskLevel(rentGapRatio);
         String depositRisk = getRiskLevel(depositGapRatio);
 
-        System.out.println("rentRist : " + rentRisk);
-        System.out.println("depositRisk : " + depositRisk);
-
-
         // 13) 담보가치 계산
         // 연 임대수익 / 임대수익률
         // 연 임대수익 : 월세 * 12 + 보증금 * 0.02(환산율)
@@ -221,7 +215,6 @@ public class PropertyController {
 
         String regstrGbCdNm = realItem.get("regstrGbCdNm").toString();
         String mainPurpsCdNm = realItem.get("mainPurpsCdNm").toString();
-        System.out.println(realItem);
 
         // 상가종류 분류
         String buildingType;
@@ -247,7 +240,17 @@ public class PropertyController {
         // 채권 최고액 + 예산 선순위보증금 금액 / 담보가치
         double riskRatio = (weightedValue + seniorityTotalRounded) / collateralValue;
 
-        System.out.println("riskRatio : " + riskRatio);
+        String bondDepositRisk;
+
+        if (riskRatio < 0.5) {
+            bondDepositRisk = "정상";
+        } else if (riskRatio < 0.7) {
+            bondDepositRisk = "주의";
+        } else if (riskRatio < 1.0) {
+            bondDepositRisk = "위험";
+        } else {
+            bondDepositRisk = "고위험";
+        }
 
         // 15) 근저당권 기반 위험
         // 채권최고액 / 담보가치
@@ -256,19 +259,33 @@ public class PropertyController {
         // >= 1.0 : 깡통매물
         double debtRatio = weightedValue / collateralValue;
 
-        System.out.println("근저당권 기반 위험 : " + debtRatio);
+        String debtRiskLevel;
 
+        if (debtRatio < 0.5) {
+            debtRiskLevel = "정상";
+        } else if (debtRatio < 0.7) {
+            debtRiskLevel = "주의";
+        } else if (debtRatio < 1.0) {
+            debtRiskLevel = "위험";
+        } else {
+            debtRiskLevel = "고위험";
+        }
 
         double predictedMonthly = avgMonthlyPerM2 * currentArea;
         double predictedDeposit = avgDepositPerM2 * currentArea;
-        System.out.println("currentArea : " + currentArea);
+
         // 예상 월세 계산
-        double avgMonthlyDisplay = Math.round(predictedMonthly / 10000.0);
-        double avgDepositDisplay = Math.round(predictedDeposit / 10000.0);
+        DecimalFormat df = new DecimalFormat("#.#"); // 소수점 한 자리, 필요할 때만 표시
+        double avgMonthlyValue = predictedMonthly / 10000.0;
+        String avgMonthlyDisplay = df.format(avgMonthlyValue);
+        double avgDepositValue = predictedDeposit / 10000.0;
+        String avgDepositDisplay = df.format(avgDepositValue);
 
         // 평균 m2당 월세
-        long MonthlyDisplayPerSqm = Math.round(avgMonthlyPerM2 / 1000.0) * 1000;
-        long DepositDisplayPerSqm = Math.round(avgDepositPerM2 / 1000.0) * 1000;
+        double MonthlyDisplayPerSqmValue = avgMonthlyPerM2 / 1000.0;
+        String MonthlyDisplayPerSqm = df.format(MonthlyDisplayPerSqmValue);
+        double DepositDisplayPerSqmValue = avgDepositPerM2 / 1000.0;
+        String DepositDisplayPerSqm = df.format(DepositDisplayPerSqmValue);
 
 
         // 데이터 정리해서 보내기
@@ -277,13 +294,14 @@ public class PropertyController {
         responseData.put("seniorityTotalFormatted", seniorityTotalFormatted); // 예상 선순위보증금
         responseData.put("rentRisk", rentRisk);       // 월세 시세괴리 단계
         responseData.put("depositRisk", depositRisk); // 보증금 시세괴리 단계
-        responseData.put("riskRatio", riskRatio); // 채권보증금 리스크
-        responseData.put("debtRatio", debtRatio); // 근저당권 기반 위험
+        responseData.put("bondDepositRisk", bondDepositRisk); // 채권보증금 리스크
+        responseData.put("debtRiskLevel", debtRiskLevel); // 근저당권 기반 위험
         responseData.put("collateralValue", collateralValue);
         responseData.put("avgMonthlyDisplay", avgMonthlyDisplay);
         responseData.put("avgDepositDisplay", avgDepositDisplay);
         responseData.put("MonthlyDisplayPerSqm", MonthlyDisplayPerSqm);
         responseData.put("DepositDisplayPerSqm", DepositDisplayPerSqm);
+        responseData.put("weightedValue", weightedValue);
 
 
         return ResponseEntity.ok(responseData);
