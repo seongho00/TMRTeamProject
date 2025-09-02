@@ -1,6 +1,6 @@
 package com.koreait.exam.tmrteamproject.controller;
 
-import com.koreait.exam.tmrteamproject.entity.LhApplyInfo;
+import com.koreait.exam.tmrteamproject.vo.LhApplyInfo;
 import com.koreait.exam.tmrteamproject.service.*;
 import com.koreait.exam.tmrteamproject.service.AdminDongService;
 import com.koreait.exam.tmrteamproject.service.ChatBotService;

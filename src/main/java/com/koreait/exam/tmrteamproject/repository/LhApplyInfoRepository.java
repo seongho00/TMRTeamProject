@@ -1,6 +1,6 @@
 package com.koreait.exam.tmrteamproject.repository;
 
-import com.koreait.exam.tmrteamproject.entity.LhApplyInfo;
+import com.koreait.exam.tmrteamproject.vo.LhApplyInfo;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

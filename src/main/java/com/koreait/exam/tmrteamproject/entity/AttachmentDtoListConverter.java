@@ -3,6 +3,8 @@ package com.koreait.exam.tmrteamproject.entity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.koreait.exam.tmrteamproject.vo.LhApplyInfo;
+
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
