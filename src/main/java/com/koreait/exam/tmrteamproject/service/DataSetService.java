@@ -387,27 +387,32 @@ public class DataSetService {
         DataSet ds = list.isEmpty() ? null : list.get(0);
         String displayQuarter = (ds != null) ? convertQuarterCode(ds.getBaseYearQuarterCode()) : null;
 
-        // 분기 전체에서 최대값 구하기
-        Long maxFloating = dataSetRepository.findMaxFloatingByQuarter(quarter);
-        Long maxSales    = dataSetRepository.findMaxSalesByQuarter(quarter);
+        // 평균 유동인구 계산
+        Long maxFloating = dataSetRepository.findAvgFloatingByQuarter(quarter, adminDongCode);
 
-        // 현재 행정동 값
+        // 평균 매출액 계산
+        Long avgSales = dataSetRepository.findAvgSalesByQuarter(quarter, adminDongCode);
+
+        // 점포수 합산
+        Long sumStoreCount = dataSetRepository.findSumStoreCountByQuarter(quarter, adminDongCode);
+
+        // 퍼센트화할 기준
         Long floatingVal = (ds != null ? ds.getTotalFloatingPopulation() : null);
         Long salesVal    = (ds != null ? ds.getMonthlySalesAmount() : null);
         Long storeVal = (ds != null ? ds.getStoreCount() : null);
 
         // 안전 퍼센트 계산 (0 나눔 방지 + 최소 보정)
         int footPercent  = calcPercent(floatingVal, maxFloating);
-        int salesPercent = calcPercent(salesVal, maxSales);
-        int storePercent = calcPercent(storeVal, dataSetRepository.findMaxStoreCountByQuarter(quarter));
+        int salesPercent = calcPercent(salesVal, avgSales);
+        int storePercent = calcPercent(storeVal, sumStoreCount);
 
         return DashBoard.builder()
                 .baseYearQuarterCode(displayQuarter)
                 .adminDongCode(ds != null ? ds.getAdminDongCode() : null)
                 .adminDongName(ds != null ? ds.getAdminDongName() : null)
                 .totalFloatingPopulation(floatingVal)
-                .monthlySalesAmount(salesVal)
-                .storeCount(storeVal)
+                .monthlySalesAmount(avgSales)
+                .storeCount(sumStoreCount)
                 .footPercent(footPercent)
                 .salesPercent(salesPercent)
                 .storPercent(storePercent)
