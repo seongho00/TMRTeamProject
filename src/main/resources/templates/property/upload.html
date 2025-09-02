@@ -59,6 +59,7 @@
         <h3 class="font-bold text-lg">분석 결과</h3>
         <p id="riskResult" class="py-2 text-gray-700"></p>
         <p id="depositResult" class="py-2 text-gray-700"></p>
+        <ul id="riskBase" class="text-sm text-gray-600 list-disc list-inside mt-1"></ul>
         <div class="text-right mt-4">
             <button onclick="closeModal()"
                     class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">확인
@@ -206,26 +207,28 @@
 
 
             if (json.ok) {
+                overlay.classList.add("hidden");
+
                 // 팝업 열기 (DaisyUI modal-toggle)
-                document.getElementById("result-modal").checked = true;
+                $("#result-modal").removeClass("hidden");
 
                 console.log(json);
 
                 // 결과 데이터 바인딩
-                // document.getElementById("riskResult").textContent =
-                //     `임대 리스크: ${json.rentRisk}, 보증금 리스크: ${json.depositRisk}`;
-                // document.getElementById("depositResult").textContent =
-                //     `예상 선순위보증금: ${json.seniorityTotalFormatted}`;
+                $("#riskResult").text(`임대 리스크: ${json.rentRisk}, 보증금 리스크: ${json.depositRisk}`);
+                $("#risk").text(`(기준: 평균 월세 ${json.MonthlyDisplayPerSqm}만원 /㎡ , 평균 보증금 ${json.DepositDisplayPerSqm}만원/㎡)`);
+                $("#riskBase").html(`
+                  <li>내 면적 기준 예상 월세: ${json.avgMonthlyDisplay}만원</li>
+                  <li>평균 보증금: ${json.avgDepositDisplay}만원</li>
+                `);
 
-                // resp 영역에는 JSON 대신 "분석 완료" 정도만
-                resp.textContent = "분석 완료 ✅";
+                // 채권보증금
+                // 근저당권 위험
+                
             }
 
 
         } catch (err) {
-            resp.textContent = "업로드 실패: " + err.message;
-        } finally {
-            overlay.classList.add("hidden");
         }
     });
 
