@@ -3,7 +3,7 @@ package com.koreait.exam.tmrteamproject.service;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.koreait.exam.tmrteamproject.entity.LhApplyInfo;
+import com.koreait.exam.tmrteamproject.vo.LhApplyInfo;
 import com.koreait.exam.tmrteamproject.repository.LhApplyInfoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Transactional(readOnly = true)
 public class LhApplyInfoService {
 
-    private final LhApplyInfoRepository repo;
+    private final LhApplyInfoRepository lhApplyInfoRepository;
     private final AtomicBoolean loading = new AtomicBoolean(false);
 
     private final ObjectMapper mapper = new ObjectMapper()
@@ -60,22 +60,26 @@ public class LhApplyInfoService {
             log.warn("[LH] siteNo 없음 → SKIP : {}", dto.getTitle());
             return;
         }
-        repo.findBySiteNo(dto.getSiteNo())
+        lhApplyInfoRepository.findBySiteNo(dto.getSiteNo())
                 .ifPresentOrElse(found -> {
                     found.updateFrom(dto);
-                }, () -> repo.save(dto));
+                }, () -> lhApplyInfoRepository.save(dto));
     }
 
     public List<LhApplyInfo> findAllDesc() {
-        return repo.findAllByOrderBySiteNoDesc();
+        return lhApplyInfoRepository.findAllByOrderBySiteNoDesc();
     }
 
     public LhApplyInfo findById(Long id) {
-        return repo.findById(id)
+        return lhApplyInfoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid item Id:" + id));
     }
 
     public List<LhApplyInfo> findAllByStatus() {
-        return repo.findAllByStatusNotContaining("접수마감");
+        return lhApplyInfoRepository.findAllByStatusNotContaining("접수마감");
+    }
+
+    public List<LhApplyInfo> findAll() {
+        return lhApplyInfoRepository.findAll();
     }
 }
