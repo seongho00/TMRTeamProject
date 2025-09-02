@@ -54,12 +54,24 @@
 
 <!-- 분석결과 팝업창 -->
 <div id="result-modal"
-     class="hidden fixed inset-0 flex items-center justify-center bg-black/30 z-50">
+     class=" fixed inset-0 flex items-center justify-center bg-black/30 z-50">
     <div class="bg-white rounded-lg p-6 w-[400px] shadow-lg">
         <h3 class="font-bold text-lg">분석 결과</h3>
-        <p id="riskResult" class="py-2 text-gray-700"></p>
-        <p id="depositResult" class="py-2 text-gray-700"></p>
-        <ul id="riskBase" class="text-sm text-gray-600 list-disc list-inside mt-1"></ul>
+        <div class="w-full bg-gray-200 rounded-full h-4">
+            <div id="riskBar" class="h-4 rounded-full"></div>
+        </div>
+        <div class="mt-1 text-sm text-gray-700">
+            위험도 점수: <span id="totalScore"></span> (단계: <span id="totalLevel"></span>)
+        </div>
+
+        <button id="toggleDetail" class="btn btn-sm btn-outline">상세보기</button>
+
+        <div id="riskDetail" class="mt-2 hidden">
+            임대 리스크: <span id="rentRisk"></span><br>
+            보증금 리스크: <span id="depositRisk"></span><br>
+            채권보증금 리스크: <span id="bondRisk"></span><br>
+            근저당권 리스크: <span id="debtRisk"></span>
+        </div>
         <div class="text-right mt-4">
             <button onclick="closeModal()"
                     class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">확인
@@ -213,28 +225,39 @@
                 $("#result-modal").removeClass("hidden");
 
                 console.log(json);
+
                 // 위험 색 넣기
                 function getRiskClass(level) {
                     switch (level) {
-                        case "정상": return "text-green-600 font-bold";
-                        case "주의": return "text-yellow-600 font-bold";
-                        case "위험": return "text-orange-600 font-bold";
-                        case "고위험": return "text-red-600 font-bold";
-                        default: return "text-gray-600";
+                        case "정상":
+                            return "text-green-600 font-bold";
+                        case "주의":
+                            return "text-yellow-600 font-bold";
+                        case "위험":
+                            return "text-orange-600 font-bold";
+                        case "고위험":
+                            return "text-red-600 font-bold";
+                        default:
+                            return "text-gray-600";
                     }
                 }
 
-                function riskToScore(level){
+                function riskToScore(level) {
                     switch (level) {
-                        case "정상": return 25;
-                        case "주의": return 50;
-                        case "위험": return 75;
-                        case "고위험": return 100;
-                        default: return "text-gray-600";
+                        case "정상":
+                            return 25;
+                        case "주의":
+                            return 50;
+                        case "위험":
+                            return 75;
+                        case "고위험":
+                            return 100;
+                        default:
+                            return 0;
                     }
                 }
 
-                function scoreToLevel(score){
+                function scoreToLevel(score) {
                     if (score < 40) return "정상";
                     else if (score < 60) return "주의";
                     else if (score < 80) return "위험";
@@ -246,18 +269,21 @@
                 let bondDepositRiskClass = getRiskClass(json.bondDepositRisk);
                 let debtRiskLevelClass = getRiskClass(json.debtRiskLevel);
 
-                let rent = riskToScore(json.rentRisk());
-                let deposit = riskToScore(json.depositRisk());
-                let bond = riskToScore(json.bondDepositRisk());
-                let debt = riskToScore(json.debtRiskLevel());
+                let rent = riskToScore(json.rentRisk);
+                let deposit = riskToScore(json.depositRisk);
+                let bond = riskToScore(json.bondDepositRisk);
+                let debt = riskToScore(json.debtRiskLevel);
 
                 // 단순 평균 (가중치 필요시 weight 적용)
                 let totalScore = (rent + deposit + bond + debt) / 4.0;
                 let totalLevel = scoreToLevel(totalScore);
 
+                let totalLevelClass = getRiskClass(totalLevel);
+                let totalScoreDisplay = totalScore.toFixed(1); // 소수점 1자리
+
                 // 결과 데이터 바인딩
                 $("#riskResult").html(`
-                  위험도 점수 : ${totalScore} , 위험 단계 : ${totalLevel}
+                  위험도 점수 : ${totalScoreDisplay} , 위험 단계 :  <span class="${totalLevelClass}">${totalLevel}</span>
                   임대 리스크: <span class="${rentRiskClass}">${json.rentRisk}</span>,
                   보증금 리스크: <span class="${depositRiskClass}">${json.depositRisk}</span>
                   채권보증금 리스크: <span class="${bondDepositRiskClass}">${json.bondDepositRisk}</span>,
@@ -279,6 +305,26 @@
     function closeModal() {
         document.getElementById("result-modal").classList.add("hidden");
     }
+
+    let targetWidth = 60; // 목표 %
+
+    $({val:0}).animate({val:targetWidth}, {
+        duration: 1500,
+        step: function(now) {
+            let color = "#22c55e"; // 기본값 (정상)
+            if (now >= 100) {
+                color = "#dc2626"; // 고위험
+            } else if (now >= 70) {
+                color = "#ef4444"; // 위험
+            } else if (now >= 50) {
+                color = "#eab308"; // 주의
+            }
+
+            $("#riskBar")
+                .css("width", now + "%")
+                .css("background-color", color);
+        }
+    });
 
 </script>
 </html>
