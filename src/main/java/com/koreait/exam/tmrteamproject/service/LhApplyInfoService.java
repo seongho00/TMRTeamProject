@@ -66,10 +66,6 @@ public class LhApplyInfoService {
                 }, () -> lhApplyInfoRepository.save(dto));
     }
 
-    public List<LhApplyInfo> findAllDesc() {
-        return lhApplyInfoRepository.findAllByOrderBySiteNoDesc();
-    }
-
     public LhApplyInfo findById(Long id) {
         return lhApplyInfoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid item Id:" + id));

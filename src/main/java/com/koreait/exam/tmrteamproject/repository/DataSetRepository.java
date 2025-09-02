@@ -92,18 +92,15 @@ public interface DataSetRepository extends JpaRepository<DataSet, Long> {
     List<DataSet> findByAdminDongCodeAndBaseYearQuarterCode(String adminDongCode, String baseYearQuarterCode);
 
     // 퍼센트용 계산 구하기
-    @Query("select max(d.totalFloatingPopulation) " +
-            "from DataSet d " +
-            "where d.baseYearQuarterCode = :code")
-    Long findMaxFloatingByQuarter(@Param("code") String baseYearQuarterCode);
+    // 평균 매출액
+    @Query("SELECT AVG(d.monthlySalesAmount) FROM DataSet d WHERE d.baseYearQuarterCode = :quarter AND d.adminDongCode = :adminDongCode")
+    Long findAvgSalesByQuarter(@Param("quarter") String quarter, String adminDongCode);
 
-    @Query("select max(d.monthlySalesAmount) " +
-            "from DataSet d " +
-            "where d.baseYearQuarterCode = :code")
-    Long findMaxSalesByQuarter(@Param("code") String baseYearQuarterCode);
+    // 분기별 행정동별 점포수 합
+    @Query("SELECT SUM(d.storeCount) FROM DataSet d WHERE d.baseYearQuarterCode = :quarter AND d.adminDongCode = :adminDongCode")
+    Long findSumStoreCountByQuarter(@Param("quarter") String quarter, String adminDongCode);
 
-    @Query("select max(d.storeCount) " +
-            "from DataSet d " +
-            "where d.baseYearQuarterCode = :code")
-    Integer findMaxStoreCountByQuarter(@Param("code") String baseYearQuarterCode);
+    //분기별 행정동별 평균 유동인구
+    @Query("SELECT AVG(d.totalFloatingPopulation) FROM DataSet d WHERE d.baseYearQuarterCode = :quarter AND d.adminDongCode = :adminDongCode")
+    Long findAvgFloatingByQuarter(@Param("quarter") String quarter, String adminDongCode);
 }
