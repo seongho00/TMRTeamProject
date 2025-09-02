@@ -56,15 +56,23 @@
 <div id="result-modal"
      class=" fixed inset-0 flex items-center justify-center bg-black/30 z-50">
     <div class="bg-white rounded-lg p-6 w-[400px] shadow-lg">
-        <h3 class="font-bold text-lg">분석 결과</h3>
+        <div class="flex  mb-3">
+            <h3 class="font-bold text-lg">분석 결과</h3>
+            <div class="flex-1"></div>
+            <button id="toggleDetail"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800  text-sm text-white font-medium
+         hover:bg-gray-700 active:bg-gray-900 shadow transition duration-200">
+                <i class="fa-solid fa-circle-info text-xs "></i>
+                상세보기
+            </button>
+        </div>
         <div class="w-full bg-gray-200 rounded-full h-4">
             <div id="riskBar" class="h-4 rounded-full"></div>
         </div>
-        <div class="mt-1 text-sm text-gray-700">
+        <div class="mt-1 text-lg text-gray-700">
             위험도 점수: <span id="totalScore"></span> (단계: <span id="totalLevel"></span>)
         </div>
 
-        <button id="toggleDetail" class="btn btn-sm btn-outline">상세보기</button>
 
         <div id="riskDetail" class="mt-2 hidden">
             임대 리스크: <span id="rentRisk"></span><br>
@@ -281,20 +289,36 @@
                 let totalLevelClass = getRiskClass(totalLevel);
                 let totalScoreDisplay = totalScore.toFixed(1); // 소수점 1자리
 
-                // 결과 데이터 바인딩
-                $("#riskResult").html(`
-                  위험도 점수 : ${totalScoreDisplay} , 위험 단계 :  <span class="${totalLevelClass}">${totalLevel}</span>
-                  임대 리스크: <span class="${rentRiskClass}">${json.rentRisk}</span>,
-                  보증금 리스크: <span class="${depositRiskClass}">${json.depositRisk}</span>
-                  채권보증금 리스크: <span class="${bondDepositRiskClass}">${json.bondDepositRisk}</span>,
-                  근저당권 리스크: <span class="${debtRiskLevelClass}">${json.debtRiskLevel}</span>
-                `);
+                // 결과 데이터 바인딩 (요약만)
+                $("#totalScore").text(totalScoreDisplay);
+                $("#totalLevel").html(`<span class="${totalLevelClass}">${totalLevel}</span>`);
 
-                $("#riskBase").html(`
-                  <li>예상 월세: ${json.avgMonthlyDisplay}만원 (평균 월세 ${json.MonthlyDisplayPerSqm}만원 /㎡)</li>
-                  <li>예상 보증금: ${json.avgDepositDisplay}만원 (평균 보증금 ${json.DepositDisplayPerSqm}만원/㎡)</li>
-                `);
+                // 상세 내용 (처음엔 hidden → 상세보기 버튼으로 토글)
+                $("#rentRisk").html(`<span class="${rentRiskClass}">${json.rentRisk}</span>`);
+                $("#depositRisk").html(`<span class="${depositRiskClass}">${json.depositRisk}</span>`);
+                $("#bondRisk").html(`<span class="${bondDepositRiskClass}">${json.bondDepositRisk}</span>`);
+                $("#debtRisk").html(`<span class="${debtRiskLevelClass}">${json.debtRiskLevel}</span>`);
 
+                // 위험도 bar
+                let targetWidth = Math.round(totalScore); // 목표 %
+
+                $({val: 0}).animate({val: targetWidth}, {
+                    duration: 1500,
+                    step: function (now) {
+                        let color = "#22c55e"; // 기본값 (정상)
+                        if (now >= 100) {
+                            color = "#dc2626"; // 고위험
+                        } else if (now >= 70) {
+                            color = "#ef4444"; // 위험
+                        } else if (now >= 50) {
+                            color = "#eab308"; // 주의
+                        }
+
+                        $("#riskBar")
+                            .css("width", now + "%")
+                            .css("background-color", color);
+                    }
+                });
 
             }
 
@@ -306,25 +330,18 @@
         document.getElementById("result-modal").classList.add("hidden");
     }
 
-    let targetWidth = 60; // 목표 %
+    $("#toggleDetail").on("click", function () {
+        $("#riskDetail").toggleClass("hidden");
 
-    $({val:0}).animate({val:targetWidth}, {
-        duration: 1500,
-        step: function(now) {
-            let color = "#22c55e"; // 기본값 (정상)
-            if (now >= 100) {
-                color = "#dc2626"; // 고위험
-            } else if (now >= 70) {
-                color = "#ef4444"; // 위험
-            } else if (now >= 50) {
-                color = "#eab308"; // 주의
-            }
-
-            $("#riskBar")
-                .css("width", now + "%")
-                .css("background-color", color);
+        // 버튼 텍스트 토글
+        if ($("#riskDetail").hasClass("hidden")) {
+            $(this).html('<i class="fa-solid fa-circle-info text-xs"></i> 상세보기');
+        } else {
+            $(this).html('<i class="fa-solid fa-chevron-up text-xs"></i> 접기');
         }
     });
+
+
 
 </script>
 </html>
