@@ -76,7 +76,9 @@
 
         <div id="riskDetail" class="mt-2 hidden">
             임대 리스크: <span id="rentRisk"></span><br>
+            (예상 평균 월세 : <span id="rentBase"></span>)<br>
             보증금 리스크: <span id="depositRisk"></span><br>
+            (예상 평균 보증금 : <span id="depositBase"></span>)<br>
             채권보증금 리스크: <span id="bondRisk"></span><br>
             근저당권 리스크: <span id="debtRisk"></span>
         </div>
@@ -295,7 +297,9 @@
 
                 // 상세 내용 (처음엔 hidden → 상세보기 버튼으로 토글)
                 $("#rentRisk").html(`<span class="${rentRiskClass}">${json.rentRisk}</span>`);
+                $("#rentBase").html(`<span> ${json.avgMonthlyDisplay}</span>`);
                 $("#depositRisk").html(`<span class="${depositRiskClass}">${json.depositRisk}</span>`);
+                $("#depositBase").html(`<span>${json.avgDepositDisplay}</span>`);
                 $("#bondRisk").html(`<span class="${bondDepositRiskClass}">${json.bondDepositRisk}</span>`);
                 $("#debtRisk").html(`<span class="${debtRiskLevelClass}">${json.debtRiskLevel}</span>`);
 
