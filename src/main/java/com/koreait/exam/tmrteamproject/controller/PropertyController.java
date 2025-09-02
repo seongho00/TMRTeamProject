@@ -261,10 +261,10 @@ public class PropertyController {
 
         double predictedMonthly = avgMonthlyPerM2 * currentArea;
         double predictedDeposit = avgDepositPerM2 * currentArea;
-
+        System.out.println("currentArea : " + currentArea);
         // 예상 월세 계산
-        long avgMonthlyDisplay = Math.round(predictedMonthly / 1000.0) * 1000;
-        long avgDepositDisplay = Math.round(predictedDeposit / 10000.0) * 10000;
+        double avgMonthlyDisplay = Math.round(predictedMonthly / 10000.0);
+        double avgDepositDisplay = Math.round(predictedDeposit / 10000.0);
 
         // 평균 m2당 월세
         long MonthlyDisplayPerSqm = Math.round(avgMonthlyPerM2 / 1000.0) * 1000;
@@ -292,9 +292,9 @@ public class PropertyController {
     // 리스크 등급 계산
     public static String getRiskLevel(double gapRatio) {
         double absGap = Math.abs(gapRatio);
-        if (absGap <= 0.1) return "정상";      // ±10% 이내
-        else if (absGap <= 0.2) return "주의"; // ±20% 이내
-        else if (absGap <= 0.3) return "위험"; // ±30% 이내
+        if (absGap <= 0.2) return "정상";      // ±20% 이내
+        else if (absGap <= 0.4) return "주의"; // ±40% 이내
+        else if (absGap <= 0.6) return "위험"; // ±60% 이내
         else return "고위험";
     }
 
