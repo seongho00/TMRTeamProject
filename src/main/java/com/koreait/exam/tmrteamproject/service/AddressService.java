@@ -300,7 +300,6 @@ public class AddressService {
             return ResultData.from("F-0", "크롤링 데이터 없음", null, 0);
         }
 
-
         List<Map<String, Object>> items = (List<Map<String, Object>>) crawl.get("items");
         if (items == null || items.isEmpty()) {
             return ResultData.from("F-0", "매물 없음", null, 0);
@@ -312,7 +311,7 @@ public class AddressService {
         else if (myArea < 100) myBand = "medium";
         else myBand = "large";
 
-
+        List<Double> perList = new ArrayList<>();
         double totalMonthly = 0;
         double totalArea = 0;
 
@@ -343,15 +342,11 @@ public class AddressService {
             if (!band.equals(myBand)) continue;
 
             // 면적 가중 평균 계산
-            totalMonthly += monthly;
-            totalArea += area;
-            System.out.println("item : " + item);
-            System.out.println("totalMonthly : " + totalMonthly);
-            System.out.println("totalArea : " + totalArea);
+            perList.add(monthly / area);
         }
 
         // 같은 구간이 없으면 전체 평균으로 fallback
-        if (totalArea == 0) {
+        if (perList.isEmpty()) {
             for (Map<String, Object> item : items) {
                 Map<String, Object> dom = (Map<String, Object>) item.get("dom");
                 if (dom == null) continue;
@@ -373,9 +368,31 @@ public class AddressService {
             return ResultData.from("F-1", "⚠️ 같은 구간 매물이 없어 전체 평균으로 계산합니다.", "전체 평균 월세 데이터", totalMonthly / totalArea);
         }
 
-        double result = totalMonthly / totalArea;
+        Collections.sort(perList);
+        double avgPerSqm;
+        // 표본 개수에 따른 로직
+        if (perList.size() >= 8) {
+            // 10% 절사(가볍게)
+            int n = perList.size();
+            int k = (int) Math.floor(n * 0.10);
+            k = Math.min(k, 3); // 과도 절사 방지
+            double sum = 0;
+            for (int i = k; i < n - k; i++) sum += perList.get(i);
+            avgPerSqm = sum / (n - 2 * k);
+        } else if (perList.size() >= 3) {
 
-        return ResultData.from("S-1", "평균월세 조회 성공", "평균월세 데이터", result);
+            int n = perList.size();
+            if (n % 2 == 1) {
+                avgPerSqm = perList.get(n / 2);
+            } else {
+                avgPerSqm = (perList.get(n / 2 - 1) + perList.get(n / 2)) / 2.0;
+            }
+        } else {
+            // 너무 적으면 단순평균
+            avgPerSqm = perList.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+        }
+
+        return ResultData.from("S-1", "평균월세 조회 성공", "평균월세 데이터", avgPerSqm);
     }
 
     private double parseArea(Object areaObj) {
@@ -405,16 +422,19 @@ public class AddressService {
     @SuppressWarnings("unchecked")
     public ResultData calculateAverageDeposit(Map<String, Object> response, double myArea) {
         Map<String, Object> crawl = (Map<String, Object>) response.get("crawl");
-        if (crawl == null)  return ResultData.from("F-0", "크롤링 데이터 없음", null, 0);;
+        if (crawl == null) return ResultData.from("F-0", "크롤링 데이터 없음", null, 0);
+        ;
 
         List<Map<String, Object>> items = (List<Map<String, Object>>) crawl.get("items");
-        if (items == null || items.isEmpty())  return ResultData.from("F-0", "매물 없음", null, 0);;
+        if (items == null || items.isEmpty()) return ResultData.from("F-0", "매물 없음", null, 0);
+        ;
 
         String myBand;
         if (myArea < 50) myBand = "small";
         else if (myArea < 100) myBand = "medium";
         else myBand = "large";
 
+        List<Double> perList = new ArrayList<>();  // 보증금/㎡
         double totalDeposit = 0;
         double totalArea = 0;
 
@@ -442,12 +462,11 @@ public class AddressService {
             String band = area < 50 ? "small" : area < 100 ? "medium" : "large";
             if (!band.equals(myBand)) continue;
 
-            totalDeposit += deposit;
-            totalArea += area;
+            perList.add(deposit / area);
         }
 
         // 같은 구간이 없으면 전체 평균으로 fallback
-        if (totalArea == 0) {
+        if (perList.isEmpty()) {
             for (Map<String, Object> item : items) {
                 Map<String, Object> dom = (Map<String, Object>) item.get("dom");
                 if (dom == null) continue;
@@ -468,7 +487,24 @@ public class AddressService {
 
             return ResultData.from("F-1", "⚠️ 같은 구간 매물이 없어 전체 평균으로 계산합니다.", "전체 평균 보증금 데이터", totalDeposit / totalArea);
         }
+        Collections.sort(perList);
+        double avgPerSqm;
+        int n = perList.size();
 
-        return ResultData.from("S-1", "평균 보증금 조회 성공", "평균 보증금 데이터", totalDeposit / totalArea);
+        if (n >= 8) {
+            int k = (int) Math.floor(n * 0.10);
+            k = Math.min(k, 3); // 과도 절사 방지
+            double sum = 0.0;
+            for (int i = k; i < n - k; i++) sum += perList.get(i);
+            avgPerSqm = sum / (n - 2 * k);
+        } else if (n >= 3) {
+            avgPerSqm = (n % 2 == 1)
+                    ? perList.get(n / 2)
+                    : (perList.get(n / 2 - 1) + perList.get(n / 2)) / 2.0; // 짝수 중앙값
+        } else {
+            avgPerSqm = perList.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        }
+
+        return ResultData.from("S-1", "평균 보증금 조회 성공", "평균 보증금 데이터", avgPerSqm);
     }
 }

@@ -177,9 +177,10 @@ public class PropertyController {
 
 
         ResultData avgMonthlyRd = addressService.calculateAverageMonthly(response, currentArea);
-        double avgMonthlyPerM2 = (double) avgMonthlyRd.getData2();
+        double avgMonthlyPerM2 = (double) avgMonthlyRd.getData1();
+
         ResultData avgDepositRd = addressService.calculateAverageDeposit(response, currentArea);
-        double avgDepositPerM2 = (double) avgDepositRd.getData2();
+        double avgDepositPerM2 = (double) avgDepositRd.getData1();
         // 12) 예상 선순위보증금 계산
         // 선임차 환산보증금 + 채권금액
         // 선임차 환산보증금 : 지역 평균 월세 * 전유면적
