@@ -1,8 +1,10 @@
-package com.koreait.exam.tmrteamproject.entity;
+package com.koreait.exam.tmrteamproject.vo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import javax.persistence.*;
+
+import com.koreait.exam.tmrteamproject.entity.AttachmentDtoListConverter;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -17,20 +19,10 @@ import java.util.List;
 @ToString
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class LhApplyInfo {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class LhApplyInfo extends BaseEntity {
 
     @Column(name = "site_no", nullable = false, unique = true)
     private Integer siteNo;
-
-    @Column(name = "reg_date", updatable = false)
-    private LocalDateTime regDate;
-
-    @Column(name = "update_date")
-    private LocalDateTime updateDate;
 
     private String type;
     private String title;
