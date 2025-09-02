@@ -22,7 +22,7 @@ public class LearningController {
     @Autowired
     private LearningService learningService;
 
-    @RequestMapping("/savedDB")
+    @GetMapping("/savedDB")
     @ResponseBody
     public String saveData(@RequestBody List<Learning> data) {
         int saved = learningService.setSaved(data);
