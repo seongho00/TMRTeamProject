@@ -29,10 +29,10 @@ public class BaseEntity {
     private Long id;
 
     @CreatedDate
-    private LocalDateTime regDate;
+    public LocalDateTime regDate;
 
     @LastModifiedDate
-    private LocalDateTime updateDate;
+    public LocalDateTime updateDate;
 
     @Transient // 아래의 필드가 DB 컬림이 되는것을 막아
     @Builder.Default
