@@ -12,33 +12,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 
-@Slf4j
 @Controller
+@Slf4j
 @RequiredArgsConstructor
-@RequestMapping("usr/lh")
+@RequestMapping("usr/lh/notice")
 public class LhController {
 
     private final LhApplyInfoService lhApplyInfoService;
 
-    @GetMapping
-    public String list(Model model) {
-        var lhList = lhApplyInfoService.findAllDesc();
+    @GetMapping()
+    public String notice(Model model) {
+        List<LhApplyInfo> lhList = lhApplyInfoService.findAll();
+
         model.addAttribute("lhList", lhList);
-        return "lh_list";
+        return "subscription/noticeList";
     }
 
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
-        LhApplyInfo item = lhApplyInfoService.findById(id);
-        model.addAttribute("item", item);
-        return "lh_detail";
-    }
-
-    @RequestMapping("/notice")
-    public String notice(Model model) {
-        List<LhApplyInfo> lhApplyInfo = lhApplyInfoService.findAll();
-
+        LhApplyInfo lhApplyInfo = lhApplyInfoService.findById(id);
         model.addAttribute("lhApplyInfo", lhApplyInfo);
-        return "subscription/noticelist";
+        return "subscription/noticeDetail";
     }
 }

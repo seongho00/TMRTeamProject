@@ -9,7 +9,6 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -37,23 +36,9 @@ public class LhApplyInfo extends BaseEntity {
     private String status;
     private Integer views;
 
-    @Column(name = "call_number")
-    private String callNumber;
-
     @Column(columnDefinition = "TEXT")
     @Convert(converter = AttachmentDtoListConverter.class)
     private List<AttachmentDto> attachments;
-
-    @Lob
-    @Column(name = "extracted_text", columnDefinition = "LONGTEXT")
-    private String extractedText;
-
-    @Lob
-    @Column(name = "markdown_text", columnDefinition = "LONGTEXT")
-    private String markdownText;
-
-    @OneToMany(mappedBy = "lhApplyInfo", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<LhShopDetail> details = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -72,7 +57,6 @@ public class LhApplyInfo extends BaseEntity {
         this.deadlineDate = src.deadlineDate;
         this.status = src.status;
         this.views = src.views;
-        this.callNumber = src.callNumber;
         this.attachments = src.attachments;
     }
 
