@@ -213,18 +213,38 @@
                 $("#result-modal").removeClass("hidden");
 
                 console.log(json);
+                // 위험 색 넣기
+                function getRiskClass(level) {
+                    switch (level) {
+                        case "정상": return "text-green-600 font-bold";
+                        case "주의": return "text-yellow-600 font-bold";
+                        case "위험": return "text-orange-600 font-bold";
+                        case "고위험": return "text-red-600 font-bold";
+                        default: return "text-gray-600";
+                    }
+                }
+
+                let rentRiskClass = getRiskClass(json.rentRisk);
+                let depositRiskClass = getRiskClass(json.depositRisk);
+
 
                 // 결과 데이터 바인딩
-                $("#riskResult").text(`임대 리스크: ${json.rentRisk}, 보증금 리스크: ${json.depositRisk}`);
-                $("#risk").text(`(기준: 평균 월세 ${json.MonthlyDisplayPerSqm}만원 /㎡ , 평균 보증금 ${json.DepositDisplayPerSqm}만원/㎡)`);
+                $("#riskResult").html(`
+                  임대 리스크: <span class="${rentRiskClass}">${json.rentRisk}</span>,
+                  보증금 리스크: <span class="${depositRiskClass}">${json.depositRisk}</span>
+                `);
+
                 $("#riskBase").html(`
-                  <li>내 면적 기준 예상 월세: ${json.avgMonthlyDisplay}만원</li>
-                  <li>평균 보증금: ${json.avgDepositDisplay}만원</li>
+                  <li>내 면적 기준 예상 월세: ${json.avgMonthlyDisplay}만원 (평균 월세 ${json.MonthlyDisplayPerSqm}만원 /㎡)</li>
+                  <li>평균 보증금: ${json.avgDepositDisplay}만원 (평균 보증금 ${json.DepositDisplayPerSqm}만원/㎡)</li>
                 `);
 
                 // 채권보증금
+
+
                 // 근저당권 위험
-                
+
+
             }
 
 
