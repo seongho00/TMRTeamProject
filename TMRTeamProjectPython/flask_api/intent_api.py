@@ -2,7 +2,6 @@ from collections import deque
 from contextlib import nullcontext
 
 from flask import Flask, request, jsonify, Response
-import json
 import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 import pickle
@@ -10,14 +9,12 @@ import mecab_ko
 import pymysql
 import pymysql.cursors
 import io, os, uuid, tempfile
-import cv2, numpy as np, re
 import re, time, random, hashlib
 from collections import deque
-from playwright.sync_api import sync_playwright, Page
 import io
 import pdfplumber
 import fitz  # ← PyMuPDF
-
+from playwright.sync_api import Page, Locator, TimeoutError as PWTimeout
 # HEIC 지원 (설치되어 있으면 자동 등록)
 try:
     import pillow_heif
@@ -1058,8 +1055,7 @@ def crawl_viewport(lat: float, lng: float,
         }
 
 
-from playwright.sync_api import Page, Locator, TimeoutError as PWTimeout
-import re
+
 
 
 def wait_for_element(page: Page, selector: str, timeout: int = 6000) -> Locator:
@@ -1279,6 +1275,10 @@ def api_crawl():
     except Exception as e:
         print(f"[CRAWL ERR] {e}")
         return jsonify(ok=False, error="crawl_failed", message=str(e)), 500
+
+
+
+
 
 
 if __name__ == "__main__":
