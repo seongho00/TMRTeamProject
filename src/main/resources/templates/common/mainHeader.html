@@ -40,9 +40,14 @@
                             <p class="text-[22px] text-black">상가 청약</p>
                         </div>
                         <ul class="sub-menu absolute flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
-                            <li><a href="#" class="block px-4 py-2 hover:underline">청약 알림</a></li>
-                            <li><a href="#" class="block px-4 py-2 hover:underline">공고문</a></li>
-                            <li><a href="../member/conditionalLogout" class="block px-4 py-2 hover:underline">로그아웃</a>
+                            <li>
+                                <a href="../home/notifications" class="block px-4 py-2 hover:underline">청약 알림</a>
+                            </li>
+                            <li>
+                                <a href="#" class="block px-4 py-2 hover:underline">공고문</a>
+                            </li>
+                            <li>
+                                <a href="../member/conditionalLogout" class="block px-4 py-2 hover:underline">로그아웃</a>
                             </li>
                         </ul>
                     </li>
@@ -223,5 +228,4 @@
             if (!wrapper.contains(e.target)) notifPopover.classList.add('hidden');
         });
     </script>
-
 </header>
