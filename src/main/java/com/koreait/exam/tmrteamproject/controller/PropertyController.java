@@ -210,13 +210,14 @@ public class PropertyController {
         // 13) 담보가치 계산
         // 연 임대수익 / 임대수익률
         // 연 임대수익 : 월세 * 12 + 보증금 * 0.02(환산율)
-        propertyService.getBasePrice(currentAddress);
 
         double annualRentalIncome = monthlyRent * 12 + deposit * 0.02;
 
         List<Map<String, Object>> items = propertyService.fetchBldRgstItems(currentAddress);
         Map<String, Object> realItem = items.get(0);
         double totalArea = propertyService.resolveAreaFromLine(currentAddress);
+
+        propertyService.getBasePrice(currentAddress, realItem);
 
         String regstrGbCdNm = realItem.get("regstrGbCdNm").toString();
         String mainPurpsCdNm = realItem.get("mainPurpsCdNm").toString();
@@ -336,7 +337,6 @@ public class PropertyController {
         }
         return false;
     }
-
 
 
 
