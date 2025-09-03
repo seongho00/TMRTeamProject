@@ -4,6 +4,7 @@ from playwright.sync_api import sync_playwright
 from contextlib import nullcontext
 from playwright.sync_api import Page, Locator, TimeoutError as PWTimeout
 
+
 def wait_for_element(page: Page, selector: str, timeout: int = 6000) -> Locator:
     loc = page.locator(selector)
     loc.wait_for(state="visible", timeout=timeout)
@@ -65,12 +66,11 @@ with sync_playwright() as p:
     # 값 입력
     emd_input_box.fill("서초동")
 
-
     # 조회하기 버튼 대기 후 클릭
     btn = wait_for_element(page, "#mf_txppWframe_UTECMAAA08_wframe_trigger6")  # id 선택자는 # 으로
     btn.click()
 
-    time.sleep(1)
+    time.sleep(0.5)
 
     # tbody 선택
     tbody = wait_for_element(page, "#mf_txppWframe_UTECMAAA08_wframe_ldCdAdmDVOList_body_tbody")
@@ -81,7 +81,7 @@ with sync_playwright() as p:
     # tr 개수 확인
     row_count = rows.count()
     print("행 개수:", row_count)
-    
+
     target_sido = "서울특별시"
     target_sgg = "서초구"
 
@@ -99,15 +99,80 @@ with sync_playwright() as p:
         if target_sido in first_col and target_sgg in second_col:
             print("✅ 찾음:", first_col, second_col)
             # 필요하면 여기서 row.click() 같은 동작도 가능
-            btn = cols.nth(6).locator("button")   # td 안에 버튼 요소
+
+            # 선택하기 버튼 누르기
+            btn = row.locator("td:nth-child(8) button[title='선택']")
+            btn_count = btn.count()
             btn.click()
 
             break
 
+    # "번지" 입력창 찾기
+    bunji_input = wait_for_element(page, "#mf_txppWframe_txtBunj")
 
+    # 값 채우기
+    bunji_input.fill("1317")
 
+    # "호" 입력창 찾기
+    ho_input = wait_for_element(page, "#mf_txppWframe_txtHo")
 
-# 예시: 도로명 입력 (실제 셀렉터는 F12로 확인 필요)
+    # 값 채우기
+    ho_input.fill("20")
+
+    # 검색 버튼 누르기
+    search_button = wait_for_element(page, "#mf_txppWframe_group1962")
+    search_button.click()
+
+    # 건물 이름 선택하기
+    build_name_button = wait_for_element(page, "a#txtItm0")
+    build_name_button.click()
+
+    # 동, 층, 호 선택
+
+    # 선택할 변수
+    target_dong = ""
+    target_floor = "지상층12"
+    target_ho = "1201"
+    # 1. 동 select 선택
+    dong_select_box = page.locator("#mf_txppWframe_selBldComp")
+
+    # 2번째 index 선택 (0부터 시작 → 두 번째 옵션은 index=1)
+    dong_select_box.select_option(index=1)
+
+    # 2. 층 선택
+    floor_select_box = page.locator("#mf_txppWframe_selBldFlor")
+    floor_select_box.select_option(label=target_floor)
+
+    # 3. 호 선택
+    ho_select_box = page.locator("#mf_txppWframe_selBldHo")
+    ho_select_box.select_option(label=target_ho)
+
+    # 검색버튼 클릭
+    detail_search_button = wait_for_element(page, "#mf_txppWframe_btnSchTsv")
+    detail_search_button.click()
+
+    # 기준시가 및 면적 가져오기
+    # 테이블 선택
+    tbody = wait_for_element(page, "#mf_txppWframe_grdCmrcBldTsvList_body_tbody")
+
+    # 첫 번째 행
+    first_row = tbody.locator("tr").nth(0)
+
+    # 2번째, 3번째 td (index 1, 2)
+    td2 = first_row.locator("td").nth(1).inner_text().strip()
+    td3 = first_row.locator("td").nth(2).inner_text().strip()
+
+    # 문자열 → 숫자 변환
+    val2 = float(td2.replace(",", ""))   # 3,402,000 → 3402000.0
+    val3 = float(td3)                    # 256.379 → 256.379
+
+    result = val2 * val3                 # 곱한 값
+    final_price = int(result // 10000 * 10000)  # 만 단위 절사
+    print("첫 번째 tr의 2번째 td:", td2)
+    print("첫 번째 tr의 3번째 td:", td3)
+    print("기준시가 : ", final_price)
+
+    # 예시: 도로명 입력 (실제 셀렉터는 F12로 확인 필요)
     page.wait_for_selector("#textbox-도로명입력아이디", timeout=20000).fill("강남대로")
 
     # 조회 버튼 클릭 (실제 CSS 셀렉터 확인 필요)
