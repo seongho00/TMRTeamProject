@@ -295,11 +295,24 @@
                 $("#totalScore").text(totalScoreDisplay);
                 $("#totalLevel").html(`<span class="${totalLevelClass}">${totalLevel}</span>`);
 
+                function formatMoney(valueInManwon) {
+                    valueInManwon = parseInt(valueInManwon, 10);
+                    if (isNaN(valueInManwon)) return "-";
+
+                    if (valueInManwon >= 10000) {
+                        const eok = Math.floor(valueInManwon / 10000);
+                        const man = valueInManwon % 10000;
+                        return man === 0 ? `${eok}억` : `${eok}억 ${man}만`;
+                    } else {
+                        return `${valueInManwon}만`;
+                    }
+                }
+ㄴ
                 // 상세 내용 (처음엔 hidden → 상세보기 버튼으로 토글)
                 $("#rentRisk").html(`<span class="${rentRiskClass}">${json.rentRisk}</span>`);
-                $("#rentBase").html(`<span> ${json.avgMonthlyDisplay}</span>`);
+                $("#rentBase").html(`<span>${formatMoney(json.avgMonthlyValue)}</span>`);
                 $("#depositRisk").html(`<span class="${depositRiskClass}">${json.depositRisk}</span>`);
-                $("#depositBase").html(`<span>${json.avgDepositDisplay}</span>`);
+                $("#depositBase").html(`<span>${formatMoney(json.avgDepositValue)}</span>`);
                 $("#bondRisk").html(`<span class="${bondDepositRiskClass}">${json.bondDepositRisk}</span>`);
                 $("#debtRisk").html(`<span class="${debtRiskLevelClass}">${json.debtRiskLevel}</span>`);
 

@@ -1137,8 +1137,12 @@ def parse_korean_price(s: str) -> Optional[int]:
 
 def parse_deposit_monthly(price_value: Optional[str]) -> Tuple[Optional[int], Optional[int]]:
     """'보증금/월세' 문자열을 (보증금, 월세) 튜플로 변환 (만원 단위)"""
-    if not price_value or "/" not in price_value:
+    if not price_value:
         return None, None
+
+    if "/" not in price_value:  # 전세 or 매매 (단일 금액)
+        return parse_korean_price(price_value), None
+
     a, b = price_value.split("/", 1)
     return parse_korean_price(a), parse_korean_price(b)
 
