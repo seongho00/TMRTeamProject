@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Address;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.parameters.P;
@@ -147,7 +148,6 @@ public class PropertyController {
             }
         }
 
-
         // 8) 현재주소 면적 가져오기
         double currentArea = propertyService.resolveAreaFromLine((String) result.get("jointCollateralCurrentAddress"));
         sum += currentArea;
@@ -169,7 +169,7 @@ public class PropertyController {
         // AddressService로 검색
         List<NormalizedAddress> list = addressService.search(normalizedCurrentAddr, 1, 5);
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response;
         NormalizedAddress n = list.get(0);
 
         // AddressPickReq 생성
@@ -178,7 +178,6 @@ public class PropertyController {
 
         // ✅ 최종: confirm + geocode + crawl 한번에 실행
         response = addressService.confirmGeoAndCrawl(req);
-
 
         ResultData avgMonthlyRd = addressService.calculateAverageMonthly(response, currentArea);
         double avgMonthlyPerM2 = (double) avgMonthlyRd.getData1();
@@ -211,6 +210,8 @@ public class PropertyController {
         // 13) 담보가치 계산
         // 연 임대수익 / 임대수익률
         // 연 임대수익 : 월세 * 12 + 보증금 * 0.02(환산율)
+        propertyService.getBasePrice(currentAddress);
+
         double annualRentalIncome = monthlyRent * 12 + deposit * 0.02;
 
         List<Map<String, Object>> items = propertyService.fetchBldRgstItems(currentAddress);
@@ -337,19 +338,7 @@ public class PropertyController {
     }
 
 
-    @GetMapping("/selectJuso")
-    public String selectJuso(Model model) {
 
-        return "property/selectJuso";
-    }
-
-    @GetMapping("/test")
-    @ResponseBody
-    public String test(Model model) throws JsonProcessingException {
-        System.out.println(propertyService.getRentYield("대전광역시", "소규모상가", 1, 10));
-
-        return "";
-    }
 
 }
 

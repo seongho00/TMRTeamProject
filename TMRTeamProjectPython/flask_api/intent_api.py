@@ -1278,6 +1278,125 @@ def api_crawl():
 
 
 
+@app.route("/get_base_price", methods=["POST"])
+def get_base_price():
+    data = request.json
+    emd_name = data["emd_name"]
+    bunji = data["bunji"]
+    ho = data["ho"]
+    target_floor = data["floor"]
+    target_ho = data["target_ho"]
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch_persistent_context(
+            user_data_dir=USER_DATA_DIR,
+            channel="chrome",
+            headless=True,   # API 서버에서는 headless 권장
+            locale="ko-KR",
+            viewport={"width": 1280, "height": 860},
+            ignore_https_errors=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-first-run", "--no-default-browser-check",
+                "--disable-dev-shm-use", "--no-sandbox",
+            ],
+        )
+        page = browser.new_page()
+
+        # 홈택스 접속
+        page.goto("https://hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index_pp.xml&tmIdx=47&tm2lIdx=4712090000&tm3lIdx=4712090300")
+
+        # 법정동 버튼 클릭
+        btn = wait_for_element(page, "#mf_txppWframe_btnLdCdPop")
+        btn.click()
+
+        time.sleep(0.5)
+
+        # 행정동 입력
+        emd_input_box = wait_for_element(page, "#mf_txppWframe_UTECMAAA08_wframe_inputSchNm")
+        emd_input_box.fill(emd_name)
+
+        # 조회 버튼 클릭
+        btn = wait_for_element(page, "#mf_txppWframe_UTECMAAA08_wframe_trigger6")
+        btn.click()
+
+        time.sleep(0.5)
+
+        # 테이블 선택
+        tbody = wait_for_element(page, "#mf_txppWframe_UTECMAAA08_wframe_ldCdAdmDVOList_body_tbody")
+        rows = tbody.locator("tr")
+        row_count = rows.count()
+
+        # 서울특별시 서초구 찾기 (하드코딩 대신 data 입력값으로 확장 가능)
+        target_sido = "서울특별시"
+        target_sgg = "서초구"
+
+        for i in range(row_count):
+            row = rows.nth(i)
+            cols = row.locator("td")
+            first_col = cols.nth(0).inner_text().strip()
+            second_col = cols.nth(1).inner_text().strip()
+            if target_sido in first_col and target_sgg in second_col:
+                btn = row.locator("td:nth-child(8) button[title='선택']")
+                btn.click()
+                break
+
+        # 번지 입력
+        bunji_input = wait_for_element(page, "#mf_txppWframe_txtBunj")
+        bunji_input.fill(bunji)
+
+        # 호 입력
+        ho_input = wait_for_element(page, "#mf_txppWframe_txtHo")
+        ho_input.fill(ho)
+
+        # 검색 버튼 클릭
+        search_button = wait_for_element(page, "#mf_txppWframe_group1962")
+        search_button.click()
+
+        # 건물명 선택
+        build_name_button = wait_for_element(page, "a#txtItm0")
+        build_name_button.click()
+
+        # 동 select
+        dong_select_box = page.locator("#mf_txppWframe_selBldComp")
+        dong_select_box.select_option(index=1)
+
+        # 층 select
+        floor_select_box = page.locator("#mf_txppWframe_selBldFlor")
+        floor_select_box.select_option(label=target_floor)
+
+        # 호 select
+        ho_select_box = page.locator("#mf_txppWframe_selBldHo")
+        ho_select_box.select_option(label=target_ho)
+
+        # 상세 검색 버튼 클릭
+        detail_search_button = wait_for_element(page, "#mf_txppWframe_btnSchTsv")
+        detail_search_button.click()
+
+        # 기준시가 테이블
+        tbody = wait_for_element(page, "#mf_txppWframe_grdCmrcBldTsvList_body_tbody")
+        first_row = tbody.locator("tr").nth(0)
+
+        td2 = first_row.locator("td").nth(1).inner_text().strip()
+        td3 = first_row.locator("td").nth(2).inner_text().strip()
+
+        val2 = float(td2.replace(",", ""))
+        val3 = float(td3)
+        result = val2 * val3
+        final_price = int(result // 10000 * 10000)
+
+        browser.close()
+
+    return jsonify({
+        "emd_name": emd_name,
+        "bunji": bunji,
+        "ho": ho,
+        "floor": target_floor,
+        "target_ho": target_ho,
+        "td2": td2,
+        "td3": td3,
+        "base_price": final_price
+    })
 
 
 

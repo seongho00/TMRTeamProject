@@ -53,6 +53,52 @@ public class PropertyService {
     private final RestTemplate rest = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();  // ✅ 추가
 
+    public ResponseEntity<?> getBasePrice(
+            String raw) {
+
+        String cleaned = cleanup(raw);
+
+        String juso = simplifyToLegalLot(cleaned);
+
+        Map<String, Object> results = jusoLookupAsResp(juso);
+
+        List<Object> jusoList = (List<Object>) results.get("juso");
+
+        // 첫 번째 결과만 사용
+        Map<String, Object> j = (Map<String, Object>) jusoList.get(0);
+
+        String emd_name = j.get("emd_name").toString();
+        String bunji = j.get("lnbrMnnm").toString();
+        String ho = j.get("lnbrSlno").toString();
+        String floor = "";
+        String target_ho = j.get("target_ho").toString();
+        String siNm = (String) j.get("siNm");           // "서울특별시"
+        String sggNm = (String) j.get("sggNm");         // "서초구"
+        String emdNm = (String) j.get("emdNm");         // "서초동"
+
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("emd_name", emd_name);
+        payload.put("bunji", bunji);
+        payload.put("ho", ho);
+        payload.put("floor", floor);
+        payload.put("target_ho", target_ho);
+
+        try {
+            Map response = pythonClient.post()
+                    .uri("/get_base_price")
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("ok", false, "error", e.getMessage()));
+        }
+    }
+
     public double getRentYield(String region, String type, int page, int perPage) {
         RestTemplate restTemplate = new RestTemplate();
 
@@ -462,6 +508,47 @@ public class PropertyService {
         out.put("lnbrSlno", str(first.get("lnbrSlno")));
         out.put("mtYn", str(first.get("mtYn")));
         return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> jusoLookupAsResp(String keyword) {
+        final String url = "https://business.juso.go.kr/addrlink/addrLinkApi.do";
+
+        // 1) POST form 데이터 구성
+        org.springframework.util.MultiValueMap<String, String> form = new org.springframework.util.LinkedMultiValueMap<>();
+        form.add("confmKey", jusoKey);
+        form.add("currentPage", "1");
+        form.add("countPerPage", "10");
+        form.add("keyword", (keyword == null ? "" : keyword.trim())); // 예: "대전광역시 동구 천동 515"
+        form.add("resultType", "json");
+
+        // 2) 헤더: UTF-8 form-data + JSON 응답
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
+        headers.setAccept(java.util.List.of(org.springframework.http.MediaType.APPLICATION_JSON));
+        headers.setAcceptCharset(java.util.List.of(java.nio.charset.StandardCharsets.UTF_8));
+        headers.set(org.springframework.http.HttpHeaders.USER_AGENT, "Mozilla/5.0"); // 일부 환경에서 필요
+
+        org.springframework.http.HttpEntity<org.springframework.util.MultiValueMap<String, String>> req =
+                new org.springframework.http.HttpEntity<>(form, headers);
+
+        // 3) POST 호출 (원문 로그 찍고 Map 파싱)
+        org.springframework.http.ResponseEntity<String> respEntity =
+                rest.postForEntity(url, req, String.class);
+        String body = respEntity.getBody();
+
+        if (body == null) throw new IllegalStateException("JUSO 응답 body가 null");
+
+        java.util.Map<String, Object> resp;
+        try {
+            resp = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(body, new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {
+                    });
+        } catch (Exception e) {
+            throw new IllegalStateException("JUSO 응답 파싱 실패", e);
+        }
+
+        return resp;
     }
 
     @SuppressWarnings("unchecked")
