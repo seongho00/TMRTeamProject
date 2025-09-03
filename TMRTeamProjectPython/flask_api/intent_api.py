@@ -1286,6 +1286,9 @@ def get_base_price():
     ho = data["ho"]
     target_floor = data["floor"]
     target_ho = data["target_ho"]
+    target_sido = data["sidoNm"]
+    target_sgg = data["sggNm"]
+
 
     with sync_playwright() as p:
         browser = p.chromium.launch_persistent_context(
@@ -1327,9 +1330,6 @@ def get_base_price():
         rows = tbody.locator("tr")
         row_count = rows.count()
 
-        # 서울특별시 서초구 찾기 (하드코딩 대신 data 입력값으로 확장 가능)
-        target_sido = "서울특별시"
-        target_sgg = "서초구"
 
         for i in range(row_count):
             row = rows.nth(i)

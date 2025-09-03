@@ -310,9 +310,9 @@
 
                 // 상세 내용 (처음엔 hidden → 상세보기 버튼으로 토글)
                 $("#rentRisk").html(`<span class="${rentRiskClass}">${json.rentRisk}</span>`);
-                $("#rentBase").html(`<span>${formatMoney(json.avgMonthlyValue)}</span>`);
+                $("#rentBase").html(`<span>${formatMoney(json.avgMonthlyDisplay)}</span>`);
                 $("#depositRisk").html(`<span class="${depositRiskClass}">${json.depositRisk}</span>`);
-                $("#depositBase").html(`<span>${formatMoney(json.avgDepositValue)}</span>`);
+                $("#depositBase").html(`<span>${formatMoney(json.avgDepositDisplay)}</span>`);
                 $("#bondRisk").html(`<span class="${bondDepositRiskClass}">${json.bondDepositRisk}</span>`);
                 $("#debtRisk").html(`<span class="${debtRiskLevelClass}">${json.debtRiskLevel}</span>`);
 

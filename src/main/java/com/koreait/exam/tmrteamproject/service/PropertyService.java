@@ -53,28 +53,39 @@ public class PropertyService {
     private final RestTemplate rest = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();  // ✅ 추가
 
+    private static final Pattern FLOOR_PATTERN = Pattern.compile("제(\\d+)층");
+    private static final Pattern HO_PATTERN = Pattern.compile("제(\\d+)호");
+
     public ResponseEntity<?> getBasePrice(
-            String raw) {
+            String raw, Map<String, Object> item) {
 
         String cleaned = cleanup(raw);
 
+        Matcher floorMatcher = FLOOR_PATTERN.matcher(raw);
+        Matcher hoMatcher = HO_PATTERN.matcher(raw);
+
         String juso = simplifyToLegalLot(cleaned);
 
-        Map<String, Object> results = jusoLookupAsResp(juso);
+        Map<String, Object> resp = jusoLookupAsResp(juso);
 
+        Map<String, Object> results = (Map<String, Object>) resp.get("results");
+
+        System.out.println("juso: " + juso);
+        System.out.println("results: " + results);
         List<Object> jusoList = (List<Object>) results.get("juso");
 
         // 첫 번째 결과만 사용
         Map<String, Object> j = (Map<String, Object>) jusoList.get(0);
 
+        System.out.println(item);
+
         String emd_name = j.get("emd_name").toString();
         String bunji = j.get("lnbrMnnm").toString();
         String ho = j.get("lnbrSlno").toString();
-        String floor = "";
-        String target_ho = j.get("target_ho").toString();
-        String siNm = (String) j.get("siNm");           // "서울특별시"
+        String floor = floorMatcher.group(1);
+        String target_ho = hoMatcher.group(1);
+        String sidoNm = (String) j.get("siNm");           // "서울특별시"
         String sggNm = (String) j.get("sggNm");         // "서초구"
-        String emdNm = (String) j.get("emdNm");         // "서초동"
 
 
         Map<String, Object> payload = new HashMap<>();
@@ -83,20 +94,22 @@ public class PropertyService {
         payload.put("ho", ho);
         payload.put("floor", floor);
         payload.put("target_ho", target_ho);
-
-        try {
-            Map response = pythonClient.post()
-                    .uri("/get_base_price")
-                    .bodyValue(payload)
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .block();
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("ok", false, "error", e.getMessage()));
-        }
+        payload.put("sidoNm", sidoNm);
+        payload.put("sggNm", sggNm);
+        return null;
+//        try {
+//            Map response = pythonClient.post()
+//                    .uri("/get_base_price")
+//                    .bodyValue(payload)
+//                    .retrieve()
+//                    .bodyToMono(Map.class)
+//                    .block();
+//
+//            return ResponseEntity.ok(response);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Map.of("ok", false, "error", e.getMessage()));
+//        }
     }
 
     public double getRentYield(String region, String type, int page, int perPage) {
@@ -326,9 +339,7 @@ public class PropertyService {
 
     public List<Map<String, Object>> fetchBldRgstItems(String raw) {
         // 1) 전처리: ‘외 n필지’, 대괄호 태그 제거, 공백 정리
-        System.out.println("raw : " + raw);
         String cleaned = cleanup(raw);
-        System.out.println("cleaned :  " + cleaned);
 
         // 2) 동/호 힌트 추출 (등기부가 “제1층 제103호”처럼 오는 케이스 처리)
         String dongNm = extractDong(cleaned); // “제1동/1동/동1” → 1
@@ -338,11 +349,7 @@ public class PropertyService {
         String juso = simplifyToLegalLot(cleaned);
 
         // 1) JUSO 조회 (Map으로 받기)
-        System.out.println("juso" + juso);
-
         Map<String, String> j = jusoLookupAsMap(juso);
-
-        System.out.println("juso: " + j);
 
         String admCd = j.get("admCd");
         String sigunguCd = admCd.substring(0, 5);
@@ -375,10 +382,7 @@ public class PropertyService {
             if (parsed != null) {
                 bun = z4(parsed[0]);
                 ji = z4(parsed[1]);
-                System.out.println("실행됨");
 
-                System.out.println(bun);
-                System.out.println(ji);
                 q.put("bun", bun);
                 q.put("ji", ji);
 
@@ -483,8 +487,6 @@ public class PropertyService {
             throw new IllegalStateException("JUSO 응답 파싱 실패", e);
         }
 
-        System.out.println(resp.toString());
-
         // 4) 공통부/결과 파싱
         java.util.Map<String, Object> results = asMap(resp.get("results"));
         java.util.Map<String, Object> common = asMap(results.get("common"));
@@ -514,6 +516,7 @@ public class PropertyService {
     private Map<String, Object> jusoLookupAsResp(String keyword) {
         final String url = "https://business.juso.go.kr/addrlink/addrLinkApi.do";
 
+        System.out.println(keyword);
         // 1) POST form 데이터 구성
         org.springframework.util.MultiValueMap<String, String> form = new org.springframework.util.LinkedMultiValueMap<>();
         form.add("confmKey", jusoKey);
@@ -547,6 +550,8 @@ public class PropertyService {
         } catch (Exception e) {
             throw new IllegalStateException("JUSO 응답 파싱 실패", e);
         }
+
+        System.out.println(resp.toString());
 
         return resp;
     }
