@@ -129,6 +129,8 @@ public class PropertyController {
 
         }
 
+        System.out.println("sumAmountKRW : " + sumAmountKRW);
+
         // 7) 분석된 주소마다 면적 구해오기
         List<Map<String, Object>> normals = (List<Map<String, Object>>) filteredResult.get("normalAddresses");
         double sum = 0.0;
@@ -278,10 +280,8 @@ public class PropertyController {
 
         // 예상 월세 계산
         DecimalFormat df = new DecimalFormat("#.#"); // 소수점 한 자리, 필요할 때만 표시
-        double avgMonthlyValue = predictedMonthly / 10000.0;
-        String avgMonthlyDisplay = df.format(avgMonthlyValue);
-        double avgDepositValue = predictedDeposit / 10000.0;
-        String avgDepositDisplay = df.format(avgDepositValue);
+        long avgMonthlyDisplay = Math.round(predictedMonthly / 10000.0);
+        long avgDepositDisplay = Math.round(predictedDeposit / 10000.0);
 
         // 평균 m2당 월세
         double MonthlyDisplayPerSqmValue = avgMonthlyPerM2 / 1000.0;
