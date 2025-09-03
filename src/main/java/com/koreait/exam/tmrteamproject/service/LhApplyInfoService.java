@@ -7,6 +7,8 @@ import com.koreait.exam.tmrteamproject.vo.LhApplyInfo;
 import com.koreait.exam.tmrteamproject.repository.LhApplyInfoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,5 +79,55 @@ public class LhApplyInfoService {
 
     public List<LhApplyInfo> findAll() {
         return lhApplyInfoRepository.findAll();
+    }
+
+    public List<LhApplyInfo> searchNotices(String type, String region, String status, String q) {
+        boolean hasType = !type.isBlank() && !"전체".equals(type);
+        boolean hasRegion = !region.isBlank() && !"전국".equals(region);
+        boolean hasStatus = !status.isBlank() && !"전체".equals(status);
+        boolean hasQ = !q.isBlank();
+
+        // 동적 스펙 조합
+        Specification<LhApplyInfo> spec = Specification.where(alwaysTrue());
+
+        if (hasType) {
+            spec = spec.and(eq("type", type));
+        }
+        if (hasStatus) {
+            spec = spec.and(eq("status", status));
+        }
+        if (hasRegion) {
+            // 주소 LIKE 검색 허용: 예) '%전%'
+            spec = spec.and(likeLower("address", region));
+        }
+
+        if (hasQ) {
+            // LIKE 검색: 예) '%전%'
+            spec = spec.and(likeLower("title", q));
+        }
+
+        // 정렬: 최신 등록일 → id 내림차순
+        Sort sort = Sort.by(Sort.Direction.DESC, "postDate")
+                .and(Sort.by(Sort.Direction.DESC, "id"));
+
+        return lhApplyInfoRepository.findAll(spec, sort);
+    }
+
+    // 항상 true인 스펙(시작점)
+    private static <T> Specification<T> alwaysTrue() {
+        return (root, query, cb) -> cb.conjunction();
+    }
+
+    // equals 스펙
+    private static <T> Specification<T> eq(String field, String value) {
+        return (root, query, cb) -> cb.equal(root.get(field), value);
+    }
+
+    // lower(field) LIKE %lower(keyword)%
+    private static <T> Specification<T> likeLower(String field, String keyword) {
+        return (root, query, cb) -> cb.like(
+                cb.lower(root.get(field)),
+                "%" + keyword.toLowerCase() + "%"
+        );
     }
 }

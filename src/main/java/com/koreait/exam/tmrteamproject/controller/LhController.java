@@ -9,6 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -20,11 +21,17 @@ public class LhController {
 
     private final LhApplyInfoService lhApplyInfoService;
 
-    @GetMapping()
-    public String notice(Model model) {
+    @GetMapping
+    public String notice(
+            @RequestParam(required = false, defaultValue = "")String type,
+            @RequestParam(required = false, defaultValue = "")String region,
+            @RequestParam(required = false, defaultValue = "")String status,
+            @RequestParam(required = false, defaultValue = "")String q,
+            Model model) {
         List<LhApplyInfo> lhList = lhApplyInfoService.findAll();
+        List<LhApplyInfo> lhApplyInfoList = lhApplyInfoService.searchNotices(type, region, status, q);
 
-        model.addAttribute("lhList", lhList);
+        model.addAttribute("lhApplyInfoList", lhApplyInfoList);
         return "subscription/noticeList";
     }
 
