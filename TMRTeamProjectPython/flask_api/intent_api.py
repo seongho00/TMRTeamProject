@@ -1113,12 +1113,34 @@ def get_by_header(page: Page, header_text: str) -> Optional[str]:
     return text_or_none(row.locator("td").first)  # text_or_none: Optional[str] 반환
 
 
+def parse_korean_price(s: str) -> Optional[int]:
+    """한국식 금액 문자열(예: 1억400, 2,000, 3500)을 만원 단위 정수로 변환"""
+    if not s:
+        return None
+
+    s = s.replace(",", "").strip()
+    total = 0
+
+    # 억 단위 (1억 = 10000만원)
+    match = re.search(r"(\d+)억", s)
+    if match:
+        total += int(match.group(1)) * 10000
+        s = s[match.end():]
+
+    # 남은 숫자 (만원 단위)
+    digits = re.findall(r"\d+", s)
+    if digits:
+        total += int("".join(digits))
+
+    return total if total > 0 else None
+
+
 def parse_deposit_monthly(price_value: Optional[str]) -> Tuple[Optional[int], Optional[int]]:
+    """'보증금/월세' 문자열을 (보증금, 월세) 튜플로 변환 (만원 단위)"""
     if not price_value or "/" not in price_value:
         return None, None
     a, b = price_value.split("/", 1)
-    clean = lambda s: int("".join(ch for ch in s if ch.isdigit())) if any(ch.isdigit() for ch in s) else None
-    return clean(a), clean(b)
+    return parse_korean_price(a), parse_korean_price(b)
 
 
 def scrape_detail_panel(page: Page) -> dict:
