@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .antMatchers("usr/static/**", "usr/images/**", "/css/**", "/static/js/**").permitAll()  // 정적 리소스 먼저 허용
                         .antMatchers("/admin/**").hasRole("ADMIN")
                         .antMatchers("usr/chatbot/chat").hasAnyRole("USER", "ADMIN") // 여기에 막을 url 적기
+                        .antMatchers("usr/home/notifications").hasAnyRole("USER", "ADMIN")
                         .anyRequest().permitAll()
                 )
                 .formLogin((login) -> login
