@@ -121,14 +121,8 @@
                     </label>
                 </div>
 
-                <!-- 활성 필터 칩 영역 (정적 목업) -->
-                <div class="mt-4 flex flex-wrap items-center gap-2">
-                    <!-- 주석: 실제로는 선택된 값에 맞춰 JS로 생성 -->
-                    <span class="inline-flex items-center gap-2 rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-xs">
-                        임대상가(입찰)
-                        <button type="button" class="text-blue-600 hover:text-blue-800" aria-label="필터 제거">×</button>
-                    </span>
-                </div>
+                <!-- 활성 필터 칩 영역 -->
+                <div id="active-filters" class="mt-4 flex flex-wrap items-center gap-2"></div>
             </div>
 
             <!-- 하단: 적용/초기화 버튼 바 (정적 목업) -->
@@ -259,6 +253,61 @@
         <a class="px-3 py-1.5 rounded-md border text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">다음</a>
     </nav>
 </section>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // 필터 바 유형, 지역, 상태 매핑
+        const filters = [
+            { name: "type",   default: "전체", label: "유형" },
+            { name: "region", default: "전국", label: "지역" },
+            { name: "status", default: "전체", label: "상태" },
+        ];
+
+        const selects = Object.fromEntries(
+            filters.map(f => [f.name, document.querySelector(`select[name='${f.name}']`)])
+        );
+        const filterArea = document.getElementById("active-filters");
+
+        function renderChips() {
+            filterArea.innerHTML = "";
+
+            filters.forEach(f => {
+                const sel = selects[f.name];
+                if (!sel) return;
+
+                const selectedText = sel.options[sel.selectedIndex]?.text || "";
+                if (!selectedText || selectedText === f.default) return;
+
+                // chip 생성
+                const chip = document.createElement("span");
+                chip.className =
+                    "inline-flex items-center gap-2 rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-xs";
+                chip.innerHTML = `
+                    <span class="font-medium">${f.label}</span>: ${selectedText}
+                    <button type="button" class="text-blue-600 hover:text-blue-800" aria-label="${f.label} 필터 제거">×</button>
+                `;
+
+                // chip X 버튼 클릭 시 기본값으로 리셋
+                chip.querySelector("button").addEventListener("click", () => {
+                    const defaultOpt = Array.from(sel.options).find(o => o.text === f.default);
+                    sel.value = defaultOpt ? defaultOpt.value : "";
+                    renderChips();
+                });
+
+                filterArea.appendChild(chip);
+            });
+        }
+
+        // 변경 이벤트 연결
+        Object.values(selects).forEach(sel => {
+            if (!sel) return;
+            sel.addEventListener("change", renderChips);
+        });
+
+        // 초기 렌더
+        renderChips();
+    });
+</script>
 
 <footer th:replace="common/footer::footer"></footer>
 

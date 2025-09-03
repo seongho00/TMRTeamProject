@@ -346,7 +346,4 @@ public class DataSet extends BaseEntity {
     private Long age50SalesCount;
     // 연령대_60_이상_매출_건수
     private Long age60PlusSalesCount;
-
-    // AS 컬럼
-    private Long avg_floating;
 }
