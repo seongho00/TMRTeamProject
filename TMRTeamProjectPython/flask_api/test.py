@@ -172,19 +172,4 @@ with sync_playwright() as p:
     print("첫 번째 tr의 3번째 td:", td3)
     print("기준시가 : ", final_price)
 
-    # 예시: 도로명 입력 (실제 셀렉터는 F12로 확인 필요)
-    page.wait_for_selector("#textbox-도로명입력아이디", timeout=20000).fill("강남대로")
-
-    # 조회 버튼 클릭 (실제 CSS 셀렉터 확인 필요)
-    page.click("button.조회버튼-CSS")
-
-    # 결과 테이블 대기
-    table = page.wait_for_selector("table.resultTable", timeout=20000)
-
-    # 테이블 데이터 출력
-    rows = table.query_selector_all("tr")
-    for row in rows:
-        cols = row.query_selector_all("td")
-        print([col.inner_text().strip() for col in cols])
-
     browser.close()
