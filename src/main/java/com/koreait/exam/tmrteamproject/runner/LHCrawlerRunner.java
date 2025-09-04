@@ -1,7 +1,6 @@
 package com.koreait.exam.tmrteamproject.runner;
-/* 앱 실행시 저장된 JSON을 읽어 DB에 저장 */
 
-import com.koreait.exam.tmrteamproject.service.LhApplyInfoService;
+import com.koreait.exam.tmrteamproject.service.CrawlExecService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -15,13 +14,12 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class LHCrawlerRunner implements ApplicationRunner {
 
-    private final LhApplyInfoService svc;
+    private final CrawlExecService crawlExecService;
 
     @Override
     public void run(ApplicationArguments args) {
-        log.info("[Runner] LH 크롤러 작업 시작");
-
-        svc.refreshFromCrawler();
-
+        log.info("크롤러 작업 시작");
+        int exit = crawlExecService.runPythonOnce();
+        log.info("[Startup] python exit={}", exit);
     }
 }
