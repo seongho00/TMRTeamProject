@@ -28,7 +28,7 @@ public class LhController {
             @RequestParam(required = false, defaultValue = "")String status,
             @RequestParam(required = false, defaultValue = "")String q,
             Model model) {
-        List<LhApplyInfo> lhList = lhApplyInfoService.findAll();
+
         List<LhApplyInfo> lhApplyInfoList = lhApplyInfoService.searchNotices(type, region, status, q);
 
         model.addAttribute("lhApplyInfoList", lhApplyInfoList);

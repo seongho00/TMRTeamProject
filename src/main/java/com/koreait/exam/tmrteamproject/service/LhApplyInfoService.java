@@ -1,8 +1,5 @@
 package com.koreait.exam.tmrteamproject.service;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.koreait.exam.tmrteamproject.vo.LhApplyInfo;
 import com.koreait.exam.tmrteamproject.repository.LhApplyInfoRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,12 +9,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -26,46 +18,28 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class LhApplyInfoService {
 
     private final LhApplyInfoRepository lhApplyInfoRepository;
-    private final AtomicBoolean loading = new AtomicBoolean(false);
-
-    private final ObjectMapper mapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .setDateFormat(new SimpleDateFormat("yyyy-MM-dd"))
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Transactional
-    public void refreshFromCrawler() {
-        if (loading.compareAndSet(false, true)) {
-            try {
-                Path json = Paths.get( "TMRTeamProjectPython", "python_LH_crawler", "data", "lh_data.json")
-                        .normalize().toAbsolutePath();
-                log.info("[LH] user.dir={} / json={}", System.getProperty("user.dir"), json);
-                List<LhApplyInfo> crawledList = mapper.readValue(
-                        json.toFile(),
-                        new com.fasterxml.jackson.core.type.TypeReference<List<LhApplyInfo>>() {}
-                );
-                log.info("[LH] {}건의 크롤링 데이터를 읽었습니다.", crawledList.size());
-                for (LhApplyInfo newInfo : crawledList) {
-                    upsert(newInfo);
-                }
-                log.info("[LH] {}건 적재/업데이트 완료", crawledList.size());
-            } catch (IOException e) {
-                log.error("JSON 파일 읽기 또는 처리 중 에러", e);
-            } finally {
-                loading.set(false);
-            }
-        }
-    }
+    public int upsertBatch(List<LhApplyInfo> items) {
+        int affected = 0;
+        if (items == null || items.isEmpty()) return affected;
 
-    private void upsert(LhApplyInfo dto) {
-        if (dto.getSiteNo() == null) {
-            log.warn("[LH] siteNo 없음 → SKIP : {}", dto.getTitle());
-            return;
+        for (LhApplyInfo dto : items) {
+            if (dto == null || dto.getSiteNo() == null) {
+                log.warn("siteNo 없음 → SKIP : {}", dto != null ? dto.getTitle() : "null");
+                continue;
+            }
+            lhApplyInfoRepository.findBySiteNo(dto.getSiteNo())
+                    .ifPresentOrElse(found -> {
+                        // 기존 레코드 갱신
+                        found.updateFrom(dto);
+                    }, () -> {
+                        // 신규 저장
+                        lhApplyInfoRepository.save(dto);
+                    });
+            affected++;
         }
-        lhApplyInfoRepository.findBySiteNo(dto.getSiteNo())
-                .ifPresentOrElse(found -> {
-                    found.updateFrom(dto);
-                }, () -> lhApplyInfoRepository.save(dto));
+        return affected;
     }
 
     public LhApplyInfo findById(Long id) {
@@ -75,10 +49,6 @@ public class LhApplyInfoService {
 
     public List<LhApplyInfo> findAllByStatus() {
         return lhApplyInfoRepository.findAllByStatusNotContaining("접수마감");
-    }
-
-    public List<LhApplyInfo> findAll() {
-        return lhApplyInfoRepository.findAll();
     }
 
     public List<LhApplyInfo> searchNotices(String type, String region, String status, String q) {
