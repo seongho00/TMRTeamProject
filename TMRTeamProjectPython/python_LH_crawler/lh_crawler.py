@@ -1,17 +1,8 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# LH 임대·분양 상가 공고 목록 크롤러 (상세 페이지 포함 최종본)
-# ---------------------------------
-# - 각 공고의 상세 페이지에 진입하여 첨부파일(공고문) 정보 수집
-# - PDF, HWP 등 여러 개의 공고문이 있는 경우 모두 수집
-
 from __future__ import annotations
 
-import json
 import re
 import time
 from datetime import datetime
-from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 from playwright.sync_api import (
@@ -31,10 +22,6 @@ NEXT_CANDIDATES: List[str] = [
 ]
 # 상세 페이지에서 공고문 파일이 있는 항목
 ATTACHMENT_ITEM_SELECTOR = "div.bbsV_atchmnfl dl.col_red li"
-
-# 출력 파일
-OUT_FILE: Path = Path(__file__).parent / "data" / "lh_data.json"
-OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 # 유틸 함수
 def to_std_date(txt: str) -> Optional[str]:
@@ -58,7 +45,9 @@ def safe_click(page: Page, selectors: List[str]) -> bool:
     return False
 
 # 메인 크롤링
-def crawl() -> None:
+def crawl() -> List[Dict[str, Any]]:
+    rows_out: List[Dict[str, Any]] = []
+
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
@@ -77,15 +66,14 @@ def crawl() -> None:
 
         try:
             print("[INFO] Waiting for table to be ready...")
-            # ▼▼▼ [수정] networkidle 대신 selector를 기다립니다. ▼▼▼
+            # networkidle 대신 selector를 기다립니다.
             page.wait_for_selector(TABLE_HEADER, timeout=20_000)
             print("[INFO] Table is ready.")
         except PlaywrightTimeout as e:
             print(f"[ERROR] Page loading failed or table not found: {e}")
             browser.close()
-            return
+            return rows_out
 
-        rows_out: List[Dict[str, Any]] = []
         page_no = 1
 
         while True:
@@ -107,7 +95,7 @@ def crawl() -> None:
                 detail_link = current_row.query_selector("a.wrtancInfoBtn")
                 if detail_link:
                     detail_link.click()
-                    # ▼▼▼ [수정] networkidle 대신 selector를 기다립니다. ▼▼▼
+                    # networkidle 대신 selector를 기다립니다.
                     page.wait_for_selector(ATTACHMENT_ITEM_SELECTOR, timeout=20_000)
 
                     attachment_items = page.query_selector_all(ATTACHMENT_ITEM_SELECTOR)
@@ -123,7 +111,7 @@ def crawl() -> None:
                                 attachments.append({"name": file_name, "url": download_url})
 
                     page.go_back()
-                    # ▼▼▼ [수정] networkidle 대신 selector를 기다립니다. ▼▼▼
+                    # networkidle 대신 selector를 기다립니다.
                     page.wait_for_selector(TABLE_ROW, timeout=20_000)
 
                 rows_out.append({
@@ -137,16 +125,12 @@ def crawl() -> None:
             if not safe_click(page, NEXT_CANDIDATES):
                 break
 
-            # ▼▼▼ [수정] 클릭 후 잠시 대기하고 selector를 기다립니다. ▼▼▼
+            # 클릭 후 잠시 대기하고 selector를 기다립니다.
             time.sleep(0.5)
             page.wait_for_selector(TABLE_ROW, timeout=20_000)
             page_no += 1
 
         browser.close()
 
-    OUT_FILE.write_text(json.dumps(rows_out, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[INFO] saved → {OUT_FILE} ({len(rows_out)} rows)")
-
-
-if __name__ == "__main__":
-    crawl()
+    print(f"[INFO] 크롤링 완료: {len(rows_out)} rows")
+    return rows_out

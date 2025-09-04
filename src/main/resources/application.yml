@@ -34,7 +34,14 @@ logging:
   level:
     org.springframework.security: DEBUG
 
-
+lh:
+  crawler:
+    enabled: true
+    mode: script
+    python: 'C:\Users\admin\anaconda3\envs\TMRTeamProject\python.exe'
+    script: PythonJPA/run_lh.py
+    workdir: "TMRTeamProjectPython"
+    timeout-sec: 600
 
 # 카카오 api 키
 kakao:
@@ -73,3 +80,7 @@ bldrgst:
 # R-ONE API
 rOne:
   apiKey: 11ff00dfd57d4af28c5d3c16ed576fc1
+
+# python API
+ingest:
+  apiKey: "SECRET_KEY_123"
