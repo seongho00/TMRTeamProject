@@ -9,7 +9,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.criteria.Predicate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -72,8 +76,8 @@ public class LhApplyInfoService {
         }
 
         if (hasQ) {
-            // LIKE 검색: 예) '%전%'
-            spec = spec.and(likeLower("title", q));
+            List<String> fields = Arrays.asList("title", "address", "type", "status");
+            spec = spec.and(tokensInAnyField(q, fields, true));
         }
 
         // 정렬: 최신 등록일 → id 내림차순
@@ -99,5 +103,42 @@ public class LhApplyInfoService {
                 cb.lower(root.get(field)),
                 "%" + keyword.toLowerCase() + "%"
         );
+    }
+
+    private static Specification<LhApplyInfo> tokensInAnyField(String q, List<String> fields, boolean tokens) {
+        List<String> allTokens = Arrays.stream(q.trim().split("\\s"))
+                .filter(s -> !s.isBlank())
+                .map(String::toLowerCase)
+                .toList();
+
+        Specification<LhApplyInfo> acc = alwaysTrue();
+        for (String token : allTokens) {
+            Specification<LhApplyInfo> tokenSpec = anyFieldLike(fields, token);
+
+            // 숫자 토큰이면 siteNo = token 도 OR로 포함
+            if (token.chars().allMatch(Character::isDigit)) {
+                try {
+                    Integer val = Integer.valueOf(token);
+                    Specification<LhApplyInfo> bySiteNo = (root, query, cb) -> cb.equal(root.get("siteNo"), val);
+                    tokenSpec = tokenSpec.or(bySiteNo);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+
+            acc = tokens ? acc.and(tokenSpec) : acc.or(tokenSpec);
+        }
+        return acc;
+    }
+
+    /** fields 중 아무거나 lower LIKE %token% 매칭되면 OK (OR) */
+    private static Specification<LhApplyInfo> anyFieldLike(List<String> fields, String token) {
+        return (root, query, cb) -> {
+            String like = "%" + token + "%";
+            List<Predicate> ors = new ArrayList<>();
+            for (String f : fields) {
+                ors.add(cb.like(cb.lower(root.get(f)), like));
+            }
+            return cb.or(ors.toArray(new Predicate[0]));
+        };
     }
 }
