@@ -217,7 +217,11 @@ public class PropertyController {
         Map<String, Object> realItem = items.get(0);
         double totalArea = propertyService.resolveAreaFromLine(currentAddress);
 
-        propertyService.getBasePrice(currentAddress, realItem);
+
+        // 건물시가
+        ResponseEntity data = propertyService.getBasePrice(currentAddress, realItem);
+
+        System.out.println("data : " + data);
 
         String regstrGbCdNm = realItem.get("regstrGbCdNm").toString();
         String mainPurpsCdNm = realItem.get("mainPurpsCdNm").toString();
@@ -338,6 +342,10 @@ public class PropertyController {
         return false;
     }
 
+    @GetMapping("/test")
+    public void test(){
+        propertyService.getLandPrice("116501080013170019");
+    }
 
 
 }
