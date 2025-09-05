@@ -137,4 +137,8 @@ public interface DataSetRepository extends JpaRepository<DataSet, Long> {
         ) AS t ORDER BY t.sum_store DESC LIMIT 1;
         """, nativeQuery = true)
     Long findMaxStoreCountByQuarter(@Param("quarter") String quarter);
+
+    Long findTotalFloatingPopulationByadminDongCode(String adminDongCode);
+
+    Long findMonthlySalesAmountByAdminDongCode(String adminDongCode);
 }
