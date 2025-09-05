@@ -775,7 +775,7 @@ public class PropertyService {
     }
 
 
-    public Map<String, Object> getLandInfo(String pnu) throws Exception {
+    public double getLandInfo(String pnu) throws Exception {
         StringBuilder urlBuilder = new StringBuilder("http://api.vworld.kr/ned/data/ladfrlList"); /* URL */
         StringBuilder parameter = new StringBuilder();
         parameter.append("?" + URLEncoder.encode("key", "UTF-8") + "=" + vworldKey); /*key*/
@@ -784,6 +784,7 @@ public class PropertyService {
         parameter.append("&" + URLEncoder.encode("format", "UTF-8") + "=" + URLEncoder.encode("xml", "UTF-8")); /* 응답결과 형식(xml 또는 json) */
         parameter.append("&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("10", "UTF-8")); /* 검색건수 (최대 1000) */
         parameter.append("&" + URLEncoder.encode("pageNo", "UTF-8") + "=" + URLEncoder.encode("1", "UTF-8")); /* 페이지 번호 */
+        parameter.append("&" + URLEncoder.encode("format", "UTF-8") + "=" + URLEncoder.encode("json", "UTF-8"));
 
         URL url = new URL(urlBuilder.toString() + parameter.toString());
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -805,7 +806,21 @@ public class PropertyService {
         conn.disconnect();
         System.out.println(sb.toString());
 
-        return null;
+        ObjectMapper mapper = new ObjectMapper();
+
+        // sb.toString() 에 JSON 문자열이 들어있다고 가정
+        Map<String, Object> root = mapper.readValue(sb.toString(), Map.class);
+
+        // 1) 최상위 key = "ladfrlVOList"
+        Map<String, Object> ladfrlVOList = (Map<String, Object>) root.get("ladfrlVOList");
+
+        // 2) 하위 key = "ladfrlVOList" → 실제 배열
+        List<Map<String, Object>> items = (List<Map<String, Object>>) ladfrlVOList.get("ladfrlVOList");
+
+
+        Map<String, Object> item = items.get(0);
+
+        return (double) item.get("lndpclAr");
     }
 
 

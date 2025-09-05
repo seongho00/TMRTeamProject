@@ -343,8 +343,10 @@ public class PropertyController {
     }
 
     @GetMapping("/test")
-    public void test() throws Exception {
+    @ResponseBody
+    public String test() throws Exception {
         propertyService.getLandInfo("1165010800113170016");
+        return "성공";
     }
 
 
