@@ -1,13 +1,14 @@
-package com.koreait.exam.tmrteamproject.entity;
+package com.koreait.exam.tmrteamproject.vo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import javax.persistence.*;
+
+import com.koreait.exam.tmrteamproject.entity.AttachmentDtoListConverter;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -17,20 +18,10 @@ import java.util.List;
 @ToString
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class LhApplyInfo {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class LhApplyInfo extends BaseEntity {
 
     @Column(name = "site_no", nullable = false, unique = true)
     private Integer siteNo;
-
-    @Column(name = "reg_date", updatable = false)
-    private LocalDateTime regDate;
-
-    @Column(name = "update_date")
-    private LocalDateTime updateDate;
 
     private String type;
     private String title;
@@ -45,23 +36,9 @@ public class LhApplyInfo {
     private String status;
     private Integer views;
 
-    @Column(name = "call_number")
-    private String callNumber;
-
     @Column(columnDefinition = "TEXT")
     @Convert(converter = AttachmentDtoListConverter.class)
     private List<AttachmentDto> attachments;
-
-    @Lob
-    @Column(name = "extracted_text", columnDefinition = "LONGTEXT")
-    private String extractedText;
-
-    @Lob
-    @Column(name = "markdown_text", columnDefinition = "LONGTEXT")
-    private String markdownText;
-
-    @OneToMany(mappedBy = "lhApplyInfo", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<LhShopDetail> details = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -80,7 +57,6 @@ public class LhApplyInfo {
         this.deadlineDate = src.deadlineDate;
         this.status = src.status;
         this.views = src.views;
-        this.callNumber = src.callNumber;
         this.attachments = src.attachments;
     }
 

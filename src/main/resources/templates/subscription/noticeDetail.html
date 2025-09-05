@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head">
+    <meta charset="UTF-8">
+    <title th:text="${lhApplyInfo.title}">공고 상세 정보</title>
+</head>
+<body class="bg-gray-50 text-gray-800">
+<header th:replace="common/mapHeader :: header"></header>
+<div class="max-w-4xl mx-auto px-6 py-10 h-[1080px]">
+    <!-- 헤더 -->
+    <div class="flex justify-between items-center mb-8 border-b pb-4">
+        <h1 class="text-2xl font-bold text-gray-900" th:text="${lhApplyInfo.title}">공고 제목</h1>
+        <a href="/usr/lh/notice"
+           class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm rounded-lg transition">
+            목록으로
+        </a>
+    </div>
+
+    <!-- 메타 정보 -->
+    <div class="flex flex-wrap gap-6 mb-8 text-sm text-gray-600">
+        <span><strong class="font-medium text-gray-700">번호:</strong>
+            <span th:text="${lhApplyInfo.siteNo}">123</span>
+        </span>
+        <span><strong class="font-medium text-gray-700">게시일:</strong>
+            <span th:text="${#temporals.format(lhApplyInfo.postDate, 'yyyy-MM-dd')}">2025-09-02</span>
+        </span>
+        <span><strong class="font-medium text-gray-700">상태:</strong>
+            <span th:text="${lhApplyInfo.status}">진행중</span>
+        </span>
+    </div>
+
+    <!-- 본문 -->
+    <div class="bg-white rounded-xl shadow p-6">
+        <h2 class="text-lg font-semibold mb-4">첨부파일 목록</h2>
+        <ul th:if="${!#lists.isEmpty(lhApplyInfo.attachments)}" class="space-y-3">
+            <li th:each="file : ${lhApplyInfo.attachments}"
+                class="flex justify-between items-center border-b pb-2">
+                <span class="text-gray-700" th:text="${file.name}">파일명</span>
+                <a th:href="${file.url}" th:download="${file.name}"
+                   class="px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+                    다운로드
+                </a>
+            </li>
+        </ul>
+        <p th:if="${#lists.isEmpty(lhApplyInfo.attachments)}"
+           class="text-gray-500 text-sm">첨부파일이 없습니다.</p>
+    </div>
+</div>
+<footer th:replace="common/footer :: footer"></footer>
+</body>
+</html>

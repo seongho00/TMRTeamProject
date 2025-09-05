@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head th:replace="common/head :: head">
+    <meta charset="UTF-8">
+    <title>상가청약 공고문</title>
+</head>
+<body>
+<header th:replace="common/mapHeader :: header"></header>
+<!-- 필터/검색 영역 -->
+<div class="pt-[120px]">
+    <form action="/usr/lh/notice" method="get" class="w-full">
+        <!-- 필터/검색 영역 -->
+        <section class="relative z-20 max-w-[1200px] mx-auto px-6">
+            <!-- 카드 스타일 래퍼 -->
+            <div class="rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <!-- 상단: 제목/리셋 -->
+                <div class="flex items-center justify-between px-5 py-4 border-b">
+                    <h2 class="text-base font-semibold text-gray-900">상가 공고</h2>
+                </div>
+
+                <!-- 필터 바: 작은 화면에서는 세로 스택, 큰 화면에서는 가로 정렬 -->
+                <div class="px-5 py-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- 유형 -->
+                        <label class="flex flex-col gap-2">
+                            <span class="text-sm text-gray-700">유형</span>
+                            <div class="relative">
+                                <select name="type"
+                                        class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2 pr-9 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                                    <option>전체</option>
+                                    <option>분양ㆍ(구)임대상가(입찰)</option>
+                                    <option>임대상가(입찰)</option>
+                                    <option>임대상가(공모ㆍ심사)</option>
+                                    <option>임대상가(추첨)</option>
+                                </select>
+                                <!-- 셀렉트 화살표 -->
+                                <span class="flex items-center pointer-events-none absolute inset-y-0 right-3 text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 640 640">
+                                    <path d="M480 224C492.9 224 504.6 231.8 509.6 243.8C514.6 255.8 511.8 269.5 502.7 278.7L342.7 438.7C330.2 451.2 309.9 451.2 297.4 438.7L137.4 278.7C128.2 269.5 125.5 255.8 130.5 243.8C135.5 231.8 147.1 224 160 224L480 224z"/>
+                                </svg>
+                            </span>
+                            </div>
+                        </label>
+
+                        <!-- 지역 -->
+                        <label class="flex flex-col gap-2">
+                            <span class="text-sm text-gray-700">지역</span>
+                            <div class="relative">
+                                <select name="region"
+                                        class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2 pr-9 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                                    <option>전국</option>
+                                    <option>서울특별시</option>
+                                    <option>부산광역시</option>
+                                    <option>인천광역시</option>
+                                    <option>대구광역시</option>
+                                    <option>울산광역시</option>
+                                    <option>대전광역시</option>
+                                    <option>광주광역시</option>
+                                    <option>세종특별자치시</option>
+                                    <option>경기도</option>
+                                    <option>강원특별자치도</option>
+                                    <option>충청북도</option>
+                                    <option>충청남도</option>
+                                    <option>경상북도</option>
+                                    <option>경상남도</option>
+                                    <option>전북특별자치도</option>
+                                    <option>전라남도</option>
+                                    <option>제주특별자치도</option>
+                                </select>
+                                <!-- 셀렉트 화살표 -->
+                                <span class="flex items-center pointer-events-none absolute inset-y-0 right-3 text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 640 640">
+                                    <path d="M480 224C492.9 224 504.6 231.8 509.6 243.8C514.6 255.8 511.8 269.5 502.7 278.7L342.7 438.7C330.2 451.2 309.9 451.2 297.4 438.7L137.4 278.7C128.2 269.5 125.5 255.8 130.5 243.8C135.5 231.8 147.1 224 160 224L480 224z"/>
+                                </svg>
+                            </span>
+                            </div>
+                        </label>
+
+                        <!-- 상태 -->
+                        <label class="flex flex-col gap-2">
+                            <span class="text-sm text-gray-700">상태</span>
+                            <div class="relative">
+                                <select name="status"
+                                        class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2 pr-9 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                                    <option>전체</option>
+                                    <option>공고중</option>
+                                    <option>접수중</option>
+                                    <option>접수마감</option>
+                                    <option>상담요청</option>
+                                </select>
+                                <!-- 셀렉트 화살표 -->
+                                <span class="flex items-center pointer-events-none absolute inset-y-0 right-3 text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 640 640">
+                                    <path d="M480 224C492.9 224 504.6 231.8 509.6 243.8C514.6 255.8 511.8 269.5 502.7 278.7L342.7 438.7C330.2 451.2 309.9 451.2 297.4 438.7L137.4 278.7C128.2 269.5 125.5 255.8 130.5 243.8C135.5 231.8 147.1 224 160 224L480 224z"/>
+                                </svg>
+                            </span>
+                            </div>
+                        </label>
+
+                        <!-- 검색 -->
+                        <label class="flex flex-col gap-2">
+                            <span class="text-sm text-gray-700">검색</span>
+                            <div class="relative">
+                                <input name="q" type="text"
+                                       class="w-full rounded-full border border-gray-300 bg-white h-11 pl-5 pr-12 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                       placeholder="공고명을 입력해주세요" aria-label="공고명 검색" th:value="${param.q}">
+                                <button type="submit"
+                                        class="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-gray-100 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                        title="검색" aria-label="검색">
+                                    <svg width="18" height="18" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                        <circle cx="10" cy="10" r="8" stroke="currentColor"></circle>
+                                        <path d="M16 16L21 21" stroke="currentColor" stroke-linecap="round"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- 활성 필터 칩 영역 -->
+                    <div id="active-filters" class="mt-4 flex flex-wrap items-center gap-2"></div>
+                </div>
+
+                <!-- 하단: 적용/초기화 버튼 바 (정적 목업) -->
+                <div class="flex items-center justify-end gap-2 px-5 pb-5">
+                    <button type="button"
+                            class="inline-flex items-center rounded-lg border px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        초기화
+                    </button>
+                    <button type="submit"
+                            class="inline-flex items-center rounded-lg bg-gray-700 px-4 py-2 text-sm text-white hover:bg-gray-600">
+                        적용
+                    </button>
+                </div>
+            </div>
+        </section>
+    </form>
+</div>
+
+<!-- 목록 테이블 -->
+<section class="max-w-[1200px] mx-auto px-6 mt-10">
+    <!-- 카드 스타일 래퍼 -->
+    <div class="w-full overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
+        <!-- 가로 스크롤 컨테이너 -->
+        <div class="overflow-x-auto">
+            <table class="w-full table-fixed text-sm">
+                <!-- 가독성 좋은 컬럼 너비 -->
+                <colgroup>
+                    <col class="w-[70px]"/>
+                    <col class="w-[100px]"/>
+                    <col/>
+                    <col class="w-[140px]"/>
+                    <col class="w-[120px]"/>
+                    <col class="w-[130px]"/>
+                    <col class="w-[120px]"/>
+                    <col class="w-[120px]"/>
+                    <col class="w-[110px]"/>
+                </colgroup>
+
+                <!-- 고정 헤더: 스크롤 시 상단에 고정 -->
+                <thead class="bg-gray-50 text-gray-700">
+                <tr class="border-b">
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">번호</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">유형</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">공고명</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">지역</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">등록일</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">접수 날짜</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">마감일</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">접수 상태</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">알림설정</th>
+                </tr>
+                </thead>
+
+                <tbody class="divide-y divide-gray-100">
+                <!-- 주석: 리스트를 row 라는 이름으로 순회 -->
+                <tr th:each="lhList : ${lhApplyInfoList}"
+                    class="hover:bg-gray-50 transition-colors">
+                    <!-- 번호: 필요하면 stat.count 사용 -->
+                    <td class="px-4 py-4 text-gray-800" th:text="${lhList.getId()}"></td>
+
+                    <!-- 유형: 칩 스타일 -->
+                    <td class="px-4 py-4">
+                        <span class="inline-flex items-center px-2 py-0.5 text-xs"
+                              th:text="${lhList.getType()}">
+                        </span>
+                    </td>
+
+                    <!-- 공고명: 두 줄 말줄임 -->
+                    <td class="px-4 py-4">
+                        <a class="block text-gray-900 hover:underline line-clamp-2"
+                           th:text="${lhList.getTitle()}" th:href="@{../lh/notice/{id}(id=${lhList.Id})}">
+                        </a>
+                    </td>
+
+                    <!-- 지역 -->
+                    <td class="px-4 py-4 text-gray-800 truncate" th:text="${lhList.getAddress()}"></td>
+
+                    <!-- 등록일 -->
+                    <td class="px-4 py-4 text-gray-800"
+                        th:text="${lhList.getPostDate()}">
+                    </td>
+
+                    <!-- 접수 날짜 -->
+                    <td class="px-4 py-4 text-gray-800"
+                        th:text="${lhList.getDeadlineDate()}">
+                    </td>
+
+                    <!-- 마감일 -->
+                    <td class="px-4 py-4 text-gray-800"
+                        th:text="${lhList.getDeadlineDate()}">
+                    </td>
+
+                    <!-- 접수 상태: 배지 색상 매핑 -->
+                    <td class="px-4 py-4">
+                        <span th:switch="${lhList.getStatus()}">
+                            <span th:case="'공고중'"
+                                  class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs font-medium">공고중</span>
+                            <span th:case="'접수중'"
+                                  class="inline-flex items-center rounded-full bg-rose-50 text-rose-700 px-2 py-0.5 text-xs font-medium">접수중</span>
+                            <span th:case="'접수마감'"
+                                  class="inline-flex items-center rounded-full bg-gray-100 text-gray-600 px-2 py-0.5 text-xs font-medium">접수마감</span>
+                            <span th:case="*"
+                                  class="inline-flex items-center rounded-full bg-gray-50 text-gray-500 px-2 py-0.5 text-xs font-medium">-</span>
+                        </span>
+                    </td>
+
+                    <!-- 알림설정: 토글 버튼 예시 -->
+                    <td class="px-4 py-4">
+                        <button type="button"
+                                class="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                                title="알림 설정">알림
+                        </button>
+                    </td>
+                </tr>
+
+                <!-- 데이터 없음 -->
+                <tr th:if="${lhApplyInfoList.isEmpty()}">
+                    <td colspan="9" class="px-4 py-16 text-center text-gray-500">표시할 데이터가 없습니다.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 페이지네이션: 접근성 + 포커스 스타일 -->
+    <nav class="my-6 flex items-center justify-center gap-2" aria-label="Pagination">
+        <a class="px-3 py-1.5 rounded-md border text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">이전</a>
+        <a class="px-3 py-1.5 rounded-md border text-sm bg-gray-900 text-white border-gray-900 cursor-default">1</a>
+        <a class="px-3 py-1.5 rounded-md border text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">다음</a>
+    </nav>
+</section>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // 필터 바 유형, 지역, 상태 매핑
+        const filters = [
+            { name: "type",   default: "전체", label: "유형" },
+            { name: "region", default: "전국", label: "지역" },
+            { name: "status", default: "전체", label: "상태" },
+        ];
+
+        const selects = Object.fromEntries(
+            filters.map(f => [f.name, document.querySelector(`select[name='${f.name}']`)])
+        );
+        const filterArea = document.getElementById("active-filters");
+
+        function renderChips() {
+            filterArea.innerHTML = "";
+
+            filters.forEach(f => {
+                const sel = selects[f.name];
+                if (!sel) return;
+
+                const selectedText = sel.options[sel.selectedIndex]?.text || "";
+                if (!selectedText || selectedText === f.default) return;
+
+                // chip 생성
+                const chip = document.createElement("span");
+                chip.className =
+                    "inline-flex items-center gap-2 rounded-full bg-gray-100 text-gray-700 px-3 py-1 text-xs";
+                chip.innerHTML = `
+                    <span class="font-medium">${f.label}</span>: ${selectedText}
+                    <button type="button" class="text-black hover:text-blue-800" aria-label="${f.label} 필터 제거">×</button>
+                `;
+
+                // chip X 버튼 클릭 시 기본값으로 리셋
+                chip.querySelector("button").addEventListener("click", () => {
+                    const defaultOpt = Array.from(sel.options).find(o => o.text === f.default);
+                    sel.value = defaultOpt ? defaultOpt.value : "";
+                    renderChips();
+                });
+
+                filterArea.appendChild(chip);
+            });
+        }
+
+        // 변경 이벤트 연결
+        Object.values(selects).forEach(sel => {
+            if (!sel) return;
+            sel.addEventListener("change", renderChips);
+        });
+
+        // 초기 렌더
+        renderChips();
+    });
+</script>
+
+<footer th:replace="common/footer::footer"></footer>
+
+</body>
+</html>

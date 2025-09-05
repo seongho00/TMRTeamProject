@@ -92,18 +92,53 @@ public interface DataSetRepository extends JpaRepository<DataSet, Long> {
     List<DataSet> findByAdminDongCodeAndBaseYearQuarterCode(String adminDongCode, String baseYearQuarterCode);
 
     // 퍼센트용 계산 구하기
-    @Query("select max(d.totalFloatingPopulation) " +
-            "from DataSet d " +
-            "where d.baseYearQuarterCode = :code")
-    Long findMaxFloatingByQuarter(@Param("code") String baseYearQuarterCode);
+    // 평균 매출액
+    @Query("SELECT AVG(d.monthlySalesAmount) FROM DataSet d WHERE d.baseYearQuarterCode = :quarter AND d.adminDongCode = :adminDongCode")
+    Long findAvgSalesByQuarter(@Param("quarter") String quarter, String adminDongCode);
 
-    @Query("select max(d.monthlySalesAmount) " +
-            "from DataSet d " +
-            "where d.baseYearQuarterCode = :code")
-    Long findMaxSalesByQuarter(@Param("code") String baseYearQuarterCode);
+    // 분기별 행정동별 점포수 합
+    @Query("SELECT SUM(d.storeCount) FROM DataSet d WHERE d.baseYearQuarterCode = :quarter AND d.adminDongCode = :adminDongCode")
+    Long findSumStoreCountByQuarter(@Param("quarter") String quarter, String adminDongCode);
 
-    @Query("select max(d.storeCount) " +
-            "from DataSet d " +
-            "where d.baseYearQuarterCode = :code")
-    Integer findMaxStoreCountByQuarter(@Param("code") String baseYearQuarterCode);
+    //분기별 행정동별 평균 유동인구
+    @Query("SELECT AVG(d.totalFloatingPopulation) FROM DataSet d WHERE d.baseYearQuarterCode = :quarter AND d.adminDongCode = :adminDongCode")
+    Long findAvgFloatingByQuarter(@Param("quarter") String quarter, String adminDongCode);
+
+    // 분기중 유동인구 최댓값
+    @Query(value = """
+    SELECT MAX(t.avg_floating) FROM (
+        SELECT base_year_quarter_code, admin_dong_code, admin_dong_name, AVG(total_floating_population) AS avg_floating\s
+        FROM data_set
+        WHERE base_year_quarter_code = :quarter
+        GROUP BY admin_dong_code
+    ) AS t;
+    """, nativeQuery = true)
+    Long findMaxAvgFloatingByQuarter(@Param("quarter") String quarter);
+
+    // 분기중 평균 매출액 최댓값
+    @Query(value = """
+            SELECT MAX(t.avg_sales)
+                FROM (
+                    SELECT AVG(d.monthly_sales_amount) AS avg_sales
+                    FROM data_set d
+                    WHERE d.base_year_quarter_code = :quarter
+                    GROUP BY d.admin_dong_code
+                ) AS t
+        """, nativeQuery = true)
+    Long findMaxAvgSalesByQuarter(@Param("quarter") String quarter);
+
+    // 분기중 점포수 합산중 최댓값
+    @Query(value = """
+        SELECT t.base_year_quarter_code, t.admin_dong_code, t.admin_dong_name, t.sum_store FROM (
+            SELECT d.base_year_quarter_code, d.admin_dong_code, d.admin_dong_name, SUM(d.store_count) AS sum_store
+            FROM data_set d
+            WHERE d.base_year_quarter_code = 20251
+            GROUP BY d.admin_dong_code
+        ) AS t ORDER BY t.sum_store DESC LIMIT 1;
+        """, nativeQuery = true)
+    Long findMaxStoreCountByQuarter(@Param("quarter") String quarter);
+
+    Long findTotalFloatingPopulationByadminDongCode(String adminDongCode);
+
+    Long findMonthlySalesAmountByAdminDongCode(String adminDongCode);
 }
