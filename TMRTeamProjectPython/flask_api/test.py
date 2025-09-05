@@ -107,8 +107,4 @@ with sync_playwright() as p:
 
     print("숫자 기준시가:", price_value)  # 79730000
 
-    time.sleep(10)
-
-
-
     browser.close()

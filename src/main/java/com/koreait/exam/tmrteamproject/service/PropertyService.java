@@ -103,7 +103,7 @@ public class PropertyService {
         payload.put("sggNm", sggNm);
         try {
             Map response = pythonClient.post()
-                    .uri("/get_base_price")
+                    .uri("/get_build_base_price")
                     .bodyValue(payload)
                     .retrieve()
                     .bodyToMono(Map.class)
