@@ -1283,7 +1283,7 @@ def api_crawl():
 
 
 
-@app.route("/get_build_base_price", methods=["POST"])
+@app.route("/get_base_price", methods=["POST"])
 def get_base_price():
     data = request.json
     emd_name = data["emd_name"]
@@ -1418,8 +1418,6 @@ def get_base_price():
         "ho": ho,
         "floor": target_floor,
         "target_ho": target_ho,
-        "td2": td2,
-        "td3": td3,
         "build_base_price": final_price,
         "land_base_price": land_price
     })

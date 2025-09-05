@@ -507,4 +507,6 @@ public class AddressService {
 
         return ResultData.from("S-1", "평균 보증금 조회 성공", "평균 보증금 데이터", avgPerSqm);
     }
+
+
 }

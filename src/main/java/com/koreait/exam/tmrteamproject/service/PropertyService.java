@@ -103,7 +103,7 @@ public class PropertyService {
         payload.put("sggNm", sggNm);
         try {
             Map response = pythonClient.post()
-                    .uri("/get_build_base_price")
+                    .uri("/get_base_price")
                     .bodyValue(payload)
                     .retrieve()
                     .bodyToMono(Map.class)
@@ -801,6 +801,47 @@ public class PropertyService {
         } catch (Exception e) {
             throw new RuntimeException("API 응답 파싱 오류", e);
         }
+    }
+
+    public Map<String, Object> getLandInfo(String pnu) {
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl("http://apis.data.go.kr/1613000/landRegisterService/attr/getLandRegisterAttr")
+                .queryParam("serviceKey", vworldKey)
+                .queryParam("pnu", pnu)
+                .queryParam("numOfRows", 10)
+                .queryParam("pageNo", 1)
+                .queryParam("format", "json")
+                .encode(StandardCharsets.UTF_8)
+                .build()
+                .toUri();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = rest.getForObject(uri, Map.class);
+
+        if (response == null) {
+            throw new RuntimeException("API 응답 없음");
+        }
+
+        // JSON 파싱: {"response":{"fields":{"ladfrlVOList":[...]}}} 구조
+        Map<String, Object> resp = (Map<String, Object>) response.get("response");
+        if (resp == null) throw new RuntimeException("response 없음");
+
+        Map<String, Object> fields = (Map<String, Object>) resp.get("fields");
+        if (fields == null) throw new RuntimeException("fields 없음");
+
+        Object listObj = fields.get("ladfrlVOList");
+        if (!(listObj instanceof Map)) throw new RuntimeException("ladfrlVOList 없음");
+
+        Map<String, Object> landInfo = (Map<String, Object>) listObj;
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("pnu", landInfo.get("pnu"));
+        result.put("address", landInfo.get("ldCodeNm") + " " + landInfo.get("mnnmSlno"));
+        result.put("land_use", landInfo.get("lndcgrCodeNm")); // 지목
+        result.put("area", landInfo.get("lndpclAr")); // 면적(㎡)
+        result.put("last_update", landInfo.get("lastUpdtDt"));
+
+        return result;
     }
 
 }
