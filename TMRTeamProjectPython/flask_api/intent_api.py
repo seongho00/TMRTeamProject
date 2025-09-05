@@ -1783,7 +1783,7 @@ def get_base_price():
         val2 = float(td2.replace(",", ""))
         val3 = float(td3)
         result = val2 * val3
-        final_price = int(result // 10000 * 10000)
+        final_price = int(val2 // 10000 * 10000)
 
         # ───────────── 토지 기준시가 ─────────────
         page2 = browser.new_page()
