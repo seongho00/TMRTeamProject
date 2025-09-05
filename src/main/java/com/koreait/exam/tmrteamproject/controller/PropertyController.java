@@ -219,12 +219,32 @@ public class PropertyController {
 
         // 건물시가 + 토지시가
         ResponseEntity data = propertyService.getBasePrice(currentAddress, realItem);
+        // 1. Body 꺼내기
+        Map<String, Object> body = (Map<String, Object>) data.getBody();
+
+        // 3. 실제 data 꺼내기
+        Map<String, Object> inner = (Map<String, Object>) body.get("data");
+
+        // 4. 개별 값 접근
+        // 건물시가
+        double buildBasePrice = (double) inner.get("build_base_price");
+        // 토지시가
+        double landBasePrice = (double) inner.get("land_base_price");
 
         // 토지면적
+        double landShareArea = (double) result.get("landShareArea");
 
+        // 토지 지분가치 (토지시가 * 토지면적)
+        double landShareValue = landShareArea * landBasePrice;
 
+        // 건물 지분 가치 (건물시가 * 전유면적)
+        double buildingValue = currentArea * buildBasePrice;
 
-        System.out.println("data : " + data);
+        // 담보가치(정적)
+        double collateralValue = landShareValue + buildingValue;
+        System.out.println("landShareValue : " + landShareValue);
+        System.out.println("buildingalue : " + buildingValue);
+        System.out.println("collateralValue : " + collateralValue);
 
         String regstrGbCdNm = realItem.get("regstrGbCdNm").toString();
         String mainPurpsCdNm = realItem.get("mainPurpsCdNm").toString();

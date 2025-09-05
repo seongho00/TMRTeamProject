@@ -956,7 +956,6 @@ def extract_land_share_table(pdf_bytes: bytes):
         r for r in results
         if any([r.get("소재지번"), r.get("지목"), r.get("면적")])
     ]
-    print(cleaned)
     return cleaned
 
 
@@ -1027,6 +1026,13 @@ def _parse_ratio_pairs(cell_text: str):
     return pairs
 
 
+def _num_prefix(s: str):
+    """문자열 앞의 번호 추출: '2 소유권대지권' → '2'"""
+    if not s: return None
+    m = re.match(r'^\s*(\d+)[\.\)]?\s*', s)
+    return m.group(1) if m else None
+
+
 # -------------------------------------------------
 # 메인: (대지권의 표시) 섹션에서 테이블 추출
 # columns: 표시번호 | 대지권종류 | 대지권비율 | 등기원인 및 기타사항
@@ -1085,36 +1091,89 @@ def extract_land_right_ratios(pdf_bytes: bytes):
                         group_no = last_group_no
 
                     # 칸별 줄 분해
-                    kinds = [re.sub(r'^\s*\d+[\.\)]\s*', '', s).strip()
-                             for s in kind_cell.split("\n") if s.strip()] if kind_cell else []
+                    kinds = [s.strip() for s in kind_cell.split("\n") if s.strip()] if kind_cell else []
                     ratios = _parse_ratio_pairs(ratio_cell)
                     notes = [s.strip() for s in note_cell.split("\n") if s.strip()] if note_cell else []
 
                     # 최댓길이에 맞춰 확장
                     n = max(len(kinds), len(ratios), len(notes), 1)
+
                     for i in range(n):
-                        r = ratios[i] if i < len(ratios) else {"numerator": None, "denominator": None, "text": None,
-                                                               "share": None}
+                        raw_kind = kinds[i] if i < len(kinds) else None
+
+                        # 1) 그룹번호: 대지권종류의 앞 숫자 → 표시번호 셀 숫자 → 이전 그룹 번호
+                        grp_from_kind = _num_prefix(raw_kind)
+                        grp_from_cell = _num_prefix(group_no)
+                        group_no_final = grp_from_kind or grp_from_cell or last_group_no
+                        if group_no_final:
+                            last_group_no = group_no_final  # 다음 행 대비 갱신
+
+                        # 2) 비율
+                        r = ratios[i] if i < len(ratios) else {
+                            "numerator": None, "denominator": None, "text": None, "share": None
+                        }
+
                         results.append({
-                            "표시번호그룹": group_no,
-                            "대지권종류": kinds[i] if i < len(kinds) else None,
+                            "표시번호그룹": group_no_final,  # ← 예: "2"
+                            "대지권종류": raw_kind,  # ← 예: "2 소유권대지권" (숫자 보존)
                             "대지권비율": {
                                 "numerator": r["numerator"],
                                 "denominator": r["denominator"],
                                 "text": r["text"],
-                                "share": (str(r["share"]) if r["share"] is not None else None)  # Decimal → str
+                                "share": (str(r["share"]) if r["share"] is not None else None)
                             },
                             "등기원인및기타사항": notes[i] if i < len(notes) else None
                         })
-
             if y1 is not None:  # 이 페이지에서 섹션 종료
                 in_section = False
                 break
 
     # 불필요한 빈 레코드 제거
     cleaned = [x for x in results if any([x.get("대지권종류"), x.get("대지권비율", {}).get("text")])]
-    print(cleaned)
     return cleaned
+
+
+def parse_float_m2(s):
+    # "229.7㎡" -> 229.7
+    return float(re.sub(r"[^\d\.]", "", s))
+
+
+def lot_no_from_addr(addr):
+    # "1. 서울특별시 ..." -> 1
+    m = re.match(r"\s*(\d+)\.", addr or "")
+    return int(m.group(1)) if m else None
+
+
+def compute_land_share_area(land_rows, ratio_rows):
+    # land_rows: [{"소재지번": "1. ...", "면적": "229.7㎡"}, ...]
+    # ratio_rows: [{"표시번호그룹":"1","대지권비율":{"share":"0.01503..."}} ...]
+    area_by_lot = {}
+    for r in land_rows:
+        lot = lot_no_from_addr(r.get("소재지번"))
+        if lot is None:
+            continue
+        area = parse_float_m2(r.get("면적", "0"))
+        area_by_lot[lot] = area
+
+    total = 0.0
+    parts = []
+    for rr in ratio_rows:
+        lot = None
+        # 표시번호그룹이 숫자 문자열로 들어있다고 가정
+        g = rr.get("표시번호그룹")
+        if g and str(g).isdigit():
+            lot = int(g)
+        share_str = rr.get("대지권비율", {}).get("share")
+        if lot is None or not share_str:
+            continue
+        share = float(share_str)
+        area = area_by_lot.get(lot)
+        if area is None:
+            continue
+        part = area * share
+        parts.append(part)
+        total += part
+    return total, parts
 
 
 # ============ Flask 라우트 ============
@@ -1144,6 +1203,11 @@ def analyze():
     try:
         land_share_info = extract_land_share_table(data)
         land_ratios_info = extract_land_right_ratios(data)
+
+        total, parts = compute_land_share_area(land_share_info, land_ratios_info)
+        print("total", total)
+
+        land_share_area = round(total, 2)
         joint_info = extract_joint_collateral_addresses_follow(data)
         mortgage_info = extract_mortgage_info(data)
         gabu_info = extract_gabu_info(data)
@@ -1160,7 +1224,8 @@ def analyze():
         jointCollateralCurrentAddress=joint_info["currentAddress"],
         mortgageInfo=mortgage_info["mortgages"],
         mortgageRiskFlags=mortgage_info["riskFlags"],  # 가압류/압류/가처분
-        gabuInfo=gabu_info
+        gabuInfo=gabu_info,
+        landShareArea=land_share_area
     ), 200
 
 
