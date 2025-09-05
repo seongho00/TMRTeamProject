@@ -775,64 +775,6 @@ public class PropertyService {
     }
 
 
-    public double getLandInfo(Map<String, Object> inputItem) throws Exception {
-
-        // pnu 만들기
-        String emdCd = inputItem.get("sigunguCd").toString() + inputItem.get("bjdongCd").toString();
-        String bunji = inputItem.get("bun").toString() + inputItem.get("ji").toString();
-
-        String pnu = emdCd + "1" + bunji;
-
-
-        // API 호출
-        StringBuilder urlBuilder = new StringBuilder("http://api.vworld.kr/ned/data/ladfrlList"); /* URL */
-        StringBuilder parameter = new StringBuilder();
-        parameter.append("?" + URLEncoder.encode("key", "UTF-8") + "=" + vworldKey); /*key*/
-        parameter.append("&" + URLEncoder.encode("domain", "UTF-8") + "=" + "http://localhost:8080/"); /*domain*/
-        parameter.append("&" + URLEncoder.encode("pnu", "UTF-8") + "=" + URLEncoder.encode(pnu, "UTF-8")); /* 고유번호 */
-        parameter.append("&" + URLEncoder.encode("format", "UTF-8") + "=" + URLEncoder.encode("xml", "UTF-8")); /* 응답결과 형식(xml 또는 json) */
-        parameter.append("&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("10", "UTF-8")); /* 검색건수 (최대 1000) */
-        parameter.append("&" + URLEncoder.encode("pageNo", "UTF-8") + "=" + URLEncoder.encode("1", "UTF-8")); /* 페이지 번호 */
-        parameter.append("&" + URLEncoder.encode("format", "UTF-8") + "=" + URLEncoder.encode("json", "UTF-8"));
-
-        URL url = new URL(urlBuilder.toString() + parameter.toString());
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        conn.setRequestProperty("Content-type", "application/json");
-        System.out.println("Response code: " + conn.getResponseCode());
-        BufferedReader rd;
-        if (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
-            rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        } else {
-            rd = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
-        }
-        StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = rd.readLine()) != null) {
-            sb.append(line);
-        }
-        rd.close();
-        conn.disconnect();
-        System.out.println(sb.toString());
-
-        ObjectMapper mapper = new ObjectMapper();
-
-        // sb.toString() 에 JSON 문자열이 들어있다고 가정
-        Map<String, Object> root = mapper.readValue(sb.toString(), Map.class);
-
-        // 1) 최상위 key = "ladfrlVOList"
-        Map<String, Object> ladfrlVOList = (Map<String, Object>) root.get("ladfrlVOList");
-
-        // 2) 하위 key = "ladfrlVOList" → 실제 배열
-        List<Map<String, Object>> items = (List<Map<String, Object>>) ladfrlVOList.get("ladfrlVOList");
-
-
-        Map<String, Object> item = items.get(0);
-
-
-        String areaStr = (String) item.get("lndpclAr");
-        return Double.parseDouble(areaStr);
-    }
 
 
 }
