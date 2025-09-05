@@ -233,7 +233,6 @@ function renderRiskPanel(emdValue, upjongName){
     const stage = rec["위험도_단계"] ?? "-";
     const score = fmtNum(rec["위험도_점수"]);
     const dscore = fmtNum(rec["위험도_업종별_점수"]);
-    const conf  = fmtPct(rec["예측_신뢰도"]);
 
     $panel.classList.remove('hidden');
     $panel.innerHTML = `
@@ -246,7 +245,6 @@ function renderRiskPanel(emdValue, upjongName){
       </div>
       <div><b>위험도 점수:</b> ${score}</div>
       <div><b>업종별 위험도 점수:</b> ${dscore}</div>
-      <div><b>예측 신뢰도:</b> ${conf}</div>
     </div>`;
 }
 

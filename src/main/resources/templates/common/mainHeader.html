@@ -17,11 +17,14 @@
                 <ul id="nav-list" class="flex justify-center items-center relative space-x-4">
                     <!-- 상권 분석 -->
                     <li class="relative group w-[240px]">
-                        <a href="../map/commercialZoneMap"
-                           class="flex justify-center items-center w-full h-[100px] cursor-pointer">
+                        <div class="flex justify-center items-center w-full h-[100px] cursor-pointer">
                             <p class="text-[22px] text-black">상권 분석</p>
-                        </a>
-                        <ul class="sub-menu absolute items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
+                        </div>
+                        <ul class="sub-menu absolute flex flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
+                            <li class="w-full">
+                                <a href="../map/commercialZoneMap"
+                                   class="block px-4 py-2 hover:underline">지도 분석</a>
+                            </li>
                             <li class="w-full">
                                 <a href="../map/riskMap"
                                    class="block px-4 py-2 hover:underline">위험도 분석</a>
