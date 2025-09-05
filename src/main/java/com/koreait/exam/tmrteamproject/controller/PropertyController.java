@@ -221,10 +221,10 @@ public class PropertyController {
         ResponseEntity data = propertyService.getBasePrice(currentAddress, realItem);
 
         // 토지면적
-        double are = propertyService.getLandInfo(realItem);
+
+
 
         System.out.println("data : " + data);
-        System.out.println("are : " + are);
 
         String regstrGbCdNm = realItem.get("regstrGbCdNm").toString();
         String mainPurpsCdNm = realItem.get("mainPurpsCdNm").toString();

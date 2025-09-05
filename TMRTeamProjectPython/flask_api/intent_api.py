@@ -782,6 +782,36 @@ def extract_gabu_info(pdf_bytes: bytes):
         "ownerChangeDetails": owner_changes,
         "coOwners": co_owners
     }
+
+def extract_land_share_table(pdf_bytes: bytes):
+    results = []
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        in_section = False
+        for page in pdf.pages:
+            text = page.extract_text() or ""
+            if "대지권의 목적인 토지의 표시" in text:
+                in_section = True
+
+            if in_section:
+                tables = page.extract_tables()
+                for table in tables:
+                    for row in table:
+                        # 열이 4~5개일 가능성 있음
+                        if row and any("㎡" in str(c) for c in row):
+                            results.append({
+                                "표시번호": row[0],
+                                "소재지번": row[1],
+                                "지목": row[2],
+                                "면적": row[3],
+                                "등기원인및기타사항": row[4] if len(row) > 4 else None
+                            })
+            # 종료 조건: 갑구/을구 시작
+            if in_section and ("갑구" in text or "을구" in text):
+                break
+    print(results)
+    return results
+
+
 # ============ Flask 라우트 ============
 @app.route("/analyze", methods=["POST"])
 def analyze():
@@ -807,6 +837,7 @@ def analyze():
         return jsonify(ok=False, message=f"PDF 열기 실패: {e}"), 400
 
     try:
+        land_share_info = extract_land_share_table(data)
         joint_info = extract_joint_collateral_addresses_follow(data)
         mortgage_info = extract_mortgage_info(data)
         gabu_info = extract_gabu_info(data)
@@ -814,6 +845,7 @@ def analyze():
         import traceback;
         traceback.print_exc()
         return jsonify(ok=False, message=f"분석 실패: {e}"), 500
+
 
 
     return jsonify(
