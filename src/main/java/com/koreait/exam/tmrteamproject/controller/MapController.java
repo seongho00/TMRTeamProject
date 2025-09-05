@@ -26,16 +26,6 @@ public class MapController {
     @Autowired
     private UpjongCodeService upjongCodeService;
 
-    @GetMapping("/commercialZoneMap")
-    public String commercialZoneMap(Model model) {
-
-        List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
-
-        model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
-
-        return "map/commercialZoneMap";
-    }
-
     @GetMapping("/getEmdsBySggNm")
     @ResponseBody
     public List<AdminDong> getEmdsBySggNm(String sgg) {
@@ -50,6 +40,18 @@ public class MapController {
         return adminDongService.getAdminDongsBySggNm(sgg);
     }
 
+    // 유동인구 및 매출액 맵
+    @GetMapping("/commercialZoneMap")
+    public String commercialZoneMap(Model model) {
+
+        List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
+
+        model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
+        model.addAttribute("upjongNames", upjongCodeService.getAllNames());
+
+        return "map/commercialZoneMap";
+    }
+
     // 위험도 페이지
     @GetMapping("/correlationMap")
     public String correlationMap(Model model) {
@@ -59,6 +61,6 @@ public class MapController {
         model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
         model.addAttribute("upjongNames", upjongCodeService.getAllNames());
 
-        return "map/correlationMap";
+        return "map/riskMap";
     }
 }
