@@ -60,7 +60,7 @@ public class PropertyController {
             @RequestParam("monthlyRent") int monthlyRent,
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng
-    ) throws JsonProcessingException {
+    ) throws Exception {
         // 0) (만원)으로 들어온 데이터 10,000 곱해주기
         deposit *= 10000;
         monthlyRent *= 10000;
@@ -218,10 +218,14 @@ public class PropertyController {
         double totalArea = propertyService.resolveAreaFromLine(currentAddress);
 
 
-        // 건물시가
+        // 건물시가 + 토지시가
         ResponseEntity data = propertyService.getBasePrice(currentAddress, realItem);
 
+        // 토지면적
+        double are = propertyService.getLandInfo(realItem);
+
         System.out.println("data : " + data);
+        System.out.println("are : " + are);
 
         String regstrGbCdNm = realItem.get("regstrGbCdNm").toString();
         String mainPurpsCdNm = realItem.get("mainPurpsCdNm").toString();
@@ -345,7 +349,6 @@ public class PropertyController {
     @GetMapping("/test")
     @ResponseBody
     public String test() throws Exception {
-        propertyService.getLandInfo("1165010800113170016");
         return "성공";
     }
 

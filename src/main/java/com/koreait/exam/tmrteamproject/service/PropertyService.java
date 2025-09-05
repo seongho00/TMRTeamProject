@@ -775,7 +775,16 @@ public class PropertyService {
     }
 
 
-    public double getLandInfo(String pnu) throws Exception {
+    public double getLandInfo(Map<String, Object> inputItem) throws Exception {
+
+        // pnu 만들기
+        String emdCd = inputItem.get("sigunguCd").toString() + inputItem.get("bjdongCd").toString();
+        String bunji = inputItem.get("bun").toString() + inputItem.get("ji").toString();
+
+        String pnu = emdCd + "1" + bunji;
+
+
+        // API 호출
         StringBuilder urlBuilder = new StringBuilder("http://api.vworld.kr/ned/data/ladfrlList"); /* URL */
         StringBuilder parameter = new StringBuilder();
         parameter.append("?" + URLEncoder.encode("key", "UTF-8") + "=" + vworldKey); /*key*/
@@ -820,7 +829,9 @@ public class PropertyService {
 
         Map<String, Object> item = items.get(0);
 
-        return (double) item.get("lndpclAr");
+
+        String areaStr = (String) item.get("lndpclAr");
+        return Double.parseDouble(areaStr);
     }
 
 
