@@ -1283,7 +1283,7 @@ def api_crawl():
 
 
 
-@app.route("/get_base_price", methods=["POST"])
+@app.route("/get_build_base_price", methods=["POST"])
 def get_base_price():
     data = request.json
     emd_name = data["emd_name"]
@@ -1390,7 +1390,27 @@ def get_base_price():
         result = val2 * val3
         final_price = int(result // 10000 * 10000)
 
+        # ───────────── 토지 기준시가 ─────────────
+        page2 = browser.new_page()
+        page2.goto("https://www.realtyprice.kr/notice/gsindividual/search.htm")
+
+        page2.locator("#sido_list").select_option(label=target_sido)
+        page2.locator("#sgg_list").select_option(label=target_sgg)
+        page2.locator("#eub_list").select_option(label=emd_name)
+
+        container = page2.locator("div.search-opt3")
+        container.locator("input[name='bun1']").fill(bunji)
+        container.locator("input[name='bun2']").fill(ho)
+
+        page2.click(".search-bt input[type='image']")
+        page2.wait_for_selector("#dataList tr", timeout=10000)
+
+        first_row2 = page2.locator("#dataList tr").first
+        price_text = first_row2.locator("td").nth(3).inner_text().strip()
+        land_price = int(re.sub(r"[^0-9]", "", price_text))
+
         browser.close()
+
 
     return jsonify({
         "emd_name": emd_name,
@@ -1400,9 +1420,9 @@ def get_base_price():
         "target_ho": target_ho,
         "td2": td2,
         "td3": td3,
-        "base_price": final_price
+        "build_base_price": final_price,
+        "land_base_price": land_price
     })
-
 
 
 if __name__ == "__main__":
