@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Controller
@@ -25,5 +26,11 @@ public class DataSetController {
         System.out.println(future);
 
         return "저장 작업을 백그라운드에서 시작했습니다. 잠시 후 완료 됩니다.";
+    }
+
+    @GetMapping("/emd/info")
+    @ResponseBody
+    public Map<String, Object> getEmdInfo(@RequestParam("adminDongCode") String adminDongCode) {
+        return dataSetService.getFloatingAndSalesByEmd(adminDongCode);
     }
 }
