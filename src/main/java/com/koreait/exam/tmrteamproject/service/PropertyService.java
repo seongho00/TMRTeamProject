@@ -16,16 +16,27 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 import reactor.core.publisher.Mono;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Value;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 @Service
 @Slf4j
@@ -763,85 +774,39 @@ public class PropertyService {
         return filtered;
     }
 
-    // 토지면적 및 토지시가
-    public Map<String, Object> getLandPrice(String pnu) {
-        String url = "https://api.vworld.kr/ned/data/getIndvdLandPrice"
-                + "?service=data"
-                + "&request=getfeature"
-                + "&key=" + vworldKey
-                + "&pnu=" + pnu
-                + "&format=json";
 
-        RestTemplate restTemplate = new RestTemplate();
-        String response = restTemplate.getForObject(url, String.class);
+    public Map<String, Object> getLandInfo(String pnu) throws Exception {
+        StringBuilder urlBuilder = new StringBuilder("http://api.vworld.kr/ned/data/ladfrlList"); /* URL */
+        StringBuilder parameter = new StringBuilder();
+        parameter.append("?" + URLEncoder.encode("key", "UTF-8") + "=" + vworldKey); /*key*/
+        parameter.append("&" + URLEncoder.encode("domain", "UTF-8") + "=" + "http://localhost:8080/"); /*domain*/
+        parameter.append("&" + URLEncoder.encode("pnu", "UTF-8") + "=" + URLEncoder.encode(pnu, "UTF-8")); /* 고유번호 */
+        parameter.append("&" + URLEncoder.encode("format", "UTF-8") + "=" + URLEncoder.encode("xml", "UTF-8")); /* 응답결과 형식(xml 또는 json) */
+        parameter.append("&" + URLEncoder.encode("numOfRows", "UTF-8") + "=" + URLEncoder.encode("10", "UTF-8")); /* 검색건수 (최대 1000) */
+        parameter.append("&" + URLEncoder.encode("pageNo", "UTF-8") + "=" + URLEncoder.encode("1", "UTF-8")); /* 페이지 번호 */
 
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(response);
-
-            JsonNode features = root.path("featureCollection").path("features");
-            if (features.isArray() && features.size() > 0) {
-                JsonNode props = features.get(0).path("properties");
-
-                double landArea = props.path("lndpclAr").asDouble();     // 토지면적(㎡)
-                long pricePerSqm = props.path("pblntfPclnd").asLong();  // 개별공시지가(원/㎡)
-                long totalLandValue = (long) (landArea * pricePerSqm);  // 총액
-
-                Map<String, Object> result = new HashMap<>();
-                result.put("pnu", pnu);
-                result.put("landArea", landArea);
-                result.put("pricePerSqm", pricePerSqm);
-                result.put("totalLandValue", totalLandValue);
-
-                return result;
-            } else {
-                throw new RuntimeException("해당 PNU로 조회된 결과가 없습니다: " + pnu);
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException("API 응답 파싱 오류", e);
+        URL url = new URL(urlBuilder.toString() + parameter.toString());
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("Content-type", "application/json");
+        System.out.println("Response code: " + conn.getResponseCode());
+        BufferedReader rd;
+        if (conn.getResponseCode() >= 200 && conn.getResponseCode() <= 300) {
+            rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        } else {
+            rd = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
         }
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while ((line = rd.readLine()) != null) {
+            sb.append(line);
+        }
+        rd.close();
+        conn.disconnect();
+        System.out.println(sb.toString());
+
+        return null;
     }
 
-    public Map<String, Object> getLandInfo(String pnu) {
-        URI uri = UriComponentsBuilder
-                .fromHttpUrl("http://apis.data.go.kr/1613000/landRegisterService/attr/getLandRegisterAttr")
-                .queryParam("serviceKey", vworldKey)
-                .queryParam("pnu", pnu)
-                .queryParam("numOfRows", 10)
-                .queryParam("pageNo", 1)
-                .queryParam("format", "json")
-                .encode(StandardCharsets.UTF_8)
-                .build()
-                .toUri();
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> response = rest.getForObject(uri, Map.class);
-
-        if (response == null) {
-            throw new RuntimeException("API 응답 없음");
-        }
-
-        // JSON 파싱: {"response":{"fields":{"ladfrlVOList":[...]}}} 구조
-        Map<String, Object> resp = (Map<String, Object>) response.get("response");
-        if (resp == null) throw new RuntimeException("response 없음");
-
-        Map<String, Object> fields = (Map<String, Object>) resp.get("fields");
-        if (fields == null) throw new RuntimeException("fields 없음");
-
-        Object listObj = fields.get("ladfrlVOList");
-        if (!(listObj instanceof Map)) throw new RuntimeException("ladfrlVOList 없음");
-
-        Map<String, Object> landInfo = (Map<String, Object>) listObj;
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("pnu", landInfo.get("pnu"));
-        result.put("address", landInfo.get("ldCodeNm") + " " + landInfo.get("mnnmSlno"));
-        result.put("land_use", landInfo.get("lndcgrCodeNm")); // 지목
-        result.put("area", landInfo.get("lndpclAr")); // 면적(㎡)
-        result.put("last_update", landInfo.get("lastUpdtDt"));
-
-        return result;
-    }
 
 }
