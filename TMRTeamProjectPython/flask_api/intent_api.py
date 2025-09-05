@@ -831,7 +831,7 @@ def analyze():
 # 좌표를 통한 네이버 부동산 실시간 크롤링
 # --- Playwright 설정 ---
 USER_DATA_DIR = "./.chrome-profile"  # 쿠키/지문 유지
-HEADLESS = False  # 먼저 창 띄워서 확인 후 True로 전환 가능
+HEADLESS = False # 먼저 창 띄워서 확인 후 True로 전환 가능
 LIST_SEL_CANDS = [
     "div.item_list.item_list--article",
     "div.item_list--article",
@@ -917,6 +917,7 @@ def _launch_ctx(p):
             "--disable-blink-features=AutomationControlled",
             "--no-first-run", "--no-default-browser-check",
             "--disable-dev-shm-use", "--no-sandbox",
+            "--disable-gpu", "--window-size=1280,860",
         ],
     )
     # 약식 스텔스
@@ -933,15 +934,19 @@ def _launch_ctx(p):
 def _goto_offices(page, lat: float, lng: float):
     root = "https://new.land.naver.com"
     path = f"/offices?ms={lat},{lng},19&a=SG&e=RETAIL"
-    page.goto(root, wait_until="domcontentloaded", timeout=30000)
+
+    # 기본 진입: 바로 목적지로 이동 (referer 유지)
+    page.goto(root + path, referer=root, wait_until="domcontentloaded", timeout=60000)
+
     try:
-        page.evaluate("href => { location.href = href }", path)
-        page.wait_for_url("**/offices**", timeout=20000)
-        return
-    except PwTimeout:
-        pass
-    page.goto(root + path, referer=root, wait_until="domcontentloaded", timeout=30000)
-    page.wait_for_url("**/offices**", timeout=20000)
+        # ✅ 'load' 대신 'domcontentloaded'로 대기
+        page.wait_for_url("**/offices**", wait_until="domcontentloaded", timeout=60000)
+    except PWTimeout:
+        # 보정: SPA 특성상 URL은 바뀌었는데 'load'가 안 오는 케이스 방지
+        page.wait_for_load_state("domcontentloaded", timeout=30000)
+
+    # ✅ URL만 믿지 말고, 실제 목록 컨테이너가 붙을 때까지 한 번 더 대기
+    page.wait_for_selector(", ".join(LIST_SEL_CANDS), state="attached", timeout=20000)
 
 
 DETAIL_PATTERNS = [
@@ -1294,7 +1299,7 @@ def get_base_price():
         browser = p.chromium.launch_persistent_context(
             user_data_dir=USER_DATA_DIR,
             channel="chrome",
-            headless=True,   # API 서버에서는 headless 권장
+            headless=False,   # API 서버에서는 headless 권장
             locale="ko-KR",
             viewport={"width": 1280, "height": 860},
             ignore_https_errors=True,
