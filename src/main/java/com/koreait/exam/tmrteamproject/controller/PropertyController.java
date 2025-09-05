@@ -349,6 +349,7 @@ public class PropertyController {
     @GetMapping("/test")
     @ResponseBody
     public String test() throws Exception {
+        propertyService.fetchBldRgstItems("서울특별시 서초구 서초동 1317-17");
         return "성공";
     }
 
