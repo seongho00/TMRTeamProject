@@ -344,7 +344,7 @@ public class PropertyController {
 
     @GetMapping("/test")
     public void test(){
-        propertyService.getLandPrice("116501080013170019");
+        propertyService.getLandInfo("116501080113170019");
     }
 
 
