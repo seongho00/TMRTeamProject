@@ -38,7 +38,7 @@ with sync_playwright() as p:
     browser = p.chromium.launch_persistent_context(
         user_data_dir=USER_DATA_DIR,
         channel="chrome",  # ⚡ 로컬 설치된 Chrome 사용
-        headless=False,  # True로 하면 창 안 뜸
+        headless=True,  # True로 하면 창 안 뜸
         locale="ko-KR",
         viewport={"width": 1280, "height": 860},
         ignore_https_errors=True,

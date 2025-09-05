@@ -77,13 +77,15 @@ public class PropertyService {
         // 첫 번째 결과만 사용
         Map<String, Object> j = (Map<String, Object>) jusoList.get(0);
 
-        System.out.println(item);
+        System.out.println("j :" + j);
+        System.out.println("item : " + item);
 
-        String emd_name = j.get("emd_name").toString();
-        String bunji = j.get("lnbrMnnm").toString();
-        String ho = j.get("lnbrSlno").toString();
-        String floor = floorMatcher.group(1);
-        String target_ho = hoMatcher.group(1);
+
+        String emd_name = j.get("emdNm").toString(); // "서초동"
+        String bunji = j.get("lnbrMnnm").toString(); // 1317
+        String ho = j.get("lnbrSlno").toString(); // 20
+        String floor = item.get("flrGbCdNm").toString() + "층" + item.get("flrNo").toString(); // 지상층12
+        String target_ho = item.get("hoNm").toString(); // 1201
         String sidoNm = (String) j.get("siNm");           // "서울특별시"
         String sggNm = (String) j.get("sggNm");         // "서초구"
 
@@ -96,20 +98,19 @@ public class PropertyService {
         payload.put("target_ho", target_ho);
         payload.put("sidoNm", sidoNm);
         payload.put("sggNm", sggNm);
-        return null;
-//        try {
-//            Map response = pythonClient.post()
-//                    .uri("/get_base_price")
-//                    .bodyValue(payload)
-//                    .retrieve()
-//                    .bodyToMono(Map.class)
-//                    .block();
-//
-//            return ResponseEntity.ok(response);
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                    .body(Map.of("ok", false, "error", e.getMessage()));
-//        }
+        try {
+            Map response = pythonClient.post()
+                    .uri("/get_base_price")
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("ok", false, "error", e.getMessage()));
+        }
     }
 
     public double getRentYield(String region, String type, int page, int perPage) {
