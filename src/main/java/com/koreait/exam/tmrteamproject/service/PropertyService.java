@@ -44,6 +44,9 @@ public class PropertyService {
     @Value("${rOne.apiKey}")
     private String rOneApiKey;
 
+    @Value("${vworld.key}")
+    private String vworldKey;
+
 
     // ✅ PDF만 허용
     private static final Set<String> ALLOWED = Set.of(MediaType.APPLICATION_PDF_VALUE);
@@ -760,5 +763,44 @@ public class PropertyService {
         return filtered;
     }
 
+    // 토지면적 및 토지시가
+    public Map<String, Object> getLandPrice(String pnu) {
+        String url = "https://api.vworld.kr/ned/data/getIndvdLandPrice"
+                + "?service=data"
+                + "&request=getfeature"
+                + "&key=" + vworldKey
+                + "&pnu=" + pnu
+                + "&format=json";
+
+        RestTemplate restTemplate = new RestTemplate();
+        String response = restTemplate.getForObject(url, String.class);
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response);
+
+            JsonNode features = root.path("featureCollection").path("features");
+            if (features.isArray() && features.size() > 0) {
+                JsonNode props = features.get(0).path("properties");
+
+                double landArea = props.path("lndpclAr").asDouble();     // 토지면적(㎡)
+                long pricePerSqm = props.path("pblntfPclnd").asLong();  // 개별공시지가(원/㎡)
+                long totalLandValue = (long) (landArea * pricePerSqm);  // 총액
+
+                Map<String, Object> result = new HashMap<>();
+                result.put("pnu", pnu);
+                result.put("landArea", landArea);
+                result.put("pricePerSqm", pricePerSqm);
+                result.put("totalLandValue", totalLandValue);
+
+                return result;
+            } else {
+                throw new RuntimeException("해당 PNU로 조회된 결과가 없습니다: " + pnu);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("API 응답 파싱 오류", e);
+        }
+    }
 
 }
