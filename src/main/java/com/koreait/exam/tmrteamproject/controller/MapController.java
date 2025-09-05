@@ -53,7 +53,7 @@ public class MapController {
     }
 
     // 위험도 페이지
-    @GetMapping("/correlationMap")
+    @GetMapping("/riskMap")
     public String correlationMap(Model model) {
 
         List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
