@@ -343,8 +343,8 @@ public class PropertyController {
     }
 
     @GetMapping("/test")
-    public void test(){
-        propertyService.getLandInfo("116501080113170019");
+    public void test() throws Exception {
+        propertyService.getLandInfo("1165010800113170016");
     }
 
 
