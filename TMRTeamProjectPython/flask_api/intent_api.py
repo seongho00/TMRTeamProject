@@ -783,33 +783,126 @@ def extract_gabu_info(pdf_bytes: bytes):
         "coOwners": co_owners
     }
 
-def extract_land_share_table(pdf_bytes: bytes):
-    results = []
-    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-        in_section = False
-        for page in pdf.pages:
-            text = page.extract_text() or ""
-            if "대지권의 목적인 토지의 표시" in text:
-                in_section = True
+import io, re, pdfplumber
 
-            if in_section:
-                tables = page.extract_tables()
-                for table in tables:
-                    for row in table:
-                        # 열이 4~5개일 가능성 있음
-                        if row and any("㎡" in str(c) for c in row):
-                            results.append({
-                                "표시번호": row[0],
-                                "소재지번": row[1],
-                                "지목": row[2],
-                                "면적": row[3],
-                                "등기원인및기타사항": row[4] if len(row) > 4 else None
-                            })
-            # 종료 조건: 갑구/을구 시작
-            if in_section and ("갑구" in text or "을구" in text):
+def _find_y_bottom_of(words, pattern):
+    """pattern(정규식)에 매칭되는 단어들의 'bottom' 중 최댓값 반환"""
+    cands = [w for w in words if re.search(pattern, w["text"])]
+    return max((w["bottom"] for w in cands), default=None)
+
+def _find_y_top_of(words, pattern):
+    """pattern(정규식)에 매칭되는 단어들의 'top' 중 최솟값 반환"""
+    cands = [w for w in words if re.search(pattern, w["text"])]
+    return min((w["top"] for w in cands), default=None)
+
+def _combine_address_lines(lines):
+    """
+    소재지번 셀 내 줄들이
+      [ '1. 서울특별시 서초구 서초동', '1317-16', '2. 서울특별시 서초구 서초동', '1317-17', ... ]
+    형태일 때, (행정구역 + 지번) 페어로 합쳐서 한 줄씩 반환
+    """
+    combined = []
+    buf = None
+    for s in lines:
+        s = s.strip()
+        if not s:
+            continue
+        if buf is None:
+            buf = s
+        else:
+            combined.append((buf + " " + s).strip())
+            buf = None
+    if buf is not None:  # 홀수 개로 끝나면 남은 것 그대로
+        combined.append(buf)
+    return combined
+
+def extract_land_share_table(pdf_bytes: bytes):
+    """
+    (대지권의 목적인 토지의 표시) 이후 영역만 잘라 테이블 추출
+    - 페이지 내 헤더 y좌표 아래로 crop
+    - 같은 페이지에 '갑구/을구'가 나오면 그 위까지만 crop
+    - 소재지번 줄바꿈(행정구역/지번) 페어를 합쳐 한 줄 주소로 정규화
+    """
+    results = []
+    in_section = False
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for page in pdf.pages:
+            words = page.extract_words(use_text_flow=True, keep_blank_chars=False)
+
+            # 1) 섹션 시작 y 찾기 (현재 페이지에서 헤더 발견 시 그 아랫부분만)
+            y0 = None
+            if not in_section:
+                # '대지권의' 만으로도 시작 포착 (공백 무시는 단어단위라 '\s*'보단 키워드로)
+                y0 = _find_y_bottom_of(words, r"대지권")
+                if y0 is not None:
+                    in_section = True
+                else:
+                    continue  # 아직 섹션 시작 안함 → 다음 페이지로
+
+            # 2) 섹션 종료 y 찾기 (같은 페이지에 갑구/을구가 있으면 그 위까지)
+            y1 = _find_y_top_of(words, r"(갑구|을구)")
+
+            # 3) 크롭 박스 설정 (헤더가 이 페이지에서 시작했으면 y0 아래부터, 이어지는 페이지면 전체 상단부터)
+            top = (y0 + 2) if y0 is not None else 0
+            bottom = (y1 - 2) if y1 is not None else page.height
+            bbox = (0, top, page.width, bottom)
+            sub = page.crop(bbox)
+
+            # 4) 테이블만 추출
+            tables = sub.extract_tables()
+
+            for table in tables:
+                for row in table:
+                    if not row:
+                        continue
+                    # None → "" 및 좌우 공백 제거
+                    row = [str(c).strip() if c else "" for c in row]
+                    joined = "".join(row)
+
+                    # 헤더행 스킵 (공백/개행 불규칙 대응)
+                    if re.search(r"표\s*시\s*번\s*호", joined) or re.search(r"소\s*재\s*지\s*번", joined):
+                        continue
+
+                    # 열 수 보정 (최소 4열 가정: 표시번호, 소재지번, 지목, 면적, (비고))
+                    while len(row) < 5:
+                        row.append("")
+
+                    표시번호, 소재지번, 지목, 면적, 비고 = row
+
+                    # 소재지번/지목/면적에 줄바꿈이 붙어 여러 건이 한 셀에 있을 수 있음 → 분해
+                    addr_lines  = 소재지번.split("\n") if 소재지번 else []
+                    jimo_lines  = 지목.split("\n") if 지목 else []
+                    area_lines  = 면적.split("\n") if 면적 else []
+
+                    # 소재지번은 (행정구역 + 지번) 페어로 합치기
+                    if len(addr_lines) >= 2:
+                        addr_lines = _combine_address_lines(addr_lines)
+
+                    # 가장 긴 길이에 맞춰 행 분해
+                    max_len = max(len(addr_lines), len(jimo_lines), len(area_lines), 1)
+                    for i in range(max_len):
+                        results.append({
+                            "표시번호": 표시번호 if i == 0 else f"{표시번호}-{i+1}" if 표시번호 else "",
+                            "소재지번": (addr_lines[i].strip() if i < len(addr_lines) else "").strip() or None,
+                            "지목": (jimo_lines[i].strip() if i < len(jimo_lines) else "").strip() or None,
+                            "면적": (area_lines[i].strip() if i < len(area_lines) else "").strip() or None,
+                            "비고": 비고 or None
+                        })
+
+            # 5) 이 페이지에서 섹션이 끝났으면 루프 종료
+            if y1 is not None:
+                in_section = False
                 break
-    print(results)
-    return results
+
+    # 후처리: 완전 빈 행들 제거
+    cleaned = [
+        r for r in results
+        if any([r.get("소재지번"), r.get("지목"), r.get("면적")])
+    ]
+    print(cleaned)
+
+    return cleaned
 
 
 # ============ Flask 라우트 ============
