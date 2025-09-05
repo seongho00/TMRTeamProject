@@ -75,24 +75,16 @@ public class PropertyService {
 
         String cleaned = cleanup(raw);
 
-        Matcher floorMatcher = FLOOR_PATTERN.matcher(raw);
-        Matcher hoMatcher = HO_PATTERN.matcher(raw);
-
         String juso = simplifyToLegalLot(cleaned);
 
         Map<String, Object> resp = jusoLookupAsResp(juso);
 
         Map<String, Object> results = (Map<String, Object>) resp.get("results");
 
-        System.out.println("juso: " + juso);
-        System.out.println("results: " + results);
         List<Object> jusoList = (List<Object>) results.get("juso");
 
         // 첫 번째 결과만 사용
         Map<String, Object> j = (Map<String, Object>) jusoList.get(0);
-
-        System.out.println("j :" + j);
-        System.out.println("item : " + item);
 
 
         String emd_name = j.get("emdNm").toString(); // "서초동"
