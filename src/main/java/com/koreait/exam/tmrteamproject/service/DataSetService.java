@@ -441,4 +441,18 @@ public class DataSetService {
 
         return year + "년 " + quarter + "분기";
     }
+
+    // 유동인구와 당월 매출금액 찾기
+    public Map<String, Object> getFloatingAndSalesByEmd(String adminDongCode) {
+        Map<String, Object> result = new HashMap<>();
+
+        Long floating = dataSetRepository.findTotalFloatingPopulationByadminDongCode(adminDongCode);
+        Long sales = dataSetRepository.findMonthlySalesAmountByAdminDongCode(adminDongCode);
+
+        result.put("adminDongCode", adminDongCode);
+        result.put("totalFloating", floating != null ? floating : 0L);
+        result.put("monthlySales", sales != null ? sales : 0L);
+
+        return result;
+    }
 }
