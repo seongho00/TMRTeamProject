@@ -387,27 +387,32 @@ public class DataSetService {
         DataSet ds = list.isEmpty() ? null : list.get(0);
         String displayQuarter = (ds != null) ? convertQuarterCode(ds.getBaseYearQuarterCode()) : null;
 
-        // 분기 전체에서 최대값 구하기
-        Long maxFloating = dataSetRepository.findMaxFloatingByQuarter(quarter);
-        Long maxSales    = dataSetRepository.findMaxSalesByQuarter(quarter);
+        // 현재 행정동 유동인구 계산 (분자)
+        Long avgFloating = dataSetRepository.findAvgFloatingByQuarter(quarter, adminDongCode);
 
-        // 현재 행정동 값
-        Long floatingVal = (ds != null ? ds.getTotalFloatingPopulation() : null);
-        Long salesVal    = (ds != null ? ds.getMonthlySalesAmount() : null);
-        Long storeVal = (ds != null ? ds.getStoreCount() : null);
+        // 현재 행정동 평균 매출액 계산 (분자)
+        Long avgSales = dataSetRepository.findAvgSalesByQuarter(quarter, adminDongCode);
+
+        // 현재 행정동 점포수 합산 (업종별로 나뉘어져 있어서 합산해야함, 분자)
+        Long sumStoreCount = dataSetRepository.findSumStoreCountByQuarter(quarter, adminDongCode);
+
+        // 퍼센트화할 기준 (분모)
+        Long maxFloating = dataSetRepository.findMaxAvgFloatingByQuarter(quarter);
+        Long maxSales    = dataSetRepository.findMaxAvgSalesByQuarter(quarter);
+        Long maxStore = dataSetRepository.findMaxStoreCountByQuarter(quarter);
 
         // 안전 퍼센트 계산 (0 나눔 방지 + 최소 보정)
-        int footPercent  = calcPercent(floatingVal, maxFloating);
-        int salesPercent = calcPercent(salesVal, maxSales);
-        int storePercent = calcPercent(storeVal, dataSetRepository.findMaxStoreCountByQuarter(quarter));
+        long footPercent  = calcPercent(avgFloating, maxFloating);
+        long salesPercent = calcPercent(avgSales, maxSales);
+        long storePercent = calcPercent(sumStoreCount, maxStore);
 
         return DashBoard.builder()
                 .baseYearQuarterCode(displayQuarter)
                 .adminDongCode(ds != null ? ds.getAdminDongCode() : null)
                 .adminDongName(ds != null ? ds.getAdminDongName() : null)
-                .totalFloatingPopulation(floatingVal)
-                .monthlySalesAmount(salesVal)
-                .storeCount(storeVal)
+                .totalFloatingPopulation(avgFloating)
+                .monthlySalesAmount(avgSales)
+                .storeCount(sumStoreCount)
                 .footPercent(footPercent)
                 .salesPercent(salesPercent)
                 .storPercent(storePercent)
@@ -415,13 +420,13 @@ public class DataSetService {
     }
 
     // 퍼센트 계산 유틸
-    private int calcPercent(Number value, Number max) {
-        if (value == null || max == null) return 0;
+    private long calcPercent(Number value, Number avg) {
+        if (value == null || avg == null) return 0;
         double v = value.doubleValue();
-        double m = max.doubleValue();
-        if (m <= 0) return 0;
+        double a = avg.doubleValue();
+        if (a <= 0) return 0;
 
-        int pct = (int) Math.round((v / m) * 100.0);
+        long pct = Math.round((v / a) * 100.0);
 
         // 너무 작아서 그래프가 아예 안 보이는 걸 방지 (최소 2%는 표시)
         return (pct == 1) ? 2 : pct;
@@ -435,5 +440,19 @@ public class DataSetService {
         String quarter = code.substring(4);   // "1"
 
         return year + "년 " + quarter + "분기";
+    }
+
+    // 유동인구와 당월 매출금액 찾기
+    public Map<String, Object> getFloatingAndSalesByEmd(String adminDongCode) {
+        Map<String, Object> result = new HashMap<>();
+
+        Long floating = dataSetRepository.findTotalFloatingPopulationByadminDongCode(adminDongCode);
+        Long sales = dataSetRepository.findMonthlySalesAmountByAdminDongCode(adminDongCode);
+
+        result.put("adminDongCode", adminDongCode);
+        result.put("totalFloating", floating != null ? floating : 0L);
+        result.put("monthlySales", sales != null ? sales : 0L);
+
+        return result;
     }
 }

@@ -1,6 +1,6 @@
 package com.koreait.exam.tmrteamproject.controller;
 
-import com.koreait.exam.tmrteamproject.entity.LhApplyInfo;
+import com.koreait.exam.tmrteamproject.vo.LhApplyInfo;
 import com.koreait.exam.tmrteamproject.service.LhApplyInfoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,26 +9,36 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
-@Slf4j
+import java.util.List;
+
 @Controller
+@Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/lh")
+@RequestMapping("usr/lh/notice")
 public class LhController {
 
-    private final LhApplyInfoService svc;
+    private final LhApplyInfoService lhApplyInfoService;
 
     @GetMapping
-    public String list(Model model) {
-        var lhList = svc.findAllDesc();
-        model.addAttribute("lhList", lhList);
-        return "lh_list";
+    public String notice(
+            @RequestParam(required = false, defaultValue = "")String type,
+            @RequestParam(required = false, defaultValue = "")String region,
+            @RequestParam(required = false, defaultValue = "")String status,
+            @RequestParam(required = false, defaultValue = "")String q,
+            Model model) {
+
+        List<LhApplyInfo> lhApplyInfoList = lhApplyInfoService.searchNotices(type, region, status, q);
+
+        model.addAttribute("lhApplyInfoList", lhApplyInfoList);
+        return "subscription/noticeList";
     }
 
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
-        LhApplyInfo item = svc.findById(id);
-        model.addAttribute("item", item);
-        return "lh_detail";
+        LhApplyInfo lhApplyInfo = lhApplyInfoService.findById(id);
+        model.addAttribute("lhApplyInfo", lhApplyInfo);
+        return "subscription/noticeDetail";
     }
 }
