@@ -1,6 +1,6 @@
 from collections import deque
 from contextlib import nullcontext
-
+from collections import defaultdict
 from flask import Flask, request, jsonify, Response
 import torch
 from transformers import BertTokenizer, BertForSequenceClassification
@@ -790,10 +790,35 @@ def _find_y_bottom_of(words, pattern):
     cands = [w for w in words if re.search(pattern, w["text"])]
     return max((w["bottom"] for w in cands), default=None)
 
-def _find_y_top_of(words, pattern):
-    """pattern(정규식)에 매칭되는 단어들의 'top' 중 최솟값 반환"""
-    cands = [w for w in words if re.search(pattern, w["text"])]
-    return min((w["top"] for w in cands), default=None)
+def _find_y_top_of_section_linewise(words, patterns):
+    """
+    words: page.extract_words() 결과
+    patterns: 공백 없는 정규식 패턴 목록 (예: '갑구', '을구', '표제부', '전유부분의건물의표시', '대지권의표시')
+    반환: 해당 섹션 라인의 top (없으면 None)
+    """
+    # 1) 같은 줄(유사 y)에 있는 word들을 묶어서 한 줄 텍스트로 합치기
+    lines = defaultdict(list)
+    for w in words:
+        # 같은 줄 판정: top 값을 반올림해서 key로 사용 (허용 오차 2~3px 정도)
+        key = round(w["top"] / 2)  # 필요하면 3,5 등으로 조절
+        lines[key].append(w)
+
+    y_candidates = []
+    for key, ws in lines.items():
+        # 한 줄의 텍스트를 연결
+        ws_sorted = sorted(ws, key=lambda x: x["x0"])
+        line_text = "".join(w["text"] for w in ws_sorted)
+
+        # 2) 공백/괄호/특수기호 제거 후 비교
+        norm = re.sub(r"[\s【】\[\]\(\)<>]", "", line_text)
+
+        # 3) 패턴 매칭 (공백 없이 만든 패턴과 비교)
+        if any(re.search(p, norm) for p in patterns):
+            # 이 라인의 실제 top은 라인 내 단어들의 최소 top 사용
+            y_top = min(w["top"] for w in ws_sorted)
+            y_candidates.append(y_top)
+
+    return min(y_candidates) if y_candidates else None
 
 def _combine_address_lines(lines):
     """
@@ -841,7 +866,15 @@ def extract_land_share_table(pdf_bytes: bytes):
                     continue  # 아직 섹션 시작 안함 → 다음 페이지로
 
             # 2) 섹션 종료 y 찾기 (같은 페이지에 갑구/을구가 있으면 그 위까지)
-            y1 = _find_y_top_of(words, r"(갑구|을구)")
+            # 종료 키워드들: 공백/괄호 제거한 형태로 대비
+            end_patterns = [
+                r"갑구",
+                r"을구",
+                r"표제부",
+                r"전유부분의건물의표시",
+                r"대지권의표시"
+            ]
+            y1 = _find_y_top_of_section_linewise(words, end_patterns)
 
             # 3) 크롭 박스 설정 (헤더가 이 페이지에서 시작했으면 y0 아래부터, 이어지는 페이지면 전체 상단부터)
             top = (y0 + 2) if y0 is not None else 0
