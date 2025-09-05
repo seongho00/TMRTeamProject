@@ -1,4 +1,4 @@
-package com.koreait.exam.tmrteamproject.runner;
+package com.koreait.exam.tmrteamproject.scheduler;
 
 import com.koreait.exam.tmrteamproject.service.CrawlExecService;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class LHCrawlerRunner {
+public class LHCrawlerScheduler {
 
     private final CrawlExecService crawlExecService;
 
