@@ -249,6 +249,9 @@ public class PropertyController {
         // 실거래가를 통해 가치 구하기
         propertyService.fetchAndCalculate("","202508");
 
+
+
+
         // 상가종류 분류
         String buildingType;
 

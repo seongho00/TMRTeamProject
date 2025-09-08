@@ -3,6 +3,7 @@ package com.koreait.exam.tmrteamproject.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,72 +62,100 @@ public class PropertyService {
 
     public Map<String, Object> fetchAndCalculate(String emdCd, String dealYmd) throws Exception {
 
-        emdCd = "11680";
-        dealYmd = "202501";
+        Map<String, String> params = new HashMap<>();
+        params.put("LAWD_CD", "11680"); // 강남구
+        params.put("DEAL_YMD", "202508");
+        params.put("numOfRows", "100");
+        params.put("pageNo", "1");
 
-        String url = "https://apis.data.go.kr/1613000/RTMSDataSvcNrgTrade/getRTMSDataSvcNrgTrade"
-                + "?serviceKey=" + bldrgstKey
-                + "&LAWD_CD=" + emdCd
-                + "&DEAL_YMD=" + dealYmd
-                + "&numOfRows=100&pageNo=1";
-
-        RestTemplate restTemplate = new RestTemplate();
-        String xmlResponse = restTemplate.getForObject(url, String.class);
-
-        System.out.println("==== API Raw Response ====");
-        System.out.println(xmlResponse);
-        System.out.println("FinalKey = " + bldrgstKey);
-        // W3C DOM Parser
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        org.w3c.dom.Document doc = builder.parse(new java.io.ByteArrayInputStream(xmlResponse.getBytes(StandardCharsets.UTF_8)));
-
-        NodeList items = doc.getElementsByTagName("item");
-
-        List<Map<String, Object>> tradeList = new ArrayList<>();
-        double totalPrice = 0;
-        double totalArea = 0;
-        int count = 0;
-
-        for (int i = 0; i < items.getLength(); i++) {
-            Node node = items.item(i);
-            if (node.getNodeType() == Node.ELEMENT_NODE) {
-                Element elem = (Element) node;
-                Map<String, Object> trade = new HashMap<>();
-
-                trade.put("년", getTagValue("년", elem));
-                trade.put("월", getTagValue("월", elem));
-                trade.put("일", getTagValue("일", elem));
-                trade.put("법정동", getTagValue("법정동", elem));
-                trade.put("시군구", getTagValue("시군구", elem));
-
-                double area = Double.parseDouble(getTagValue("건물면적", elem));
-                long price = Long.parseLong(getTagValue("거래금액", elem).replace(",", "")) * 1000;
-
-                trade.put("건물면적", area);
-                trade.put("거래금액", price);
-
-                tradeList.add(trade);
-
-                totalPrice += price;
-                totalArea += area;
-                count++;
-            }
-        }
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("count", count);
-        result.put("trades", tradeList);
-        result.put("단순평균거래가", (count > 0) ? totalPrice / count : 0);
-        result.put("㎡당평균단가", (totalArea > 0) ? totalPrice / totalArea : 0);
-        System.out.println(result);
-        return result;
+        List<Map<String, Object>> trades = callRtms(
+                "https://apis.data.go.kr/1613000/RTMSDataSvcNrgTrade/getRTMSDataSvcNrgTrade",
+                params
+        );
+        System.out.println(trades);
+        return null;
     }
 
-    private static String getTagValue(String tag, Element elem) {
-        NodeList nodeList = elem.getElementsByTagName(tag).item(0).getChildNodes();
-        Node nValue = nodeList.item(0);
-        return nValue == null ? "" : nValue.getNodeValue();
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> callRtms(String endpoint, Map<String, String> params) {
+        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(endpoint);
+
+        if (apiKeyEncoded) {
+            // 이미 인코딩된 키 → 그대로 추가
+            ub.queryParam("serviceKey", bldrgstKey);
+            params.forEach((k, v) -> {
+                if (v != null && !v.isBlank()) {
+                    ub.queryParam(k, org.springframework.web.util.UriUtils.encode(v, StandardCharsets.UTF_8));
+                }
+            });
+            String url = ub.build(true).toUriString();
+            logUrlMasked(url);
+
+            String xml = rest.getForObject(url, String.class);
+            return parseRtmsXml(xml);
+
+        } else {
+            // raw 키 → 직접 인코딩
+            ub.queryParam("serviceKey", UriUtils.encode(bldrgstKey, StandardCharsets.UTF_8));
+            params.forEach((k, v) -> {
+                if (v != null && !v.isBlank()) {
+                    ub.queryParam(k, v);
+                }
+            });
+            String url = ub.build(true).toUriString();
+            logUrlMasked(url);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Accept", "application/xml");
+            headers.set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            headers.set("User-Agent", "Mozilla/5.0");
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            ResponseEntity<byte[]> response = rest.exchange(
+                    URI.create(url),
+                    HttpMethod.GET,
+                    entity,
+                    byte[].class
+            );
+            String xml = new String(response.getBody(), StandardCharsets.UTF_8);
+            System.out.println(xml.toString());
+            return parseRtmsXml(xml);
+        }
+    }
+
+    private List<Map<String, Object>> parseRtmsXml(String xml) {
+        if (xml == null || xml.isBlank()) throw new IllegalStateException("빈 응답");
+        try {
+            XmlMapper xmlMapper = new XmlMapper();
+            JsonNode root = xmlMapper.readTree(xml);
+
+            // <response><header><resultCode> 체크
+            JsonNode header = root.path("response").path("header");
+            String resultCode = header.path("resultCode").asText();
+            String resultMsg = header.path("resultMsg").asText();
+            if (!"000".equals(resultCode)) {
+                throw new IllegalStateException("RTMS 오류: " + resultCode + " / " + resultMsg);
+            }
+
+            // <response><body><items><item> 배열 찾기
+            JsonNode itemsNode = root.path("response").path("body").path("items").path("item");
+            if (itemsNode.isMissingNode() || itemsNode.isNull()) {
+                return List.of();
+            }
+
+            List<Map<String, Object>> out = new ArrayList<>();
+            if (itemsNode.isArray()) {
+                for (JsonNode it : itemsNode) {
+                    out.add(nodeToMap(it));
+                }
+            } else {
+                out.add(nodeToMap(itemsNode));
+            }
+            return out;
+        } catch (Exception e) {
+            throw new RuntimeException("RTMS XML 파싱 실패", e);
+        }
     }
 
 
