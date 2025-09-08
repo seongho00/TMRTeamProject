@@ -241,14 +241,17 @@ public class PropertyController {
         double collateralValueTotal = landShareValue + buildingValue;
         System.out.println("landShareValue : " + landShareValue);
         System.out.println("buildingValue : " + buildingValue);
-        System.out.println("collateralValue : " + collateralValueTotal);
+        System.out.println("collateralValueTotal : " + collateralValueTotal);
 
         String regstrGbCdNm = realItem.get("regstrGbCdNm").toString();
         String mainPurpsCdNm = realItem.get("mainPurpsCdNm").toString();
 
         // 실거래가를 통해 가치 구하기
-        Map<String, Object> results = propertyService.fetchAndCalculate("11650", "서초동");
-        System.out.println("results : " + results);
+        double dealPrice = propertyService.fetchAndCalculate("11650", "서초동");
+        System.out.println("results : " + dealPrice);
+
+        // 실거래가 계산
+        double collateralValueBydealPrice = dealPrice * currentArea;
 
 
         // 상가종류 분류

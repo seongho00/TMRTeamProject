@@ -60,7 +60,7 @@ public class PropertyService {
     @Value("${vworld.key}")
     private String vworldKey;
 
-    public Map<String, Object> fetchAndCalculate(String sggCd, String targetUmd) throws Exception {
+    public double fetchAndCalculate(String sggCd, String targetUmd) throws Exception {
         LocalDate now = LocalDate.now();
         int year = now.getYear();
         int month = now.getMonthValue();
@@ -87,7 +87,21 @@ public class PropertyService {
         if (trades.size() < MIN_COUNT) {
             log.info("⚠️ {} 최근 6개월({}) 거래 {}건 → 구 단위 fallback", targetUmd, baseYmd, trades.size());
             trades.clear();
-            trades.addAll(fetchPagedTrades(sggCd, baseYmd, null)); // 구 단위 전체 사용
+
+            // ⚠️ fallback도 최근 2개월 데이터는 누적
+            int fYear = year;
+            int fMonth = month;
+            for (int i = 0; i < 2; i++) {
+                String ymd = String.format("%04d%02d", fYear, fMonth);
+                trades.addAll(fetchPagedTrades(sggCd, ymd, null));
+
+                // 이전 달로 이동
+                fMonth -= 1;
+                if (fMonth == 0) {
+                    fMonth = 12;
+                    fYear -= 1;
+                }
+            }
         }
 
         // ✅ 평균 계산
@@ -98,8 +112,11 @@ public class PropertyService {
             Object arObj = t.get("buildingAr");
 
             if (amtObj != null && arObj != null) {
-                long price = Long.parseLong(amtObj.toString()) * 10000;
-                double area = Double.parseDouble(arObj.toString());
+                String amtStr = amtObj.toString().replaceAll(",", "").trim(); // ← 쉼표 제거
+                long price = Long.parseLong(amtStr) * 10000;
+
+                String areaStr = arObj.toString().trim();
+                double area = Double.parseDouble(areaStr);
 
                 totalPrice += price;
                 totalArea += area;
@@ -112,7 +129,9 @@ public class PropertyService {
         result.put("㎡당평균단가", totalArea > 0 ? totalPrice / totalArea : 0);
         result.put("trades", trades);
 
-        return result;
+
+        // ✅ ㎡당평균단가만 반환
+        return totalArea > 0 ? totalPrice / totalArea : 0;
     }
 
     private List<Map<String, Object>> fetchPagedTrades(String sggCd, String dealYmd, String targetUmd) {
