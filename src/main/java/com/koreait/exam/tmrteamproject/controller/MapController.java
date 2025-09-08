@@ -44,6 +44,7 @@ public class MapController {
     @GetMapping("/commercialZoneMap")
     public String commercialZoneMap(Model model) {
 
+        // 공통 데이터
         List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
 
         model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
