@@ -1,7 +1,6 @@
 package com.koreait.exam.tmrteamproject.repository;
 
 import com.koreait.exam.tmrteamproject.vo.DataSet;
-import com.koreait.exam.tmrteamproject.vo.UpjongCode;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -138,7 +137,18 @@ public interface DataSetRepository extends JpaRepository<DataSet, Long> {
         """, nativeQuery = true)
     Long findMaxStoreCountByQuarter(@Param("quarter") String quarter);
 
-    Long findTotalFloatingPopulationByadminDongCode(String adminDongCode);
-
-    Long findMonthlySalesAmountByAdminDongCode(String adminDongCode);
+    @Query(value = """
+        SELECT d.base_year_quarter_code,
+        d.admin_dong_code,
+        d.admin_dong_name,
+        d.total_floating_population,
+        SUM(d.monthly_sales_amount)
+        FROM data_set d
+        WHERE d.admin_dong_code = :adminDongCode
+        AND d.base_year_quarter_code = (
+        SELECT MAX(base_year_quarter_code)
+        FROM data_set
+        );
+        """, nativeQuery = true)
+    List<Object[]> findTotalFloatingPopulationAndMonthlySalesAmountByAdminDongCode(String adminDongCode);
 }
