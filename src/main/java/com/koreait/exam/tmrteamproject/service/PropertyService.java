@@ -119,7 +119,6 @@ public class PropertyService {
                     byte[].class
             );
             String xml = new String(response.getBody(), StandardCharsets.UTF_8);
-            System.out.println(xml.toString());
             return parseRtmsXml(xml);
         }
     }
@@ -130,16 +129,21 @@ public class PropertyService {
             XmlMapper xmlMapper = new XmlMapper();
             JsonNode root = xmlMapper.readTree(xml);
 
-            // <response><header><resultCode> 체크
-            JsonNode header = root.path("response").path("header");
+            // header 가져오기 (배열/객체 모두 대응)
+            JsonNode header = root.path("header");
+            if (header.isArray() && header.size() > 0) {
+                header = header.get(0);
+            }
+
             String resultCode = header.path("resultCode").asText();
             String resultMsg = header.path("resultMsg").asText();
+
             if (!"000".equals(resultCode)) {
                 throw new IllegalStateException("RTMS 오류: " + resultCode + " / " + resultMsg);
             }
 
-            // <response><body><items><item> 배열 찾기
-            JsonNode itemsNode = root.path("response").path("body").path("items").path("item");
+            // items 파싱
+            JsonNode itemsNode = root.path("body").path("items").path("item");
             if (itemsNode.isMissingNode() || itemsNode.isNull()) {
                 return List.of();
             }
@@ -154,9 +158,12 @@ public class PropertyService {
             }
             return out;
         } catch (Exception e) {
+            // 디버깅을 위해 원본 XML 출력
+            System.err.println("RTMS 원본 XML: " + xml);
             throw new RuntimeException("RTMS XML 파싱 실패", e);
         }
     }
+
 
 
     // ✅ PDF만 허용
