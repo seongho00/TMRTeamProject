@@ -240,6 +240,7 @@ public class PropertyController {
         // 담보가치(정적)
         double collateralValue = landShareValue + buildingValue;
 
+        System.out.println("realItem : " + realItem);
         // 실거래가를 통해 가치 구하기
         double dealPrice = propertyService.fetchAndCalculate("11650", "서초동");
 
