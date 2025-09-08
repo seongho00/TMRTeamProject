@@ -1,3 +1,8 @@
+import io
+import os
+import pickle
+import random
+import time
 from collections import deque
 from contextlib import nullcontext
 from collections import defaultdict
@@ -6,6 +11,7 @@ import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 import pickle
 import mecab_ko
+import pdfplumber
 import pymysql
 import pymysql.cursors
 import io, os, uuid, tempfile
@@ -27,7 +33,7 @@ except Exception:
     pass
 
 # 크롤링 관련 import
-from typing import Optional, Collection, List, Dict, Tuple, Any, Set
+from typing import Optional, List, Dict, Tuple, Any
 from playwright.sync_api import sync_playwright, TimeoutError as PwTimeout
 
 # 업종 검색 관련 import
@@ -151,7 +157,7 @@ def extract_upjong_code_map():
     conn = pymysql.connect(
         host='localhost',
         user='root',
-        password='',
+        password='1234',
         db='TMRTeamProject',
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
@@ -498,8 +504,10 @@ def _parse_amount_num(text: str):
     except:
         return None
 
+
 EUL_RX = re.compile(r"【\s*을\s*구\s*】")
 ANY_SECTION_RX = re.compile(r"【\s*(?:표\s*제\s*부|갑\s*구|을\s*구)\s*】")
+
 
 def extract_mortgage_info(pdf_bytes: bytes):
     """
@@ -553,7 +561,7 @@ def extract_mortgage_info(pdf_bytes: bytes):
                         continue
 
                     rank_raw = _one_line(row[col_rank])
-                    purpose  = _one_line(row[col_purpose])
+                    purpose = _one_line(row[col_purpose])
                     amount_txt = _one_line(row[col_amount])
 
                     # 1) 말소/해지 -> 텍스트 내 '…번'들만 취소 대상으로 수집

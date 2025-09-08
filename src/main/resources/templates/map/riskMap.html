@@ -15,9 +15,12 @@
 
 <!-- 좌측 패널 -->
 <aside class="absolute top-[160px] left-[40px] z-20 w-[420px] bg-white/95 backdrop-blur rounded-2xl border border-gray-200 shadow-xl overflow-hidden">
-    <div class="px-6 py-5 border-b">
-        <h2 class="text-lg heading text-gray-800">상권 위험도 분석</h2>
-    </div>
+    <header class="sticky top-0 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-6 py-5">
+        <!-- 제목 -->
+        <h2 class="text-xl font-extrabold tracking-tight">상권 위험도 분석 정보</h2>
+        <!-- 부제(선택된 행정동 라벨) -->
+        <p id="emdName" class="mt-1 text-sm/6 text-indigo-100">행정동을 선택해 주세요</p>
+    </header>
 
     <div class="p-6 space-y-6">
         <!-- 업종 검색 -->
