@@ -167,37 +167,7 @@ const CompareChartPanel = ({infos, onClose}) => {
         },
     };
 
-    /* 연령대별 유동인구 - Radar 차트 (비율 기반) */
-    const ageRadarChartData = {
-        labels: ageLabels,
-        datasets: fetchedData.map((data, idx) => {
-            const total =
-                data.age10 +
-                data.age20 +
-                data.age30 +
-                data.age40 +
-                data.age50 +
-                data.age60plus;
 
-            const ratioData = [
-                ((data.age10 / total) * 100).toFixed(2),
-                ((data.age20 / total) * 100).toFixed(2),
-                ((data.age30 / total) * 100).toFixed(2),
-                ((data.age40 / total) * 100).toFixed(2),
-                ((data.age50 / total) * 100).toFixed(2),
-                ((data.age60plus / total) * 100).toFixed(2),
-            ];
-
-            return {
-                label: data.name,
-                data: ratioData,
-                fill: true,
-                backgroundColor: colorList[idx % colorList.length] + "33",
-                borderColor: colorList[idx % colorList.length],
-                pointBackgroundColor: colorList[idx % colorList.length],
-            };
-        }),
-    };
 
     const ageRadarChartOptions = {
         responsive: true,
@@ -375,15 +345,6 @@ const CompareChartPanel = ({infos, onClose}) => {
             <div className="tw-mt-12">
                 <h2 className="tw-text-xl tw-font-bold tw-mb-4 tw-text-center">⏰ 시간대별 유동인구</h2>
                 <Line data={timeChartData} options={timeChartOptions}/>
-            </div>
-            <div className="tw-mt-12">
-                <h2 className="tw-text-xl tw-font-bold tw-mb-4 tw-text-center">⏰ 연령대별 유동인구</h2>
-                <Bar data={ageChartData} options={ageChartOptions}/>
-
-            </div>
-            <div className="tw-mt-12">
-                <h2 className="tw-text-xl tw-font-bold tw-mb-4 tw-text-center">📈 연령대별 유동인구 비율 (Radar)</h2>
-                <Radar data={ageRadarChartData} options={ageRadarChartOptions}/>
             </div>
             <div className="tw-mt-12 tw-h-[500px]">
                 <h2 className="tw-text-xl tw-font-bold tw-mb-4 tw-text-center ">📈 연령대별 유동인구 비율 (Radar)</h2>

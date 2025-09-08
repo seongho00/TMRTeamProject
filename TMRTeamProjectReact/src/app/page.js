@@ -6,6 +6,8 @@ import BusinessSelectPage from "./sub/BusinessSelectPage";
 import CostSettingPage from "./sub/CostSettingPage";
 import LocationSelectPage from "./sub/LocationSelectPage";
 import WeeklySimulationPage from "./sub/WeeklySimulationPage";
+import LoanPage from "./sub/LoanPage";
+
 import './globals.css';  // 파일 경로에 맞게 수정
 
 const Page = () => {
@@ -13,7 +15,7 @@ const Page = () => {
     const [business, setBusiness] = useState(null);
     const [costs, setCosts] = useState(null);
     const [location, setLocation] = useState(null);
-
+    const [loan, setLoan] = useState(null); // 대출 결과 저장
 
     const goBack = () => {
         if (costs) {
@@ -48,6 +50,13 @@ const Page = () => {
             />
         );
 
+    // 비용이 자본보다 크면 → 대출 페이지
+    if (costs < 0) {
+        return (
+            <LoanPage onSelect={setLoan}/>
+        );
+    }
+
 
     return (
         <WeeklySimulationPage
@@ -57,6 +66,7 @@ const Page = () => {
             initialCost={costs.initialCost}
         />
     );
+
 };
 
 export default Page;
