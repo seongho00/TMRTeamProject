@@ -4,7 +4,7 @@ import {useState, useEffect} from "react";
 import WeeklyCalendar from "./WeeklyCalendar";
 
 
-const WeeklySimulationPage = ({character, business, location, initialCost, onFinish}) => {
+const WeeklySimulationPage = ({character, business, location, initialCost ,costs}) => {
     const [month, setMonth] = useState(1);
     const [weekInMonth, setWeekInMonth] = useState(1); // ✅ 추가: 1~4
     const [year, setYear] = useState(2025); // 기본 시작 연도
