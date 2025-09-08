@@ -44,6 +44,7 @@ public class MapController {
     @GetMapping("/commercialZoneMap")
     public String commercialZoneMap(Model model) {
 
+        // 공통 데이터
         List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
 
         model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
@@ -53,7 +54,7 @@ public class MapController {
     }
 
     // 위험도 페이지
-    @GetMapping("/correlationMap")
+    @GetMapping("/riskMap")
     public String correlationMap(Model model) {
 
         List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();

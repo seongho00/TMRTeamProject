@@ -443,15 +443,22 @@ public class DataSetService {
     }
 
     // 유동인구와 당월 매출금액 찾기
-    public Map<String, Object> getFloatingAndSalesByEmd(String adminDongCode) {
-        Map<String, Object> result = new HashMap<>();
+    public List<Map<String, Object>> getFloatingAndSalesByEmd(String adminDongCode) {
+        List<Object[]> rows = dataSetRepository.findTotalFloatingPopulationAndMonthlySalesAmountByAdminDongCode(adminDongCode);
 
-        Long floating = dataSetRepository.findTotalFloatingPopulationByadminDongCode(adminDongCode);
-        Long sales = dataSetRepository.findMonthlySalesAmountByAdminDongCode(adminDongCode);
+        List<Map<String, Object>> result = new ArrayList<>();
 
-        result.put("adminDongCode", adminDongCode);
-        result.put("totalFloating", floating != null ? floating : 0L);
-        result.put("monthlySales", sales != null ? sales : 0L);
+        for (Object[] row : rows) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("baseYearQuarterCode", row[0] != null ? String.valueOf(row[0]) : null);
+            map.put("adminDongCode", row[1] != null ? String.valueOf(row[1]) : null);
+            map.put("adminDongName", row[2] != null ? String.valueOf(row[2]) : null);
+            map.put("floatingPopulation", row[3] == null ? 0L : ((Number) row[3]).longValue());
+            map.put("totalSalesAmount", row[4] == null ? 0L : ((Number) row[4]).longValue());
+            result.add(map);
+        }
+
+        log.info("행정동 [{}] 조회 결과: {}", adminDongCode, result.size());
 
         return result;
     }
