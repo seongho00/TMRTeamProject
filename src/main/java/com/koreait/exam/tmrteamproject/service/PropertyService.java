@@ -17,13 +17,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import reactor.core.publisher.Mono;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -37,6 +35,8 @@ import org.springframework.beans.factory.annotation.Value;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Element;
 
 @Service
 @Slf4j
@@ -57,6 +57,77 @@ public class PropertyService {
 
     @Value("${vworld.key}")
     private String vworldKey;
+
+
+    public Map<String, Object> fetchAndCalculate(String emdCd, String dealYmd) throws Exception {
+
+        emdCd = "11680";
+        dealYmd = "202501";
+
+        String url = "https://apis.data.go.kr/1613000/RTMSDataSvcNrgTrade/getRTMSDataSvcNrgTrade"
+                + "?serviceKey=" + bldrgstKey
+                + "&LAWD_CD=" + emdCd
+                + "&DEAL_YMD=" + dealYmd
+                + "&numOfRows=100&pageNo=1";
+
+        RestTemplate restTemplate = new RestTemplate();
+        String xmlResponse = restTemplate.getForObject(url, String.class);
+
+        System.out.println("==== API Raw Response ====");
+        System.out.println(xmlResponse);
+        System.out.println("FinalKey = " + bldrgstKey);
+        // W3C DOM Parser
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        org.w3c.dom.Document doc = builder.parse(new java.io.ByteArrayInputStream(xmlResponse.getBytes(StandardCharsets.UTF_8)));
+
+        NodeList items = doc.getElementsByTagName("item");
+
+        List<Map<String, Object>> tradeList = new ArrayList<>();
+        double totalPrice = 0;
+        double totalArea = 0;
+        int count = 0;
+
+        for (int i = 0; i < items.getLength(); i++) {
+            Node node = items.item(i);
+            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                Element elem = (Element) node;
+                Map<String, Object> trade = new HashMap<>();
+
+                trade.put("년", getTagValue("년", elem));
+                trade.put("월", getTagValue("월", elem));
+                trade.put("일", getTagValue("일", elem));
+                trade.put("법정동", getTagValue("법정동", elem));
+                trade.put("시군구", getTagValue("시군구", elem));
+
+                double area = Double.parseDouble(getTagValue("건물면적", elem));
+                long price = Long.parseLong(getTagValue("거래금액", elem).replace(",", "")) * 1000;
+
+                trade.put("건물면적", area);
+                trade.put("거래금액", price);
+
+                tradeList.add(trade);
+
+                totalPrice += price;
+                totalArea += area;
+                count++;
+            }
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("count", count);
+        result.put("trades", tradeList);
+        result.put("단순평균거래가", (count > 0) ? totalPrice / count : 0);
+        result.put("㎡당평균단가", (totalArea > 0) ? totalPrice / totalArea : 0);
+        System.out.println(result);
+        return result;
+    }
+
+    private static String getTagValue(String tag, Element elem) {
+        NodeList nodeList = elem.getElementsByTagName(tag).item(0).getChildNodes();
+        Node nValue = nodeList.item(0);
+        return nValue == null ? "" : nValue.getNodeValue();
+    }
 
 
     // ✅ PDF만 허용
@@ -152,6 +223,7 @@ public class PropertyService {
 
         return -1;
     }
+
 
     @Getter
     public enum RegionCode {
@@ -765,8 +837,6 @@ public class PropertyService {
 
         return filtered;
     }
-
-
 
 
 }
