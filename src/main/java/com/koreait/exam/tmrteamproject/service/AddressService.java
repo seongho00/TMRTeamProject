@@ -6,6 +6,7 @@ import com.koreait.exam.tmrteamproject.util.CrsConverter;
 import com.koreait.exam.tmrteamproject.vo.AddressPickReq;
 import com.koreait.exam.tmrteamproject.vo.AddressApiResponse;
 import com.koreait.exam.tmrteamproject.vo.NormalizedAddress;
+import com.koreait.exam.tmrteamproject.vo.ResultData;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.proj4j.ProjCoordinate;
 import org.springframework.beans.factory.annotation.Value;
@@ -293,15 +294,28 @@ public class AddressService {
     }
 
     @SuppressWarnings("unchecked")
-    public double calculateAverageMonthly(Map<String, Object> response) {
+    public ResultData calculateAverageMonthly(Map<String, Object> response, double myArea) {
         Map<String, Object> crawl = (Map<String, Object>) response.get("crawl");
-        if (crawl == null) return 0;
+        if (crawl == null) {
+            return ResultData.from("F-0", "크롤링 데이터 없음", null, 0);
+        }
 
         List<Map<String, Object>> items = (List<Map<String, Object>>) crawl.get("items");
-        if (items == null || items.isEmpty()) return 0;
+        if (items == null || items.isEmpty()) {
+            return ResultData.from("F-0", "매물 없음", null, 0);
+        }
 
+        // 내 매물 면적 구간 결정
+        String myBand;
+        if (myArea < 50) myBand = "small";
+        else if (myArea < 100) myBand = "medium";
+        else myBand = "large";
+
+        List<Double> perList = new ArrayList<>();
         double totalMonthly = 0;
         double totalArea = 0;
+
+        System.out.println("아이템들 : " + items);
 
         for (Map<String, Object> item : items) {
             Map<String, Object> dom = (Map<String, Object>) item.get("dom");
@@ -314,7 +328,7 @@ public class AddressService {
             // 월세
             Object monthlyObj = dom.get("monthly");
             if (monthlyObj == null) continue;
-            double monthly = Double.parseDouble(monthlyObj.toString());
+            double monthly = Double.parseDouble(monthlyObj.toString()) * 10000; // 원 단위 변환
 
             // 관리비 포함
 //            monthly += parseManagementFee(dom.get("관리비"));
@@ -323,11 +337,62 @@ public class AddressService {
             double area = parseArea(dom.get("전용면적"));
             if (area <= 0) continue;
 
-            totalMonthly += (monthly * area);
-            totalArea += area;
+            // 같은 면적 구간만 비교
+            String band = area < 50 ? "small" : area < 100 ? "medium" : "large";
+            if (!band.equals(myBand)) continue;
+
+            // 면적 가중 평균 계산
+            perList.add(monthly / area);
         }
 
-        return totalArea > 0 ? totalMonthly / totalArea : 0;
+        // 같은 구간이 없으면 전체 평균으로 fallback
+        if (perList.isEmpty()) {
+            for (Map<String, Object> item : items) {
+                Map<String, Object> dom = (Map<String, Object>) item.get("dom");
+                if (dom == null) continue;
+
+                String priceType = (String) dom.get("price_type");
+                if (!"월세".equals(priceType)) continue;
+
+                Object monthlyObj = dom.get("monthly");
+                if (monthlyObj == null) continue;
+                double monthly = Double.parseDouble(monthlyObj.toString()) * 10000;
+
+                double area = parseArea(dom.get("전용면적"));
+                if (area <= 0) continue;
+
+                totalMonthly += monthly;
+                totalArea += area;
+            }
+
+            return ResultData.from("F-1", "⚠️ 같은 구간 매물이 없어 전체 평균으로 계산합니다.", "전체 평균 월세 데이터", totalMonthly / totalArea);
+        }
+
+        Collections.sort(perList);
+        double avgPerSqm;
+        // 표본 개수에 따른 로직
+        if (perList.size() >= 8) {
+            // 10% 절사(가볍게)
+            int n = perList.size();
+            int k = (int) Math.floor(n * 0.10);
+            k = Math.min(k, 3); // 과도 절사 방지
+            double sum = 0;
+            for (int i = k; i < n - k; i++) sum += perList.get(i);
+            avgPerSqm = sum / (n - 2 * k);
+        } else if (perList.size() >= 3) {
+
+            int n = perList.size();
+            if (n % 2 == 1) {
+                avgPerSqm = perList.get(n / 2);
+            } else {
+                avgPerSqm = (perList.get(n / 2 - 1) + perList.get(n / 2)) / 2.0;
+            }
+        } else {
+            // 너무 적으면 단순평균
+            avgPerSqm = perList.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+        }
+
+        return ResultData.from("S-1", "평균월세 조회 성공", "평균월세 데이터", avgPerSqm);
     }
 
     private double parseArea(Object areaObj) {
@@ -355,13 +420,21 @@ public class AddressService {
 
 
     @SuppressWarnings("unchecked")
-    public double calculateAverageDeposit(Map<String, Object> response) {
+    public ResultData calculateAverageDeposit(Map<String, Object> response, double myArea) {
         Map<String, Object> crawl = (Map<String, Object>) response.get("crawl");
-        if (crawl == null) return 0;
+        if (crawl == null) return ResultData.from("F-0", "크롤링 데이터 없음", null, 0);
+        ;
 
         List<Map<String, Object>> items = (List<Map<String, Object>>) crawl.get("items");
-        if (items == null || items.isEmpty()) return 0;
+        if (items == null || items.isEmpty()) return ResultData.from("F-0", "매물 없음", null, 0);
+        ;
 
+        String myBand;
+        if (myArea < 50) myBand = "small";
+        else if (myArea < 100) myBand = "medium";
+        else myBand = "large";
+
+        List<Double> perList = new ArrayList<>();  // 보증금/㎡
         double totalDeposit = 0;
         double totalArea = 0;
 
@@ -376,7 +449,7 @@ public class AddressService {
             // 월세
             Object depositObj = dom.get("deposit");
             if (depositObj == null) continue;
-            double deposit = Double.parseDouble(depositObj.toString());
+            double deposit = Double.parseDouble(depositObj.toString()) * 10000; // 원 단위 변환
 
             // 관리비 포함
 //            monthly += parseManagementFee(dom.get("관리비"));
@@ -385,10 +458,55 @@ public class AddressService {
             double area = parseArea(dom.get("전용면적"));
             if (area <= 0) continue;
 
-            totalDeposit += (deposit * area);
-            totalArea += area;
+            // 같은 면적 구간만 비교
+            String band = area < 50 ? "small" : area < 100 ? "medium" : "large";
+            if (!band.equals(myBand)) continue;
+
+            perList.add(deposit / area);
         }
 
-        return totalArea > 0 ? totalDeposit / totalArea : 0;
+        // 같은 구간이 없으면 전체 평균으로 fallback
+        if (perList.isEmpty()) {
+            for (Map<String, Object> item : items) {
+                Map<String, Object> dom = (Map<String, Object>) item.get("dom");
+                if (dom == null) continue;
+
+                String priceType = (String) dom.get("price_type");
+                if (!"월세".equals(priceType)) continue;
+
+                Object depositObj = dom.get("deposit");
+                if (depositObj == null) continue;
+                double deposit = Double.parseDouble(depositObj.toString()) * 10000; // 원 단위 변환
+
+                double area = parseArea(dom.get("전용면적"));
+                if (area <= 0) continue;
+
+                totalDeposit += deposit;
+                totalArea += area;
+            }
+
+            return ResultData.from("F-1", "⚠️ 같은 구간 매물이 없어 전체 평균으로 계산합니다.", "전체 평균 보증금 데이터", totalDeposit / totalArea);
+        }
+        Collections.sort(perList);
+        double avgPerSqm;
+        int n = perList.size();
+
+        if (n >= 8) {
+            int k = (int) Math.floor(n * 0.10);
+            k = Math.min(k, 3); // 과도 절사 방지
+            double sum = 0.0;
+            for (int i = k; i < n - k; i++) sum += perList.get(i);
+            avgPerSqm = sum / (n - 2 * k);
+        } else if (n >= 3) {
+            avgPerSqm = (n % 2 == 1)
+                    ? perList.get(n / 2)
+                    : (perList.get(n / 2 - 1) + perList.get(n / 2)) / 2.0; // 짝수 중앙값
+        } else {
+            avgPerSqm = perList.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        }
+
+        return ResultData.from("S-1", "평균 보증금 조회 성공", "평균 보증금 데이터", avgPerSqm);
     }
+
+
 }

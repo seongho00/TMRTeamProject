@@ -3,6 +3,7 @@ package com.koreait.exam.tmrteamproject.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,16 +17,28 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
+import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Value;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Element;
 
 @Service
 @Slf4j
@@ -44,6 +57,236 @@ public class PropertyService {
     @Value("${rOne.apiKey}")
     private String rOneApiKey;
 
+    @Value("${vworld.key}")
+    private String vworldKey;
+
+    public double fetchAndCalculate(String sggCd, String targetUmd) throws Exception {
+        LocalDate now = LocalDate.now();
+        int year = now.getYear();
+        int month = now.getMonthValue();
+        String baseYmd = String.format("%04d%02d", year, month);
+
+        List<Map<String, Object>> trades = new ArrayList<>();
+
+        // ✅ 최근 6개월 데이터 누적
+        for (int i = 0; i < 6; i++) {
+            String ymd = String.format("%04d%02d", year, month);
+
+            trades.addAll(fetchPagedTrades(sggCd, ymd, targetUmd));
+
+            // 이전 달로 이동
+            month -= 1;
+            if (month == 0) {
+                month = 12;
+                year -= 1;
+            }
+        }
+
+        // ✅ 최소 매물 기준
+        int MIN_COUNT = 10;
+        if (trades.size() < MIN_COUNT) {
+            log.info("⚠️ {} 최근 6개월({}) 거래 {}건 → 구 단위 fallback", targetUmd, baseYmd, trades.size());
+            trades.clear();
+
+            // ⚠️ fallback도 최근 2개월 데이터는 누적
+            int fYear = year;
+            int fMonth = month;
+            for (int i = 0; i < 2; i++) {
+                String ymd = String.format("%04d%02d", fYear, fMonth);
+                trades.addAll(fetchPagedTrades(sggCd, ymd, null));
+
+                // 이전 달로 이동
+                fMonth -= 1;
+                if (fMonth == 0) {
+                    fMonth = 12;
+                    fYear -= 1;
+                }
+            }
+        }
+
+        // ✅ 평균 계산
+        double totalPrice = 0;
+        double totalArea = 0;
+        for (Map<String, Object> t : trades) {
+            Object amtObj = t.get("dealAmount");
+            Object arObj = t.get("buildingAr");
+
+            if (amtObj != null && arObj != null) {
+                String amtStr = amtObj.toString().replaceAll(",", "").trim(); // ← 쉼표 제거
+                long price = Long.parseLong(amtStr) * 10000;
+
+                String areaStr = arObj.toString().trim();
+                double area = Double.parseDouble(areaStr);
+
+                totalPrice += price;
+                totalArea += area;
+            }
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("count", trades.size());
+        result.put("단순평균거래가", trades.isEmpty() ? 0 : totalPrice / trades.size());
+        result.put("㎡당평균단가", totalArea > 0 ? totalPrice / totalArea : 0);
+        result.put("trades", trades);
+
+
+        // ✅ ㎡당평균단가만 반환
+        return totalArea > 0 ? totalPrice / totalArea : 0;
+    }
+
+    private List<Map<String, Object>> fetchPagedTrades(String sggCd, String dealYmd, String targetUmd) {
+        List<Map<String, Object>> results = new ArrayList<>();
+        int page = 1;
+        int totalCount = Integer.MAX_VALUE;
+
+        while ((page - 1) * 100 < totalCount) {
+            Map<String, String> params = new HashMap<>();
+            params.put("LAWD_CD", sggCd);
+            params.put("DEAL_YMD", dealYmd);
+            params.put("numOfRows", "100");
+            params.put("pageNo", String.valueOf(page));
+
+            Map<String, Object> call = callRtms(
+                    "https://apis.data.go.kr/1613000/RTMSDataSvcNrgTrade/getRTMSDataSvcNrgTrade",
+                    params
+            );
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> pageTrades = (List<Map<String, Object>>) call.get("trades");
+            String xml = (String) call.get("xml");
+
+            // ✅ totalCount 갱신
+            int thisTotal = getTotalCountFromLastResponse(xml);
+            if (thisTotal > 0) totalCount = thisTotal;
+
+            // ✅ 동 필터링
+            if (targetUmd != null) {
+                pageTrades = pageTrades.stream()
+                        .filter(t -> targetUmd.equals(t.get("umdNm")))
+                        .toList();
+            }
+
+            results.addAll(pageTrades);
+            if (pageTrades.isEmpty()) break;
+            page++;
+        }
+
+        return results;
+    }
+
+    private int getTotalCountFromLastResponse(String xml) {
+        if (xml == null || xml.isBlank()) return 0;
+        try {
+            XmlMapper xmlMapper = new XmlMapper();
+            JsonNode root = xmlMapper.readTree(xml);
+
+            // totalCount 노드 찾아보기
+            JsonNode totalNode = root.path("response").path("body").path("totalCount");
+            if (totalNode.isMissingNode() || totalNode.isNull()) {
+                return 0;
+            }
+            return totalNode.asInt(0);
+        } catch (Exception e) {
+            System.err.println("totalCount 파싱 실패, 원본 XML: " + xml);
+            return 0;
+        }
+    }
+
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> callRtms(String endpoint, Map<String, String> params) {
+        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(endpoint);
+
+        if (apiKeyEncoded) {
+            ub.queryParam("serviceKey", bldrgstKey);
+            params.forEach((k, v) -> {
+                if (v != null && !v.isBlank()) {
+                    ub.queryParam(k, org.springframework.web.util.UriUtils.encode(v, StandardCharsets.UTF_8));
+                }
+            });
+            String url = ub.build(true).toUriString();
+            logUrlMasked(url);
+
+            String xml = rest.getForObject(url, String.class);
+            List<Map<String, Object>> trades = parseRtmsXml(xml);
+
+            Map<String, Object> out = new HashMap<>();
+            out.put("trades", trades);
+            out.put("xml", xml);
+            return out;
+
+        } else {
+            ub.queryParam("serviceKey", UriUtils.encode(bldrgstKey, StandardCharsets.UTF_8));
+            params.forEach((k, v) -> {
+                if (v != null && !v.isBlank()) {
+                    ub.queryParam(k, v);
+                }
+            });
+            String url = ub.build(true).toUriString();
+            logUrlMasked(url);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Accept", "application/xml");
+            headers.set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            headers.set("User-Agent", "Mozilla/5.0");
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            ResponseEntity<byte[]> response = rest.exchange(
+                    URI.create(url), HttpMethod.GET, entity, byte[].class
+            );
+            String xml = new String(response.getBody(), StandardCharsets.UTF_8);
+            List<Map<String, Object>> trades = parseRtmsXml(xml);
+
+            Map<String, Object> out = new HashMap<>();
+            out.put("trades", trades);
+            out.put("xml", xml);
+            return out;
+        }
+    }
+
+
+    private List<Map<String, Object>> parseRtmsXml(String xml) {
+        if (xml == null || xml.isBlank()) throw new IllegalStateException("빈 응답");
+        try {
+            XmlMapper xmlMapper = new XmlMapper();
+            JsonNode root = xmlMapper.readTree(xml);
+
+            // header 가져오기 (배열/객체 모두 대응)
+            JsonNode header = root.path("header");
+            if (header.isArray() && header.size() > 0) {
+                header = header.get(0);
+            }
+
+            String resultCode = header.path("resultCode").asText();
+            String resultMsg = header.path("resultMsg").asText();
+
+            if (!"000".equals(resultCode)) {
+                throw new IllegalStateException("RTMS 오류: " + resultCode + " / " + resultMsg);
+            }
+
+            // items 파싱
+            JsonNode itemsNode = root.path("body").path("items").path("item");
+            if (itemsNode.isMissingNode() || itemsNode.isNull()) {
+                return List.of();
+            }
+
+            List<Map<String, Object>> out = new ArrayList<>();
+            if (itemsNode.isArray()) {
+                for (JsonNode it : itemsNode) {
+                    out.add(nodeToMap(it));
+                }
+            } else {
+                out.add(nodeToMap(itemsNode));
+            }
+            return out;
+        } catch (Exception e) {
+            // 디버깅을 위해 원본 XML 출력
+            System.err.println("RTMS 원본 XML: " + xml);
+            throw new RuntimeException("RTMS XML 파싱 실패", e);
+        }
+    }
+
+
 
     // ✅ PDF만 허용
     private static final Set<String> ALLOWED = Set.of(MediaType.APPLICATION_PDF_VALUE);
@@ -52,6 +295,58 @@ public class PropertyService {
 
     private final RestTemplate rest = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();  // ✅ 추가
+
+    private static final Pattern FLOOR_PATTERN = Pattern.compile("제(\\d+)층");
+    private static final Pattern HO_PATTERN = Pattern.compile("제(\\d+)호");
+
+    public ResponseEntity<?> getBasePrice(
+            String raw, Map<String, Object> item) {
+
+        String cleaned = cleanup(raw);
+
+        String juso = simplifyToLegalLot(cleaned);
+
+        Map<String, Object> resp = jusoLookupAsResp(juso);
+
+        Map<String, Object> results = (Map<String, Object>) resp.get("results");
+
+        List<Object> jusoList = (List<Object>) results.get("juso");
+
+        // 첫 번째 결과만 사용
+        Map<String, Object> j = (Map<String, Object>) jusoList.get(0);
+
+
+        String emd_name = j.get("emdNm").toString(); // "서초동"
+        String bunji = j.get("lnbrMnnm").toString(); // 1317
+        String ho = j.get("lnbrSlno").toString(); // 20
+        String floor = item.get("flrGbCdNm").toString() + "층" + item.get("flrNo").toString(); // 지상층12
+        String target_ho = item.get("hoNm").toString(); // 1201
+        String sidoNm = (String) j.get("siNm");           // "서울특별시"
+        String sggNm = (String) j.get("sggNm");         // "서초구"
+
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("emd_name", emd_name);
+        payload.put("bunji", bunji);
+        payload.put("ho", ho);
+        payload.put("floor", floor);
+        payload.put("target_ho", target_ho);
+        payload.put("sidoNm", sidoNm);
+        payload.put("sggNm", sggNm);
+        try {
+            Map response = pythonClient.post()
+                    .uri("/get_base_price")
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("ok", false, "error", e.getMessage()));
+        }
+    }
 
     public double getRentYield(String region, String type, int page, int perPage) {
         RestTemplate restTemplate = new RestTemplate();
@@ -86,6 +381,7 @@ public class PropertyService {
 
         return -1;
     }
+
 
     @Getter
     public enum RegionCode {
@@ -384,8 +680,8 @@ public class PropertyService {
     }
 
     public String simplifyToLegalLot(String s) {
-        // "대전광역시 동구 천동 515 ..." → "대전광역시 동구 천동 515"
-        var m = Pattern.compile("(.+?\\s[가-힣]+동)\\s(\\d+)(?:-\\d+)?").matcher(s);
+        // "서울특별시 서초구 서초동 1317-16 ..." → "서울특별시 서초구 서초동 1317-16"
+        var m = Pattern.compile("(.+?\\s[가-힣]+동)\\s(\\d+(?:-\\d+)?)").matcher(s);
         if (m.find()) return m.group(1) + " " + m.group(2);
         return s;
     }
@@ -451,6 +747,50 @@ public class PropertyService {
         out.put("lnbrSlno", str(first.get("lnbrSlno")));
         out.put("mtYn", str(first.get("mtYn")));
         return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> jusoLookupAsResp(String keyword) {
+        final String url = "https://business.juso.go.kr/addrlink/addrLinkApi.do";
+
+        System.out.println(keyword);
+        // 1) POST form 데이터 구성
+        org.springframework.util.MultiValueMap<String, String> form = new org.springframework.util.LinkedMultiValueMap<>();
+        form.add("confmKey", jusoKey);
+        form.add("currentPage", "1");
+        form.add("countPerPage", "10");
+        form.add("keyword", (keyword == null ? "" : keyword.trim())); // 예: "대전광역시 동구 천동 515"
+        form.add("resultType", "json");
+
+        // 2) 헤더: UTF-8 form-data + JSON 응답
+        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED);
+        headers.setAccept(java.util.List.of(org.springframework.http.MediaType.APPLICATION_JSON));
+        headers.setAcceptCharset(java.util.List.of(java.nio.charset.StandardCharsets.UTF_8));
+        headers.set(org.springframework.http.HttpHeaders.USER_AGENT, "Mozilla/5.0"); // 일부 환경에서 필요
+
+        org.springframework.http.HttpEntity<org.springframework.util.MultiValueMap<String, String>> req =
+                new org.springframework.http.HttpEntity<>(form, headers);
+
+        // 3) POST 호출 (원문 로그 찍고 Map 파싱)
+        org.springframework.http.ResponseEntity<String> respEntity =
+                rest.postForEntity(url, req, String.class);
+        String body = respEntity.getBody();
+
+        if (body == null) throw new IllegalStateException("JUSO 응답 body가 null");
+
+        java.util.Map<String, Object> resp;
+        try {
+            resp = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(body, new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, Object>>() {
+                    });
+        } catch (Exception e) {
+            throw new IllegalStateException("JUSO 응답 파싱 실패", e);
+        }
+
+        System.out.println(resp.toString());
+
+        return resp;
     }
 
     @SuppressWarnings("unchecked")
