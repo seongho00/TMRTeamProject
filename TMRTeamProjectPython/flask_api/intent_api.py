@@ -498,31 +498,45 @@ def _parse_amount_num(text: str):
     except:
         return None
 
+EUL_RX = re.compile(r"【\s*을\s*구\s*】")
+ANY_SECTION_RX = re.compile(r"【\s*(?:표\s*제\s*부|갑\s*구|을\s*구)\s*】")
 
 def extract_mortgage_info(pdf_bytes: bytes):
     """
-    【을구】에서 근저당권 '설정'만 수집하고,
-    '말소/해지' 행은 '해당 행의 순위번호'를 취소 대상으로 간주.
-    반환: [{"rankNo": int, "amountKRW": int|None, "status": "normal|cancelled"} ...]
+    【을구】 전체(여러 페이지 이어짐 포함)를 스캔:
+      - '설정'만 수집
+      - '말소/해지' 행은 해당 목적 텍스트에 포함된 '…번' 순위들을 취소 대상으로 마킹
+    반환: {"mortgages":[...], "riskFlags":[...]}
     """
-    title_rx = re.compile(r"【\s*을\s*구\s*】")
-
-    mortgages_by_rank = {}  # rankNo -> {"rankNo", "amountKRW", "status"}
-    cancel_ranks = set()  # 말소/해지로 지목된 순위번호들
+    mortgages_by_rank = {}
+    cancel_ranks = set()
     risks = []
 
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        in_eul = False  # 을구 섹션 안에 있는지 상태 플래그
+
         for page in pdf.pages:
             txt = page.extract_text() or ""
-            if not title_rx.search(txt):
+
+            # 섹션 헤더 스위칭
+            if EUL_RX.search(txt):
+                in_eul = True
+            elif ANY_SECTION_RX.search(txt):
+                # 다른 섹션 헤더(갑구/표제부 등)를 만나면 을구 종료
+                if in_eul:
+                    in_eul = False
+                # 을구가 아니므로 넘어감
+            # 섹션 외 페이지는 스킵
+            if not in_eul:
                 continue
 
+            # ---- 여기부터는 을구 섹션 안의 페이지 전부 처리 ----
             tables = page.extract_tables() or []
             for tb in tables:
                 if not tb:
                     continue
 
-                # 헤더 위치 추정
+                # 헤더 위치 추정 (기존 로직 유지)
                 col_rank = col_purpose = col_amount = None
                 for row in tb[:5]:
                     cells = [(_one_line(c) if c else "") for c in (row or [])]
@@ -539,19 +553,17 @@ def extract_mortgage_info(pdf_bytes: bytes):
                         continue
 
                     rank_raw = _one_line(row[col_rank])
-                    purpose = _one_line(row[col_purpose])
+                    purpose  = _one_line(row[col_purpose])
                     amount_txt = _one_line(row[col_amount])
 
-                    # --- 1) 말소/해지 행: 텍스트 안의 "…번"들만 취소 대상으로 수집 ---
+                    # 1) 말소/해지 -> 텍스트 내 '…번'들만 취소 대상으로 수집
                     if _CANCEL_FLAG_RX.search(purpose):
-                        nums = _RANK_LIST_RX.findall(purpose)  # ["1","2",...]
-                        for n in nums:
+                        for n in _RANK_LIST_RX.findall(purpose):  # ["1","2",...]
                             cancel_ranks.add(int(n))
-                        continue  # 말소행 자체는 수집 안 함
+                        continue
 
-                    # --- 근저당권 '설정'만 수집 ---
+                    # 2) 근저당권 '설정'만 수집
                     if ("근저당권" in purpose) and ("설정" in purpose):
-                        # 순위번호 열이 숫자여야 설정행으로 인정
                         if rank_raw.isdigit():
                             row_rank = int(rank_raw)
                             mortgages_by_rank[row_rank] = {
@@ -560,6 +572,7 @@ def extract_mortgage_info(pdf_bytes: bytes):
                                 "status": "normal",
                             }
 
+                    # 위험 스캔(기존)
                     if _RISK_FLAG_RX.search(purpose):
                         risks.append({
                             "rankNo": int(rank_raw) if rank_raw.isdigit() else None,
@@ -571,7 +584,6 @@ def extract_mortgage_info(pdf_bytes: bytes):
         if r in mortgages_by_rank:
             mortgages_by_rank[r]["status"] = "cancelled"
 
-    # 설정행만 정렬해서 반환
     return {
         "mortgages": sorted(mortgages_by_rank.values(), key=lambda x: x["rankNo"]),
         "riskFlags": risks
@@ -1205,11 +1217,10 @@ def analyze():
         land_ratios_info = extract_land_right_ratios(data)
 
         total, parts = compute_land_share_area(land_share_info, land_ratios_info)
-        print("total", total)
-
         land_share_area = round(total, 2)
         joint_info = extract_joint_collateral_addresses_follow(data)
         mortgage_info = extract_mortgage_info(data)
+        print(mortgage_info)
         gabu_info = extract_gabu_info(data)
     except Exception as e:
         import traceback;

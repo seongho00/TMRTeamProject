@@ -238,45 +238,30 @@ public class PropertyController {
         double buildingValue = currentArea * buildBasePrice;
 
         // 담보가치(정적)
-        double collateralValueTotal = landShareValue + buildingValue;
-        System.out.println("landShareValue : " + landShareValue);
-        System.out.println("buildingValue : " + buildingValue);
-        System.out.println("collateralValueTotal : " + collateralValueTotal);
-
-        String regstrGbCdNm = realItem.get("regstrGbCdNm").toString();
-        String mainPurpsCdNm = realItem.get("mainPurpsCdNm").toString();
+        double collateralValue = landShareValue + buildingValue;
 
         // 실거래가를 통해 가치 구하기
         double dealPrice = propertyService.fetchAndCalculate("11650", "서초동");
-        System.out.println("results : " + dealPrice);
 
         // 실거래가 계산
-        double collateralValueBydealPrice = dealPrice * currentArea;
+        double collateralValueByDealPrice = dealPrice * currentArea;
 
+        // 만원 단위로 계산
+        String formatCollateralValueTotal = formatToEokCheon(collateralValue);
+        String formatCollateralValueByDealPrice = formatToEokCheon(collateralValueByDealPrice);
 
-        // 상가종류 분류
-        String buildingType;
+        System.out.println("formatCollateralValueByDealPrice : " + formatCollateralValueTotal);
+        System.out.println("formatCollateralValueByDealPrice : " + formatCollateralValueByDealPrice);
 
-        if (regstrGbCdNm.equals("집합")) {
-            buildingType = "집합";
-        } else if (mainPurpsCdNm.contains("업무시설") || mainPurpsCdNm.contains("오피스텔") || mainPurpsCdNm.contains("사무소")) {
-            buildingType = "오피스";
-        } else if (totalArea < 1000 && (int) realItem.get("flrNo") <= 2) {
-            buildingType = "소규모";
-        } else {
-            buildingType = "중대형";
-        }
-
-
-        // 임대수익률 가져오기
-        double rentalYield = propertyService.getRentYield(n.siNm, buildingType, 1, 10);
-
-        // 담보가치 계산
-        double collateralValue = annualRentalIncome / rentalYield;
 
         // 14) 채권보증금 리스크 계산
         // 채권 최고액 + 예산 선순위보증금 금액 / 담보가치
         double riskRatio = (weightedValue + seniorityTotalRounded) / collateralValue;
+
+        System.out.println("weightedValue : " + weightedValue);
+        System.out.println("seniorityTotalRounded : " + seniorityTotalRounded);
+        System.out.println("collateralValue : " + collateralValue);
+        System.out.println("riskRatio : " + riskRatio);
 
         String bondDepositRisk;
 
@@ -341,6 +326,25 @@ public class PropertyController {
 
 
         return ResponseEntity.ok(responseData);
+    }
+
+    private String formatToEokCheon(double value) {
+        long won = Math.round(value);  // 원 단위 반올림
+
+        long eok = won / 100_000_000;              // 억
+        long cheon = Math.round((won % 100_000_000) / 10_000_000.0); // 천만 단위 반올림
+
+        // 천만이 10이 되면 올림 처리
+        if (cheon == 10) {
+            eok += 1;
+            cheon = 0;
+        }
+
+        if (cheon == 0) {
+            return String.format("%d억", eok);
+        } else {
+            return String.format("%d억 %d천만", eok, cheon);
+        }
     }
 
     // 리스크 등급 계산
