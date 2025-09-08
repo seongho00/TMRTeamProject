@@ -7,10 +7,12 @@ import com.koreait.exam.tmrteamproject.service.PropertyService;
 import com.koreait.exam.tmrteamproject.vo.AddressPickReq;
 import com.koreait.exam.tmrteamproject.vo.NormalizedAddress;
 import com.koreait.exam.tmrteamproject.vo.PropertyFile;
+import com.koreait.exam.tmrteamproject.vo.ResultData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Address;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.parameters.P;
@@ -25,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -56,11 +59,11 @@ public class PropertyController {
             @RequestParam("monthlyRent") int monthlyRent,
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng
-    ) throws JsonProcessingException {
+    ) throws Exception {
         // 0) (만원)으로 들어온 데이터 10,000 곱해주기
         deposit *= 10000;
         monthlyRent *= 10000;
-        
+
         // 1) 들어온 파일 모으기 (file 또는 files)
         List<MultipartFile> all = new ArrayList<>();
         if (file != null && !file.isEmpty()) all.add(file);
@@ -107,8 +110,9 @@ public class PropertyController {
         MultipartFile thePdf = pdfOnly.get(0);
         Map<String, Object> result = propertyService.analyzeWithPythonDirect(List.of(thePdf), extra);
 
-        // 6) 분석된 주소에서 normal인 것만 빼오기
+        // 6) 분석된 주소에서 normal인 것만 빼오기 (공동매물)
         Map<String, Object> filteredResult = propertyService.printNormalAddresses(result);
+
 
         // 6-1) 채권최고액 가져오기
         List<Map<String, Object>> mortgages =
@@ -125,20 +129,22 @@ public class PropertyController {
 
         }
 
+        System.out.println("sumAmountKRW : " + sumAmountKRW);
+
         // 7) 분석된 주소마다 면적 구해오기
         List<Map<String, Object>> normals = (List<Map<String, Object>>) filteredResult.get("normalAddresses");
+        double sum = 0.0;
 
         if (normals == null || normals.isEmpty()) {
             System.out.println("✅ normal 주소 없음");
-        }
+        } else {
+            for (Map<String, Object> addr : normals) {
+                String address = (String) addr.get("address");
 
-        double sum = 0.0;
-        for (Map<String, Object> addr : normals) {
-            String address = (String) addr.get("address");
+                double area = propertyService.resolveAreaFromLine(address);
 
-            double area = propertyService.resolveAreaFromLine(address);
-
-            sum += area;
+                sum += area;
+            }
         }
 
         // 8) 현재주소 면적 가져오기
@@ -161,9 +167,8 @@ public class PropertyController {
 
         // AddressService로 검색
         List<NormalizedAddress> list = addressService.search(normalizedCurrentAddr, 1, 5);
-        System.out.println(list);
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response;
         NormalizedAddress n = list.get(0);
 
         // AddressPickReq 생성
@@ -173,9 +178,11 @@ public class PropertyController {
         // ✅ 최종: confirm + geocode + crawl 한번에 실행
         response = addressService.confirmGeoAndCrawl(req);
 
+        ResultData avgMonthlyRd = addressService.calculateAverageMonthly(response, currentArea);
+        double avgMonthlyPerM2 = (double) avgMonthlyRd.getData1();
 
-        double avgMonthlyPerM2 = addressService.calculateAverageMonthly(response);
-        double avgDepositPerM2 = addressService.calculateAverageDeposit(response);
+        ResultData avgDepositRd = addressService.calculateAverageDeposit(response, currentArea);
+        double avgDepositPerM2 = (double) avgDepositRd.getData1();
         // 12) 예상 선순위보증금 계산
         // 선임차 환산보증금 + 채권금액
         // 선임차 환산보증금 : 지역 평균 월세 * 전유면적
@@ -186,9 +193,6 @@ public class PropertyController {
         // 한국 원화 기준 포맷
         NumberFormat formatter = NumberFormat.getCurrencyInstance(Locale.KOREA);
         String seniorityTotalFormatted = formatter.format(seniorityTotalRounded);
-
-        System.out.println(seniorityTotalFormatted); // → ₩17,857,978
-
 
         // 시세 괴리 리스크
         double unit_rent = monthlyRent / currentArea;
@@ -202,67 +206,153 @@ public class PropertyController {
         String rentRisk = getRiskLevel(rentGapRatio);
         String depositRisk = getRiskLevel(depositGapRatio);
 
-        System.out.println("rentRist : " + rentRisk);
-        System.out.println("depositRisk : " + depositRisk);
-
-
         // 13) 담보가치 계산
         // 연 임대수익 / 임대수익률
         // 연 임대수익 : 월세 * 12 + 보증금 * 0.02(환산율)
+
         double annualRentalIncome = monthlyRent * 12 + deposit * 0.02;
 
         List<Map<String, Object>> items = propertyService.fetchBldRgstItems(currentAddress);
         Map<String, Object> realItem = items.get(0);
         double totalArea = propertyService.resolveAreaFromLine(currentAddress);
 
-        String regstrGbCdNm = realItem.get("regstrGbCdNm").toString();
-        String mainPurpsCdNm = realItem.get("mainPurpsCdNm").toString();
-        System.out.println(realItem);
 
-        // 상가종류 분류
-        String buildingType = "";
+        // 건물시가 + 토지시가
+        ResponseEntity data = propertyService.getBasePrice(currentAddress, realItem);
+        // 1. Body 꺼내기
+        Map<String, Object> body = (Map<String, Object>) data.getBody();
 
-        if (regstrGbCdNm.equals("집합")) {
-            buildingType = "집합";
-        } else if (mainPurpsCdNm.contains("업무시설") || mainPurpsCdNm.contains("오피스텔") || mainPurpsCdNm.contains("사무소")) {
-            buildingType = "오피스";
-        } else if (totalArea < 1000 && (int) realItem.get("flrNo") <= 2) {
-            buildingType = "소규모";
-        } else {
-            buildingType = "중대형";
-        }
+        // 4. 개별 값 접근
+        // 건물시가
+        double buildBasePrice = Double.parseDouble(body.get("build_base_price").toString());
+        // 토지시가
+        double landBasePrice = Double.parseDouble(body.get("land_base_price").toString());
 
+        // 토지면적
+        double landShareArea = (double) result.get("landShareArea");
 
-        // 임대수익률 가져오기
-        double rentalYield = propertyService.getRentYield(n.siNm, buildingType, 1, 10);
+        // 토지 지분가치 (토지시가 * 토지면적)
+        double landShareValue = landShareArea * landBasePrice;
 
-        // 담보가치 계산
-        double collateralValue = annualRentalIncome / rentalYield;
+        // 건물 지분 가치 (건물시가 * 전유면적)
+        double buildingValue = currentArea * buildBasePrice;
+
+        // 담보가치(정적)
+        double collateralValue = landShareValue + buildingValue;
+
+        // 실거래가를 통해 가치 구하기
+        double dealPrice = propertyService.fetchAndCalculate("11650", "서초동");
+
+        // 실거래가 계산
+        double collateralValueByDealPrice = dealPrice * currentArea;
+
+        // 만원 단위로 계산
+        String formatCollateralValueTotal = formatToEokCheon(collateralValue);
+        String formatCollateralValueByDealPrice = formatToEokCheon(collateralValueByDealPrice);
+
+        System.out.println("formatCollateralValueByDealPrice : " + formatCollateralValueTotal);
+        System.out.println("formatCollateralValueByDealPrice : " + formatCollateralValueByDealPrice);
+
 
         // 14) 채권보증금 리스크 계산
         // 채권 최고액 + 예산 선순위보증금 금액 / 담보가치
-        double riskRatio = (sumAmountKRW + seniorityTotalRounded) / collateralValue;
+        double riskRatio = (weightedValue + seniorityTotalRounded) / collateralValue;
 
+        System.out.println("weightedValue : " + weightedValue);
+        System.out.println("seniorityTotalRounded : " + seniorityTotalRounded);
+        System.out.println("collateralValue : " + collateralValue);
         System.out.println("riskRatio : " + riskRatio);
+
+        String bondDepositRisk;
+
+        if (riskRatio < 0.5) {
+            bondDepositRisk = "정상";
+        } else if (riskRatio < 0.7) {
+            bondDepositRisk = "주의";
+        } else if (riskRatio < 1.0) {
+            bondDepositRisk = "위험";
+        } else {
+            bondDepositRisk = "고위험";
+        }
 
         // 15) 근저당권 기반 위험
         // 채권최고액 / 담보가치
         // < 0.5 : 양호
         // 0.5~ 1.0 : 경계
         // >= 1.0 : 깡통매물
-        double debtRatio  = sumAmountKRW / collateralValue;
+        double debtRatio = weightedValue / collateralValue;
 
-        System.out.println("근저당권 기반 위험 : " + debtRatio);
+        String debtRiskLevel;
 
-        return ResponseEntity.ok(result);
+        if (debtRatio < 0.5) {
+            debtRiskLevel = "정상";
+        } else if (debtRatio < 0.7) {
+            debtRiskLevel = "주의";
+        } else if (debtRatio < 1.0) {
+            debtRiskLevel = "위험";
+        } else {
+            debtRiskLevel = "고위험";
+        }
+
+        double predictedMonthly = avgMonthlyPerM2 * currentArea;
+        double predictedDeposit = avgDepositPerM2 * currentArea;
+
+        // 예상 월세 계산
+        DecimalFormat df = new DecimalFormat("#.#"); // 소수점 한 자리, 필요할 때만 표시
+        long avgMonthlyDisplay = Math.round(predictedMonthly / 10000.0);
+        long avgDepositDisplay = Math.round(predictedDeposit / 10000.0);
+
+        // 평균 m2당 월세
+        double MonthlyDisplayPerSqmValue = avgMonthlyPerM2 / 1000.0;
+        String MonthlyDisplayPerSqm = df.format(MonthlyDisplayPerSqmValue);
+        double DepositDisplayPerSqmValue = avgDepositPerM2 / 1000.0;
+        String DepositDisplayPerSqm = df.format(DepositDisplayPerSqmValue);
+
+
+        // 데이터 정리해서 보내기
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("ok", true);
+        responseData.put("seniorityTotalFormatted", seniorityTotalFormatted); // 예상 선순위보증금
+        responseData.put("rentRisk", rentRisk);       // 월세 시세괴리 단계
+        responseData.put("depositRisk", depositRisk); // 보증금 시세괴리 단계
+        responseData.put("bondDepositRisk", bondDepositRisk); // 채권보증금 리스크
+        responseData.put("debtRiskLevel", debtRiskLevel); // 근저당권 기반 위험
+        responseData.put("collateralValue", collateralValue);
+        responseData.put("avgMonthlyDisplay", avgMonthlyDisplay);
+        responseData.put("avgDepositDisplay", avgDepositDisplay);
+        responseData.put("MonthlyDisplayPerSqm", MonthlyDisplayPerSqm);
+        responseData.put("DepositDisplayPerSqm", DepositDisplayPerSqm);
+        responseData.put("weightedValue", weightedValue);
+
+
+        return ResponseEntity.ok(responseData);
+    }
+
+    private String formatToEokCheon(double value) {
+        long won = Math.round(value);  // 원 단위 반올림
+
+        long eok = won / 100_000_000;              // 억
+        long cheon = Math.round((won % 100_000_000) / 10_000_000.0); // 천만 단위 반올림
+
+        // 천만이 10이 되면 올림 처리
+        if (cheon == 10) {
+            eok += 1;
+            cheon = 0;
+        }
+
+        if (cheon == 0) {
+            return String.format("%d억", eok);
+        } else {
+            return String.format("%d억 %d천만", eok, cheon);
+        }
     }
 
     // 리스크 등급 계산
     public static String getRiskLevel(double gapRatio) {
         double absGap = Math.abs(gapRatio);
-        if (absGap <= 0.1) return "정상";      // ±10% 이내
-        else if (absGap <= 0.2) return "주의"; // ±20% 이내
-        else if (absGap <= 0.3) return "위험"; // ±30% 이내
+        if (absGap <= 0.2) return "정상";      // ±20% 이내
+        else if (absGap <= 0.4) return "주의"; // ±40% 이내
+        else if (absGap <= 0.6) return "위험"; // ±60% 이내
         else return "고위험";
     }
 
@@ -284,19 +374,11 @@ public class PropertyController {
         return false;
     }
 
-
-    @GetMapping("/selectJuso")
-    public String selectJuso(Model model) {
-
-        return "property/selectJuso";
-    }
-
     @GetMapping("/test")
     @ResponseBody
-    public String test(Model model) throws JsonProcessingException {
-        System.out.println(propertyService.getRentYield("대전광역시", "소규모상가", 1, 10));
-
-        return "";
+    public String test() throws Exception {
+        propertyService.fetchAndCalculate("11680", "서초동");
+        return "성공";
     }
 
 }

@@ -1,53 +1,139 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="common/head::head"></head>
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="common/head::head"></head>
 
-<h1 class="text-2xl font-bold mb-2">등기부 PDF 업로드</h1>
-<p class="text-sm text-gray-500 mb-4">원본 PDF 1개를 업로드하세요. (최대 20MB)</p>
+<header th:replace="common/mapHeader::header"></header>
+<div class="flex flex-col justify-center items-center h-screen w-screen">
+    <h1 class="text-2xl font-bold mb-2">등기부등본 분석</h1>
+    <p class="text-sm text-gray-500 mb-4">원본 PDF 1개를 업로드하세요. (최대 20MB)</p>
 
-<!-- Dropzone -->
-<div id="drop" class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer bg-white">
-    <p class="font-medium text-gray-700">여기에 PDF를 끌어다 놓거나</p>
-    <p class="text-gray-500">아래 버튼으로 선택하세요</p>
+    <!-- Dropzone -->
+    <div id="drop"
+         class="flex flex-col justify-center items-center border-2 border-dashed border-gray-300 rounded-xl p-6 bg-white h-[300px] w-[90%]">
+        <p class="font-medium text-gray-700">여기에 PDF를 끌어다 놓거나</p>
+        <p class="text-gray-500">아래 버튼으로 선택하세요</p>
 
-    <!-- PDF만, 단일 파일 -->
-    <input id="file" type="file" name="file" accept="application/pdf" class="hidden"/>
+        <!-- PDF만, 단일 파일 -->
+        <input id="file" type="file" name="file" accept="application/pdf" class="hidden"/>
 
-    <div class="flex justify-center gap-3 mt-4">
-        <button id="pick" type="button" class="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700">PDF 선택</button>
-        <button id="upload" type="button" disabled
-                class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50">
-            업로드
-        </button>
+        <div class="flex justify-center gap-3 mt-4">
+            <button id="pick" type="button" class="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700">PDF 선택
+            </button>
+
+        </div>
+
+        <p class="text-xs text-gray-400 mt-2">허용 형식: PDF (최대 20MB)</p>
+
+        <!-- 미리보기 -->
+        <div id="thumbs" class="flex justify-center gap-4 mt-6"></div>
     </div>
 
-    <p class="text-xs text-gray-400 mt-2">허용 형식: PDF (최대 20MB)</p>
+    <!-- 보증금, 월세 데이터 받기 -->
+    <div class="mt-4 flex justify-center gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">보증금 (만원)</label>
+            <input id="deposit" type="number"
+                   class="w-32 border border-gray-300 bg-white rounded-md px-2 py-1 no-spin
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500"/>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">월세 (만원)</label>
+            <input id="monthlyRent" type="number"
+                   class="w-32 border border-gray-300 bg-white rounded-md px-2 py-1 no-spin
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500"/>
+        </div>
+
+    </div>
+    <div class="flex justify-center mt-3">
+        <button id="upload" type="button" disabled
+                class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50">
+            분석하기
+        </button>
+    </div>
 </div>
 
-<!-- 보증금, 월세 데이터 받기 -->
-<div class="mt-4">
-    <label class="block text-sm font-medium text-gray-700">보증금 (만원)</label>
-    <input id="deposit" type="number" name="deposit" min="0"
-           class="mt-1 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
+<!-- 분석결과 팝업창 -->
+<div id="result-modal"
+     class="hidden fixed inset-0 flex items-center justify-center bg-black/30 z-50">
+    <div class="bg-white rounded-lg p-6 w-[400px] shadow-lg">
+        <div class="flex  mb-3">
+            <h3 class="font-bold text-lg">분석 결과</h3>
+            <div class="flex-1"></div>
+            <button id="toggleDetail"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800  text-sm text-white font-medium
+         hover:bg-gray-700 active:bg-gray-900 shadow transition duration-200">
+                <i class="fa-solid fa-circle-info text-xs "></i>
+                상세보기
+            </button>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-4">
+            <div id="riskBar" class="h-4 rounded-full"></div>
+        </div>
+        <div class="mt-1 text-lg text-gray-700">
+            위험도 점수: <span id="totalScore"></span> (단계: <span id="totalLevel"></span>)
+        </div>
+
+
+        <div id="riskDetail" class="mt-2 hidden">
+            임대 리스크: <span id="rentRisk"></span><br>
+            (예상 평균 월세 : <span id="rentBase"></span>)<br>
+            보증금 리스크: <span id="depositRisk"></span><br>
+            (예상 평균 보증금 : <span id="depositBase"></span>)<br>
+            채권보증금 리스크: <span id="bondRisk"></span><br>
+            근저당권 리스크: <span id="debtRisk"></span>
+        </div>
+        <div class="text-right mt-4">
+            <button onclick="closeModal()"
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">확인
+            </button>
+        </div>
+    </div>
 </div>
 
-<div class="mt-4">
-    <label class="block text-sm font-medium text-gray-700">월세 (만원)</label>
-    <input id="monthlyRent" type="number" name="monthlyRent" min="0"
-           class="mt-1 w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"/>
+
+<!-- 로딩 오버레이 -->
+<div id="loadingOverlay" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50">
+    <div class="flex flex-col items-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid"></div>
+        <p class="mt-3 text-white font-semibold">분석 중...</p>
+    </div>
 </div>
 
-<!-- 미리보기 -->
-<div id="thumbs" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6"></div>
 
-<!-- 서버 응답 -->
-<h3 class="text-lg font-semibold mt-6">서버 응답</h3>
-<pre id="resp" class="bg-gray-900 text-blue-100 p-3 rounded-lg text-sm whitespace-pre-wrap"></pre>
+<style>
+    .no-spin::-webkit-inner-spin-button,
+    .no-spin::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .no-spin {
+        -moz-appearance: textfield;
+    }
+</style>
 
 <script>
+    const depositInput = document.getElementById("deposit");
+    const monthlyRentInput = document.getElementById("monthlyRent");
+    const uploadBtn = document.getElementById("upload");
+    const overlay = document.getElementById("loadingOverlay");
+
+    // 입력값 검사 함수
+    function checkInputs() {
+        const deposit = depositInput.value.trim();
+        const monthlyRent = monthlyRentInput.value.trim();
+
+        if (selectedFile && deposit !== "" && monthlyRent !== "") {
+            uploadBtn.disabled = false;
+        } else {
+            uploadBtn.disabled = true;
+        }
+    }
+
+    // 인풋 이벤트 등록
+    depositInput.addEventListener("input", checkInputs);
+    monthlyRentInput.addEventListener("input", checkInputs);
+
     let selectedFile = null;
     const MAX_MB = 20;
 
@@ -57,25 +143,31 @@
         const thumbs = document.getElementById("thumbs");
         thumbs.innerHTML = "";
         if (!selectedFile) {
-            document.getElementById("upload").disabled = true;
+            uploadBtn.disabled = true;
             return;
         }
-        const sizeMB = (selectedFile.size / (1024*1024)).toFixed(2);
+        const sizeMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
         const card = document.createElement("div");
         card.className = "border rounded-lg p-2 bg-white shadow";
         card.innerHTML = `
-      <div class="w-full h-40 flex items-center justify-center bg-gray-50 rounded">
-        <span class="text-gray-700 font-semibold">PDF</span>
-      </div>
-      <div class="mt-1 text-sm text-gray-600 truncate">${selectedFile.name}
-        <span class="text-xs text-gray-400">(${sizeMB}MB)</span>
-      </div>`;
+          <div class="flex items-center gap-3">
+            <img src="/images/pdf-icon.png" alt="PDF" class="w-10 h-10">
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-700 truncate">${selectedFile.name}</p>
+              <p class="text-xs text-gray-500">${sizeMB} MB</p>
+            </div>
+          </div>
+        `;
         thumbs.appendChild(card);
-        document.getElementById("upload").disabled = false;
+        checkInputs();
     }
 
     function setPdf(file) {
-        if (!file) { selectedFile = null; showPreview(); return; }
+        if (!file) {
+            selectedFile = null;
+            showPreview();
+            return;
+        }
         if (!isPdf(file)) {
             alert("PDF만 업로드할 수 있습니다.");
             selectedFile = null;
@@ -93,21 +185,32 @@
     }
 
     document.getElementById("pick").addEventListener("click", () => document.getElementById("file").click());
-    document.getElementById("file").addEventListener("change", function () { setPdf(this.files?.[0]); });
+    document.getElementById("file").addEventListener("change", function () {
+        setPdf(this.files?.[0]);
+    });
 
     const drop = document.getElementById("drop");
-    drop.addEventListener("dragenter", e => { e.preventDefault(); drop.classList.add("border-blue-500"); });
-    drop.addEventListener("dragover",  e => { e.preventDefault(); });
-    drop.addEventListener("dragleave", e => { e.preventDefault(); drop.classList.remove("border-blue-500"); });
-    drop.addEventListener("drop",      e => {
-        e.preventDefault(); drop.classList.remove("border-blue-500");
+    drop.addEventListener("dragenter", e => {
+        e.preventDefault();
+        drop.classList.add("border-blue-500");
+    });
+    drop.addEventListener("dragover", e => {
+        e.preventDefault();
+    });
+    drop.addEventListener("dragleave", e => {
+        e.preventDefault();
+        drop.classList.remove("border-blue-500");
+    });
+
+    drop.addEventListener("drop", e => {
+        e.preventDefault();
+        drop.classList.remove("border-blue-500");
         const file = e.dataTransfer.files?.[0];
         setPdf(file);
     });
 
     document.getElementById("upload").addEventListener("click", async () => {
-        const resp = document.getElementById("resp");
-        resp.textContent = "업로드 중...";
+
         const form = new FormData();
         form.append("file", selectedFile);
 
@@ -117,14 +220,145 @@
         form.append("deposit", deposit);
         form.append("monthlyRent", monthlyRent);
 
+        // 로딩 오버레이 표시
+        overlay.classList.remove("hidden");
 
         try {
-            const r = await fetch("/usr/property/upload", { method: "POST", body: form });
+            const r = await fetch("/usr/property/upload", {method: "POST", body: form});
             const json = await r.json();
-            resp.textContent = JSON.stringify(json, null, 2);
+
+
+            if (json.ok) {
+                overlay.classList.add("hidden");
+
+                // 팝업 열기 (DaisyUI modal-toggle)
+                $("#result-modal").removeClass("hidden");
+
+                console.log(json);
+
+                // 위험 색 넣기
+                function getRiskClass(level) {
+                    switch (level) {
+                        case "정상":
+                            return "text-green-600 font-bold";
+                        case "주의":
+                            return "text-yellow-600 font-bold";
+                        case "위험":
+                            return "text-orange-600 font-bold";
+                        case "고위험":
+                            return "text-red-600 font-bold";
+                        default:
+                            return "text-gray-600";
+                    }
+                }
+
+                function riskToScore(level) {
+                    switch (level) {
+                        case "정상":
+                            return 25;
+                        case "주의":
+                            return 50;
+                        case "위험":
+                            return 75;
+                        case "고위험":
+                            return 100;
+                        default:
+                            return 0;
+                    }
+                }
+
+                function scoreToLevel(score) {
+                    if (score < 40) return "정상";
+                    else if (score < 60) return "주의";
+                    else if (score < 80) return "위험";
+                    else return "고위험";
+                }
+
+                let rentRiskClass = getRiskClass(json.rentRisk);
+                let depositRiskClass = getRiskClass(json.depositRisk);
+                let bondDepositRiskClass = getRiskClass(json.bondDepositRisk);
+                let debtRiskLevelClass = getRiskClass(json.debtRiskLevel);
+
+                let rent = riskToScore(json.rentRisk);
+                let deposit = riskToScore(json.depositRisk);
+                let bond = riskToScore(json.bondDepositRisk);
+                let debt = riskToScore(json.debtRiskLevel);
+
+                // 단순 평균 (가중치 필요시 weight 적용)
+                let totalScore = (rent + deposit + bond + debt) / 4.0;
+                let totalLevel = scoreToLevel(totalScore);
+
+                let totalLevelClass = getRiskClass(totalLevel);
+                let totalScoreDisplay = totalScore.toFixed(1); // 소수점 1자리
+
+                // 결과 데이터 바인딩 (요약만)
+                $("#totalScore").text(totalScoreDisplay);
+                $("#totalLevel").html(`<span class="${totalLevelClass}">${totalLevel}</span>`);
+
+                function formatMoney(valueInManwon) {
+                    valueInManwon = parseInt(valueInManwon, 10);
+                    if (isNaN(valueInManwon)) return "-";
+
+                    if (valueInManwon >= 10000) {
+                        const eok = Math.floor(valueInManwon / 10000);
+                        const man = valueInManwon % 10000;
+                        return man === 0 ? `${eok}억` : `${eok}억 ${man}만`;
+                    } else {
+                        return `${valueInManwon}만`;
+                    }
+                }
+
+                // 상세 내용 (처음엔 hidden → 상세보기 버튼으로 토글)
+                $("#rentRisk").html(`<span class="${rentRiskClass}">${json.rentRisk}</span>`);
+                $("#rentBase").html(`<span>${formatMoney(json.avgMonthlyDisplay)}</span>`);
+                $("#depositRisk").html(`<span class="${depositRiskClass}">${json.depositRisk}</span>`);
+                $("#depositBase").html(`<span>${formatMoney(json.avgDepositDisplay)}</span>`);
+                $("#bondRisk").html(`<span class="${bondDepositRiskClass}">${json.bondDepositRisk}</span>`);
+                $("#debtRisk").html(`<span class="${debtRiskLevelClass}">${json.debtRiskLevel}</span>`);
+
+                // 위험도 bar
+                let targetWidth = Math.round(totalScore); // 목표 %
+
+                $({val: 0}).animate({val: targetWidth}, {
+                    duration: 1500,
+                    step: function (now) {
+                        let color = "#22c55e"; // 기본값 (정상)
+                        if (now >= 100) {
+                            color = "#dc2626"; // 고위험
+                        } else if (now >= 70) {
+                            color = "#ef4444"; // 위험
+                        } else if (now >= 50) {
+                            color = "#eab308"; // 주의
+                        }
+
+                        $("#riskBar")
+                            .css("width", now + "%")
+                            .css("background-color", color);
+                    }
+                });
+
+            }
+
         } catch (err) {
-            resp.textContent = "업로드 실패: " + err.message;
         }
     });
+
+    function closeModal() {
+        document.getElementById("result-modal").classList.add("hidden");
+    }
+
+    $("#toggleDetail").on("click", function () {
+        $("#riskDetail").toggleClass("hidden");
+
+        // 버튼 텍스트 토글
+        if ($("#riskDetail").hasClass("hidden")) {
+            $(this).html('<i class="fa-solid fa-circle-info text-xs"></i> 상세보기');
+        } else {
+            $(this).html('<i class="fa-solid fa-chevron-up text-xs"></i> 접기');
+        }
+    });
+
+
+
 </script>
 </html>

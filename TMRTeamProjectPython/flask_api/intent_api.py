@@ -5,16 +5,24 @@ import random
 import time
 from collections import deque
 from contextlib import nullcontext
-
-import fitz  # ← PyMuPDF
+from collections import defaultdict
+from flask import Flask, request, jsonify, Response
+import torch
+from transformers import BertTokenizer, BertForSequenceClassification
+import pickle
 import mecab_ko
 import pdfplumber
 import pymysql
 import pymysql.cursors
-import torch
-from flask import Flask, request, jsonify
-from playwright.sync_api import Page
-from transformers import BertTokenizer, BertForSequenceClassification
+import io, os, uuid, tempfile
+import re, time, random, hashlib
+from collections import deque
+from decimal import Decimal, InvalidOperation
+
+import io
+import pdfplumber
+import fitz  # ← PyMuPDF
+from playwright.sync_api import Page, Locator, TimeoutError as PWTimeout
 
 # HEIC 지원 (설치되어 있으면 자동 등록)
 try:
@@ -34,9 +42,11 @@ import unicodedata
 
 try:
     from rapidfuzz import process, fuzz
+
     HAVE_RAPIDFUZZ = True
 except Exception:
     HAVE_RAPIDFUZZ = False
+
 
 # ✅ 예측 함수
 def predict_intent(text, threshold=0.1):
@@ -117,6 +127,7 @@ def extract_nouns(text):
 
     return nouns
 
+
 # 앱 시작 시 한 번만 실행 (DB에서 행정동 데이터 가져오기)
 def extract_emd_nm_list():
     conn = pymysql.connect(
@@ -172,6 +183,7 @@ def extract_upjong_code_map():
     finally:
         conn.close()
 
+
 def _normalize(s: str) -> str:
     s = unicodedata.normalize("NFC", s)
     # 환경에 따라 아래 둘 중 하나 사용
@@ -179,9 +191,10 @@ def _normalize(s: str) -> str:
     # s = re.sub(r'[\s\p{P}\p{S}]+', '', s)
     return s
 
+
 def find_upjong_pre_morph_from_map(
         user_input: str,
-        name_to_code: dict[str, str],   # {"중국음식점":"CS1001", ...}
+        name_to_code: dict[str, str],  # {"중국음식점":"CS1001", ...}
         fuzzy_threshold: int = 60,
         max_window_len: int = 12
 ):
@@ -194,7 +207,7 @@ def find_upjong_pre_morph_from_map(
         return (None, None, None, None, None)
 
     # 정규화 인덱스
-    idx = { _normalize(nm): (nm, code) for nm, code in name_to_code.items() }
+    idx = {_normalize(nm): (nm, code) for nm, code in name_to_code.items()}
 
     # 1) 공백무시 부분일치(가장 긴 매칭 우선)
     best = None
@@ -213,7 +226,7 @@ def find_upjong_pre_morph_from_map(
         Lmax = min(max_window_len, max((len(k) for k in keys), default=0))
         for L in range(2, Lmax + 1):
             for i in range(0, max(0, len(text_norm) - L + 1)):
-                sub = text_norm[i:i+L]
+                sub = text_norm[i:i + L]
                 m = process.extractOne(sub, keys, scorer=fuzz.ratio)
                 if m and m[1] > BEST[3]:
                     nm, cd = idx[m[0]]
@@ -223,10 +236,9 @@ def find_upjong_pre_morph_from_map(
 
     return (None, None, None, None, None)
 
+
 # ✅ 의미 분석 함수
 def analyze_input(user_input, intent, valid_emd_list):
-
-
     entities = {
         "sido": None,
         "sigungu": None,
@@ -243,8 +255,8 @@ def analyze_input(user_input, intent, valid_emd_list):
     )
     if cd:
         entities["raw_upjong"] = raw or nm
-        entities["upjong_nm"]  = nm
-        entities["upjong_cd"]  = cd
+        entities["upjong_nm"] = nm
+        entities["upjong_cd"] = cd
 
     tokens = extract_nouns_with_age_merge(user_input)
     print("추출된 명사:", tokens)
@@ -385,7 +397,6 @@ INTENT_REQUIRED = {
 }
 
 
-
 # ✅ API 라우팅
 @app.route("/predict", methods=["GET"])
 def predict():
@@ -419,7 +430,7 @@ def predict():
         return jsonify({
             "intent": 0,
             "confidence": round(confidence, 4),
-            "entities": entities,   # ← 지역, 업종, 성별, 연령 등 전체 전달
+            "entities": entities,  # ← 지역, 업종, 성별, 연령 등 전체 전달
             "data": "...매출조회결과..."
         }), 200
 
@@ -427,7 +438,7 @@ def predict():
         return jsonify({
             "intent": 1,
             "confidence": round(confidence, 4),
-            "entities": entities,   # ← 지역, 업종, 성별, 연령 등 전체 전달
+            "entities": entities,  # ← 지역, 업종, 성별, 연령 등 전체 전달
             "data": "...매출조회결과..."
         }), 200
 
@@ -436,7 +447,7 @@ def predict():
         return jsonify({
             "intent": 2,
             "confidence": round(confidence, 4),
-            "entities": entities,   # ← 지역, 업종, 성별, 연령 등 전체 전달
+            "entities": entities,  # ← 지역, 업종, 성별, 연령 등 전체 전달
             "data": "...매출조회결과..."
         }), 200
 
@@ -444,29 +455,34 @@ def predict():
         return jsonify({
             "intent": int(intent_id),
             "confidence": round(confidence, 4),
-            "entities": entities,   # ← 지역, 업종, 성별, 연령 등 전체 전달
+            "entities": entities,  # ← 지역, 업종, 성별, 연령 등 전체 전달
             "data": "...매출조회결과..."
         }), 200
+
 
 _BRACKETS = re.compile(r"\[[^\]]+\]")
 _CANCEL_RX = re.compile(r"(기?말소|해지)")
 _HANGUL_OR_NUM = re.compile(r"[가-힣0-9]")
 
+
 def _norm_ws(s: str) -> str:
     return " ".join((s or "").replace("\u200b", "").split()).strip()
+
 
 def _stable_unique(seq):
     seen, out = set(), []
     for x in seq:
         if x not in seen:
-            seen.add(x); out.append(x)
+            seen.add(x);
+            out.append(x)
     return out
+
 
 _WS = re.compile(r"\s+")
 _MONEY = re.compile(r"금?\s*([0-9,]+)\s*원")
 
 # '말소/해지' 플래그만 확인
-_CANCEL_FLAG_RX   = re.compile(r"(말소|해지)")
+_CANCEL_FLAG_RX = re.compile(r"(말소|해지)")
 # 보조: purpose 텍스트에서 "1번 근저당권 설정" 같은 표기를 파싱 (순위번호 칸이 비었을 때만 사용)
 _CANCEL_TARGET_RX = re.compile(r"(\d+)\s*번")
 # 취소 대상 번호들: "제1번", "1번", "1,2번", "1번·2번" 등에서 모두 추출
@@ -474,8 +490,10 @@ _RANK_LIST_RX = re.compile(r"(?:제?\s*)(\d+)\s*번")
 
 _RISK_FLAG_RX = re.compile(r"(가압류|가처분|압류)")
 
+
 def _one_line(s: str) -> str:
     return _WS.sub(" ", (s or "").strip())
+
 
 def _parse_amount_num(text: str):
     m = _MONEY.search(text or "")
@@ -486,38 +504,55 @@ def _parse_amount_num(text: str):
     except:
         return None
 
+
+EUL_RX = re.compile(r"【\s*을\s*구\s*】")
+ANY_SECTION_RX = re.compile(r"【\s*(?:표\s*제\s*부|갑\s*구|을\s*구)\s*】")
+
+
 def extract_mortgage_info(pdf_bytes: bytes):
     """
-    【을구】에서 근저당권 '설정'만 수집하고,
-    '말소/해지' 행은 '해당 행의 순위번호'를 취소 대상으로 간주.
-    반환: [{"rankNo": int, "amountKRW": int|None, "status": "normal|cancelled"} ...]
+    【을구】 전체(여러 페이지 이어짐 포함)를 스캔:
+      - '설정'만 수집
+      - '말소/해지' 행은 해당 목적 텍스트에 포함된 '…번' 순위들을 취소 대상으로 마킹
+    반환: {"mortgages":[...], "riskFlags":[...]}
     """
-    title_rx = re.compile(r"【\s*을\s*구\s*】")
-
-    mortgages_by_rank = {}   # rankNo -> {"rankNo", "amountKRW", "status"}
-    cancel_ranks = set()     # 말소/해지로 지목된 순위번호들
+    mortgages_by_rank = {}
+    cancel_ranks = set()
     risks = []
 
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        in_eul = False  # 을구 섹션 안에 있는지 상태 플래그
+
         for page in pdf.pages:
             txt = page.extract_text() or ""
-            if not title_rx.search(txt):
+
+            # 섹션 헤더 스위칭
+            if EUL_RX.search(txt):
+                in_eul = True
+            elif ANY_SECTION_RX.search(txt):
+                # 다른 섹션 헤더(갑구/표제부 등)를 만나면 을구 종료
+                if in_eul:
+                    in_eul = False
+                # 을구가 아니므로 넘어감
+            # 섹션 외 페이지는 스킵
+            if not in_eul:
                 continue
 
+            # ---- 여기부터는 을구 섹션 안의 페이지 전부 처리 ----
             tables = page.extract_tables() or []
             for tb in tables:
                 if not tb:
                     continue
 
-                # 헤더 위치 추정
+                # 헤더 위치 추정 (기존 로직 유지)
                 col_rank = col_purpose = col_amount = None
                 for row in tb[:5]:
                     cells = [(_one_line(c) if c else "") for c in (row or [])]
                     for i, c in enumerate(cells):
-                        if col_rank is None    and (c in ("순위번호","순위")):    col_rank = i
+                        if col_rank is None and (c in ("순위번호", "순위")):    col_rank = i
                         if col_purpose is None and ("등기" in c and "목적" in c):  col_purpose = i
-                        if col_amount is None  and ("채권최고액" in c):            col_amount = i
-                if col_rank   is None: col_rank = 0
+                        if col_amount is None and ("채권최고액" in c):            col_amount = i
+                if col_rank is None: col_rank = 0
                 if col_purpose is None: col_purpose = 1
                 if col_amount is None:  col_amount = 4
 
@@ -525,20 +560,18 @@ def extract_mortgage_info(pdf_bytes: bytes):
                     if not row or len(row) <= max(col_rank, col_purpose, col_amount):
                         continue
 
-                    rank_raw   = _one_line(row[col_rank])
-                    purpose    = _one_line(row[col_purpose])
+                    rank_raw = _one_line(row[col_rank])
+                    purpose = _one_line(row[col_purpose])
                     amount_txt = _one_line(row[col_amount])
 
-                    # --- 1) 말소/해지 행: 텍스트 안의 "…번"들만 취소 대상으로 수집 ---
+                    # 1) 말소/해지 -> 텍스트 내 '…번'들만 취소 대상으로 수집
                     if _CANCEL_FLAG_RX.search(purpose):
-                        nums = _RANK_LIST_RX.findall(purpose)  # ["1","2",...]
-                        for n in nums:
+                        for n in _RANK_LIST_RX.findall(purpose):  # ["1","2",...]
                             cancel_ranks.add(int(n))
-                        continue  # 말소행 자체는 수집 안 함
+                        continue
 
-                    # --- 근저당권 '설정'만 수집 ---
+                    # 2) 근저당권 '설정'만 수집
                     if ("근저당권" in purpose) and ("설정" in purpose):
-                        # 순위번호 열이 숫자여야 설정행으로 인정
                         if rank_raw.isdigit():
                             row_rank = int(rank_raw)
                             mortgages_by_rank[row_rank] = {
@@ -547,6 +580,7 @@ def extract_mortgage_info(pdf_bytes: bytes):
                                 "status": "normal",
                             }
 
+                    # 위험 스캔(기존)
                     if _RISK_FLAG_RX.search(purpose):
                         risks.append({
                             "rankNo": int(rank_raw) if rank_raw.isdigit() else None,
@@ -558,11 +592,12 @@ def extract_mortgage_info(pdf_bytes: bytes):
         if r in mortgages_by_rank:
             mortgages_by_rank[r]["status"] = "cancelled"
 
-    # 설정행만 정렬해서 반환
     return {
         "mortgages": sorted(mortgages_by_rank.values(), key=lambda x: x["rankNo"]),
         "riskFlags": risks
     }
+
+
 def extract_joint_collateral_addresses_follow(
         pdf_bytes: bytes,
         must_have_bracket: bool = True,
@@ -588,7 +623,7 @@ def extract_joint_collateral_addresses_follow(
         txt = page.extract_text() or ""
         if not re.search(r"【\s*공동담보목록\s*】", txt):
             return False, 0.0
-        words = page.extract_words(extra_attrs=["top","text"]) or []
+        words = page.extract_words(extra_attrs=["top", "text"]) or []
         tops = [w["top"] for w in words if "공동담보목록" in (w.get("text") or "")]
         return True, min(tops) if tops else 0.0
 
@@ -616,6 +651,7 @@ def extract_joint_collateral_addresses_follow(
         if not tb or not tb[0]:
             return None
         cols = max(len(r or []) for r in tb)
+
         def col_score(i):
             kor_num = 0
             total = 0
@@ -626,6 +662,7 @@ def extract_joint_collateral_addresses_follow(
                 total += len(t)
             # 한글/숫자 비중을 더 가중
             return kor_num * 2 + total
+
         scores = [col_score(i) for i in range(cols)]
         return max(range(cols), key=lambda i: scores[i])
 
@@ -658,7 +695,7 @@ def extract_joint_collateral_addresses_follow(
                     continue
 
             # 행 스캔 (hits만 사용)
-            for r in tb[header_row_idx+1:]:
+            for r in tb[header_row_idx + 1:]:
                 serial = (r[0] or "").strip() if r else ""
                 row_text = " ".join((c or "") for c in r)
 
@@ -687,8 +724,6 @@ def extract_joint_collateral_addresses_follow(
 
         return hits
 
-
-
     pages_hit, addresses = [], []
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
 
@@ -708,7 +743,8 @@ def extract_joint_collateral_addresses_follow(
 
             # 시작 페이지
             prev_last = addresses[-1] if addresses else None
-            addrs = _pick_addresses_from_tables(_extract_tables_on(page, crop), require_header=True, prev_last=prev_last)
+            addrs = _pick_addresses_from_tables(_extract_tables_on(page, crop), require_header=True,
+                                                prev_last=prev_last)
             if addrs:
                 pages_hit.append(i + 1)
                 addresses.extend(addrs)
@@ -734,8 +770,10 @@ def extract_joint_collateral_addresses_follow(
     # 여기부터는 addresses가 [ {serial, address, status}, ... ]
     return {"pages": sorted(set(pages_hit)), "addresses": addresses, "currentAddress": current_addr}
 
+
 _OWNER_CHANGE_RX = re.compile(r"소유권.*이전")
-_CO_OWNER_RX     = re.compile(r"공유")
+_CO_OWNER_RX = re.compile(r"공유")
+
 
 # 갑구 분석
 def extract_gabu_info(pdf_bytes: bytes):
@@ -767,7 +805,7 @@ def extract_gabu_info(pdf_bytes: bytes):
                     cells = [(_one_line(c) if c else "") for c in (row or [])]
                     if not cells:
                         continue
-                    purpose = cells[1] if len(cells) > 1 else ""   # 등기목적
+                    purpose = cells[1] if len(cells) > 1 else ""  # 등기목적
                     right_holder = cells[2] if len(cells) > 2 else ""  # 권리자/기타사항
 
                     # 소유권 이전 탐지
@@ -783,6 +821,381 @@ def extract_gabu_info(pdf_bytes: bytes):
         "ownerChangeDetails": owner_changes,
         "coOwners": co_owners
     }
+
+
+import io, re, pdfplumber
+
+
+def _find_y_bottom_of(words, pattern):
+    """pattern(정규식)에 매칭되는 단어들의 'bottom' 중 최댓값 반환"""
+    cands = [w for w in words if re.search(pattern, w["text"])]
+    return max((w["bottom"] for w in cands), default=None)
+
+
+def _find_y_top_of_section_linewise(words, patterns):
+    """
+    words: page.extract_words() 결과
+    patterns: 공백 없는 정규식 패턴 목록 (예: '갑구', '을구', '표제부', '전유부분의건물의표시', '대지권의표시')
+    반환: 해당 섹션 라인의 top (없으면 None)
+    """
+    # 1) 같은 줄(유사 y)에 있는 word들을 묶어서 한 줄 텍스트로 합치기
+    lines = defaultdict(list)
+    for w in words:
+        # 같은 줄 판정: top 값을 반올림해서 key로 사용 (허용 오차 2~3px 정도)
+        key = round(w["top"] / 2)  # 필요하면 3,5 등으로 조절
+        lines[key].append(w)
+
+    y_candidates = []
+    for key, ws in lines.items():
+        # 한 줄의 텍스트를 연결
+        ws_sorted = sorted(ws, key=lambda x: x["x0"])
+        line_text = "".join(w["text"] for w in ws_sorted)
+
+        # 2) 공백/괄호/특수기호 제거 후 비교
+        norm = re.sub(r"[\s【】\[\]\(\)<>]", "", line_text)
+
+        # 3) 패턴 매칭 (공백 없이 만든 패턴과 비교)
+        if any(re.search(p, norm) for p in patterns):
+            # 이 라인의 실제 top은 라인 내 단어들의 최소 top 사용
+            y_top = min(w["top"] for w in ws_sorted)
+            y_candidates.append(y_top)
+
+    return min(y_candidates) if y_candidates else None
+
+
+def _combine_address_lines(lines):
+    """
+    소재지번 셀 내 줄들이
+      [ '1. 서울특별시 서초구 서초동', '1317-16', '2. 서울특별시 서초구 서초동', '1317-17', ... ]
+    형태일 때, (행정구역 + 지번) 페어로 합쳐서 한 줄씩 반환
+    """
+    combined = []
+    buf = None
+    for s in lines:
+        s = s.strip()
+        if not s:
+            continue
+        if buf is None:
+            buf = s
+        else:
+            combined.append((buf + " " + s).strip())
+            buf = None
+    if buf is not None:  # 홀수 개로 끝나면 남은 것 그대로
+        combined.append(buf)
+    return combined
+
+
+def extract_land_share_table(pdf_bytes: bytes):
+    """
+    (대지권의 목적인 토지의 표시) 이후 영역만 잘라 테이블 추출
+    - 페이지 내 헤더 y좌표 아래로 crop
+    - 같은 페이지에 '갑구/을구'가 나오면 그 위까지만 crop
+    - 소재지번 줄바꿈(행정구역/지번) 페어를 합쳐 한 줄 주소로 정규화
+    """
+    results = []
+    in_section = False
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for page in pdf.pages:
+            words = page.extract_words(use_text_flow=True, keep_blank_chars=False)
+
+            # 1) 섹션 시작 y 찾기 (현재 페이지에서 헤더 발견 시 그 아랫부분만)
+            y0 = None
+            if not in_section:
+                # '대지권의' 만으로도 시작 포착 (공백 무시는 단어단위라 '\s*'보단 키워드로)
+                y0 = _find_y_bottom_of(words, r"대지권")
+                if y0 is not None:
+                    in_section = True
+                else:
+                    continue  # 아직 섹션 시작 안함 → 다음 페이지로
+
+            # 2) 섹션 종료 y 찾기 (같은 페이지에 갑구/을구가 있으면 그 위까지)
+            # 종료 키워드들: 공백/괄호 제거한 형태로 대비
+            end_patterns = [
+                r"갑구",
+                r"을구",
+                r"전유부분의건물의표시",
+                r"대지권의표시"
+            ]
+            y1 = _find_y_top_of_section_linewise(words, end_patterns)
+
+            # 3) 크롭 박스 설정 (헤더가 이 페이지에서 시작했으면 y0 아래부터, 이어지는 페이지면 전체 상단부터)
+            top = (y0 + 2) if y0 is not None else 0
+            bottom = (y1 - 2) if y1 is not None else page.height
+            bbox = (0, top, page.width, bottom)
+            sub = page.crop(bbox)
+
+            # 4) 테이블만 추출
+            tables = sub.extract_tables()
+
+            for table in tables:
+                for row in table:
+                    if not row:
+                        continue
+                    # None → "" 및 좌우 공백 제거
+                    row = [str(c).strip() if c else "" for c in row]
+                    joined = "".join(row)
+
+                    # 헤더행 스킵 (공백/개행 불규칙 대응)
+                    if re.search(r"표\s*시\s*번\s*호", joined) or re.search(r"소\s*재\s*지\s*번", joined):
+                        continue
+
+                    # 열 수 보정 (최소 4열 가정: 표시번호, 소재지번, 지목, 면적, (비고))
+                    while len(row) < 5:
+                        row.append("")
+
+                    표시번호, 소재지번, 지목, 면적, 비고 = row
+
+                    # 소재지번/지목/면적에 줄바꿈이 붙어 여러 건이 한 셀에 있을 수 있음 → 분해
+                    addr_lines = 소재지번.split("\n") if 소재지번 else []
+                    jimo_lines = 지목.split("\n") if 지목 else []
+                    area_lines = 면적.split("\n") if 면적 else []
+
+                    # 소재지번은 (행정구역 + 지번) 페어로 합치기
+                    if len(addr_lines) >= 2:
+                        addr_lines = _combine_address_lines(addr_lines)
+
+                    # 가장 긴 길이에 맞춰 행 분해
+                    max_len = max(len(addr_lines), len(jimo_lines), len(area_lines), 1)
+                    for i in range(max_len):
+                        results.append({
+                            "표시번호": 표시번호 if i == 0 else f"{표시번호}-{i + 1}" if 표시번호 else "",
+                            "소재지번": (addr_lines[i].strip() if i < len(addr_lines) else "").strip() or None,
+                            "지목": (jimo_lines[i].strip() if i < len(jimo_lines) else "").strip() or None,
+                            "면적": (area_lines[i].strip() if i < len(area_lines) else "").strip() or None,
+                            "비고": 비고 or None
+                        })
+
+            # 5) 이 페이지에서 섹션이 끝났으면 루프 종료
+            if y1 is not None:
+                in_section = False
+                break
+
+    # 후처리: 완전 빈 행들 제거
+    cleaned = [
+        r for r in results
+        if any([r.get("소재지번"), r.get("지목"), r.get("면적")])
+    ]
+    return cleaned
+
+
+_num = r'[0-9][0-9\.,]*'  # 숫자(콤마/소수점 포함)
+
+
+def _parse_ratio_pairs(cell_text: str):
+    """
+    입력: "102446.2분의\n1539.9454\n525165분의\n7893.912\n..."
+    출력: [{"numerator":"102446.2","denominator":"1539.9454","text":"102446.2분의 1539.9454"}, ...]
+    """
+    if not cell_text:
+        return []
+
+    lines = [ln.strip() for ln in str(cell_text).split("\n") if ln.strip()]
+    pairs = []
+    pending_numer = None
+
+    for ln in lines:
+        # 1) 같은 줄에 둘 다 있는 경우
+        m_both = re.search(rf'({_num})\s*분의\s*({_num})', ln)
+        if m_both:
+            num, den = m_both.group(1), m_both.group(2)
+            pairs.append({
+                "numerator": num,
+                "denominator": den,
+                "text": f"{num}분의 {den}"
+            })
+            pending_numer = None
+            continue
+
+        # 2) 분자만 있는 줄 (…분의)
+        m_num_only = re.search(rf'({_num})\s*분의$', ln)
+        if m_num_only:
+            pending_numer = m_num_only.group(1)
+            continue
+
+        # 3) 숫자만 있는 줄 (이전 줄의 '…분의'와 결합 → 분모)
+        m_num = re.fullmatch(rf'{_num}', ln)
+        if m_num and pending_numer is not None:
+            num, den = pending_numer, m_num.group(0)
+            pairs.append({
+                "numerator": num,
+                "denominator": den,
+                "text": f"{num}분의 {den}"
+            })
+            pending_numer = None
+            continue
+
+        # 4) 예외(패턴 불일치) → 그대로 텍스트로 남김
+        pairs.append({"numerator": None, "denominator": None, "text": ln})
+
+    # 끝에 분자만 남아있으면 보존
+    if pending_numer is not None:
+        pairs.append({"numerator": pending_numer, "denominator": None, "text": f"{pending_numer}분의"})
+
+    # 수치형 비율(den/num) 계산 부가 필드
+    for p in pairs:
+        try:
+            if p["numerator"] and p["denominator"]:
+                p["share"] = (Decimal(p["denominator"].replace(",", "")) /
+                              Decimal(p["numerator"].replace(",", "")))
+            else:
+                p["share"] = None
+        except (InvalidOperation, ZeroDivisionError):
+            p["share"] = None
+
+    return pairs
+
+
+def _num_prefix(s: str):
+    """문자열 앞의 번호 추출: '2 소유권대지권' → '2'"""
+    if not s: return None
+    m = re.match(r'^\s*(\d+)[\.\)]?\s*', s)
+    return m.group(1) if m else None
+
+
+# -------------------------------------------------
+# 메인: (대지권의 표시) 섹션에서 테이블 추출
+# columns: 표시번호 | 대지권종류 | 대지권비율 | 등기원인 및 기타사항
+# -------------------------------------------------
+def extract_land_right_ratios(pdf_bytes: bytes):
+    results = []
+    in_section = False
+    last_group_no = ""
+
+    with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+        for page in pdf.pages:
+            words = page.extract_words(use_text_flow=True, keep_blank_chars=False) or []
+
+            # 시작 지점 찾기
+            y0 = None
+            if not in_section:
+                y0 = _find_y_top_of_section_linewise(words, [r"대지권의표시"])
+                if y0 is not None:
+                    in_section = True
+                else:
+                    continue
+
+            # 종료 지점(같은 페이지에 다음 섹션이 있으면 그 위까지만)
+            end_patterns = [r"갑구", r"을구"]
+            y1 = _find_y_top_of_section_linewise(words, end_patterns)
+
+            top = (y0 + 2) if y0 is not None else 0
+            bottom = (y1 - 2) if y1 is not None else page.height
+            sub = page.crop((0, top, page.width, bottom))
+
+            tables = sub.extract_tables()
+            for table in tables:
+                for row in table:
+                    if not row:
+                        continue
+                    # None -> "" + strip
+                    row = [str(c).strip() if c else "" for c in row]
+                    joined = "".join(row)
+
+                    # 헤더 라인 스킵 (공백 무시)
+                    if re.search(r"표\s*시\s*번\s*호", joined) or \
+                            re.search(r"대\s*지\s*권\s*종\s*류", joined) or \
+                            re.search(r"대\s*지\s*권\s*비\s*율", joined):
+                        continue
+
+                    # 열 수 보정: [표시번호, 대지권종류, 대지권비율, 등기원인및기타사항]
+                    while len(row) < 4:
+                        row.append("")
+
+                    group_no, kind_cell, ratio_cell, note_cell = row[:4]
+
+                    # 표시번호가 비어 있으면 이전 그룹 번호 유지
+                    if group_no:
+                        last_group_no = group_no
+                    else:
+                        group_no = last_group_no
+
+                    # 칸별 줄 분해
+                    kinds = [s.strip() for s in kind_cell.split("\n") if s.strip()] if kind_cell else []
+                    ratios = _parse_ratio_pairs(ratio_cell)
+                    notes = [s.strip() for s in note_cell.split("\n") if s.strip()] if note_cell else []
+
+                    # 최댓길이에 맞춰 확장
+                    n = max(len(kinds), len(ratios), len(notes), 1)
+
+                    for i in range(n):
+                        raw_kind = kinds[i] if i < len(kinds) else None
+
+                        # 1) 그룹번호: 대지권종류의 앞 숫자 → 표시번호 셀 숫자 → 이전 그룹 번호
+                        grp_from_kind = _num_prefix(raw_kind)
+                        grp_from_cell = _num_prefix(group_no)
+                        group_no_final = grp_from_kind or grp_from_cell or last_group_no
+                        if group_no_final:
+                            last_group_no = group_no_final  # 다음 행 대비 갱신
+
+                        # 2) 비율
+                        r = ratios[i] if i < len(ratios) else {
+                            "numerator": None, "denominator": None, "text": None, "share": None
+                        }
+
+                        results.append({
+                            "표시번호그룹": group_no_final,  # ← 예: "2"
+                            "대지권종류": raw_kind,  # ← 예: "2 소유권대지권" (숫자 보존)
+                            "대지권비율": {
+                                "numerator": r["numerator"],
+                                "denominator": r["denominator"],
+                                "text": r["text"],
+                                "share": (str(r["share"]) if r["share"] is not None else None)
+                            },
+                            "등기원인및기타사항": notes[i] if i < len(notes) else None
+                        })
+            if y1 is not None:  # 이 페이지에서 섹션 종료
+                in_section = False
+                break
+
+    # 불필요한 빈 레코드 제거
+    cleaned = [x for x in results if any([x.get("대지권종류"), x.get("대지권비율", {}).get("text")])]
+    return cleaned
+
+
+def parse_float_m2(s):
+    # "229.7㎡" -> 229.7
+    return float(re.sub(r"[^\d\.]", "", s))
+
+
+def lot_no_from_addr(addr):
+    # "1. 서울특별시 ..." -> 1
+    m = re.match(r"\s*(\d+)\.", addr or "")
+    return int(m.group(1)) if m else None
+
+
+def compute_land_share_area(land_rows, ratio_rows):
+    # land_rows: [{"소재지번": "1. ...", "면적": "229.7㎡"}, ...]
+    # ratio_rows: [{"표시번호그룹":"1","대지권비율":{"share":"0.01503..."}} ...]
+    area_by_lot = {}
+    for r in land_rows:
+        lot = lot_no_from_addr(r.get("소재지번"))
+        if lot is None:
+            continue
+        area = parse_float_m2(r.get("면적", "0"))
+        area_by_lot[lot] = area
+
+    total = 0.0
+    parts = []
+    for rr in ratio_rows:
+        lot = None
+        # 표시번호그룹이 숫자 문자열로 들어있다고 가정
+        g = rr.get("표시번호그룹")
+        if g and str(g).isdigit():
+            lot = int(g)
+        share_str = rr.get("대지권비율", {}).get("share")
+        if lot is None or not share_str:
+            continue
+        share = float(share_str)
+        area = area_by_lot.get(lot)
+        if area is None:
+            continue
+        part = area * share
+        parts.append(part)
+        total += part
+    return total, parts
+
+
 # ============ Flask 라우트 ============
 @app.route("/analyze", methods=["POST"])
 def analyze():
@@ -808,8 +1221,14 @@ def analyze():
         return jsonify(ok=False, message=f"PDF 열기 실패: {e}"), 400
 
     try:
+        land_share_info = extract_land_share_table(data)
+        land_ratios_info = extract_land_right_ratios(data)
+
+        total, parts = compute_land_share_area(land_share_info, land_ratios_info)
+        land_share_area = round(total, 2)
         joint_info = extract_joint_collateral_addresses_follow(data)
         mortgage_info = extract_mortgage_info(data)
+        print(mortgage_info)
         gabu_info = extract_gabu_info(data)
     except Exception as e:
         import traceback;
@@ -821,10 +1240,11 @@ def analyze():
         pageCount=len(doc),
         jointCollateralPages=joint_info["pages"],
         jointCollateralAddresses=joint_info["addresses"],
-        jointCollateralCurrentAddress= joint_info["currentAddress"],
-        mortgageInfo = mortgage_info["mortgages"],
+        jointCollateralCurrentAddress=joint_info["currentAddress"],
+        mortgageInfo=mortgage_info["mortgages"],
         mortgageRiskFlags=mortgage_info["riskFlags"],  # 가압류/압류/가처분
-        gabuInfo=gabu_info
+        gabuInfo=gabu_info,
+        landShareArea=land_share_area
     ), 200
 
 
@@ -837,7 +1257,7 @@ LIST_SEL_CANDS = [
     "div.item_list--article",
     "div.article_list",  # 예비
 ]
-API_SOFT_WAIT_MS = 1200  # 800~1500 권장 (너무 느리면 900로)
+API_SOFT_WAIT_MS = 800  # 800~1500 권장 (너무 느리면 900로)
 MAX_CLICK = 20  # 클릭할 카드 수 상한
 
 
@@ -917,6 +1337,7 @@ def _launch_ctx(p):
             "--disable-blink-features=AutomationControlled",
             "--no-first-run", "--no-default-browser-check",
             "--disable-dev-shm-use", "--no-sandbox",
+            "--disable-gpu", "--window-size=1280,860",
         ],
     )
     # 약식 스텔스
@@ -932,16 +1353,20 @@ def _launch_ctx(p):
 
 def _goto_offices(page, lat: float, lng: float):
     root = "https://new.land.naver.com"
-    path = f"/offices?ms={lat},{lng},17&a=SG&e=RETAIL"
-    page.goto(root, wait_until="domcontentloaded", timeout=30000)
+    path = f"/offices?ms={lat},{lng},19&a=SG&e=RETAIL"
+
+    # 기본 진입: 바로 목적지로 이동 (referer 유지)
+    page.goto(root + path, referer=root, wait_until="domcontentloaded", timeout=60000)
+
     try:
-        page.evaluate("href => { location.href = href }", path)
-        page.wait_for_url("**/offices**", timeout=20000)
-        return
-    except PwTimeout:
-        pass
-    page.goto(root + path, referer=root, wait_until="domcontentloaded", timeout=30000)
-    page.wait_for_url("**/offices**", timeout=20000)
+        # ✅ 'load' 대신 'domcontentloaded'로 대기
+        page.wait_for_url("**/offices**", wait_until="domcontentloaded", timeout=60000)
+    except PWTimeout:
+        # 보정: SPA 특성상 URL은 바뀌었는데 'load'가 안 오는 케이스 방지
+        page.wait_for_load_state("domcontentloaded", timeout=30000)
+
+    # ✅ URL만 믿지 말고, 실제 목록 컨테이너가 붙을 때까지 한 번 더 대기
+    page.wait_for_selector(", ".join(LIST_SEL_CANDS), state="attached", timeout=20000)
 
 
 DETAIL_PATTERNS = [
@@ -1023,7 +1448,7 @@ def crawl_viewport(lat: float, lng: float,
             hit = _soft_wait_detail(page, api_detail_queue, before_len, API_SOFT_WAIT_MS)
 
             # 디테일 패널 DOM 파싱 (항상 시도)
-            page.wait_for_timeout(200)  # 패널 렌더 여유
+            page.wait_for_timeout(10)  # 패널 렌더 여유
             try:
                 dom_data = scrape_detail_panel(page)  # 또는 scrape_detail_panel_raw(page)
             except Exception:
@@ -1035,8 +1460,6 @@ def crawl_viewport(lat: float, lng: float,
                 "json": (hit["data"] if hit else None),
                 "dom": dom_data,
             })
-
-            page.wait_for_timeout(120 + int(random.random() * 120))
 
         # 정리
         ctx.close()
@@ -1054,10 +1477,6 @@ def crawl_viewport(lat: float, lng: float,
             },
             "items": detail_hits[:limit],  # limit=None이면 전부
         }
-
-
-from playwright.sync_api import Page, Locator, TimeoutError as PWTimeout
-import re
 
 
 def wait_for_element(page: Page, selector: str, timeout: int = 6000) -> Locator:
@@ -1111,12 +1530,38 @@ def get_by_header(page: Page, header_text: str) -> Optional[str]:
     return text_or_none(row.locator("td").first)  # text_or_none: Optional[str] 반환
 
 
+def parse_korean_price(s: str) -> Optional[int]:
+    """한국식 금액 문자열(예: 1억400, 2,000, 3500)을 만원 단위 정수로 변환"""
+    if not s:
+        return None
+
+    s = s.replace(",", "").strip()
+    total = 0
+
+    # 억 단위 (1억 = 10000만원)
+    match = re.search(r"(\d+)억", s)
+    if match:
+        total += int(match.group(1)) * 10000
+        s = s[match.end():]
+
+    # 남은 숫자 (만원 단위)
+    digits = re.findall(r"\d+", s)
+    if digits:
+        total += int("".join(digits))
+
+    return total if total > 0 else None
+
+
 def parse_deposit_monthly(price_value: Optional[str]) -> Tuple[Optional[int], Optional[int]]:
-    if not price_value or "/" not in price_value:
+    """'보증금/월세' 문자열을 (보증금, 월세) 튜플로 변환 (만원 단위)"""
+    if not price_value:
         return None, None
+
+    if "/" not in price_value:  # 전세 or 매매 (단일 금액)
+        return parse_korean_price(price_value), None
+
     a, b = price_value.split("/", 1)
-    clean = lambda s: int("".join(ch for ch in s if ch.isdigit())) if any(ch.isdigit() for ch in s) else None
-    return clean(a), clean(b)
+    return parse_korean_price(a), parse_korean_price(b)
 
 
 def scrape_detail_panel(page: Page) -> dict:
@@ -1251,6 +1696,144 @@ def api_crawl():
     except Exception as e:
         print(f"[CRAWL ERR] {e}")
         return jsonify(ok=False, error="crawl_failed", message=str(e)), 500
+
+
+@app.route("/get_base_price", methods=["POST"])
+def get_base_price():
+    data = request.json
+    emd_name = data["emd_name"]
+    bunji = data["bunji"]
+    ho = data["ho"]
+    target_floor = data["floor"]
+    target_ho = data["target_ho"]
+    target_sido = data["sidoNm"]
+    target_sgg = data["sggNm"]
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch_persistent_context(
+            user_data_dir=USER_DATA_DIR,
+            channel="chrome",
+            headless=False,  # API 서버에서는 headless 권장
+            locale="ko-KR",
+            viewport={"width": 1280, "height": 860},
+            ignore_https_errors=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-first-run", "--no-default-browser-check",
+                "--disable-dev-shm-use", "--no-sandbox",
+            ],
+        )
+        page = browser.new_page()
+
+        # 홈택스 접속
+        page.goto(
+            "https://hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index_pp.xml&tmIdx=47&tm2lIdx=4712090000&tm3lIdx=4712090300")
+
+        # 법정동 버튼 클릭
+        btn = wait_for_element(page, "#mf_txppWframe_btnLdCdPop")
+        btn.click()
+
+        time.sleep(0.5)
+
+        # 행정동 입력
+        emd_input_box = wait_for_element(page, "#mf_txppWframe_UTECMAAA08_wframe_inputSchNm")
+        emd_input_box.fill(emd_name)
+
+        # 조회 버튼 클릭
+        btn = wait_for_element(page, "#mf_txppWframe_UTECMAAA08_wframe_trigger6")
+        btn.click()
+
+        time.sleep(0.5)
+
+        # 테이블 선택
+        tbody = wait_for_element(page, "#mf_txppWframe_UTECMAAA08_wframe_ldCdAdmDVOList_body_tbody")
+        rows = tbody.locator("tr")
+        row_count = rows.count()
+
+        for i in range(row_count):
+            row = rows.nth(i)
+            cols = row.locator("td")
+            first_col = cols.nth(0).inner_text().strip()
+            second_col = cols.nth(1).inner_text().strip()
+            if target_sido in first_col and target_sgg in second_col:
+                btn = row.locator("td:nth-child(8) button[title='선택']")
+                btn.click()
+                break
+
+        # 번지 입력
+        bunji_input = wait_for_element(page, "#mf_txppWframe_txtBunj")
+        bunji_input.fill(bunji)
+
+        # 호 입력
+        ho_input = wait_for_element(page, "#mf_txppWframe_txtHo")
+        ho_input.fill(ho)
+
+        # 검색 버튼 클릭
+        search_button = wait_for_element(page, "#mf_txppWframe_group1962")
+        search_button.click()
+
+        # 건물명 선택
+        build_name_button = wait_for_element(page, "a#txtItm0")
+        build_name_button.click()
+
+        # 동 select
+        dong_select_box = page.locator("#mf_txppWframe_selBldComp")
+        dong_select_box.select_option(index=1)
+
+        # 층 select
+        floor_select_box = page.locator("#mf_txppWframe_selBldFlor")
+        floor_select_box.select_option(label=target_floor)
+
+        # 호 select
+        ho_select_box = page.locator("#mf_txppWframe_selBldHo")
+        ho_select_box.select_option(label=target_ho)
+
+        # 상세 검색 버튼 클릭
+        detail_search_button = wait_for_element(page, "#mf_txppWframe_btnSchTsv")
+        detail_search_button.click()
+
+        # 기준시가 테이블
+        tbody = wait_for_element(page, "#mf_txppWframe_grdCmrcBldTsvList_body_tbody")
+        first_row = tbody.locator("tr").nth(0)
+
+        td2 = first_row.locator("td").nth(1).inner_text().strip()
+        td3 = first_row.locator("td").nth(2).inner_text().strip()
+
+        val2 = float(td2.replace(",", ""))
+        val3 = float(td3)
+        result = val2 * val3
+        final_price = int(val2 // 10000 * 10000)
+
+        # ───────────── 토지 기준시가 ─────────────
+        page2 = browser.new_page()
+        page2.goto("https://www.realtyprice.kr/notice/gsindividual/search.htm")
+
+        page2.locator("#sido_list").select_option(label=target_sido)
+        page2.locator("#sgg_list").select_option(label=target_sgg)
+        page2.locator("#eub_list").select_option(label=emd_name)
+
+        container = page2.locator("div.search-opt3")
+        container.locator("input[name='bun1']").fill(bunji)
+        container.locator("input[name='bun2']").fill(ho)
+
+        page2.click(".search-bt input[type='image']")
+        page2.wait_for_selector("#dataList tr", timeout=10000)
+
+        first_row2 = page2.locator("#dataList tr").first
+        price_text = first_row2.locator("td").nth(3).inner_text().strip()
+        land_price = int(re.sub(r"[^0-9]", "", price_text))
+
+        browser.close()
+
+    return jsonify({
+        "emd_name": emd_name,
+        "bunji": bunji,
+        "ho": ho,
+        "floor": target_floor,
+        "target_ho": target_ho,
+        "build_base_price": final_price,
+        "land_base_price": land_price
+    })
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ spring:
     url: jdbc:mysql://localhost:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
-    password: 1234
+    password:
   jpa:
     show-sql: true
     hibernate:
@@ -49,9 +49,6 @@ kakao:
     clientId: 5617b43c5e1f8f47e45f4d510a88e8fc
     clientSecret: 5yc5smUCscGZlKcfjqsfV46wFiVdsbzq
 
-# 카카오맵 javascript 키
-
-
 # 네이버 api 키
 naver:
   api:
@@ -68,7 +65,7 @@ solapi:
 address:
   confmKey: devU01TX0FVVEgyMDI1MDgyMTA5NDEzNzExNjA5NTk=  # 발급받은 승인키
 
-# 지오코딩 API
+# vworld API
 vworld:
   key: 0D1E185A-F71A-3D74-AE65-579E01CC79CD
 
