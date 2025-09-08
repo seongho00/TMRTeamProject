@@ -240,11 +240,14 @@ public class PropertyController {
         // 담보가치(정적)
         double collateralValueTotal = landShareValue + buildingValue;
         System.out.println("landShareValue : " + landShareValue);
-        System.out.println("buildingalue : " + buildingValue);
+        System.out.println("buildingValue : " + buildingValue);
         System.out.println("collateralValue : " + collateralValueTotal);
 
         String regstrGbCdNm = realItem.get("regstrGbCdNm").toString();
         String mainPurpsCdNm = realItem.get("mainPurpsCdNm").toString();
+        
+        // 실거래가를 통해 가치 구하기
+        propertyService.fetchAndCalculate("","202508");
 
         // 상가종류 분류
         String buildingType;
@@ -365,9 +368,8 @@ public class PropertyController {
     @GetMapping("/test")
     @ResponseBody
     public String test() throws Exception {
-        propertyService.fetchBldRgstItems("서울특별시 서초구 서초동 1317-17");
+        propertyService.fetchAndCalculate("11680","202401");
         return "성공";
     }
-
 
 }
