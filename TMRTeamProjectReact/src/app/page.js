@@ -7,6 +7,8 @@ import CostSettingPage from "./sub/CostSettingPage";
 import LocationSelectPage from "./sub/LocationSelectPage";
 import WeeklySimulationPage from "./sub/WeeklySimulationPage";
 import LoanPage from "./sub/LoanPage";
+import DesignChoice from "./sub/DesignChoice";
+
 
 import './globals.css';  // 파일 경로에 맞게 수정
 
@@ -28,6 +30,8 @@ const Page = () => {
             setCharacter(null);
         }
     };
+
+    return <DesignChoice goBack={goBack} />;
 
 
     if (!character) {
@@ -56,7 +60,6 @@ const Page = () => {
             <LoanPage onSelect={setLoan}/>
         );
     }
-
 
     return (
         <WeeklySimulationPage
