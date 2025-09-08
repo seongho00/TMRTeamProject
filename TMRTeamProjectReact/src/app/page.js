@@ -6,7 +6,6 @@ import BusinessSelectPage from "./sub/BusinessSelectPage";
 import CostSettingPage from "./sub/CostSettingPage";
 import LocationSelectPage from "./sub/LocationSelectPage";
 import WeeklySimulationPage from "./sub/WeeklySimulationPage";
-import LoanPage from "./sub/LoanPage";
 import DesignChoice from "./sub/DesignChoice";
 
 
@@ -31,7 +30,12 @@ const Page = () => {
         }
     };
 
-    return <DesignChoice goBack={goBack} />;
+    return <CostSettingPage
+        character={character}
+        business={business}
+        onSubmit={setCosts}
+        onBack={goBack}
+    />;
 
 
     if (!character) {
@@ -54,12 +58,6 @@ const Page = () => {
             />
         );
 
-    // 비용이 자본보다 크면 → 대출 페이지
-    if (costs < 0) {
-        return (
-            <LoanPage onSelect={setLoan}/>
-        );
-    }
 
     return (
         <WeeklySimulationPage
