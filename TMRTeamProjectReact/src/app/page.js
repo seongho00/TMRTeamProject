@@ -30,13 +30,6 @@ const Page = () => {
         }
     };
 
-    return <CostSettingPage
-        character={character}
-        business={business}
-        onSubmit={setCosts}
-        onBack={goBack}
-    />;
-
 
     if (!character) {
         return <CharacterSelectPage onSelect={setCharacter} onBack={goBack}/>;
@@ -58,13 +51,13 @@ const Page = () => {
             />
         );
 
-
     return (
         <WeeklySimulationPage
             character={character}
             business={business}
             location={location}
             initialCost={costs.initialCost}
+            goLoan={costs.goLoan}
         />
     );
 

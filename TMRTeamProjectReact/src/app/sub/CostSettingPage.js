@@ -8,7 +8,7 @@ const CostSettingPage = ({onSubmit, onBack}) => {
     const [showLoanForm, setShowLoanForm] = useState(false);
     const [loanAmount, setLoanAmount] = useState(0);
     const [amount, setAmount] = useState(0);
-
+    const [interestRate, setInterestRate] = useState(5); // 연이율 % (기본 5%)
 
     const handleStart = () => {
         const value = Number(initialCost);
@@ -25,9 +25,12 @@ const CostSettingPage = ({onSubmit, onBack}) => {
     const handleConfirm = () => {
         console.log("대출 확정:", amount);
         setShowLoanForm(false);
-        onSubmit(Number(initialCost), {goLoan: true, loanAmount: amount});
-    };
 
+        onSubmit(Number(initialCost), {
+            goLoan: true,
+            loanAmount: amount,
+        });
+    };
 
     const formatNumber = (value) => {
         if (!value) return "";
