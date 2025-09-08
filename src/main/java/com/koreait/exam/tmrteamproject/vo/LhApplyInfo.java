@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import javax.persistence.*;
 
-import com.koreait.exam.tmrteamproject.entity.AttachmentDtoListConverter;
+import com.koreait.exam.tmrteamproject.config.AttachmentDtoListConverter;
 import lombok.*;
 
 import java.time.LocalDate;

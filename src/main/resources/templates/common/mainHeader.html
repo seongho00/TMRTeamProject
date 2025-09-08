@@ -17,13 +17,16 @@
                 <ul id="nav-list" class="flex justify-center items-center relative space-x-4">
                     <!-- 상권 분석 -->
                     <li class="relative group w-[240px]">
-                        <a href="../map/commercialZoneMap"
-                           class="flex justify-center items-center w-full h-[100px] cursor-pointer">
+                        <div class="flex justify-center items-center w-full h-[100px] cursor-pointer">
                             <p class="text-[22px] text-black">상권 분석</p>
-                        </a>
-                        <ul class="sub-menu absolute items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
+                        </div>
+                        <ul class="sub-menu absolute flex flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
                             <li class="w-full">
-                                <a href="../map/correlationMap"
+                                <a href="../map/commercialZoneMap"
+                                   class="block px-4 py-2 hover:underline">지도 분석</a>
+                            </li>
+                            <li class="w-full">
+                                <a href="../map/riskMap"
                                    class="block px-4 py-2 hover:underline">위험도 분석</a>
                             </li>
                         </ul>
@@ -97,7 +100,7 @@
         <div class="w-full flex justify-center items-center gap-16 mt-[100px]">
             <!-- 첫 번째 아이콘 -->
             <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
-                <a href="../map/correlationMap">
+                <a href="../map/riskMap">
                     <svg xmlns="http://www.w3.org/2000/svg" width="68" height="68" viewBox="0 0 24 24">
                         <path fill="#E94876" fill-rule="evenodd"
                               d="M14 20.5V4.25c0-.728-.002-1.2-.048-1.546c-.044-.325-.115-.427-.172-.484s-.159-.128-.484-.172C12.949 2.002 12.478 2 11.75 2s-1.2.002-1.546.048c-.325.044-.427.115-.484.172s-.128.159-.172.484c-.046.347-.048.818-.048 1.546V20.5z"
@@ -112,12 +115,14 @@
 
             <!-- 두 번째 아이콘 -->
             <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="68" height="68" viewBox="0 0 24 24">
-                    <g fill="#3D9ECC">
-                        <path d="M9.883 2.207a1.9 1.9 0 0 1 2.087 1.522l.025.167L12 4v7a1 1 0 0 0 .883.993L13 12h6.8a2 2 0 0 1 2 2a1 1 0 0 1-.026.226A10 10 0 1 1 9.504 2.293l.27-.067z"/>
-                        <path d="M14 3.5V9a1 1 0 0 0 1 1h5.5a1 1 0 0 0 .943-1.332a10 10 0 0 0-6.11-6.111A1 1 0 0 0 14 3.5"/>
-                    </g>
-                </svg>
+                <a href="../map/commercialZoneMap">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="68" height="68" viewBox="0 0 24 24">
+                        <g fill="#3D9ECC">
+                            <path d="M9.883 2.207a1.9 1.9 0 0 1 2.087 1.522l.025.167L12 4v7a1 1 0 0 0 .883.993L13 12h6.8a2 2 0 0 1 2 2a1 1 0 0 1-.026.226A10 10 0 1 1 9.504 2.293l.27-.067z"/>
+                            <path d="M14 3.5V9a1 1 0 0 0 1 1h5.5a1 1 0 0 0 .943-1.332a10 10 0 0 0-6.11-6.111A1 1 0 0 0 14 3.5"/>
+                        </g>
+                    </svg>
+                </a>
             </div>
 
             <!-- 세 번째 아이콘 -->

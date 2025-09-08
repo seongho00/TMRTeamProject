@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -30,7 +31,7 @@ public class DataSetController {
 
     @GetMapping("/emd/info")
     @ResponseBody
-    public Map<String, Object> getEmdInfo(@RequestParam("adminDongCode") String adminDongCode) {
+    public List<Map<String, Object>> getEmdInfo(@RequestParam("adminDongCode") String adminDongCode) {
         return dataSetService.getFloatingAndSalesByEmd(adminDongCode);
     }
 }

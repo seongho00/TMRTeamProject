@@ -1,22 +1,20 @@
+import io
+import os
+import pickle
+import random
+import time
 from collections import deque
 from contextlib import nullcontext
 
-from flask import Flask, request, jsonify, Response
-import json
-import torch
-from transformers import BertTokenizer, BertForSequenceClassification
-import pickle
+import fitz  # ← PyMuPDF
 import mecab_ko
+import pdfplumber
 import pymysql
 import pymysql.cursors
-import io, os, uuid, tempfile
-import cv2, numpy as np, re
-import re, time, random, hashlib
-from collections import deque
-from playwright.sync_api import sync_playwright, Page
-import io
-import pdfplumber
-import fitz  # ← PyMuPDF
+import torch
+from flask import Flask, request, jsonify
+from playwright.sync_api import Page
+from transformers import BertTokenizer, BertForSequenceClassification
 
 # HEIC 지원 (설치되어 있으면 자동 등록)
 try:
@@ -27,7 +25,7 @@ except Exception:
     pass
 
 # 크롤링 관련 import
-from typing import Optional, Collection, List, Dict, Tuple, Any, Set
+from typing import Optional, List, Dict, Tuple, Any
 from playwright.sync_api import sync_playwright, TimeoutError as PwTimeout
 
 # 업종 검색 관련 import
@@ -148,7 +146,7 @@ def extract_upjong_code_map():
     conn = pymysql.connect(
         host='localhost',
         user='root',
-        password='',
+        password='1234',
         db='TMRTeamProject',
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
