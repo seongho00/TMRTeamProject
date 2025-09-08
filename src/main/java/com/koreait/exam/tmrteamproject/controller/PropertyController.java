@@ -226,7 +226,7 @@ public class PropertyController {
         // 건물시가
         double buildBasePrice = Double.parseDouble(body.get("build_base_price").toString());
         // 토지시가
-        double landBasePrice  = Double.parseDouble(body.get("land_base_price").toString());
+        double landBasePrice = Double.parseDouble(body.get("land_base_price").toString());
 
         // 토지면적
         double landShareArea = (double) result.get("landShareArea");
@@ -245,11 +245,10 @@ public class PropertyController {
 
         String regstrGbCdNm = realItem.get("regstrGbCdNm").toString();
         String mainPurpsCdNm = realItem.get("mainPurpsCdNm").toString();
-        
+
         // 실거래가를 통해 가치 구하기
-        propertyService.fetchAndCalculate("","202508");
-
-
+        Map<String, Object> results = propertyService.fetchAndCalculate("11650", "서초동");
+        System.out.println("results : " + results);
 
 
         // 상가종류 분류
@@ -371,7 +370,7 @@ public class PropertyController {
     @GetMapping("/test")
     @ResponseBody
     public String test() throws Exception {
-        propertyService.fetchAndCalculate("11680","202401");
+        propertyService.fetchAndCalculate("11680", "서초동");
         return "성공";
     }
 

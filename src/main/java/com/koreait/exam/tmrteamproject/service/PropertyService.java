@@ -28,6 +28,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,30 +60,125 @@ public class PropertyService {
     @Value("${vworld.key}")
     private String vworldKey;
 
+    public Map<String, Object> fetchAndCalculate(String sggCd, String targetUmd) throws Exception {
+        LocalDate now = LocalDate.now();
+        int year = now.getYear();
+        int month = now.getMonthValue();
+        String baseYmd = String.format("%04d%02d", year, month);
 
-    public Map<String, Object> fetchAndCalculate(String emdCd, String dealYmd) throws Exception {
+        List<Map<String, Object>> trades = new ArrayList<>();
 
-        Map<String, String> params = new HashMap<>();
-        params.put("LAWD_CD", "11680"); // 강남구
-        params.put("DEAL_YMD", "202508");
-        params.put("numOfRows", "100");
-        params.put("pageNo", "1");
+        // ✅ 최근 6개월 데이터 누적
+        for (int i = 0; i < 6; i++) {
+            String ymd = String.format("%04d%02d", year, month);
 
-        List<Map<String, Object>> trades = callRtms(
-                "https://apis.data.go.kr/1613000/RTMSDataSvcNrgTrade/getRTMSDataSvcNrgTrade",
-                params
-        );
-        System.out.println(trades);
-        return null;
+            trades.addAll(fetchPagedTrades(sggCd, ymd, targetUmd));
+
+            // 이전 달로 이동
+            month -= 1;
+            if (month == 0) {
+                month = 12;
+                year -= 1;
+            }
+        }
+
+        // ✅ 최소 매물 기준
+        int MIN_COUNT = 10;
+        if (trades.size() < MIN_COUNT) {
+            log.info("⚠️ {} 최근 6개월({}) 거래 {}건 → 구 단위 fallback", targetUmd, baseYmd, trades.size());
+            trades.clear();
+            trades.addAll(fetchPagedTrades(sggCd, baseYmd, null)); // 구 단위 전체 사용
+        }
+
+        // ✅ 평균 계산
+        double totalPrice = 0;
+        double totalArea = 0;
+        for (Map<String, Object> t : trades) {
+            Object amtObj = t.get("dealAmount");
+            Object arObj = t.get("buildingAr");
+
+            if (amtObj != null && arObj != null) {
+                long price = Long.parseLong(amtObj.toString()) * 10000;
+                double area = Double.parseDouble(arObj.toString());
+
+                totalPrice += price;
+                totalArea += area;
+            }
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("count", trades.size());
+        result.put("단순평균거래가", trades.isEmpty() ? 0 : totalPrice / trades.size());
+        result.put("㎡당평균단가", totalArea > 0 ? totalPrice / totalArea : 0);
+        result.put("trades", trades);
+
+        return result;
+    }
+
+    private List<Map<String, Object>> fetchPagedTrades(String sggCd, String dealYmd, String targetUmd) {
+        List<Map<String, Object>> results = new ArrayList<>();
+        int page = 1;
+        int totalCount = Integer.MAX_VALUE;
+
+        while ((page - 1) * 100 < totalCount) {
+            Map<String, String> params = new HashMap<>();
+            params.put("LAWD_CD", sggCd);
+            params.put("DEAL_YMD", dealYmd);
+            params.put("numOfRows", "100");
+            params.put("pageNo", String.valueOf(page));
+
+            Map<String, Object> call = callRtms(
+                    "https://apis.data.go.kr/1613000/RTMSDataSvcNrgTrade/getRTMSDataSvcNrgTrade",
+                    params
+            );
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> pageTrades = (List<Map<String, Object>>) call.get("trades");
+            String xml = (String) call.get("xml");
+
+            // ✅ totalCount 갱신
+            int thisTotal = getTotalCountFromLastResponse(xml);
+            if (thisTotal > 0) totalCount = thisTotal;
+
+            // ✅ 동 필터링
+            if (targetUmd != null) {
+                pageTrades = pageTrades.stream()
+                        .filter(t -> targetUmd.equals(t.get("umdNm")))
+                        .toList();
+            }
+
+            results.addAll(pageTrades);
+            if (pageTrades.isEmpty()) break;
+            page++;
+        }
+
+        return results;
+    }
+
+    private int getTotalCountFromLastResponse(String xml) {
+        if (xml == null || xml.isBlank()) return 0;
+        try {
+            XmlMapper xmlMapper = new XmlMapper();
+            JsonNode root = xmlMapper.readTree(xml);
+
+            // totalCount 노드 찾아보기
+            JsonNode totalNode = root.path("response").path("body").path("totalCount");
+            if (totalNode.isMissingNode() || totalNode.isNull()) {
+                return 0;
+            }
+            return totalNode.asInt(0);
+        } catch (Exception e) {
+            System.err.println("totalCount 파싱 실패, 원본 XML: " + xml);
+            return 0;
+        }
     }
 
 
     @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> callRtms(String endpoint, Map<String, String> params) {
+    private Map<String, Object> callRtms(String endpoint, Map<String, String> params) {
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(endpoint);
 
         if (apiKeyEncoded) {
-            // 이미 인코딩된 키 → 그대로 추가
             ub.queryParam("serviceKey", bldrgstKey);
             params.forEach((k, v) -> {
                 if (v != null && !v.isBlank()) {
@@ -93,10 +189,14 @@ public class PropertyService {
             logUrlMasked(url);
 
             String xml = rest.getForObject(url, String.class);
-            return parseRtmsXml(xml);
+            List<Map<String, Object>> trades = parseRtmsXml(xml);
+
+            Map<String, Object> out = new HashMap<>();
+            out.put("trades", trades);
+            out.put("xml", xml);
+            return out;
 
         } else {
-            // raw 키 → 직접 인코딩
             ub.queryParam("serviceKey", UriUtils.encode(bldrgstKey, StandardCharsets.UTF_8));
             params.forEach((k, v) -> {
                 if (v != null && !v.isBlank()) {
@@ -113,15 +213,18 @@ public class PropertyService {
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<byte[]> response = rest.exchange(
-                    URI.create(url),
-                    HttpMethod.GET,
-                    entity,
-                    byte[].class
+                    URI.create(url), HttpMethod.GET, entity, byte[].class
             );
             String xml = new String(response.getBody(), StandardCharsets.UTF_8);
-            return parseRtmsXml(xml);
+            List<Map<String, Object>> trades = parseRtmsXml(xml);
+
+            Map<String, Object> out = new HashMap<>();
+            out.put("trades", trades);
+            out.put("xml", xml);
+            return out;
         }
     }
+
 
     private List<Map<String, Object>> parseRtmsXml(String xml) {
         if (xml == null || xml.isBlank()) throw new IllegalStateException("빈 응답");
