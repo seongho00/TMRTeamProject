@@ -4,7 +4,7 @@ import {useState, useEffect} from "react";
 import WeeklyCalendar from "./WeeklyCalendar";
 
 
-const WeeklySimulationPage = ({character, business, location, initialCost ,costs}) => {
+const WeeklySimulationPage = ({character, business, location, initialCost, goLoan}) => {
     const [month, setMonth] = useState(1);
     const [weekInMonth, setWeekInMonth] = useState(1); // ✅ 추가: 1~4
     const [year, setYear] = useState(2025); // 기본 시작 연도
@@ -16,6 +16,7 @@ const WeeklySimulationPage = ({character, business, location, initialCost ,costs
     const [isWaitingChoice, setIsWaitingChoice] = useState(false);
     const [remainingEvents, setRemainingEvents] = useState([]); // ✅ 이벤트 큐
     const [averageRentData, setAverageRentData] = useState(null);
+    const [loanAmount, setLoanAmount] = useState(goLoan);
 
     const [status, setStatus] = useState({
         fatigue: false,
@@ -218,10 +219,39 @@ const WeeklySimulationPage = ({character, business, location, initialCost ,costs
         return applyCostEvents(base);
     };
 
+    function formatKoreanMoney(value) {
+        if (value === null || value === undefined || isNaN(value)) return "0원";
+
+        const num = Number(value);
+        const isNegative = num < 0;
+        const absNum = Math.abs(num);
+
+        const eok = Math.floor(absNum / 100000000);     // 억 단위
+        const man = Math.floor((absNum % 100000000) / 10000); // 만 단위
+        const won = absNum % 10000;                     // 원 단위
+
+        let result = "";
+
+        if (eok > 0) {
+            result = `${eok}억`;
+            if (man > 0) result += ` ${man.toLocaleString()}만`;
+            if (won > 0) result += ` ${won.toLocaleString()}원`;
+            else result += "원";
+        } else if (man > 0) {
+            result = `${man.toLocaleString()}만`;
+            if (won > 0) result += ` ${won.toLocaleString()}원`;
+            else result += "원";
+        } else {
+            result = `${won.toLocaleString()}원`;
+        }
+
+        return (isNegative ? "-" : "") + result;
+    }
+
     return (
         <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
             <h1 className="tw-text-3xl tw-font-bold tw-mb-4">📊 {month}월 {weekInMonth}주차 시뮬레이션</h1>
-            <p className="tw-mb-2 tw-text-lg">현재 잔고: {balance.toLocaleString()}원</p>
+            <p className="tw-mb-2 tw-text-lg">현재 잔고: {formatKoreanMoney(balance)}</p>
 
             <button
                 onClick={runSimulation}
@@ -252,6 +282,12 @@ const WeeklySimulationPage = ({character, business, location, initialCost ,costs
             <div className="tw-absolute tw-top-1/2 tw-left-6 tw-transform tw--translate-y-1/2">
                 <WeeklyCalendar year={year} month={month} weekInMonth={weekInMonth}/>
             </div>
+
+            <div className="tw-absolute tw-top-1/2 tw-right-6 tw-transform tw--translate-y-1/2">
+                <div>남은 대출금 : {formatKoreanMoney(loanAmount)}</div>
+
+            </div>
+
         </div>
     );
 };

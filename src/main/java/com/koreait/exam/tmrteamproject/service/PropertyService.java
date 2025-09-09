@@ -128,7 +128,7 @@ public class PropertyService {
         result.put("단순평균거래가", trades.isEmpty() ? 0 : totalPrice / trades.size());
         result.put("㎡당평균단가", totalArea > 0 ? totalPrice / totalArea : 0);
         result.put("trades", trades);
-
+        System.out.println(result);
 
         // ✅ ㎡당평균단가만 반환
         return totalArea > 0 ? totalPrice / totalArea : 0;

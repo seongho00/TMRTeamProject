@@ -9,15 +9,14 @@ const CostSettingPage = ({onSubmit, onBack}) => {
     const [showLoanModal, setShowLoanModal] = useState(false);
     const [showLoanForm, setShowLoanForm] = useState(false);
     const [showInitialCostModal, setShowInitialCostModal] = useState(false);
-    const [loanAmount, setLoanAmount] = useState(0);
     const [amount, setAmount] = useState(0);
     const [interestRate, setInterestRate] = useState(5); // 연이율 % (기본 5%)
     const [selectedDesign, setSelectedDesign] = useState(null);
-
+    const emdCd = location.emdCode;
 
     // 초기비용 팝업 내부
-    const deposit = 1000 * 10000; // 예: 1000만원 보증금
-    const rent = 200 * 10000;     // 예: 200만원 월세
+    const deposit = 10000 * 10000; // 예: 1000만원 보증금
+    const rent = 1000 * 10000;     // 예: 200만원 월세
     const labor = 300 * 10000;    // 2명 인건비 (300만원)
     const food = 300 * 10000;     // 식자재비 (300만원)
 
@@ -27,6 +26,8 @@ const CostSettingPage = ({onSubmit, onBack}) => {
 // 결과 계산
     const totalUsed = deposit + rent + labor + food + designCost;
     const result = initialCost - totalUsed;
+
+    const money = initialCost - totalUsed + amount;
 
     const handleStart = () => {
         setShowInitialCostModal(true);
@@ -44,7 +45,8 @@ const CostSettingPage = ({onSubmit, onBack}) => {
             setShowLoanModal(true);   // 대출 여부 묻는 모달 열기
         } else {
             // 자본이 충분할 때는 바로 onSubmit 호출
-            onSubmit(Number(initialCost), {
+            onSubmit({
+                initialCost: money,
                 goLoan: false,
                 loanAmount: 0,
             });
@@ -53,10 +55,18 @@ const CostSettingPage = ({onSubmit, onBack}) => {
     };
 
     const handleConfirm = () => {
+        const minLoanAmount = Math.abs(result); // 최소 대출 금액
+
+        if (amount < minLoanAmount) {
+            alert(`최소 ${formatMoneyKRW(minLoanAmount)} 이상 대출해야 합니다.`);
+            return; // ❌ 진행 막기
+        }
+
         console.log("대출 확정:", amount);
         setShowLoanForm(false);
 
-        onSubmit(Number(initialCost), {
+        onSubmit({
+            initialCost: money,
             goLoan: true,
             loanAmount: amount,
         });
@@ -129,6 +139,8 @@ const CostSettingPage = ({onSubmit, onBack}) => {
 
         return (isNegative ? "-" : "") + result;
     }
+
+
 
 
     return (

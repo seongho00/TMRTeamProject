@@ -30,16 +30,6 @@ const Page = () => {
         }
     };
 
-    if (!costs)
-        return (
-            <CostSettingPage
-                character={character}
-                business={business}
-                onSubmit={setCosts}
-                onBack={goBack}
-            />
-        );
-
 
     if (!character) {
         return <CharacterSelectPage onSelect={setCharacter} onBack={goBack}/>;
@@ -51,6 +41,7 @@ const Page = () => {
 
     if (!location) return <LocationSelectPage onSelect={setLocation} onBack={goBack}/>;
 
+
     if (!costs)
         return (
             <CostSettingPage
@@ -58,8 +49,10 @@ const Page = () => {
                 business={business}
                 onSubmit={setCosts}
                 onBack={goBack}
+                location={location}
             />
         );
+
 
     return (
         <WeeklySimulationPage
@@ -67,7 +60,7 @@ const Page = () => {
             business={business}
             location={location}
             initialCost={costs.initialCost}
-            goLoan={costs.goLoan}
+            goLoan={costs.loanAmount}
         />
     );
 
