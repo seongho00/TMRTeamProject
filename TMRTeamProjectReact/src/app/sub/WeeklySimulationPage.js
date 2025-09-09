@@ -4,7 +4,7 @@ import {useState, useEffect} from "react";
 import WeeklyCalendar from "./WeeklyCalendar";
 
 
-const WeeklySimulationPage = ({character, business, location, initialCost, goLoan}) => {
+const WeeklySimulationPage = ({character, business, location, initialCost, goLoan, setShowResult}) => {
     const [month, setMonth] = useState(1);
     const [weekInMonth, setWeekInMonth] = useState(1); // ✅ 추가: 1~4
     const [year, setYear] = useState(2025); // 기본 시작 연도
@@ -20,6 +20,13 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
     const [interestRate] = useState(5); // 연이율 5%, 필요시 props로 받아오기
     const [loanMonths] = useState(36); // 상환 개월 수
     const [loanLogs, setLoanLogs] = useState([]);
+    const [isFinished, setIsFinished] = useState(false);
+
+    const lastWeek = getLastWeekOfMonth(year, month);
+
+    if (month === 12 && weekInMonth === lastWeek) {
+        setIsFinished(true); // ✅ 종료 상태로 전환
+    }
 
     const [status, setStatus] = useState({
         fatigue: false,
@@ -96,7 +103,7 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
             newBalance -= monthlyPayment;
 
             setLoanLogs(prev => [
-                `💸 대출 상환: 원금 ${formatKoreanMoney(principalPortion)}, 이자 ${formatKoreanMoney(interestPortion)} (잔액: ${formatKoreanMoney(newLoanAmount)})`,
+                `💸 대출 상환: 원금 ${formatKoreanMoney(principalPortion)}, 이자 ${formatKoreanMoney(interestPortion)})`,
                 ...prev
             ]);
         }
@@ -112,7 +119,7 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
 
         // 날짜 계산 로직
         if ((month === 12 && weekInMonth === lastWeek) || newBalance <= 0) {
-            onFinish(history.concat({year, month, weekInMonth, revenue, cost, profit, balance: newBalance}));
+            setIsFinished(true);
         } else {
             if (weekInMonth === lastWeek) {
                 if (month === 12) {
@@ -291,10 +298,10 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
             <p className="tw-mb-2 tw-text-lg">현재 잔고: {formatKoreanMoney(balance)}</p>
 
             <button
-                onClick={runSimulation}
+                onClick={isFinished ? () => setShowResult(true) : runSimulation}
                 className="tw-mb-6 tw-bg-blue-500 tw-text-white tw-px-6 tw-py-2 tw-rounded-xl hover:tw-bg-blue-600"
             >
-                다음 달 진행 →
+                {isFinished ? "시뮬레이션 종료" : "다음 주 진행 →"}
             </button>
 
             <div className="tw-w-full tw-max-w-2xl tw-h-[300px] tw-overflow-y-auto tw-bg-gray-100 tw-p-4 tw-rounded-lg">
@@ -316,7 +323,7 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
                     ))}
                 </div>
             )}
-            <div className="tw-absolute tw-top-1/2 tw-left-6 tw-transform tw--translate-y-1/2">
+            <div className="tw-absolute tw-top-1/2 tw-left-10 tw-transform tw--translate-y-1/2">
                 <WeeklyCalendar year={year} month={month} weekInMonth={weekInMonth}/>
             </div>
 
