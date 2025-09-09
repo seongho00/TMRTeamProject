@@ -4,7 +4,7 @@ import {useState, useEffect} from "react";
 import WeeklyCalendar from "./WeeklyCalendar";
 
 
-const WeeklySimulationPage = ({character, business, location, initialCost, goLoan, setShowResult}) => {
+const WeeklySimulationPage = ({character, business, location, initialCost, goLoan, rent, setShowResult}) => {
     const [month, setMonth] = useState(1);
     const [weekInMonth, setWeekInMonth] = useState(1); // ✅ 추가: 1~4
     const [year, setYear] = useState(2025); // 기본 시작 연도
@@ -15,14 +15,15 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
     const [pendingEvent, setPendingEvent] = useState(null); // 선택형 이벤트 발생 시 저장
     const [isWaitingChoice, setIsWaitingChoice] = useState(false);
     const [remainingEvents, setRemainingEvents] = useState([]); // ✅ 이벤트 큐
-    const [averageRentData, setAverageRentData] = useState(null);
     const [loanAmount, setLoanAmount] = useState(goLoan);
     const [interestRate] = useState(5); // 연이율 5%, 필요시 props로 받아오기
     const [loanMonths] = useState(36); // 상환 개월 수
     const [loanLogs, setLoanLogs] = useState([]);
     const [isFinished, setIsFinished] = useState(false);
+    const [dataSet, setDataSet] = useState(null);
 
     const lastWeek = getLastWeekOfMonth(year, month);
+
 
     if (month === 12 && weekInMonth === lastWeek) {
         setIsFinished(true); // ✅ 종료 상태로 전환
@@ -34,23 +35,22 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
         trust: 0
     });
 
-    useEffect(() => {
-        if (!location?.emdCode) return;
+    // 행정동코드, 업종코드를 통해 매출액가져오기
 
-        fetch(`http://localhost:8080/usr/commercialProperty/getAverageDepositAndMonthlyRent?emdCode=${location.emdCode}`)
+    useEffect(() => {
+        if (!location?.emdCode || !business?.upjongCd) return;
+
+        fetch(`http://localhost:8080/usr/dataset/getDataSet?emdCode=${location.emdCode}&upjongCd=${business.upjongCd}`)
             .then(res => {
-                if (!res.ok) throw new Error("데이터를 불러올 수 없습니다");
+                if (!res.ok) throw new Error("매출 데이터를 불러올 수 없습니다");
                 return res.json();
             })
             .then(data => {
-                console.log(data)
-                setAverageRentData(data); // ✅ 저장
+                console.log("평균 매출 데이터:", data);
+                setDataSet(data);
             })
-            .catch(err => {
-                console.error("데이터 조회 실패:", err);
-            });
-    }, [location]);
-
+            .catch(err => console.error(err));
+    }, [location, business]);
 
     // 이벤트 JSON 가져오기
     useEffect(() => {
@@ -247,8 +247,19 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
     };
 
     const getEstimatedCost = () => {
-        const base = 3000000 + Math.floor(Math.random() * 500000);
-        return applyCostEvents(base);
+        // 인건비 (2명 기준 예: 300만 원)
+        const labor = 3000000;
+
+        // 식자재비 (매출의 30% 정도 가정 → getEstimatedRevenue() 참조)
+        const food = Math.floor(getEstimatedRevenue() * 0.3);
+
+        // 기본 운영비 (랜덤)
+        const etc = 500000 + Math.floor(Math.random() * 200000);
+
+        // 총합
+        const baseCost = rent + labor + food + etc;
+
+        return applyCostEvents(baseCost);
     };
 
     function formatKoreanMoney(value) {
@@ -262,7 +273,7 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
         const man = Math.floor((absNum % 100000000) / 10000); // 만 단위
         const won = absNum % 10000;                     // 원 단위
 
-        let result = "";
+        let result;
 
         if (eok > 0) {
             result = `${eok}억`;

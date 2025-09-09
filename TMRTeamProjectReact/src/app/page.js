@@ -55,7 +55,7 @@ const Page = () => {
 
     // 시뮬레이션 결과 페이지
     if (isResult) {
-        return <ResultPage history={history} onBack={() => window.location.reload()} />;
+        return <ResultPage history={history} onBack={() => window.location.reload()}/>;
     }
 
 
@@ -66,6 +66,7 @@ const Page = () => {
             location={location}
             initialCost={costs.initialCost}
             goLoan={costs.loanAmount}
+            rent={costs.rent}
             onFinish={setIsResult}
         />
     );

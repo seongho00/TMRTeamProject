@@ -49,6 +49,7 @@ const CostSettingPage = ({onSubmit, onBack}) => {
                 initialCost: money,
                 goLoan: false,
                 loanAmount: 0,
+                rent : rent,
             });
             setShowLoanForm(false);
         }
@@ -69,6 +70,8 @@ const CostSettingPage = ({onSubmit, onBack}) => {
             initialCost: money,
             goLoan: true,
             loanAmount: amount,
+            deposit : deposit,
+            rent : rent,
         });
     };
 
