@@ -97,8 +97,11 @@
             <!-- 카드 헤더 -->
             <div class="flex items-center justify-between">
                 <h3 class="text-sm font-semibold text-gray-800">유동인구</h3>
-                <!-- 증감 배지(옵션) -->
-                <span id="fp-trend" class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-100 text-indigo-700">-</span>
+                <!-- 그래프 보기(옵션) -->
+                <button id="show-fp-graph"
+                        class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-100 text-indigo-700">
+                    그래프 보기
+                </button>
             </div>
 
             <!-- 핵심 숫자 -->
@@ -106,13 +109,15 @@
                class="mt-2 text-3xl font-extrabold tracking-tight text-gray-900">-</p>
 
             <!-- 보조 라벨 -->
-            <p class="mt-1 text-xs text-gray-500">단위: 명</p>
+            <p class="mt-1 text-xs text-gray-500">단위: 만명</p>
 
             <!-- 미세 지표 2열 (옵션) -->
             <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
                 <div class="rounded-lg bg-white border border-gray-100 p-3">
                     <p class="text-gray-500 text-xs">당월 매출 추정</p>
                     <p id="sales-per-capita-fp" class="font-semibold text-gray-800">-</p>
+                    <!-- 보조 라벨 -->
+                    <p class="mt-1 text-[8px] text-gray-500">단위: 억원</p>
                 </div>
                 <div class="rounded-lg bg-white border border-gray-100 p-3">
                     <p class="text-gray-500 text-xs">최근 분기</p>

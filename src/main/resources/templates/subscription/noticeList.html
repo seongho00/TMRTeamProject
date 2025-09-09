@@ -176,38 +176,38 @@
                 <tr th:each="lhList : ${lhApplyInfoList}"
                     class="hover:bg-gray-50 transition-colors">
                     <!-- 번호: 필요하면 stat.count 사용 -->
-                    <td class="px-4 py-4 text-gray-800" th:text="${lhList.getId()}"></td>
+                    <td class="px-4 py-4 text-gray-800" th:text="${lhList.getListNo()}"></td>
 
                     <!-- 유형: 칩 스타일 -->
                     <td class="px-4 py-4">
                         <span class="inline-flex items-center px-2 py-0.5 text-xs"
-                              th:text="${lhList.getType()}">
+                              th:text="${lhList.getPostType()}">
                         </span>
                     </td>
 
                     <!-- 공고명: 두 줄 말줄임 -->
                     <td class="px-4 py-4">
                         <a class="block text-gray-900 hover:underline line-clamp-2"
-                           th:text="${lhList.getTitle()}" th:href="@{../lh/notice/{id}(id=${lhList.Id})}">
+                           th:text="${lhList.getName()}" th:href="@{../lh/notice/{id}(id=${lhList.getId()})}">
                         </a>
                     </td>
 
                     <!-- 지역 -->
-                    <td class="px-4 py-4 text-gray-800 truncate" th:text="${lhList.getAddress()}"></td>
+                    <td class="px-4 py-4 text-gray-800 truncate" th:text="${lhList.getRegion()}"></td>
 
                     <!-- 등록일 -->
                     <td class="px-4 py-4 text-gray-800"
-                        th:text="${lhList.getPostDate()}">
+                        th:text="${lhList.getPostedDate()}">
                     </td>
 
                     <!-- 접수 날짜 -->
                     <td class="px-4 py-4 text-gray-800"
-                        th:text="${lhList.getDeadlineDate()}">
+                        th:text="${lhList.getApplyStart()}">
                     </td>
 
                     <!-- 마감일 -->
                     <td class="px-4 py-4 text-gray-800"
-                        th:text="${lhList.getDeadlineDate()}">
+                        th:text="${lhList.getDueDate()}">
                     </td>
 
                     <!-- 접수 상태: 배지 색상 매핑 -->
