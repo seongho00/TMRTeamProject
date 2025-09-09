@@ -17,6 +17,9 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
     const [remainingEvents, setRemainingEvents] = useState([]); // ✅ 이벤트 큐
     const [averageRentData, setAverageRentData] = useState(null);
     const [loanAmount, setLoanAmount] = useState(goLoan);
+    const [interestRate] = useState(5); // 연이율 5%, 필요시 props로 받아오기
+    const [loanMonths] = useState(36); // 상환 개월 수
+    const [loanLogs, setLoanLogs] = useState([]);
 
     const [status, setStatus] = useState({
         fatigue: false,
@@ -73,8 +76,30 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
     const runMainSimulation = () => {
         const revenue = getEstimatedRevenue();
         const cost = getEstimatedCost();
-        const profit = revenue - cost;
-        const newBalance = balance + profit;
+        let profit = revenue - cost;
+        let newBalance = balance + profit;
+
+
+        // ✅ 대출 상환 처리
+        if (loanAmount > 0 && weekInMonth === 1) {
+            const monthlyPayment = calculateMonthlyPayment(loanAmount, interestRate, loanMonths);
+            // 이자/원금 분리
+            const monthlyRate = interestRate / 100 / 12;
+            const interestPortion = Math.round(loanAmount * monthlyRate);
+            const principalPortion = monthlyPayment - interestPortion;
+
+            // 원금 줄이기
+            const newLoanAmount = Math.max(0, loanAmount - principalPortion);
+            setLoanAmount(newLoanAmount);
+
+            // 잔고에서 상환금 빼기
+            newBalance -= monthlyPayment;
+
+            setLoanLogs(prev => [
+                `💸 대출 상환: 원금 ${formatKoreanMoney(principalPortion)}, 이자 ${formatKoreanMoney(interestPortion)} (잔액: ${formatKoreanMoney(newLoanAmount)})`,
+                ...prev
+            ]);
+        }
 
         setBalance(newBalance);
         setLogs(prev => [
@@ -248,6 +273,18 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
         return (isNegative ? "-" : "") + result;
     }
 
+    function calculateMonthlyPayment(loanAmount, annualRate, months = 36) {
+        const monthlyRate = annualRate / 100 / 12;
+        if (monthlyRate === 0) return loanAmount / months;
+
+        const monthlyPayment =
+            loanAmount *
+            (monthlyRate * Math.pow(1 + monthlyRate, months)) /
+            (Math.pow(1 + monthlyRate, months) - 1);
+
+        return Math.round(monthlyPayment);
+    }
+
     return (
         <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
             <h1 className="tw-text-3xl tw-font-bold tw-mb-4">📊 {month}월 {weekInMonth}주차 시뮬레이션</h1>
@@ -285,7 +322,11 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
 
             <div className="tw-absolute tw-top-1/2 tw-right-6 tw-transform tw--translate-y-1/2">
                 <div>남은 대출금 : {formatKoreanMoney(loanAmount)}</div>
-
+                <div className="tw-mt-2 tw-h-48 tw-overflow-y-auto tw-bg-gray-100 tw-p-2 tw-rounded">
+                    {loanLogs.map((log, idx) => (
+                        <div key={idx} className="tw-text-xs tw-mb-1">{log}</div>
+                    ))}
+                </div>
             </div>
 
         </div>
