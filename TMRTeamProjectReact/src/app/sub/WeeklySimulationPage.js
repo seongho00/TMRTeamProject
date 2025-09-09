@@ -20,7 +20,7 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
     const [loanMonths] = useState(36); // 상환 개월 수
     const [loanLogs, setLoanLogs] = useState([]);
     const [isFinished, setIsFinished] = useState(false);
-    const [dataSet, setDataSet] = useState(null);
+    const [monthlySalesAmount, setMonthlySalesAmount] = useState(null);
 
     const lastWeek = getLastWeekOfMonth(year, month);
 
@@ -47,7 +47,9 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
             })
             .then(data => {
                 console.log("평균 매출 데이터:", data);
-                setDataSet(data);
+                const sales = (data.monthlySalesAmount / data.storeCount) * 0.6 // 0.6 : 소규모 창업을 위한 보정수치
+                setMonthlySalesAmount(sales);
+
             })
             .catch(err => console.error(err));
     }, [location, business]);
@@ -243,7 +245,10 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
     };
 
     const getEstimatedRevenue = () => {
-        return 5000000 + Math.floor(Math.random() * 1000000) - 500000;
+        if (!monthlySalesAmount) return 0;
+        const base = monthlySalesAmount * 0.6;   // 보정치 60% 적용
+        const variation = base * 0.1;            // ±10% 변동
+        return Math.floor(base + (Math.random() * variation * 2 - variation));
     };
 
     const getEstimatedCost = () => {
