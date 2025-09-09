@@ -30,6 +30,16 @@ const Page = () => {
         }
     };
 
+    if (!costs)
+        return (
+            <CostSettingPage
+                character={character}
+                business={business}
+                onSubmit={setCosts}
+                onBack={goBack}
+            />
+        );
+
 
     if (!character) {
         return <CharacterSelectPage onSelect={setCharacter} onBack={goBack}/>;
