@@ -1,111 +1,65 @@
-from __future__ import annotations
+from datetime import date, datetime
+import json, urllib.request
+from typing import Dict, Any, List
 
-import json
-import sys
-from pathlib import Path
-from typing import List, Dict, Any
+API_URL = "http://localhost:8080/usr/api/ingest"
+API_TIMEOUT = 30
+API_KEY = "SECRET_KEY_123"
 
-import requests
-from requests.adapters import Retry, HTTPAdapter
+_bulk_buffer: List[Dict[str, Any]] = []
 
-# 1) 패키지 루트(TMRTeamProjectPython)를 sys.path에 추가
-BASE_DIR = Path(__file__).resolve().parent.parent  # .../TMRTeamProjectPython
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
+def _to_json(o):
+    if isinstance(o, (date, datetime)):
+        return o.isoformat() # "2025-09-22T10:00:00"
+    return str(o)
 
-# 2) python_LH_crawler 패키지화 보장(없으면 __init__.py 생성)
-pkg_dir = BASE_DIR / "python_LH_crawler"
-init_py = pkg_dir / "__init__.py"
-try:
-    if pkg_dir.is_dir() and not init_py.exists():
-        init_py.write_text("", encoding="utf-8")
-except Exception:
-    pass
-
-print(f"[DEBUG] BASE_DIR={BASE_DIR}")
-print(f"[DEBUG] sys.path[0]={sys.path[0]}")
-
-# 3) 이제 패키지 임포트
-try:
-    from python_LH_crawler.lh_crawler import crawl
-except Exception as e:
-    print(f"[ERROR] import failed: {e}")
-    sys.exit(1)
-
-# ===== 전송 설정 =====
-SPRING_INGEST_URL = "http://localhost:8080/usr/api/ingest"
-SPRING_INGEST_API_KEY = "SECRET_KEY_123"
-BATCH_SIZE = 200
-TIMEOUT_SEC = 30
-
-def build_session() -> requests.Session:
-    s = requests.Session()
-    try:
-        retries = Retry(
-            total=3, read=3, connect=3,
-            backoff_factor=0.5,
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["POST"],  # urllib3 구버전이면 except에서 대체
-        )
-    except TypeError:
-        retries = Retry(
-            total=3, read=3, connect=3,
-            backoff_factor=0.5,
-            status_forcelist=[429, 500, 502, 503, 504],
-            method_whitelist=["POST"],
-        )
-    s.mount("http://", HTTPAdapter(max_retries=retries))
-    s.mount("https://", HTTPAdapter(max_retries=retries))
-    return s
-
-def rows_to_ingest_items(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    items: List[Dict[str, Any]] = []
-    for r in rows:
-        items.append({
-            "siteNo": r.get("siteNo"),
-            "type": r.get("type") or "",
-            "title": r.get("title") or "",
-            "address": r.get("address") or "",
-            "postDate": r.get("postDate"),
-            "deadlineDate": r.get("deadlineDate"),
-            "status": r.get("status") or "",
-            "views": r.get("views"),
-            "attachments": r.get("attachments") or [],
-        })
-    return items
-
-def send_ingest_request(items: List[Dict[str, Any]], batch_size: int = BATCH_SIZE) -> None:
-    if not items:
-        print("[INFO] 전송할 데이터가 없어요.")
-        return
-
-    sess = build_session()
+def send_to_java_bulk(payload_list: List[Dict[str, Any]]) -> None:
+    data = json.dumps(payload_list, default=_to_json, ensure_ascii=False).encode("utf-8")
     headers = {
         "Content-Type": "application/json; charset=utf-8",
-        "X-INGEST-KEY": SPRING_INGEST_API_KEY,
     }
+    if API_KEY:
+        headers["X-INGEST-KEY"] = API_KEY
 
-    for i in range(0, len(items), batch_size):
-        chunk = items[i:i + batch_size]
-        resp = sess.post(
-            SPRING_INGEST_URL,
-            headers=headers,
-            data=json.dumps(chunk, ensure_ascii=False),
-            timeout=TIMEOUT_SEC
-        )
-        print(f"[DEBUG] POST {SPRING_INGEST_URL} → {resp.status_code}")
-        if resp.status_code >= 400:
-            print(f"[ERROR] ingest failed: {resp.status_code} {resp.text}")
-        else:
-            print(f"[INFO] ingest ok: {len(chunk)} rows → {resp.text.strip()}")
+    req = urllib.request.Request(API_URL, data=data, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=API_TIMEOUT) as resp:
+            body = resp.read().decode("utf-8", errors="ignore")
+            print(f"[INGEST] {resp.status} {body}")
+    except urllib.error.HTTPError as e:
+        err = e.read().decode("utf-8", errors="ignore")
+        print(f"[INGEST-HTTPERROR] {e.code} {err}")
+        raise
+    except urllib.error.URLError as e:
+        print(f"[INGEST-URLERROR] {e}")
+        raise
+
+def save_schedule(meta: Dict[str, Any], parsed: Dict[str, Any]) -> None:
+    _bulk_buffer.append({
+        "listNo": meta.get("list_no"),
+        "postType": meta.get("post_type"),
+        "name": meta.get("name"),
+        "region": meta.get("region"),
+        "hasAttach": bool(meta.get("has_attach")),
+        "postedDate": meta.get("posted_date"),
+        "dueDate": meta.get("due_date"),
+        "status": meta.get("status"),
+        "linkEl": meta.get("link_el"),
+        "applyStart": parsed.get("apply_start"),
+        "applyEnd": parsed.get("apply_end"),
+        "resultTime": parsed.get("result_time"),
+        "contractStart": parsed.get("contract_start"),
+        "contractEnd": parsed.get("contract_end")
+    })
+
+def flush_bulk() -> None:
+    if _bulk_buffer:
+        send_to_java_bulk(_bulk_buffer)
+        _bulk_buffer.clear()
 
 if __name__ == "__main__":
-    try:
-        rows = crawl()
-        print(f"[INFO] 크롤링 결과: {len(rows)} rows")
-    except Exception as e:
-        print(f"[ERROR] 크롤러 예외: {e}")
-        rows = []
-
-    payload = rows_to_ingest_items(rows)
-    send_ingest_request(payload, batch_size=BATCH_SIZE)
+    # 실행기(런처) 모드: 크롤러를 호출
+    from crawling.lh_data_crawling import crawl   # 모듈 경로는 실제 폴더명 기준
+    print("[PY] launcher: running crawler...")
+    crawl()   # 내부에서 save_schedule/flush_bulk 호출됨
+    print("[PY] launcher: done.")
