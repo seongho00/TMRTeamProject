@@ -1,6 +1,6 @@
 import React, {useState, useRef, useEffect} from "react";
 import DesignChoice from "./DesignChoice";
-
+import {motion, AnimatePresence} from "framer-motion";
 
 const CostSettingPage = ({onSubmit, onBack}) => {
     const [initialCost, setInitialCost] = useState("5000000");
@@ -16,8 +16,8 @@ const CostSettingPage = ({onSubmit, onBack}) => {
 
 
     // 초기비용 팝업 내부
-    const deposit = 1000 * 10000; // 예: 1000만원
-    const rent = 200 * 10000;     // 예: 200만원
+    const deposit = 1000 * 10000; // 예: 1000만원 보증금
+    const rent = 200 * 10000;     // 예: 200만원 월세
     const labor = 300 * 10000;    // 2명 인건비 (300만원)
     const food = 300 * 10000;     // 식자재비 (300만원)
 
@@ -34,6 +34,11 @@ const CostSettingPage = ({onSubmit, onBack}) => {
 
     // result 음수 여부만 체크하는 함수
     const handleCheckResult = () => {
+        if (!selectedDesign) {
+            alert("디자인을 선택해주세요!");
+            return; // 선택 안 했으면 진행 막기
+        }
+
         if (result < 0) {
             setShowInitialCostModal(false);
             setShowLoanModal(true);   // 대출 여부 묻는 모달 열기
@@ -57,10 +62,10 @@ const CostSettingPage = ({onSubmit, onBack}) => {
         });
     };
 
-    const formatNumber = (value) => {
+    function formatNumber(value) {
         if (!value) return "";
-        return value.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    };
+        return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
 
     const unformatNumber = (value) => {
         return value.replace(/[^0-9]/g, "");
@@ -93,18 +98,36 @@ const CostSettingPage = ({onSubmit, onBack}) => {
         }
     }, [initialCost]);
 
+    function parseNumber(value) {
+        if (!value) return 0;
+        return Number(value.replace(/,/g, ""));
+    }
+
     function formatMoneyKRW(value) {
-        if (value >= 100000000) { // 1억 이상
-            const eok = Math.floor(value / 100000000); // 억 단위
-            const man = Math.floor((value % 100000000) / 10000); // 남은 만원 단위
-            if (man > 0) {
-                return `${eok}억 ${man.toLocaleString()}만원`;
-            } else {
-                return `${eok}억`;
-            }
-        } else {
-            return `${(value / 10000).toLocaleString()}만원`;
+        if (value === null || value === undefined || isNaN(value)) return "0원";
+
+        const num = Number(value);
+        const isNegative = num < 0;
+        const absNum = Math.abs(num);
+
+        // 만원 미만
+        if (absNum < 10000) {
+            return (isNegative ? "-" : "") + `${absNum.toLocaleString()}원`;
         }
+
+        const eok = Math.floor(absNum / 100000000);          // 억 단위
+        const man = Math.floor((absNum % 100000000) / 10000); // 만원 단위
+
+        let result = "";
+        if (eok > 0 && man > 0) {
+            result = `${eok}억 ${man.toLocaleString()}만원`;
+        } else if (eok > 0) {
+            result = `${eok}억`;
+        } else {
+            result = `${man.toLocaleString()}만원`;
+        }
+
+        return (isNegative ? "-" : "") + result;
     }
 
 
@@ -124,6 +147,10 @@ const CostSettingPage = ({onSubmit, onBack}) => {
                             onChange={handleChange}
                         />
                     </div>
+                    {/* 입력값을 억/만원 단위로 변환해서 표시 */}
+                    <p className="tw-my-2 tw-text-gray-600">
+                        {formatMoneyKRW(initialCost)}
+                    </p>
 
                     <button
                         onClick={handleStart}
@@ -143,137 +170,189 @@ const CostSettingPage = ({onSubmit, onBack}) => {
             </div>
 
             {/* 0단계 : 초기 비용 계산 팝업창 */}
-            {showInitialCostModal && (
-                <div
-                    className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black tw-bg-opacity-40">
-                    <div className="tw-bg-white tw-p-6 tw-rounded-2xl tw-w-[500px] tw-shadow-lg">
-                        <h2 className="tw-text-xl tw-font-bold tw-mb-4">초기 비용 계산</h2>
-                        <p className="tw-mb-4">
-                            입력한 초기자금 :{" "}
-                            <span className="tw-font-semibold">
+
+            <AnimatePresence mode="wait">
+                {showInitialCostModal && (
+                    <motion.div
+                        key="initialCostModal"
+                        className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black tw-bg-opacity-40"
+                        initial={{opacity: 0}}
+                        animate={{opacity: 1}}
+                    >
+                        <motion.div
+                            className="tw-bg-white tw-p-6 tw-rounded-2xl tw-w-[500px] tw-shadow-lg"
+                            initial={{scale: 0.9, opacity: 0}}
+                            animate={{scale: [0.8, 1.05, 1], opacity: 1}}
+                            transition={{duration: 0.25, ease: "easeOut"}}
+                        >
+                            <h2 className="tw-text-xl tw-font-bold tw-mb-4">초기 비용 계산</h2>
+                            <p className="tw-mb-4">
+                                입력한 초기자금 :{" "}
+                                <span className="tw-font-semibold">
                                 {formatMoneyKRW(initialCost)}
                              </span>
-                        </p>
+                            </p>
 
-                        <p className="tw-mb-4">
-                            평균 보증금 :{" "}
-                            <span className="tw-font-semibold">
+                            <p className="tw-mb-4">
+                                평균 보증금 :{" "}
+                                <span className="tw-font-semibold">
                                 {formatMoneyKRW(deposit)}
                             </span>
-                        </p>
+                            </p>
 
-                        <p className="tw-mb-4">
-                            평균 월세 :{" "}
-                            <span className="tw-font-semibold">
+                            <p className="tw-mb-4">
+                                평균 월세 :{" "}
+                                <span className="tw-font-semibold">
                                 {formatMoneyKRW(rent)}
                             </span>
-                        </p>
+                            </p>
 
-                        <p className="tw-mb-4">
-                            인건비(2명) :{" "}
-                            <span className="tw-font-semibold">
+                            <p className="tw-mb-4">
+                                인건비(2명) :{" "}
+                                <span className="tw-font-semibold">
                                 {formatMoneyKRW(labor)}
                             </span>
-                        </p>
+                            </p>
 
-                        <p className="tw-mb-4">
-                            식자재 :{" "}
-                            <span className="tw-font-semibold">
+                            <p className="tw-mb-4">
+                                식자재 :{" "}
+                                <span className="tw-font-semibold">
                                 {formatMoneyKRW(food)}
                             </span>
-                        </p>
+                            </p>
 
 
-                        {/* 디자인 선택창 */}
-                        <DesignChoice onSelect={setSelectedDesign}/>
+                            {/* 디자인 선택창 */}
+                            <DesignChoice onSelect={setSelectedDesign}/>
 
-                        <p className="tw-mb-4">
-                            결과 :{" "}
-                            <span className="tw-font-semibold">
+                            <p className="tw-mb-4">
+                                결과 :{" "}
+                                <span className="tw-font-semibold">
                                 {formatMoneyKRW(result)}
                             </span>
-                        </p>
+                            </p>
 
-                        {/* 버튼 영역 */}
-                        <div className="tw-flex tw-justify-end tw-gap-3">
-                            <button
-                                onClick={() => setShowLoanForm(false)}
-                                className="tw-px-4 tw-py-2 tw-rounded-lg tw-border tw-border-gray-300 hover:tw-bg-gray-100"
-                            >
-                                취소
-                            </button>
-                            <button
-                                onClick={handleCheckResult}
-                                className="tw-px-4 tw-py-2 tw-rounded-lg tw-bg-blue-600 tw-text-white hover:tw-bg-blue-700"
-                            >
-                                확인
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                            {/* 버튼 영역 */}
+                            <div className="tw-flex tw-justify-end tw-gap-3">
+                                <button
+                                    onClick={() => setShowInitialCostModal(false)}
+                                    className="tw-px-4 tw-py-2 tw-rounded-lg tw-border tw-border-gray-300 hover:tw-bg-gray-100"
+                                >
+                                    취소
+                                </button>
+                                <button
+                                    onClick={handleCheckResult}
+                                    className="tw-px-4 tw-py-2 tw-rounded-lg tw-bg-blue-600 tw-text-white hover:tw-bg-blue-700"
+                                >
+                                    확인
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
 
-            {/* 1단계: 대출 여부 묻는 팝업 */}
-            {showLoanModal && (
-                <div
-                    className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black tw-bg-opacity-40">
-                    <div className="tw-bg-white tw-p-6 tw-rounded-lg tw-w-96">
-                        <h2 className="tw-text-xl tw-font-bold tw-mb-4">자본이 부족합니다</h2>
-                        <p className="tw-mb-4">대출을 진행하시겠습니까?</p>
-                        <div className="tw-flex tw-justify-end tw-space-x-2">
-                            <button
-                                onClick={() => {
-                                    setShowLoanModal(false);
+                {/* 1단계: 대출 여부 묻는 팝업 */}
+                {showLoanModal && (
+                    <motion.div
+                        key="loanModal"
+                        className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black tw-bg-opacity-40"
+                        initial={{opacity: 0}}
+                        animate={{opacity: 1}}
+                        transition={{duration: 0.1}}
+                    >
+                        <motion.div
+                            className="tw-bg-white tw-p-6 tw-rounded-lg tw-w-96"
+                            initial={{scale: 0.8, opacity: 0}}
+                            animate={{scale: [0.8, 1.05, 1], opacity: 1}}
+                            transition={{duration: 0.25, ease: "easeOut"}}
+                        >
+                            <h2 className="tw-text-xl tw-font-bold tw-mb-4">자본이 부족합니다</h2>
+                            <p className="tw-mb-4">대출을 진행하시겠습니까?</p>
+                            <div className="tw-flex tw-justify-end tw-space-x-2">
+                                <button
+                                    onClick={() => {
+                                        setShowLoanModal(false);
+                                    }}
+                                    className="tw-bg-gray-400 tw-text-white tw-px-4 tw-py-2 tw-rounded"
+                                >
+                                    아니오
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowLoanModal(false);   // 첫 모달 닫기
+                                        setShowLoanForm(true);     // LoanPage 모달 열기
+                                    }}
+                                    className="tw-bg-blue-500 tw-text-white tw-px-4 tw-py-2 tw-rounded hover:tw-bg-blue-600"
+                                >
+                                    대출하기
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {/* 2단계: LoanPage(대출 입력 폼) 팝업 */}
+                {showLoanForm && (
+                    <motion.div
+                        key="loanForm"
+                        className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black tw-bg-opacity-40"
+                        initial={{opacity: 0}}
+                        animate={{opacity: 1}}
+                        transition={{duration: 0.1}}
+                    >
+                        <motion.div
+                            className="tw-bg-white tw-p-6 tw-rounded-lg tw-w-96"
+                            initial={{scale: 0.8, opacity: 0}}
+                            animate={{scale: [0.8, 1.05, 1], opacity: 1}}
+                            transition={{duration: 0.25, ease: "easeOut"}}
+                        >
+                            <h1 className="tw-text-xl tw-font-bold tw-mb-4">대출 받기</h1>
+                            <input
+                                type="text"
+                                value={formatNumber(amount)}
+                                onChange={(e) => {
+                                    const rawValue = e.target.value;
+                                    const numericValue = parseNumber(rawValue); // 콤마 제거 후 숫자 변환
+                                    setAmount(numericValue);
                                 }}
-                                className="tw-bg-gray-400 tw-text-white tw-px-4 tw-py-2 tw-rounded"
-                            >
-                                아니오
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setShowLoanModal(false);   // 첫 모달 닫기
-                                    setShowLoanForm(true);     // LoanPage 모달 열기
-                                }}
-                                className="tw-bg-blue-500 tw-text-white tw-px-4 tw-py-2 tw-rounded hover:tw-bg-blue-600"
-                            >
-                                대출하기
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                                placeholder="대출 금액"
+                                className="tw-border tw-w-full tw-p-2 tw-rounded tw-mb-4"
+                            />
 
-            {/* 2단계: LoanPage(대출 입력 폼) 팝업 */}
-            {showLoanForm && (
-                <div
-                    className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black tw-bg-opacity-40">
-                    <div className="tw-bg-white tw-p-6 tw-rounded-lg tw-w-96">
-                        <h1 className="tw-text-xl tw-font-bold tw-mb-4">대출 시스템</h1>
-                        <input
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(Number(e.target.value))}
-                            placeholder="대출 금액"
-                            className="tw-border tw-w-full tw-p-2 tw-rounded tw-mb-4"
-                        />
-                        <div className="tw-flex tw-justify-end tw-space-x-2">
-                            <button
-                                onClick={() => setShowLoanForm(false)}
-                                className="tw-bg-gray-400 tw-text-white tw-px-4 tw-py-2 tw-rounded"
-                            >
-                                취소
-                            </button>
-                            <button
-                                onClick={handleConfirm}
-                                className="tw-bg-blue-500 tw-text-white tw-px-4 tw-py-2 tw-rounded hover:tw-bg-blue-600"
-                            >
-                                확정
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                            {/* 입력값을 억/만원 단위로 변환해서 표시 */}
+                            <p className="tw-my-2 tw-text-gray-600">
+                                {formatMoneyKRW(amount)}
+                            </p>
 
+                            {/* 월 이자 계산 결과 표시 */}
+                            {amount > 0 && (
+                                <p className="tw-mb-4 tw-text-gray-700">
+                                    예상 월 이자(연 5%):{" "}
+                                    <span className="tw-font-semibold tw-text-red-600">
+            {Math.floor(amount * 0.05 / 12).toLocaleString()} 원
+          </span>
+                                </p>
+                            )}
+
+                            <div className="tw-flex tw-justify-end tw-space-x-2">
+                                <button
+                                    onClick={() => setShowLoanForm(false)}
+                                    className="tw-bg-gray-400 tw-text-white tw-px-4 tw-py-2 tw-rounded"
+                                >
+                                    취소
+                                </button>
+                                <button
+                                    onClick={handleConfirm}
+                                    className="tw-bg-blue-500 tw-text-white tw-px-4 tw-py-2 tw-rounded hover:tw-bg-blue-600"
+                                >
+                                    확정
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+            </AnimatePresence>
 
         </>
     );
