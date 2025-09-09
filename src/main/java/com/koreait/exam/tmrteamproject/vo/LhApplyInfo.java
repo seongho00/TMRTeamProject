@@ -1,72 +1,50 @@
 package com.koreait.exam.tmrteamproject.vo;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
-import javax.persistence.*;
-
-import com.koreait.exam.tmrteamproject.config.AttachmentDtoListConverter;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
+import javax.persistence.Entity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
-@Table(name = "lh_apply_info")
 @Getter
 @Setter
-@ToString
 @NoArgsConstructor
-@JsonIgnoreProperties(ignoreUnknown = true)
+@AllArgsConstructor
+@SuperBuilder
+@ToString(callSuper = true)
 public class LhApplyInfo extends BaseEntity {
 
-    @Column(name = "site_no", nullable = false, unique = true)
-    private Integer siteNo;
+    private Integer listNo;                 // 번호
+    private String postType;                // 유형
+    private String name;                    // 공고명
+    private String region;                  // 지역
+    private boolean hasAttach;              // 첨부파일 유무
+    private LocalDate postedDate;           // 공고일
+    private LocalDate dueDate;              // 마감일
+    private String status;                  // 상태
+    private String linkEl;                  // link 추출용
+    private LocalDateTime applyStart;       // 신청시작
+    private LocalDateTime applyEnd;         // 신청마감
+    private LocalDateTime resultTime;       // 결과 발표일
+    private LocalDate contractStart;        // 계약 체결 시작
+    private LocalDate contractEnd;          // 계약 체결 마감
 
-    private String type;
-    private String title;
-    private String address;
-
-    @Column(name = "post_date")
-    private LocalDate postDate;
-
-    @Column(name = "deadline_date")
-    private LocalDate deadlineDate;
-
-    private String status;
-    private Integer views;
-
-    @Column(columnDefinition = "TEXT")
-    @Convert(converter = AttachmentDtoListConverter.class)
-    private List<AttachmentDto> attachments;
-
-    @PrePersist
-    protected void onCreate() {
-        regDate = updateDate = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updateDate = LocalDateTime.now();
-    }
-
-    public void updateFrom(LhApplyInfo src) {
-        this.type = src.type;
-        this.address = src.address;
-        this.postDate = src.postDate;
-        this.deadlineDate = src.deadlineDate;
-        this.status = src.status;
-        this.views = src.views;
-        this.attachments = src.attachments;
-    }
-
-    @Getter
-    @Setter
-    @ToString
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class AttachmentDto {
-        private String name;
-        private String url;
+    public void updateFrom(LhApplyInfo dto) {
+        this.listNo = dto.getListNo();
+        this.postType = dto.getPostType();
+        this.name = dto.getName();
+        this.region = dto.getRegion();
+        this.hasAttach = dto.isHasAttach();
+        this.postedDate = dto.getPostedDate();
+        this.dueDate = dto.getDueDate();
+        this.status = dto.getStatus();
+        this.linkEl = dto.getLinkEl();
+        this.applyStart = dto.getApplyStart();
+        this.applyEnd = dto.getApplyEnd();
+        this.resultTime = dto.getResultTime();
+        this.contractStart = dto.getContractStart();
+        this.contractEnd = dto.getContractEnd();
     }
 }
