@@ -1,6 +1,7 @@
 import React, {useState, useRef, useEffect} from "react";
 import DesignChoice from "./DesignChoice";
 import {motion, AnimatePresence} from "framer-motion";
+import InfoTooltip from "./InfoTooltip";
 
 const CostSettingPage = ({onSubmit, onBack}) => {
     const [initialCost, setInitialCost] = useState("5000000");
@@ -20,10 +21,10 @@ const CostSettingPage = ({onSubmit, onBack}) => {
     const labor = 300 * 10000;    // 2명 인건비 (300만원)
     const food = 300 * 10000;     // 식자재비 (300만원)
 
-// 디자인 선택에 따라 변하는 비용
+    // 디자인 선택에 따라 변하는 비용
     const designCost = selectedDesign ? selectedDesign.cost : 0;
 
-// 결과 계산
+    // 결과 계산
     const totalUsed = deposit + rent + labor + food + designCost;
     const result = initialCost - totalUsed;
 
@@ -49,7 +50,7 @@ const CostSettingPage = ({onSubmit, onBack}) => {
                 initialCost: money,
                 goLoan: false,
                 loanAmount: 0,
-                rent : rent,
+                rent: rent,
             });
             setShowLoanForm(false);
         }
@@ -70,8 +71,8 @@ const CostSettingPage = ({onSubmit, onBack}) => {
             initialCost: money,
             goLoan: true,
             loanAmount: amount,
-            deposit : deposit,
-            rent : rent,
+            deposit: deposit,
+            rent: rent,
         });
     };
 
@@ -144,8 +145,6 @@ const CostSettingPage = ({onSubmit, onBack}) => {
     }
 
 
-
-
     return (
         <>
             <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
@@ -208,6 +207,26 @@ const CostSettingPage = ({onSubmit, onBack}) => {
                              </span>
                             </p>
 
+                            <div className="tw-mb-4 tw-flex tw-items-center tw-gap-2">
+                                <InfoTooltip text="월세의 경우 보증금 + (월세×100) 금액을 기준으로 중개수수료(약 0.3~0.9%)가 발생합니다." />
+                                <span>중개보수 :</span>
+                                <span className="tw-font-semibold">{formatMoneyKRW(rent)}</span>
+                            </div>
+
+                            <p className="tw-mb-4">
+                                관리비 :{" "}
+                                <span className="tw-font-semibold">
+                                {formatMoneyKRW(rent)}
+                            </span>
+                            </p>
+
+                            <p className="tw-mb-4">
+                                권리금 :{" "}
+                                <span className="tw-font-semibold">
+                                {formatMoneyKRW(rent)}
+                            </span>
+                            </p>
+
                             <p className="tw-mb-4">
                                 평균 보증금 :{" "}
                                 <span className="tw-font-semibold">
@@ -239,6 +258,19 @@ const CostSettingPage = ({onSubmit, onBack}) => {
 
                             {/* 디자인 선택창 */}
                             <DesignChoice onSelect={setSelectedDesign}/>
+
+                            {/* 부동산 거래 방식 */}
+                            <p className="tw-mb-4">
+                                부동산 거래 방식 :{" "}
+                                <select
+                                    className="tw-border tw-rounded-lg tw-px-3 tw-py-2"
+                                >
+                                    <option value="">-- 결제 방식을 선택하세요 --</option>
+                                    <option value="monthly">결제 하지 않기.</option>
+                                    <option value="jeonse">직접 조사 (체력 -10)</option>
+                                    <option value="purchase">외부 결제 (비용 20만원)</option>
+                                </select>
+                            </p>
 
                             <p className="tw-mb-4">
                                 결과 :{" "}

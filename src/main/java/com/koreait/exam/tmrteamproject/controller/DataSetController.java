@@ -41,14 +41,14 @@ public class DataSetController {
 
     @GetMapping("/getDataSet")
     @ResponseBody
-    public Long getAverageSales(
+    public DataSet getAverageSales(
             @RequestParam String emdCode,
             @RequestParam String upjongCd
     ) {
         List<DataSet> dataSets = dataSetService.findAllByAdminDongCodeAndServiceIndustryCode(emdCode, upjongCd);
 
 
-        return dataSets.get(0).getMonthlySalesAmount();
+        return dataSets.get(0);
     }
 
 }
