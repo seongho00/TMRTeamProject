@@ -11,9 +11,9 @@ import java.util.Optional;
 
 public interface LhApplyInfoRepository extends JpaRepository<LhApplyInfo, Long> {
 
-    Optional<LhApplyInfo> findBySiteNo(int siteNo);
-
     List<LhApplyInfo> findAllByStatusNotContaining(String status);
 
     List<LhApplyInfo> findAll(Specification<LhApplyInfo> spec, Sort sort);
+
+    Optional<LhApplyInfo> findByListNo(Integer listNo);
 }

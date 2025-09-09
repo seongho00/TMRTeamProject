@@ -28,11 +28,11 @@ public class LhApplyInfoService {
         if (items == null || items.isEmpty()) return affected;
 
         for (LhApplyInfo dto : items) {
-            if (dto == null || dto.getSiteNo() == null) {
-                log.warn("siteNo 없음 → SKIP : {}", dto != null ? dto.getTitle() : "null");
+            if (dto == null || dto.getListNo() == null) {
+                log.warn("ListNo 없음 → SKIP : {}", dto != null ? dto.getName() : "null");
                 continue;
             }
-            lhApplyInfoRepository.findBySiteNo(dto.getSiteNo())
+            lhApplyInfoRepository.findByListNo(dto.getListNo())
                     .ifPresentOrElse(found -> {
                         // 기존 레코드 갱신
                         found.updateFrom(dto);
@@ -64,24 +64,23 @@ public class LhApplyInfoService {
         Specification<LhApplyInfo> spec = Specification.where(alwaysTrue());
 
         if (hasType) {
-            spec = spec.and(eq("type", type));
+            spec = spec.and(eq("postType", type));
         }
         if (hasStatus) {
             spec = spec.and(eq("status", status));
         }
         if (hasRegion) {
             // 주소 LIKE 검색 허용: 예) '%전%'
-            spec = spec.and(likeLower("address", region));
+            spec = spec.and(likeLower("region", region));
         }
 
         if (hasQ) {
-            List<String> fields = Arrays.asList("title", "address", "type", "status");
+            List<String> fields = Arrays.asList("name", "region", "postType", "status");
             spec = spec.and(tokensInAnyField(q, fields, true));
         }
 
-        // 정렬: 최신 등록일 → id 내림차순
-        Sort sort = Sort.by(Sort.Direction.DESC, "postDate")
-                .and(Sort.by(Sort.Direction.DESC, "id"));
+        // 정렬: 최신 등록일 → 내림차순
+        Sort sort = Sort.by(Sort.Direction.DESC, "postedDate");
 
         return lhApplyInfoRepository.findAll(spec, sort);
     }
