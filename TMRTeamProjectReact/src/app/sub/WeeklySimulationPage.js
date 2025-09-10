@@ -326,17 +326,22 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
                 ))}
             </div>
             {isWaitingChoice && pendingEvent && (
-                <div className="tw-p-4 tw-bg-yellow-100 tw-rounded-lg tw-mb-4 tw-w-full tw-max-w-2xl">
-                    <p className="tw-font-bold tw-mb-2">{pendingEvent.description}</p>
-                    {pendingEvent.choices.map((choice, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => applyDecision(choice)}
-                            className="tw-block tw-bg-blue-500 tw-text-white tw-px-4 tw-py-2 tw-rounded-xl tw-mb-2 hover:tw-bg-blue-600 tw-w-full"
-                        >
-                            {choice.label}
-                        </button>
-                    ))}
+                <div className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black tw-bg-opacity-40 z-50">
+                    <div className="tw-bg-white tw-rounded-2xl tw-p-6 tw-w-full tw-max-w-md tw-shadow-lg">
+                        {/* 이벤트 설명 */}
+                        <p className="tw-font-bold tw-text-lg tw-mb-4">{pendingEvent.description}</p>
+
+                        {/* 선택 버튼 */}
+                        {pendingEvent.choices.map((choice, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => applyDecision(choice)}
+                                className="tw-block tw-bg-blue-500 tw-text-white tw-px-4 tw-py-2 tw-rounded-xl tw-mb-2 hover:tw-bg-blue-600 tw-w-full"
+                            >
+                                {choice.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
             <div className="tw-absolute tw-top-1/2 tw-left-10 tw-transform tw--translate-y-1/2">
@@ -345,7 +350,7 @@ const WeeklySimulationPage = ({character, business, location, initialCost, goLoa
 
             <div className="tw-absolute tw-top-1/2 tw-right-6 tw-transform tw--translate-y-1/2">
                 <div>남은 대출금 : {formatKoreanMoney(loanAmount)}</div>
-                <div className="tw-mt-2 tw-h-48 tw-overflow-y-auto tw-bg-gray-100 tw-p-2 tw-rounded">
+                <div className="tw-mt-2 tw-h-48 tw-overflow-y-auto  tw-p-2 tw-rounded">
                     {loanLogs.map((log, idx) => (
                         <div key={idx} className="tw-text-xs tw-mb-1">{log}</div>
                     ))}
