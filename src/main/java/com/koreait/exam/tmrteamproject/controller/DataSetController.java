@@ -1,8 +1,11 @@
 package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.service.DataSetService;
+import com.koreait.exam.tmrteamproject.vo.DataSet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping("usr/dataset")
+@CrossOrigin(origins = "http://localhost:3000")
 public class DataSetController {
 
     private final DataSetService dataSetService;
@@ -34,4 +38,17 @@ public class DataSetController {
     public List<Map<String, Object>> getEmdInfo(@RequestParam("adminDongCode") String adminDongCode) {
         return dataSetService.getFloatingAndSalesByEmd(adminDongCode);
     }
+
+    @GetMapping("/getDataSet")
+    @ResponseBody
+    public DataSet getAverageSales(
+            @RequestParam String emdCode,
+            @RequestParam String upjongCd
+    ) {
+        List<DataSet> dataSets = dataSetService.findAllByAdminDongCodeAndServiceIndustryCode(emdCode, upjongCd);
+
+
+        return dataSets.get(0);
+    }
+
 }

@@ -4,7 +4,7 @@ import {useState, useEffect} from "react";
 import WeeklyCalendar from "./WeeklyCalendar";
 
 
-const WeeklySimulationPage = ({character, business, location, initialCost, onFinish}) => {
+const WeeklySimulationPage = ({character, business, location, initialCost, goLoan, rent, setShowResult}) => {
     const [month, setMonth] = useState(1);
     const [weekInMonth, setWeekInMonth] = useState(1); // ✅ 추가: 1~4
     const [year, setYear] = useState(2025); // 기본 시작 연도
@@ -15,7 +15,19 @@ const WeeklySimulationPage = ({character, business, location, initialCost, onFin
     const [pendingEvent, setPendingEvent] = useState(null); // 선택형 이벤트 발생 시 저장
     const [isWaitingChoice, setIsWaitingChoice] = useState(false);
     const [remainingEvents, setRemainingEvents] = useState([]); // ✅ 이벤트 큐
-    const [averageRentData, setAverageRentData] = useState(null);
+    const [loanAmount, setLoanAmount] = useState(goLoan);
+    const [interestRate] = useState(5); // 연이율 5%, 필요시 props로 받아오기
+    const [loanMonths] = useState(36); // 상환 개월 수
+    const [loanLogs, setLoanLogs] = useState([]);
+    const [isFinished, setIsFinished] = useState(false);
+    const [monthlySalesAmount, setMonthlySalesAmount] = useState(null);
+
+    const lastWeek = getLastWeekOfMonth(year, month);
+
+
+    if (month === 12 && weekInMonth === lastWeek) {
+        setIsFinished(true); // ✅ 종료 상태로 전환
+    }
 
     const [status, setStatus] = useState({
         fatigue: false,
@@ -23,23 +35,24 @@ const WeeklySimulationPage = ({character, business, location, initialCost, onFin
         trust: 0
     });
 
-    useEffect(() => {
-        if (!location?.emdCode) return;
+    // 행정동코드, 업종코드를 통해 매출액가져오기
 
-        fetch(`http://localhost:8080/usr/commercialProperty/getAverageDepositAndMonthlyRent?emdCode=${location.emdCode}`)
+    useEffect(() => {
+        if (!location?.emdCode || !business?.upjongCd) return;
+
+        fetch(`http://localhost:8080/usr/dataset/getDataSet?emdCode=${location.emdCode}&upjongCd=${business.upjongCd}`)
             .then(res => {
-                if (!res.ok) throw new Error("데이터를 불러올 수 없습니다");
+                if (!res.ok) throw new Error("매출 데이터를 불러올 수 없습니다");
                 return res.json();
             })
             .then(data => {
-                console.log(data)
-                setAverageRentData(data); // ✅ 저장
-            })
-            .catch(err => {
-                console.error("데이터 조회 실패:", err);
-            });
-    }, [location]);
+                console.log("평균 매출 데이터:", data);
+                const sales = (data.monthlySalesAmount / data.storeCount) * 0.6 // 0.6 : 소규모 창업을 위한 보정수치
+                setMonthlySalesAmount(sales);
 
+            })
+            .catch(err => console.error(err));
+    }, [location, business]);
 
     // 이벤트 JSON 가져오기
     useEffect(() => {
@@ -72,8 +85,30 @@ const WeeklySimulationPage = ({character, business, location, initialCost, onFin
     const runMainSimulation = () => {
         const revenue = getEstimatedRevenue();
         const cost = getEstimatedCost();
-        const profit = revenue - cost;
-        const newBalance = balance + profit;
+        let profit = revenue - cost;
+        let newBalance = balance + profit;
+
+
+        // ✅ 대출 상환 처리
+        if (loanAmount > 0 && weekInMonth === 1) {
+            const monthlyPayment = calculateMonthlyPayment(loanAmount, interestRate, loanMonths);
+            // 이자/원금 분리
+            const monthlyRate = interestRate / 100 / 12;
+            const interestPortion = Math.round(loanAmount * monthlyRate);
+            const principalPortion = monthlyPayment - interestPortion;
+
+            // 원금 줄이기
+            const newLoanAmount = Math.max(0, loanAmount - principalPortion);
+            setLoanAmount(newLoanAmount);
+
+            // 잔고에서 상환금 빼기
+            newBalance -= monthlyPayment;
+
+            setLoanLogs(prev => [
+                `💸 대출 상환: 원금 ${formatKoreanMoney(principalPortion)}, 이자 ${formatKoreanMoney(interestPortion)})`,
+                ...prev
+            ]);
+        }
 
         setBalance(newBalance);
         setLogs(prev => [
@@ -86,7 +121,7 @@ const WeeklySimulationPage = ({character, business, location, initialCost, onFin
 
         // 날짜 계산 로직
         if ((month === 12 && weekInMonth === lastWeek) || newBalance <= 0) {
-            onFinish(history.concat({year, month, weekInMonth, revenue, cost, profit, balance: newBalance}));
+            setIsFinished(true);
         } else {
             if (weekInMonth === lastWeek) {
                 if (month === 12) {
@@ -210,24 +245,79 @@ const WeeklySimulationPage = ({character, business, location, initialCost, onFin
     };
 
     const getEstimatedRevenue = () => {
-        return 5000000 + Math.floor(Math.random() * 1000000) - 500000;
+        if (!monthlySalesAmount) return 0;
+        const base = monthlySalesAmount * 0.6;   // 보정치 60% 적용
+        const variation = base * 0.1;            // ±10% 변동
+        return Math.floor(base + (Math.random() * variation * 2 - variation));
     };
 
     const getEstimatedCost = () => {
-        const base = 3000000 + Math.floor(Math.random() * 500000);
-        return applyCostEvents(base);
+        // 인건비 (2명 기준 예: 300만 원)
+        const labor = 3000000;
+
+        // 식자재비 (매출의 30% 정도 가정 → getEstimatedRevenue() 참조)
+        const food = Math.floor(getEstimatedRevenue() * 0.3);
+
+        // 기본 운영비 (랜덤)
+        const etc = 500000 + Math.floor(Math.random() * 200000);
+
+        // 총합
+        const baseCost = rent + labor + food + etc;
+
+        return applyCostEvents(baseCost);
     };
+
+    function formatKoreanMoney(value) {
+        if (value === null || value === undefined || isNaN(value)) return "0원";
+
+        const num = Number(value);
+        const isNegative = num < 0;
+        const absNum = Math.abs(num);
+
+        const eok = Math.floor(absNum / 100000000);     // 억 단위
+        const man = Math.floor((absNum % 100000000) / 10000); // 만 단위
+        const won = absNum % 10000;                     // 원 단위
+
+        let result;
+
+        if (eok > 0) {
+            result = `${eok}억`;
+            if (man > 0) result += ` ${man.toLocaleString()}만`;
+            if (won > 0) result += ` ${won.toLocaleString()}원`;
+            else result += "원";
+        } else if (man > 0) {
+            result = `${man.toLocaleString()}만`;
+            if (won > 0) result += ` ${won.toLocaleString()}원`;
+            else result += "원";
+        } else {
+            result = `${won.toLocaleString()}원`;
+        }
+
+        return (isNegative ? "-" : "") + result;
+    }
+
+    function calculateMonthlyPayment(loanAmount, annualRate, months = 36) {
+        const monthlyRate = annualRate / 100 / 12;
+        if (monthlyRate === 0) return loanAmount / months;
+
+        const monthlyPayment =
+            loanAmount *
+            (monthlyRate * Math.pow(1 + monthlyRate, months)) /
+            (Math.pow(1 + monthlyRate, months) - 1);
+
+        return Math.round(monthlyPayment);
+    }
 
     return (
         <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-min-h-screen tw-px-4">
             <h1 className="tw-text-3xl tw-font-bold tw-mb-4">📊 {month}월 {weekInMonth}주차 시뮬레이션</h1>
-            <p className="tw-mb-2 tw-text-lg">현재 잔고: {balance.toLocaleString()}원</p>
+            <p className="tw-mb-2 tw-text-lg">현재 잔고: {formatKoreanMoney(balance)}</p>
 
             <button
-                onClick={runSimulation}
+                onClick={isFinished ? () => setShowResult(true) : runSimulation}
                 className="tw-mb-6 tw-bg-blue-500 tw-text-white tw-px-6 tw-py-2 tw-rounded-xl hover:tw-bg-blue-600"
             >
-                다음 달 진행 →
+                {isFinished ? "시뮬레이션 종료" : "다음 주 진행 →"}
             </button>
 
             <div className="tw-w-full tw-max-w-2xl tw-h-[300px] tw-overflow-y-auto tw-bg-gray-100 tw-p-4 tw-rounded-lg">
@@ -236,22 +326,37 @@ const WeeklySimulationPage = ({character, business, location, initialCost, onFin
                 ))}
             </div>
             {isWaitingChoice && pendingEvent && (
-                <div className="tw-p-4 tw-bg-yellow-100 tw-rounded-lg tw-mb-4 tw-w-full tw-max-w-2xl">
-                    <p className="tw-font-bold tw-mb-2">{pendingEvent.description}</p>
-                    {pendingEvent.choices.map((choice, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => applyDecision(choice)}
-                            className="tw-block tw-bg-blue-500 tw-text-white tw-px-4 tw-py-2 tw-rounded-xl tw-mb-2 hover:tw-bg-blue-600 tw-w-full"
-                        >
-                            {choice.label}
-                        </button>
-                    ))}
+                <div className="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-bg-black tw-bg-opacity-40 z-50">
+                    <div className="tw-bg-white tw-rounded-2xl tw-p-6 tw-w-full tw-max-w-md tw-shadow-lg">
+                        {/* 이벤트 설명 */}
+                        <p className="tw-font-bold tw-text-lg tw-mb-4">{pendingEvent.description}</p>
+
+                        {/* 선택 버튼 */}
+                        {pendingEvent.choices.map((choice, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => applyDecision(choice)}
+                                className="tw-block tw-bg-blue-500 tw-text-white tw-px-4 tw-py-2 tw-rounded-xl tw-mb-2 hover:tw-bg-blue-600 tw-w-full"
+                            >
+                                {choice.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
-            <div className="tw-absolute tw-top-1/2 tw-left-6 tw-transform tw--translate-y-1/2">
+            <div className="tw-absolute tw-top-1/2 tw-left-10 tw-transform tw--translate-y-1/2">
                 <WeeklyCalendar year={year} month={month} weekInMonth={weekInMonth}/>
             </div>
+
+            <div className="tw-absolute tw-top-1/2 tw-right-6 tw-transform tw--translate-y-1/2">
+                <div>남은 대출금 : {formatKoreanMoney(loanAmount)}</div>
+                <div className="tw-mt-2 tw-h-48 tw-overflow-y-auto  tw-p-2 tw-rounded">
+                    {loanLogs.map((log, idx) => (
+                        <div key={idx} className="tw-text-xs tw-mb-1">{log}</div>
+                    ))}
+                </div>
+            </div>
+
         </div>
     );
 };

@@ -9,6 +9,7 @@ import com.opencsv.CSVReaderHeaderAware;
 import com.opencsv.exceptions.CsvValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -398,11 +399,11 @@ public class DataSetService {
 
         // 퍼센트화할 기준 (분모)
         Long maxFloating = dataSetRepository.findMaxAvgFloatingByQuarter(quarter);
-        Long maxSales    = dataSetRepository.findMaxAvgSalesByQuarter(quarter);
+        Long maxSales = dataSetRepository.findMaxAvgSalesByQuarter(quarter);
         Long maxStore = dataSetRepository.findMaxStoreCountByQuarter(quarter);
 
         // 안전 퍼센트 계산 (0 나눔 방지 + 최소 보정)
-        long footPercent  = calcPercent(avgFloating, maxFloating);
+        long footPercent = calcPercent(avgFloating, maxFloating);
         long salesPercent = calcPercent(avgSales, maxSales);
         long storePercent = calcPercent(sumStoreCount, maxStore);
 
@@ -461,5 +462,9 @@ public class DataSetService {
         log.info("행정동 [{}] 조회 결과: {}", adminDongCode, result.size());
 
         return result;
+    }
+
+    public List<DataSet> findAllByAdminDongCodeAndServiceIndustryCode(String emdCode, String upjongCd) {
+        return dataSetRepository.findAllByAdminDongCodeAndServiceIndustryCodeAndBaseYearQuarterCode(emdCode, upjongCd,"20251");
     }
 }
