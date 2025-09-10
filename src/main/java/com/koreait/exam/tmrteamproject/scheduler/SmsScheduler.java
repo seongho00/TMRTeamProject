@@ -1,11 +1,11 @@
 package com.koreait.exam.tmrteamproject.scheduler;
 
-import com.koreait.exam.tmrteamproject.repository.LhSupplyScheduleRepository;
+import com.koreait.exam.tmrteamproject.repository.LhApplyInfoRepository;
 import com.koreait.exam.tmrteamproject.repository.MemberRepository;
 import com.koreait.exam.tmrteamproject.repository.ScheduleInterestRepository;
 import com.koreait.exam.tmrteamproject.service.SolapiSmsService;
 import com.koreait.exam.tmrteamproject.util.PhoneNumber;
-import com.koreait.exam.tmrteamproject.vo.LhSupplySchedule;
+import com.koreait.exam.tmrteamproject.vo.LhApplyInfo;
 import com.koreait.exam.tmrteamproject.vo.Member;
 import com.koreait.exam.tmrteamproject.vo.ScheduleInterest;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import java.util.List;
 @Slf4j
 public class SmsScheduler {
 
-    private final LhSupplyScheduleRepository lhSupplyScheduleRepository;
+    private final LhApplyInfoRepository lhApplyInfoRepository;
     private final SolapiSmsService smsService;
     private final ScheduleInterestRepository scheduleInterestRepository;
     private final MemberRepository memberRepository;
@@ -35,11 +35,11 @@ public class SmsScheduler {
 
         for (ScheduleInterest si : scheduleInterests) {
             // 관심 일정 가져오기
-            LhSupplySchedule lhSupplySchedule = lhSupplyScheduleRepository
+            LhApplyInfo lhApplyInfo = lhApplyInfoRepository
                     .findById(si.getScheduleId())
                     .orElse(null);
 
-            if (lhSupplySchedule == null || si.getIsActive() == 0) {
+            if (lhApplyInfo == null || si.getIsActive() == 0) {
                 continue; // 일정 없거나 비활성 상태면 건너뜀
             }
 
@@ -54,18 +54,18 @@ public class SmsScheduler {
                 continue;
             }
 
-            LocalDate applyDate = lhSupplySchedule.getApplyStart().toLocalDate();
+            LocalDate applyDate = lhApplyInfo.getApplyStart().toLocalDate();
             long daysUntil = ChronoUnit.DAYS.between(today, applyDate);
 
             String msg = null;
             if (daysUntil == 7) {
-                msg = String.format("[알림] '%s' 신청일이 7일 남았습니다!", lhSupplySchedule.getName());
+                msg = String.format("[알림] '%s' 신청일이 7일 남았습니다!", lhApplyInfo.getName());
             } else if (daysUntil == 1) {
-                msg = String.format("[알림] '%s' 신청일이 하루 남았습니다!", lhSupplySchedule.getName());
+                msg = String.format("[알림] '%s' 신청일이 하루 남았습니다!", lhApplyInfo.getName());
             } else if (daysUntil == 0) {
                 msg = String.format("[알림] 오늘은 '%s' 신청일입니다! 신청 시작 시간 : %s",
-                        lhSupplySchedule.getName(),
-                        lhSupplySchedule.getApplyStart().toString());
+                        lhApplyInfo.getName(),
+                        lhApplyInfo.getApplyStart().toString());
             }
 
             if (msg != null && si.getIsActive() == 1) {

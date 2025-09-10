@@ -14,10 +14,10 @@
             </div>
 
             <nav class="w-[60%] text-center">
-                <ul id="nav-list" class="flex justify-center items-center relative space-x-4">
+                <ul id="nav-list" class="flex justify-center items-center relative">
                     <!-- 상권 분석 -->
                     <li class="relative group w-[240px]">
-                        <div class="flex justify-center items-center w-full h-[100px] cursor-pointer">
+                        <div class="flex justify-center items-center h-[100px] cursor-pointer">
                             <p class="text-[22px] text-black">상권 분석</p>
                         </div>
                         <ul class="sub-menu absolute flex flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
@@ -33,13 +33,15 @@
                     </li>
 
                     <!-- 부동산 매물 -->
-                    <li class="flex justify-center items-center w-[240px] h-[100px] relative">
-                        <p class="text-[22px] text-black">부동산 매물</p>
+                    <li class="relative group w-[240px]">
+                        <div class="flex justify-center items-center h-[100px] cursor-pointer">
+                            <p class="text-[22px] text-black">부동산 매물</p>
+                        </div>
                     </li>
 
                     <!-- 상가 청약 -->
                     <li class="relative group w-[240px]">
-                        <div class="flex justify-center items-center w-full h-[100px] cursor-pointer">
+                        <div class="flex justify-center items-center h-[100px] cursor-pointer">
                             <p class="text-[22px] text-black">상가 청약</p>
                         </div>
                         <ul class="sub-menu absolute flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
@@ -49,32 +51,39 @@
                             <li>
                                 <a href="../lh/notice" class="block px-4 py-2 hover:underline">공고문</a>
                             </li>
-                            <li>
-                                <a href="../member/conditionalLogout" class="block px-4 py-2 hover:underline">로그아웃</a>
-                            </li>
                         </ul>
                     </li>
 
                     <!-- 로그인 -->
-                    <li>
-                        <a href="../member/joinAndLogin"
-                           class="flex justify-center items-center w-[240px] h-[100px] relative cursor-pointer">
-                            <p class="text-[22px] text-black">로그인</p>
-                        </a>
+                    <li class="relative group">
+                        <ul>
+                            <li th:if="${rq != null and rq.isLogout()}">
+                                <a href="../member/joinAndLogin"
+                                   class="flex justify-center items-center w-[240px] h-[100px] relative cursor-pointer">
+                                    <p class="text-[22px] text-black">로그인</p>
+                                </a>
+                            </li>
+                            <li th:if="${rq != null and rq.isLogined()}">
+                                <a href="../member/conditionalLogout"
+                                   class="flex justify-center items-center w-[160px] h-[100px] relative cursor-pointer">
+                                    <p class="text-[22px] text-black">로그아웃</p>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
 
                     <!-- 알림 아이콘 + 팝업 -->
-                    <li id="notif-wrapper" class="relative">
+                    <li id="notif-wrapper" class="relative group" th:if="${rq != null and rq.isLogined()}">
                         <!-- 알림벨 버튼 -->
-                        <button id="notif-icon" type="button" class="cursor-pointer select-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24">
-                                <g fill="none" stroke="#9990e1" stroke-linecap="round" stroke-linejoin="round"
+                        <button id="notif-icon" type="button" class="cursor-pointer select-none w-[80px] h-[100px]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24">
+                                <g fill="none" stroke="#444" stroke-linecap="round" stroke-linejoin="round"
                                    stroke-width="2">
                                     <path stroke-dasharray="4" stroke-dashoffset="4" d="M12 3v2">
                                         <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.2s"
                                                  values="4;0"/>
                                     </path>
-                                    <path fill="#9990e1" fill-opacity="0" stroke-dasharray="28" stroke-dashoffset="28"
+                                    <path fill="#444" fill-opacity="0" stroke-dasharray="28" stroke-dashoffset="28"
                                           d="M12 5c-3.31 0 -6 2.69 -6 6l0 6c-1 0 -2 1 -2 2h8M12 5c3.31 0 6 2.69 6 6l0 6c1 0 2 1 2 2h-8">
                                         <animate fill="freeze" attributeName="fill-opacity" begin="0.9s" dur="0.5s"
                                                  values="0;1"/>
@@ -99,9 +108,9 @@
 
         <div class="w-full flex justify-center items-center gap-16 mt-[100px]">
             <!-- 첫 번째 아이콘 -->
-            <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
+            <div class="w-[100px] h-[100px] rounded-[5px] bg-white flex items-center justify-center">
                 <a href="../map/riskMap">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="68" height="68" viewBox="0 0 24 24">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24">
                         <path fill="#E94876" fill-rule="evenodd"
                               d="M14 20.5V4.25c0-.728-.002-1.2-.048-1.546c-.044-.325-.115-.427-.172-.484s-.159-.128-.484-.172C12.949 2.002 12.478 2 11.75 2s-1.2.002-1.546.048c-.325.044-.427.115-.484.172s-.128.159-.172.484c-.046.347-.048.818-.048 1.546V20.5z"
                               clip-rule="evenodd"/>
@@ -110,45 +119,49 @@
                               opacity="0.7"/>
                         <path fill="#E94876" d="M1.75 20.5a.75.75 0 0 0 0 1.5h20a.75.75 0 0 0 0-1.5z" opacity="0.5"/>
                     </svg>
+                    <p class="text-[10px] muted text-center">위험도 분석</p>
                 </a>
             </div>
 
             <!-- 두 번째 아이콘 -->
-            <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
+            <div class="w-[100px] h-[100px] rounded-[5px] bg-white flex items-center justify-center">
                 <a href="../map/commercialZoneMap">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="68" height="68" viewBox="0 0 24 24">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24">
                         <g fill="#3D9ECC">
                             <path d="M9.883 2.207a1.9 1.9 0 0 1 2.087 1.522l.025.167L12 4v7a1 1 0 0 0 .883.993L13 12h6.8a2 2 0 0 1 2 2a1 1 0 0 1-.026.226A10 10 0 1 1 9.504 2.293l.27-.067z"/>
                             <path d="M14 3.5V9a1 1 0 0 0 1 1h5.5a1 1 0 0 0 .943-1.332a10 10 0 0 0-6.11-6.111A1 1 0 0 0 14 3.5"/>
                         </g>
                     </svg>
+                    <p class="text-[10px] muted text-center">매출 분석</p>
                 </a>
             </div>
 
             <!-- 세 번째 아이콘 -->
-            <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="68" height="68" viewBox="0 0 640 640">
+            <div class="w-[100px] h-[100px] rounded-[5px] bg-white flex flex-col items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 640 640">
                     <g fill="#B197FC">
                         <path d="M128 64C92.7 64 64 92.7 64 128L64 512C64 547.3 92.7 576 128 576L308 576C297.5 561.4 289 545.3 282.9 528L208 528L208 448C208 430.3 222.3 416 240 416L272 416C274 416 276 416.2 277.9 416.5C283.9 392.9 294.2 371.1 308 352L304 352C295.2 352 288 344.8 288 336L288 304C288 295.2 295.2 288 304 288L336 288C344.8 288 352 295.2 352 304L352 308C379.5 288.2 412.3 275.6 448 272.6L448 128C448 92.7 419.3 64 384 64L128 64zM160 176C160 167.2 167.2 160 176 160L208 160C216.8 160 224 167.2 224 176L224 208C224 216.8 216.8 224 208 224L176 224C167.2 224 160 216.8 160 208L160 176zM304 160L336 160C344.8 160 352 167.2 352 176L352 208C352 216.8 344.8 224 336 224L304 224C295.2 224 288 216.8 288 208L288 176C288 167.2 295.2 160 304 160zM160 304C160 295.2 167.2 288 176 288L208 288C216.8 288 224 295.2 224 304L224 336C224 344.8 216.8 352 208 352L176 352C167.2 352 160 344.8 160 336L160 304zM608 464C608 384.5 543.5 320 464 320C384.5 320 320 384.5 320 464C320 543.5 384.5 608 464 608C543.5 608 608 543.5 608 464zM521.4 403.1C528.5 408.3 530.1 418.3 524.9 425.4L460.9 513.4C458.1 517.2 453.9 519.6 449.2 519.9C444.5 520.2 439.9 518.6 436.6 515.3L396.6 475.3C390.4 469.1 390.4 458.9 396.6 452.7C402.8 446.5 413 446.5 419.2 452.7L446 479.5L499 406.6C504.2 399.5 514.2 397.9 521.4 403.1z"/>
                     </g>
                 </svg>
+                <p class="text-[10px] muted text-center">부동산 매물</p>
             </div>
 
             <!-- 네 번째 아이콘 -->
-            <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
+            <div class="w-[100px] h-[100px] rounded-[5px] bg-white flex items-center justify-center">
                 <a href="../lh/notice">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="68" height="68" viewBox="0 0 640 640">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 640 640">
                         <g fill="#63E6BE">
                             <path d="M224 64C241.7 64 256 78.3 256 96L256 128L384 128L384 96C384 78.3 398.3 64 416 64C433.7 64 448 78.3 448 96L448 128L480 128C515.3 128 544 156.7 544 192L544 480C544 515.3 515.3 544 480 544L160 544C124.7 544 96 515.3 96 480L96 192C96 156.7 124.7 128 160 128L192 128L192 96C192 78.3 206.3 64 224 64zM160 304L160 336C160 344.8 167.2 352 176 352L208 352C216.8 352 224 344.8 224 336L224 304C224 295.2 216.8 288 208 288L176 288C167.2 288 160 295.2 160 304zM288 304L288 336C288 344.8 295.2 352 304 352L336 352C344.8 352 352 344.8 352 336L352 304C352 295.2 344.8 288 336 288L304 288C295.2 288 288 295.2 288 304zM432 288C423.2 288 416 295.2 416 304L416 336C416 344.8 423.2 352 432 352L464 352C472.8 352 480 344.8 480 336L480 304C480 295.2 472.8 288 464 288L432 288zM160 432L160 464C160 472.8 167.2 480 176 480L208 480C216.8 480 224 472.8 224 464L224 432C224 423.2 216.8 416 208 416L176 416C167.2 416 160 423.2 160 432zM304 416C295.2 416 288 423.2 288 432L288 464C288 472.8 295.2 480 304 480L336 480C344.8 480 352 472.8 352 464L352 432C352 423.2 344.8 416 336 416L304 416zM416 432L416 464C416 472.8 423.2 480 432 480L464 480C472.8 480 480 472.8 480 464L480 432C480 423.2 472.8 416 464 416L432 416C423.2 416 416 423.2 416 432z"/>
                         </g>
                     </svg>
+                    <p class="text-[10px] muted text-center">공고문</p>
                 </a>
             </div>
 
             <!-- 다섯 번째 아이콘 -->
-            <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
+            <div class="w-[100px] h-[100px] rounded-[5px] bg-white flex items-center justify-center">
                 <a href="../home/notifications" class="cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="68" height="68" viewBox="0 0 24 24">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24">
                         <g fill="none" stroke="#9990e1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
                             <path d="M12 3v2"/>
                             <path fill="#9990e1"
@@ -156,6 +169,7 @@
                             <path d="M10 20c0 1.1 0.9 2 2 2c1.1 0 2 -0.9 2 -2"/>
                         </g>
                     </svg>
+                    <p class="text-[10px] muted text-center">관심 일정</p>
                 </a>
             </div>
         </div>
