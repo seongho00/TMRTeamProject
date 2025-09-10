@@ -8,7 +8,8 @@
 <header th:replace="common/mapHeader::header"></header>
 
 <!-- 카카오맵 SDK: autoload=false 이므로 kakao.maps.load(...) 필수 -->
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=69544617df3febfc879cd18eed451ba3&libraries=services&autoload=false"></script>
+<script type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=69544617df3febfc879cd18eed451ba3&libraries=services&autoload=false"></script>
 
 <!-- 지도 영역 -->
 <div id="map" class="w-full h-[1080px]"></div>
@@ -136,8 +137,7 @@
 <!-- 지도/업종 스크립트 -->
 <script type="text/javascript" th:src="@{/js/commercialZoneMap.js}"></script>
 
-<!-- 챗봇 불러오기 -->
-<div th:replace="chatbot/chatbot::chatbot"></div>
+<div th:replace="chatbot/chat::chat"></div>
 
 <footer th:replace="common/footer :: footer"></footer>
 </body>
