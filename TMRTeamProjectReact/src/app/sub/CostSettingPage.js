@@ -14,6 +14,7 @@ const CostSettingPage = ({onSubmit, onBack}) => {
     const [interestRate, setInterestRate] = useState(5); // 연이율 % (기본 5%)
     const [selectedDesign, setSelectedDesign] = useState(null);
     const [selectedMethod, setSelectedMethod] = useState("");
+    const [result, setResult] = useState(0);
     const emdCd = location.emdCode;
 
     // 초기비용 팝업 내부
@@ -27,11 +28,14 @@ const CostSettingPage = ({onSubmit, onBack}) => {
     // 디자인 선택에 따라 변하는 비용
     const designCost = selectedDesign ? selectedDesign.cost : 0;
 
-    // 결과 계산
-    const totalUsed = deposit + rent + labor + food + designCost + premium + maintenance;
-    const [result, setResult] = useState(initialCost - totalUsed);
+    useEffect(() => {
+        const totalUsed = deposit + rent + labor + food + designCost + premium + maintenance
+            + (selectedMethod === "lawyer_check" ? 500000 : 0);
 
-    const money = initialCost - totalUsed + amount;
+        setResult(initialCost - totalUsed);
+    }, [initialCost, deposit, rent, labor, food, designCost, premium, maintenance, selectedMethod]);
+
+    const money = result + amount;
 
     // 부동산 사기 확률
     const scamRiskMap = {
