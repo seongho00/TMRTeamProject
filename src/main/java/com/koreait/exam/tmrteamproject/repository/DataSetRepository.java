@@ -151,4 +151,6 @@ public interface DataSetRepository extends JpaRepository<DataSet, Long> {
         );
         """, nativeQuery = true)
     List<Object[]> findTotalFloatingPopulationAndMonthlySalesAmountByAdminDongCode(String adminDongCode);
+
+    List<DataSet> findAllByAdminDongCodeAndServiceIndustryCodeAndBaseYearQuarterCode(String adminDongCode, String serviceIndustryCode, String baseYearQuarterCode);
 }
