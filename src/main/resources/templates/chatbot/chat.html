@@ -29,8 +29,10 @@
             </div>
         `);
 
+            // 버튼 생성 시 입력창 값 저장
+            const baseMessage = $("#chatbotText").val();
+
             $("#chatbotText").val("");  // 입력창 비우기
-            $chatBox.scrollTop($chatBox[0].scrollHeight); // 스크롤 하단으로
 
             $.ajax({
                 type: "POST",
@@ -42,6 +44,12 @@
                     if (data.resultCode === "F-2") {
                         // 안내 메시지 표시
                         $chatBox.append(`<div class="bot-msg"><b>챗봇: </b>행정동을 입력하지 않으셨어요 정확한 분석을 위해 행정동을 입력해주세요. <br> 예: '서울 종로구 사직동' 처럼 말해 주세요.</div>`);
+
+                        $chatBox.animate(
+                            {scrollTop: $chatBox[0].scrollHeight},
+                            500 // 500ms 동안 부드럽게 이동
+                        );
+                        return;
                     }
 
                     // 여러 개의 시군구가 있을 시
@@ -60,9 +68,10 @@
                             $("<button>")
                                 .text(label)
                                 .addClass("candidate-btn max-w-[80%]")
+                                .data("baseMessage", baseMessage)
                                 .on("click", function () {
                                     // 현재 success 스코프의 message는 바깥 변수라 혼동될 수 있으니 새로 구성
-                                    const newMessage = $("#chatbotText").val() + " " + c.sggNm;
+                                    const newMessage = $(this).data("baseMessage") + " " + c.sggNm;
 
                                     // 입력창 업데이트 후 재호출
                                     $("#chatbotText").val(newMessage);
@@ -70,6 +79,11 @@
                                 })
                                 .appendTo("#chat-box");
                         });
+
+                        $chatBox.animate(
+                            {scrollTop: $chatBox[0].scrollHeight},
+                            500 // 500ms 동안 부드럽게 이동
+                        );
                         return;
                     }
 
@@ -100,6 +114,10 @@
                             sendMessage(); // 다시 서버로 요청
                         });
 
+                        $chatBox.animate(
+                            {scrollTop: $chatBox[0].scrollHeight},
+                            500 // 500ms 동안 부드럽게 이동
+                        );
                         return;
                     }
 
@@ -404,6 +422,7 @@
 
                         $chatBox.append(tableHtml);
                     }
+
 
                     $chatBox.animate(
                         {scrollTop: $chatBox[0].scrollHeight},
