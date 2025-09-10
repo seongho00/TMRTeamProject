@@ -29,8 +29,10 @@
             </div>
         `);
 
+            // 버튼 생성 시 입력창 값 저장
+            const baseMessage = $("#chatbotText").val();
+
             $("#chatbotText").val("");  // 입력창 비우기
-            $chatBox.scrollTop($chatBox[0].scrollHeight); // 스크롤 하단으로
 
             $.ajax({
                 type: "POST",
@@ -42,18 +44,21 @@
                     if (data.resultCode === "F-2") {
                         // 안내 메시지 표시
                         $chatBox.append(`<div class="bot-msg"><b>챗봇: </b>행정동을 입력하지 않으셨어요 정확한 분석을 위해 행정동을 입력해주세요. <br> 예: '서울 종로구 사직동' 처럼 말해 주세요.</div>`);
+
+                        $chatBox.animate(
+                            {scrollTop: $chatBox[0].scrollHeight},
+                            500 // 500ms 동안 부드럽게 이동
+                        );
+                        return;
                     }
 
                     // 여러 개의 시군구가 있을 시
                     if (data.resultCode === "F-3") {
                         const candidates = data.data1;
-
-                        // 기존 표시 영역 비우기
-                        $("#candidateContainer").empty();
-
+                        console.log(data.data1)
                         // 안내 메시지 표시
-                        $("#candidateContainer").append(
-                            `<p>${data.msg || "동 이름이 여러 구에 있어요. 정확한 위치를 선택하세요."}</p>`
+                        $chatBox.append(
+                            `<div class="bot-msg"><b>챗봇: </b>같은 동 이름이 여러 구에 있어요. 정확한 위치를 선택해주세요.}</div>`
                         );
 
                         // 후보 버튼 생성
@@ -62,18 +67,23 @@
 
                             $("<button>")
                                 .text(label)
-                                .addClass("candidate-btn")
+                                .addClass("candidate-btn max-w-[80%]")
+                                .data("baseMessage", baseMessage)
                                 .on("click", function () {
                                     // 현재 success 스코프의 message는 바깥 변수라 혼동될 수 있으니 새로 구성
-                                    const newMessage = $("#chatbotText").val() + " " + c.sggNm;
+                                    const newMessage = $(this).data("baseMessage") + " " + c.sggNm;
 
                                     // 입력창 업데이트 후 재호출
                                     $("#chatbotText").val(newMessage);
-                                    $("#candidateContainer").empty();   // 후보 UI 정리
                                     sendMessage();                      // ✅ 기존 함수 재사용
                                 })
-                                .appendTo("#candidateContainer");
+                                .appendTo("#chat-box");
                         });
+
+                        $chatBox.animate(
+                            {scrollTop: $chatBox[0].scrollHeight},
+                            500 // 500ms 동안 부드럽게 이동
+                        );
                         return;
                     }
 
@@ -82,9 +92,9 @@
                         const upjongs = data.data1;
                         const message = data.data2;
 
-                        $chatBox.append(`<div class="bot-msg"><b>챗봇: </b>아래에서 업종을 선택하면 매출 데이터를 보여드릴게요.</div>`);
+                        $chatBox.append(`<div class="bot-msg"><b>챗봇: </b>아래에서 업종을 선택하시면 데이터를 보여드릴게요.</div>`);
 
-                        let btnHtml = '<div class="grid grid-cols-2 gap-2 mt-2 max-h-64 overflow-y-auto pr-2">';
+                        let btnHtml = '<div class="grid grid-cols-2 gap-2 mt-2 h-64 overflow-y-auto pr-2 flex-shrink-0">';
                         upjongs.forEach(u => {
                             btnHtml += `<button
                           class="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 candidate-upjong"
@@ -104,6 +114,10 @@
                             sendMessage(); // 다시 서버로 요청
                         });
 
+                        $chatBox.animate(
+                            {scrollTop: $chatBox[0].scrollHeight},
+                            500 // 500ms 동안 부드럽게 이동
+                        );
                         return;
                     }
 
@@ -374,11 +388,27 @@
                             tableHtml += `
                             <tr>
                                 <td class="border border-gray-300">
-                                    <a href="/lh/${lh.id}" target="_blank" class="text-blue-600 hover:underline">
-                                        ${lh.title}
+                                    <a href="/lh/notice/${lh.id}" target="_blank" class="text-blue-600 hover:underline">
+                                        ${lh.name}
                                     </a>
                                 </td>
-                                <td class="border border-gray-300">${lh.address.replace(/(특별시|광역시|특별자치시|특별자치도|도)/g, "") || "정보 없음"}</td>
+                                <td class="border border-gray-300 w-8 text-center">
+                                    ${(() => {
+                                const region = lh.region || "정보 없음";
+                                // 도 단위 축약 맵핑
+                                const shortMap = {
+                                    "충청남도": "충남",
+                                    "충청북도": "충북",
+                                    "전라남도": "전남",
+                                    "전라북도": "전북",
+                                    "경상남도": "경남",
+                                    "경상북도": "경북",
+                                    "강원도": "강원",
+                                    "제주특별자치도": "제주"
+                                };
+                                return shortMap[region] || region.replace(/(특별시|광역시|특별자치시|특별자치도|도)/g, "");
+                            })()}
+</td>
                             </tr>
                         `;
                         });
@@ -393,6 +423,11 @@
                         $chatBox.append(tableHtml);
                     }
 
+
+                    $chatBox.animate(
+                        {scrollTop: $chatBox[0].scrollHeight},
+                        500 // 500ms 동안 부드럽게 이동
+                    );
 
                 }
                 ,
@@ -440,13 +475,13 @@
             transform translate-y-8 opacity-0 transition-all duration-400 ease-in-out z-50 bg-white"
     >
         <div
-                class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] relative overflow-hidden border-t-0 border-r-0 border-b border-l-0 border-black -gradient-to-r from-indigo-600 to-indigo-500"
+                class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] relative overflow-hidden border-t-0 border-r-0 border-b border-l-0 border-black bg-gradient-to-r from-indigo-600 to-indigo-500"
         >
             <img
-                    src="/images/상담봇_미니ver.png"
+                    src="/images/챗봇이미지_흰색.png"
                     class="flex-grow-0 flex-shrink-0 w-[50px] h-[50px] rounded-tl-[75px] object-cover"
             />
-            <p class="flex-grow-0 flex-shrink-0 w-[250px] text-xl text-center text-black">터마루 상담봇</p>
+            <p class="flex-grow-0 flex-shrink-0 w-[250px] text-xl text-center text-white">터마루 상담봇</p>
 
             <i class="fa-solid fa-xmark fa-2x flex-grow-0 flex-shrink-0 rounded-tr-[25px] object-cover cursor-pointer"
                onclick="toggleChatBotUI()"></i>
