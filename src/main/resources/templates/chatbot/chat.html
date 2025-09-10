@@ -82,7 +82,7 @@
                         const upjongs = data.data1;
                         const message = data.data2;
 
-                        $chatBox.append(`<div class="bot-msg"><b>챗봇: </b>아래에서 업종을 선택하면 매출 데이터를 보여드릴게요.</div>`);
+                        $chatBox.append(`<div class="bot-msg"><b>챗봇: </b>아래에서 업종을 선택하시면 데이터를 보여드릴게요.</div>`);
 
                         let btnHtml = '<div class="grid grid-cols-2 gap-2 mt-2 max-h-64 overflow-y-auto pr-2">';
                         upjongs.forEach(u => {
@@ -374,11 +374,11 @@
                             tableHtml += `
                             <tr>
                                 <td class="border border-gray-300">
-                                    <a href="/lh/${lh.id}" target="_blank" class="text-blue-600 hover:underline">
-                                        ${lh.title}
+                                    <a href="/lh/notice/${lh.id}" target="_blank" class="text-blue-600 hover:underline">
+                                        ${lh.name}
                                     </a>
                                 </td>
-                                <td class="border border-gray-300">${lh.address.replace(/(특별시|광역시|특별자치시|특별자치도|도)/g, "") || "정보 없음"}</td>
+                                <td class="border border-gray-300">${lh.region.replace(/(특별시|광역시|특별자치시|특별자치도|도)/g, "") || "정보 없음"}</td>
                             </tr>
                         `;
                         });
@@ -393,6 +393,10 @@
                         $chatBox.append(tableHtml);
                     }
 
+                    $chatBox.animate(
+                        { scrollTop: $chatBox[0].scrollHeight },
+                        500 // 500ms 동안 부드럽게 이동
+                    );
 
                 }
                 ,
@@ -440,13 +444,13 @@
             transform translate-y-8 opacity-0 transition-all duration-400 ease-in-out z-50 bg-white"
     >
         <div
-                class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] relative overflow-hidden border-t-0 border-r-0 border-b border-l-0 border-black -gradient-to-r from-indigo-600 to-indigo-500"
+                class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] relative overflow-hidden border-t-0 border-r-0 border-b border-l-0 border-black bg-gradient-to-r from-indigo-600 to-indigo-500"
         >
             <img
-                    src="/images/상담봇_미니ver.png"
+                    src="/images/챗봇이미지_흰색.png"
                     class="flex-grow-0 flex-shrink-0 w-[50px] h-[50px] rounded-tl-[75px] object-cover"
             />
-            <p class="flex-grow-0 flex-shrink-0 w-[250px] text-xl text-center text-black">터마루 상담봇</p>
+            <p class="flex-grow-0 flex-shrink-0 w-[250px] text-xl text-center text-white">터마루 상담봇</p>
 
             <i class="fa-solid fa-xmark fa-2x flex-grow-0 flex-shrink-0 rounded-tr-[25px] object-cover cursor-pointer"
                onclick="toggleChatBotUI()"></i>
