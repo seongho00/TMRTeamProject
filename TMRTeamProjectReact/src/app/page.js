@@ -50,6 +50,7 @@ const Page = () => {
                 onSubmit={setCosts}
                 onBack={goBack}
                 location={location}
+
             />
         );
 
