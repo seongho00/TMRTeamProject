@@ -133,7 +133,7 @@ def extract_emd_nm_list():
     conn = pymysql.connect(
         host='localhost',
         user='root',
-        password='',
+        password='1234',
         db='TMRTeamProject',
         charset='utf8'
     )
@@ -157,7 +157,7 @@ def extract_upjong_code_map():
     conn = pymysql.connect(
         host='localhost',
         user='root',
-        password='',
+        password='1234',
         db='TMRTeamProject',
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
