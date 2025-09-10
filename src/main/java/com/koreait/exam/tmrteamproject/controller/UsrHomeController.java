@@ -2,12 +2,9 @@ package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.security.MemberContext;
 import com.koreait.exam.tmrteamproject.service.DataSetService;
-import com.koreait.exam.tmrteamproject.service.LhSupplyScheduleService;
+import com.koreait.exam.tmrteamproject.service.LhApplyInfoService;
 import com.koreait.exam.tmrteamproject.service.ScheduleInterestService;
-import com.koreait.exam.tmrteamproject.vo.DashBoard;
-import com.koreait.exam.tmrteamproject.vo.LhSupplySchedule;
-import com.koreait.exam.tmrteamproject.vo.Member;
-import com.koreait.exam.tmrteamproject.vo.ScheduleInterest;
+import com.koreait.exam.tmrteamproject.vo.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,18 +26,18 @@ import java.util.List;
 public class UsrHomeController {
 
     private final ScheduleInterestService scheduleInterestService;
-    private final LhSupplyScheduleService lhSupplyScheduleService;
+    private final LhApplyInfoService lhApplyInfoService;
     private final DataSetService dataSetService;
 
     @GetMapping("/main")
     public String homeMain(@AuthenticationPrincipal MemberContext memberContext, @RequestParam(name = "admCd", required = false) String adminDongCode, Model model) {
 
         // 오늘
-        List<LhSupplySchedule> nowLhSupplySchedules = new ArrayList<>();
+        List<LhApplyInfo> nowLhSupplySchedules = new ArrayList<>();
         // 어제
-        List<LhSupplySchedule> yesterdayLhSupplySchedules = new ArrayList<>();
+        List<LhApplyInfo> yesterdayLhSupplySchedules = new ArrayList<>();
         // 지난 날(이틀 전 부터)
-        List<LhSupplySchedule> lastLhSupplySchedules = new ArrayList<>();
+        List<LhApplyInfo> lastLhSupplySchedules = new ArrayList<>();
         LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
         if (memberContext != null) {
@@ -50,7 +47,7 @@ public class UsrHomeController {
                 List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginedMember.getId());
 
                 for (ScheduleInterest scheduleInterest : scheduleInterests) {
-                    LhSupplySchedule schedule = lhSupplyScheduleService.findById(scheduleInterest.getScheduleId());
+                    LhApplyInfo schedule = lhApplyInfoService.findById(scheduleInterest.getScheduleId());
 
                     LocalDate startDate = schedule.getApplyStart().toLocalDate();
 
@@ -81,11 +78,11 @@ public class UsrHomeController {
     public String notifications(@AuthenticationPrincipal MemberContext memberContext, Model model) {
 
         // 오늘
-        List<LhSupplySchedule> nowLhSupplySchedules = new ArrayList<>();
+        List<LhApplyInfo> nowLhApplySchedules = new ArrayList<>();
         // 어제
-        List<LhSupplySchedule> yesterdayLhSupplySchedules = new ArrayList<>();
+        List<LhApplyInfo> yesterdayLhApplySchedules = new ArrayList<>();
         // 지난 날(이틀 전 부터)
-        List<LhSupplySchedule> lastLhSupplySchedules = new ArrayList<>();
+        List<LhApplyInfo> lastLhApplySchedules = new ArrayList<>();
         LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
         if (memberContext != null) {
@@ -95,22 +92,22 @@ public class UsrHomeController {
                 List<ScheduleInterest> scheduleInterests = scheduleInterestService.findAllByMemberId(loginedMember.getId());
 
                 for (ScheduleInterest scheduleInterest : scheduleInterests) {
-                    LhSupplySchedule schedule = lhSupplyScheduleService.findById(scheduleInterest.getScheduleId());
+                    LhApplyInfo schedule = lhApplyInfoService.findById(scheduleInterest.getScheduleId());
 
                     LocalDate startDate = schedule.getApplyStart().toLocalDate();
 
                     if(startDate.isBefore(now)) {
-                        lastLhSupplySchedules.add(schedule);
+                        lastLhApplySchedules.add(schedule);
                     } else {
-                        nowLhSupplySchedules.add(schedule);
+                        nowLhApplySchedules.add(schedule);
                     }
                 }
             }
         }
 
-        model.addAttribute("nowLhSupplySchedules", nowLhSupplySchedules);
-        model.addAttribute("yesterdayLhSupplySchedules", yesterdayLhSupplySchedules);
-        model.addAttribute("lastLhSupplySchedules", lastLhSupplySchedules);
+        model.addAttribute("nowLhApplySchedules", nowLhApplySchedules);
+        model.addAttribute("yesterdayLhApplySchedules", yesterdayLhApplySchedules);
+        model.addAttribute("lastLhApplySchedules", lastLhApplySchedules);
         return "home/notifications";
     }
 }

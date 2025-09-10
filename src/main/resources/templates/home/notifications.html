@@ -38,7 +38,7 @@
         <div class="space-y-4">
 
             <!-- 관심일정 반복 -->
-            <article th:each="schedule : ${nowLhSupplySchedules}"
+            <article th:each="schedule : ${nowLhApplySchedules}"
                      class="bg-white rounded-2xl shadow-sm border border-gray-100">
                 <div class="flex items-start gap-3 p-4">
                     <div class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600">
@@ -59,7 +59,7 @@
             </article>
 
             <!-- 관심일정이 없을 때 -->
-            <p th:if="${#lists.isEmpty(nowLhSupplySchedules)}"
+            <p th:if="${#lists.isEmpty(nowLhApplySchedules)}"
                class="text-center text-gray-500 py-4">
                 관심 등록된 일정이 없습니다.
             </p>
@@ -80,7 +80,7 @@
         <div class="space-y-4">
 
             <!-- 관심일정 반복 -->
-            <article th:each="schedule : ${yesterdayLhSupplySchedules}"
+            <article th:each="schedule : ${yesterdayLhApplySchedules}"
                      class="bg-white rounded-2xl shadow-sm border border-gray-100">
                 <div class="flex items-start gap-3 p-4">
                     <div class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600">
@@ -101,7 +101,7 @@
             </article>
 
             <!-- 관심일정이 없을 때 -->
-            <p th:if="${#lists.isEmpty(yesterdayLhSupplySchedules)}"
+            <p th:if="${#lists.isEmpty(yesterdayLhApplySchedules)}"
                class="text-center text-gray-500 py-4">
                 관심 등록된 일정이 없습니다.
             </p>
@@ -122,7 +122,7 @@
         <div class="space-y-4">
 
             <!-- 관심일정 반복 -->
-            <article th:each="schedule : ${lastLhSupplySchedules}"
+            <article th:each="schedule : ${lastLhApplySchedules}"
                      class="bg-white rounded-2xl shadow-sm border border-gray-100">
                 <div class="flex items-start gap-3 p-4">
                     <div class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600">
@@ -143,7 +143,7 @@
             </article>
 
             <!-- 관심일정이 없을 때 -->
-            <p th:if="${#lists.isEmpty(lastLhSupplySchedules)}"
+            <p th:if="${#lists.isEmpty(lastLhApplySchedules)}"
                class="text-center text-gray-500 py-4">
                 관심 등록된 일정이 없습니다.
             </p>
