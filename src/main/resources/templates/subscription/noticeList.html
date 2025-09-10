@@ -188,7 +188,7 @@
                     <!-- 공고명: 두 줄 말줄임 -->
                     <td class="px-4 py-4">
                         <a class="block text-gray-900 hover:underline line-clamp-2"
-                           th:text="${lhList.getName()}" th:href="@{../lh/notice/{id}(id=${lhList.getId()})}">
+                           th:text="${lhList.getName()}" th:href="${lhList.getDetailUrl()}">
                         </a>
                     </td>
 

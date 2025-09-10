@@ -44,12 +44,12 @@ def save_schedule(meta: Dict[str, Any], parsed: Dict[str, Any]) -> None:
         "postedDate": meta.get("posted_date"),
         "dueDate": meta.get("due_date"),
         "status": meta.get("status"),
-        "linkEl": meta.get("link_el"),
         "applyStart": parsed.get("apply_start"),
         "applyEnd": parsed.get("apply_end"),
         "resultTime": parsed.get("result_time"),
         "contractStart": parsed.get("contract_start"),
-        "contractEnd": parsed.get("contract_end")
+        "contractEnd": parsed.get("contract_end"),
+        "detailUrl": meta.get("detail_url")
     })
 
 def flush_bulk() -> None:

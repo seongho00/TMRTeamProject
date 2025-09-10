@@ -24,7 +24,7 @@ public class LhApplyInfo extends BaseEntity {
     private LocalDate postedDate;           // 공고일
     private LocalDate dueDate;              // 마감일
     private String status;                  // 상태
-    private String linkEl;                  // link 추출용
+    private String detailUrl;               // 상세페이지 url
     private LocalDateTime applyStart;       // 신청시작
     private LocalDateTime applyEnd;         // 신청마감
     private LocalDateTime resultTime;       // 결과 발표일
@@ -40,7 +40,7 @@ public class LhApplyInfo extends BaseEntity {
         this.postedDate = dto.getPostedDate();
         this.dueDate = dto.getDueDate();
         this.status = dto.getStatus();
-        this.linkEl = dto.getLinkEl();
+        this.detailUrl = dto.getDetailUrl();
         this.applyStart = dto.getApplyStart();
         this.applyEnd = dto.getApplyEnd();
         this.resultTime = dto.getResultTime();
