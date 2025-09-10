@@ -47,13 +47,10 @@
                     // 여러 개의 시군구가 있을 시
                     if (data.resultCode === "F-3") {
                         const candidates = data.data1;
-
-                        // 기존 표시 영역 비우기
-                        $("#candidateContainer").empty();
-
+                        console.log(data.data1)
                         // 안내 메시지 표시
-                        $("#candidateContainer").append(
-                            `<p>${data.msg || "동 이름이 여러 구에 있어요. 정확한 위치를 선택하세요."}</p>`
+                        $chatBox.append(
+                            `<div class="bot-msg"><b>챗봇: </b>같은 동 이름이 여러 구에 있어요. 정확한 위치를 선택해주세요.}</div>`
                         );
 
                         // 후보 버튼 생성
@@ -62,17 +59,16 @@
 
                             $("<button>")
                                 .text(label)
-                                .addClass("candidate-btn")
+                                .addClass("candidate-btn max-w-[80%]")
                                 .on("click", function () {
                                     // 현재 success 스코프의 message는 바깥 변수라 혼동될 수 있으니 새로 구성
                                     const newMessage = $("#chatbotText").val() + " " + c.sggNm;
 
                                     // 입력창 업데이트 후 재호출
                                     $("#chatbotText").val(newMessage);
-                                    $("#candidateContainer").empty();   // 후보 UI 정리
                                     sendMessage();                      // ✅ 기존 함수 재사용
                                 })
-                                .appendTo("#candidateContainer");
+                                .appendTo("#chat-box");
                         });
                         return;
                     }
@@ -378,7 +374,23 @@
                                         ${lh.name}
                                     </a>
                                 </td>
-                                <td class="border border-gray-300">${lh.region.replace(/(특별시|광역시|특별자치시|특별자치도|도)/g, "") || "정보 없음"}</td>
+                                <td class="border border-gray-300 w-8 text-center">
+                                    ${(() => {
+                                const region = lh.region || "정보 없음";
+                                // 도 단위 축약 맵핑
+                                const shortMap = {
+                                    "충청남도": "충남",
+                                    "충청북도": "충북",
+                                    "전라남도": "전남",
+                                    "전라북도": "전북",
+                                    "경상남도": "경남",
+                                    "경상북도": "경북",
+                                    "강원도": "강원",
+                                    "제주특별자치도": "제주"
+                                };
+                                return shortMap[region] || region.replace(/(특별시|광역시|특별자치시|특별자치도|도)/g, "");
+                            })()}
+</td>
                             </tr>
                         `;
                         });
@@ -394,7 +406,7 @@
                     }
 
                     $chatBox.animate(
-                        { scrollTop: $chatBox[0].scrollHeight },
+                        {scrollTop: $chatBox[0].scrollHeight},
                         500 // 500ms 동안 부드럽게 이동
                     );
 
