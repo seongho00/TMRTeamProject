@@ -7,9 +7,9 @@ function InfoTooltip({ text }) {
     const [open, setOpen] = useState(false);
 
     return (
-        <div className="tw-relative tw-inline-block">
-            <IconButton aria-label="설명 보기">
-                <HelpOutlineIcon onClick={() => setOpen(!open)}/>
+        <div className="tw-relative tw-inline-block ">
+            <IconButton aria-label="설명 보기" className="tw-p-0 tw-m-0 tw-w-auto tw-h-auto tw-align-middle">
+                <HelpOutlineIcon fontSize="small" onClick={() => setOpen(!open)}/>
             </IconButton>
 
             {/* 설명 박스 */}
