@@ -30,6 +30,18 @@ const CostSettingPage = ({onSubmit, onBack}) => {
 
     const money = initialCost - totalUsed + amount;
 
+
+    const items = [
+        {label: "중개보수", value: rent},
+        {label: "관리비", value: rent},
+        {label: "권리금", value: rent},
+        {label: "평균 보증금", value: deposit},
+        {label: "평균 월세", value: rent},
+        {label: "인건비(2명)", value: labor},
+        {label: "식자재", value: food},
+    ];
+
+
     const handleStart = () => {
         setShowInitialCostModal(true);
     };
@@ -194,98 +206,67 @@ const CostSettingPage = ({onSubmit, onBack}) => {
                         animate={{opacity: 1}}
                     >
                         <motion.div
-                            className="tw-bg-white tw-p-6 tw-rounded-2xl tw-w-[500px] tw-shadow-lg"
+                            className="tw-bg-white tw-p-6 tw-rounded-2xl tw-w-[400px] tw-shadow-lg tw-font-mono"
                             initial={{scale: 0.9, opacity: 0}}
                             animate={{scale: [0.8, 1.05, 1], opacity: 1}}
                             transition={{duration: 0.25, ease: "easeOut"}}
                         >
-                            <h2 className="tw-text-xl tw-font-bold tw-mb-4">초기 비용 계산</h2>
-                            <p className="tw-mb-4">
-                                입력한 초기자금 :{" "}
-                                <span className="tw-font-semibold">
-                                {formatMoneyKRW(initialCost)}
-                             </span>
-                            </p>
+                            <h2 className="tw-text-center tw-font-bold tw-mb-4">영수증</h2>
 
-                            <div className="tw-mb-4 tw-flex tw-items-center tw-gap-2">
-                                <InfoTooltip text="월세의 경우 보증금 + (월세×100) 금액을 기준으로 중개수수료(약 0.3~0.9%)가 발생합니다." />
-                                <span>중개보수 :</span>
-                                <span className="tw-font-semibold">{formatMoneyKRW(rent)}</span>
+                            {/* 초기 자금 */}
+                            <div className="tw-border-b tw-border-gray-400 tw-border-dashed tw-pb-2 tw-mb-2">
+                                <p>
+                                    입력한 초기자금:{" "}
+                                    <span className="tw-font-semibold">
+            {formatMoneyKRW(initialCost)}
+          </span>
+                                </p>
                             </div>
 
-                            <p className="tw-mb-4">
-                                관리비 :{" "}
-                                <span className="tw-font-semibold">
-                                {formatMoneyKRW(rent)}
-                            </span>
-                            </p>
+                            {/* 항목별 차감 */}
+                            <div className="tw-space-y-1">
+                                {items.map((item, idx) => (
+                                    <motion.div
+                                        key={idx}
+                                        className="tw-flex tw-justify-between"
+                                        initial={{x: -30, opacity: 0}}
+                                        animate={{x: 0, opacity: 1}}
+                                        transition={{delay: idx * 0.3, duration: 0.5}}
+                                    >
+                                        <span>{item.label}</span>
+                                        <span className="tw-font-semibold tw-text-red-500">
+              - {formatMoneyKRW(item.value)}
+            </span>
+                                    </motion.div>
+                                ))}
+                            </div>
 
-                            <p className="tw-mb-4">
-                                권리금 :{" "}
-                                <span className="tw-font-semibold">
-                                {formatMoneyKRW(rent)}
-                            </span>
-                            </p>
+                            {/* 합계 */}
+                            <div className="tw-border-t tw-border-gray-400 tw-border-dashed tw-mt-3 tw-pt-2">
+                                <div className="tw-flex tw-justify-between tw-font-bold">
+                                    <span>잔여 금액</span>
+                                    <motion.span
+                                        initial={{ scale: 1.3, color: "#16a34a", opacity: 0 }}
+                                        animate={{ scale: 1, color: "#000", opacity: 1 }}
+                                        transition={{
+                                            delay: items.length * 0.3, // 항목 개수 × delay 만큼 기다렸다가 시작
+                                            duration: 0.6,
+                                            ease: "easeOut",
+                                        }}
+                                        className={result < 0 ? "tw-text-red-600" : "tw-text-green-600"}
+                                    >
+                                        {formatMoneyKRW(result)}
+                                    </motion.span>
+                                </div>
+                            </div>
 
-                            <p className="tw-mb-4">
-                                평균 보증금 :{" "}
-                                <span className="tw-font-semibold">
-                                {formatMoneyKRW(deposit)}
-                            </span>
-                            </p>
-
-                            <p className="tw-mb-4">
-                                평균 월세 :{" "}
-                                <span className="tw-font-semibold">
-                                {formatMoneyKRW(rent)}
-                            </span>
-                            </p>
-
-                            <p className="tw-mb-4">
-                                인건비(2명) :{" "}
-                                <span className="tw-font-semibold">
-                                {formatMoneyKRW(labor)}
-                            </span>
-                            </p>
-
-                            <p className="tw-mb-4">
-                                식자재 :{" "}
-                                <span className="tw-font-semibold">
-                                {formatMoneyKRW(food)}
-                            </span>
-                            </p>
-
-
-                            {/* 디자인 선택창 */}
-                            <DesignChoice onSelect={setSelectedDesign}/>
-
-                            {/* 부동산 거래 방식 */}
-                            <p className="tw-mb-4">
-                                부동산 거래 방식 :{" "}
-                                <select
-                                    className="tw-border tw-rounded-lg tw-px-3 tw-py-2"
-                                >
-                                    <option value="">-- 결제 방식을 선택하세요 --</option>
-                                    <option value="monthly">결제 하지 않기.</option>
-                                    <option value="jeonse">직접 조사 (체력 -10)</option>
-                                    <option value="purchase">외부 결제 (비용 20만원)</option>
-                                </select>
-                            </p>
-
-                            <p className="tw-mb-4">
-                                결과 :{" "}
-                                <span className="tw-font-semibold">
-                                {formatMoneyKRW(result)}
-                            </span>
-                            </p>
-
-                            {/* 버튼 영역 */}
-                            <div className="tw-flex tw-justify-end tw-gap-3">
+                            {/* 버튼 */}
+                            <div className="tw-flex tw-justify-end tw-gap-3 tw-mt-4">
                                 <button
                                     onClick={() => setShowInitialCostModal(false)}
                                     className="tw-px-4 tw-py-2 tw-rounded-lg tw-border tw-border-gray-300 hover:tw-bg-gray-100"
                                 >
-                                    취소
+                                    닫기
                                 </button>
                                 <button
                                     onClick={handleCheckResult}
@@ -297,6 +278,7 @@ const CostSettingPage = ({onSubmit, onBack}) => {
                         </motion.div>
                     </motion.div>
                 )}
+
 
                 {/* 1단계: 대출 여부 묻는 팝업 */}
                 {showLoanModal && (
