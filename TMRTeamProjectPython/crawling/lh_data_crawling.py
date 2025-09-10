@@ -203,6 +203,7 @@ def parse_list_row(row):
     due_date = _d_or_none(_get(6))
     status = _get(7)
     site_no = extract_site_no_from_link(link_el) if link_el else None
+    detail_url = build_detail_url_check_list(link_el)
 
     try:
         list_no = int(re.sub(r"[^\d]", "", list_no_txt)) if list_no_txt else None
@@ -219,13 +220,28 @@ def parse_list_row(row):
         "due_date": due_date,           # 마감일
         "status": status,               # 상태
         "site_no": site_no,             # 상세페이지 고유 식별자
-        "link_el": link_el,             # link 추출용
+        "detail_url": detail_url,       # 상세페이지 url
+        "link_el": link_el              # 엘리먼트
     }
 
 
 # 상세 이동
 def build_detail_url(site_no: int, mi: int = 1069) -> str:
     return f"{DETAIL_BASE}?{urlencode({'mi': mi, 'siteNo': site_no})}"
+
+# 상세 페이지 url 만들기
+def build_detail_url_check_list(link_el, mi=1069):
+    panId = link_el.get_attribute("data-id1")
+    ccr = link_el.get_attribute("data-id2")
+    upp = link_el.get_attribute("data-id3")
+    ais = link_el.get_attribute("data-id4")
+
+    if all([panId, ccr, upp, ais]):
+        return (
+            f"https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do"
+            f"?panId={panId}&ccrCnntSysDsCd={ccr}&uppAisTpCd={upp}&aisTpCd={ais}&mi={mi}"
+        )
+    return None
 
 
 def goto_detail_by_site_no(driver, site_no: int, mi: int = 1069):
