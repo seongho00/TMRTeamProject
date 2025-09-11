@@ -228,8 +228,9 @@
                     <!-- 알림설정: 토글 버튼 예시 -->
                     <td class="px-4 py-4">
                         <button type="button"
+                                th:classappend="${notifiedIds.contains(lhList.getId())} ? 'active' : ''"
                                 class="notify-btn inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs text-gray-700 hover:border-gray-300 hover:bg-gray-50"
-                                th:attr="data-id=${lhList.getListNo()}"
+                                th:attr="data-id=${lhList.getId()}"
                                 title="알림 설정">알림
                         </button>
                     </td>
@@ -308,9 +309,9 @@
 
     // 알림 설정 버튼
     $(document).on("click", ".notify-btn", function () {
+        const $btn = $(this);
         const listId = $(this).data("id"); // 버튼에 담긴 ID
         let memberId = $("#memberId").val();
-        console.log("알림 설정 클릭됨, ID:", listId);
 
         if (!memberId) {
             alert("로그인이 필요합니다. 로그인 페이지로 이동합니다.");
@@ -323,8 +324,11 @@
             type: "POST",
             url: "saveSchedule",   // 알림 설정 API
             data: {scheduleId: listId, memberId: memberId},
-            success: function (res) {
+            success: function () {
                 alert("알림이 설정되었습니다!");
+                $btn
+                    .addClass("active")       // CSS 스타일 추가
+                    .text("알림 설정 🔔")      // 버튼 텍스트 변경
             },
             error: function () {
                 alert("알림 설정에 실패했습니다.");
@@ -334,6 +338,12 @@
 
 </script>
 
+<style>
+    .notify-btn.active {
+        background-color: #3b82f6; /* 파랑색 */
+        color: white;
+    }
+</style>
 <footer th:replace="common/footer::footer"></footer>
 
 </body>

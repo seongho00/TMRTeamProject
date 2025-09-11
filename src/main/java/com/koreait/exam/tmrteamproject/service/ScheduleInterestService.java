@@ -31,4 +31,8 @@ public class ScheduleInterestService {
         scheduleInterestRepository.save(scheduleInterest);
 
     }
+
+    public List<Long> getScheduleIds(Long memberId) {
+        return scheduleInterestRepository.findScheduleIdsByMemberId(memberId);
+    }
 }

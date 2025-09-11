@@ -34,23 +34,27 @@ public class LhController {
         Long memberId = null;
         if (memberContext != null) {
             memberId = memberContext.getMember().getId();
+
         }
+
+        List<Long> notifiedIds = (memberId != null)
+                ? scheduleInterestService.getScheduleIds(memberId)
+                : List.of();
 
         List<LhApplyInfo> lhApplyInfoList = lhApplyInfoService.searchNotices(type, region, status, q);
 
         model.addAttribute("lhApplyInfoList", lhApplyInfoList);
+        model.addAttribute("notifiedIds", notifiedIds);
         model.addAttribute("memberId", memberId); // 로그인 X → null 들어감
         return "subscription/noticeList";
     }
 
     // 알림설정하기
-
     @PostMapping("/saveSchedule")
     @ResponseBody
     public String saveSchedule(long scheduleId, long memberId) {
 
         scheduleInterestService.saveSchedule(memberId, scheduleId);
-
-        return "subscription/noticeAdd";
+        return "OK";
     }
 }
