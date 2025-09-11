@@ -20,10 +20,10 @@ public class ScheduleInterestService {
         return scheduleInterestRepository.findAllByMemberId(memberId);
     }
     @Transactional
-    public void saveSchedule(Member member, long scheduleId) {
+    public void saveSchedule(long memberId, long scheduleId) {
 
         ScheduleInterest scheduleInterest = ScheduleInterest.builder()
-                .memberId(member.getId())
+                .memberId(memberId)
                 .scheduleId(scheduleId)
                 .isActive(1)
                 .build();
