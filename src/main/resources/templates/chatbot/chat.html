@@ -222,10 +222,14 @@
                         const ageKey = convertAgeKey(rawAgeGroup);        // 예: "age20"
                         const ageValue = dataSet?.[ageKey];     // 올바르게 접근
 
+                        // 숫자 formatter
+                        function formatNumber(num) {
+                            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                        }
 
                         if (flaskResult.gender === "" && flaskResult.ageGroup === "") {
                             // 성별도 없고, 나이대도 없을 때 → 전체 인구 출력
-                            $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 전체 유동인구는 ${dataSet.totalFloatingPopulation}명입니다.</div>`);
+                            $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 전체 유동인구는 ${formatNumber(dataSet.totalFloatingPopulation)}명입니다.</div>`);
                             $chatBox.append(`
                           <div class="bot-msg">
                             <b>챗봇:</b> ${regionText}은(는) 서울 전체 지역 중 <b>상위 ${percentile}%</b>에 해당합니다 🚀
@@ -234,7 +238,7 @@
 
                         } else if (flaskResult.gender !== "" && flaskResult.ageGroup === "") {
                             // 성별만 있을 때
-                            $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 ${genderKor} 유동인구는 ${genderValue}명입니다.</div>`);
+                            $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> ${regionText}의 ${genderKor} 유동인구는 ${formatNumber(genderValue)}명입니다.</div>`);
                             $chatBox.append(`
                           <div class="bot-msg">
                             <b>챗봇:</b> ${regionText}의 ${genderKor} 유동인구는 서울 전체 지역 중 <b>상위 ${percentile}%</b>에 해당합니다 🚀
@@ -243,7 +247,7 @@
                         } else if (flaskResult.gender === "" && flaskResult.ageGroup !== "") {
                             // 나이대만 있을 때
 
-                            $chatBox.append(`<div class="bot-msg"><b>챗봇: </b> ${regionText}의 ${ageKor} 유동인구는 ${ageValue}명입니다.</div>`);
+                            $chatBox.append(`<div class="bot-msg"><b>챗봇: </b> ${regionText}의 ${ageKor} 유동인구는 ${formatNumber(ageValue)}명입니다.</div>`);
                             $chatBox.append(`
                           <div class="bot-msg">
                             <b>챗봇:</b> ${regionText}의 ${ageKor} 유동인구는 서울 전체 지역 중 <b>상위 ${percentile}%</b>에 해당합니다 🚀
@@ -254,8 +258,8 @@
 
                             $chatBox.append(`<div class="bot-msg"><b>챗봇: </b>"${regionText}의 ${ageKor} ${genderKor}"에 대한 정확한 인구수는 제공되지 않지만,<br>
                     각각의 통계는 다음과 같습니다 😊 <br>
-                    👉 ${ageKor} 인구: ${ageValue}명<br>
-                    👉 ${genderKor} 인구: ${genderValue}명</div>`);
+                    👉 ${ageKor} 인구: ${formatNumber(ageValue)}명<br>
+                    👉 ${genderKor} 인구: ${formatNumber(genderValue)}명</div>`);
                         }
 
                         // ===== Chart.js 추가 부분 =====
@@ -271,8 +275,10 @@
 
                         $("#chartContainer").remove();
                         $chatBox.append(`
-                          <div id="chartContainer">
-                              <canvas id="genderChart"></canvas>
+                          <div id="chartContainer" >
+                                    <div style="width:220px; height:220px;">
+          <canvas id="genderChart"></canvas>
+      </div>
                               <canvas id="populationChart"></canvas>
                           </div>
                         `);
@@ -294,6 +300,7 @@
                             },
                             options: {
                                 responsive: true,
+                                maintainAspectRatio: false,
                                 plugins: {
                                     title: {display: true, text: regionText + " 성별 유동인구"}
                                 }
@@ -356,11 +363,26 @@
                             }
                         }
 
-                        $chatBox.append(`<div class="bot-msg"><b>챗봇: </b>"${regionText}"의 위험도 점수는 다음과 같습니다.<br>
-                        👉 전체 업종 위험도 : ${riskData.risk100All}점<br>
-                        👉 해당 업종 위험도 : ${riskData.risk100ByBiz}점<br>
-                        👉 업종 위험도 단계 : ${getRiskBadge(riskLevel)}<br>
-                        👉 예상 위험도 단계 : ${getRiskBadge(predictedRiskLabel)}</div>`);
+                        $chatBox.append(`
+  <div class="bot-msg">
+    <b>챗봇: </b>"${regionText}"의 위험도 점수는 다음과 같습니다.<br>
+    👉 전체 업종 위험도 : ${riskData.risk100All}점
+    <div class="w-full bg-gray-200 rounded h-4 mb-2">
+      <div id="riskAllBar" class="h-4 rounded" style="width:0%;"></div>
+    </div>
+
+    👉 해당 업종 위험도 : ${riskData.risk100ByBiz}점
+    <div class="w-full bg-gray-200 rounded h-4 mb-2">
+      <div id="riskBizBar" class="h-4 rounded" style="width:0%;"></div>
+    </div>
+
+    👉 업종 위험도 단계 : ${getRiskBadge(riskLevel)}<br>
+    👉 예상 위험도 단계 : ${getRiskBadge(predictedRiskLabel)}
+  </div>
+`);
+                        // 2) bar 애니메이션 실행 (DOM이 추가된 뒤에!)
+                        animateRiskBar(riskData.risk100All, "riskAllBar");
+                        animateRiskBar(riskData.risk100ByBiz, "riskBizBar");
 
                     }
 
@@ -433,6 +455,24 @@
                 ,
                 error: function () {
                     $chatBox.append(`<div class="bot-msg"><b>챗봇:</b> 오류가 발생했습니다.</div>`);
+                }
+            });
+        }
+
+        function animateRiskBar(value, barId) {
+            let targetWidth = Math.round(value);
+
+            $({ val: 0 }).animate({ val: targetWidth }, {
+                duration: 1500,
+                step: function (now) {
+                    let color = "#22c55e"; // 정상
+                    if (now >= 100) color = "#991b1b";     // 고위험
+                    else if (now >= 70) color = "#ef4444"; // 위험
+                    else if (now >= 50) color = "#eab308"; // 주의
+
+                    $("#" + barId)
+                        .css("width", now + "%")
+                        .css("background-color", color);
                 }
             });
         }
