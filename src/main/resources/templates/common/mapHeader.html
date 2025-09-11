@@ -31,11 +31,11 @@
                         </ul>
                     </li>
 
-                    <!-- 부동산 매물 -->
+                    <!-- 등기부등본 -->
                     <li class="relative group w-[240px]">
-                        <div class="flex justify-center items-center h-[80px] cursor-pointer">
-                            <p>부동산 매물</p>
-                        </div>
+                        <a href="../property/upload" class="flex justify-center items-center h-[80px] cursor-pointer">
+                            <p class="subheading text-[16px]">등기부등본</p>
+                        </a>
                     </li>
 
                     <!-- 상가 청약 -->
@@ -76,13 +76,13 @@
                         <!-- 알림벨 버튼 -->
                         <button id="notif-icon" type="button" class="cursor-pointer select-none w-[80px] h-[80px]">
                             <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24">
-                                <g fill="none" stroke="#444" stroke-linecap="round" stroke-linejoin="round"
+                                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                                    stroke-width="2">
                                     <path stroke-dasharray="4" stroke-dashoffset="4" d="M12 3v2">
                                         <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.2s"
                                                  values="4;0"/>
                                     </path>
-                                    <path fill="#444" fill-opacity="0" stroke-dasharray="28" stroke-dashoffset="28"
+                                    <path fill="currentColor" fill-opacity="0" stroke-dasharray="28" stroke-dashoffset="28"
                                           d="M12 5c-3.31 0 -6 2.69 -6 6l0 6c-1 0 -2 1 -2 2h8M12 5c3.31 0 6 2.69 6 6l0 6c1 0 2 1 2 2h-8">
                                         <animate fill="freeze" attributeName="fill-opacity" begin="0.9s" dur="0.5s"
                                                  values="0;1"/>
@@ -116,10 +116,10 @@
 
         const expandHeader = () => {
             clearTimeout(hoverTimeout);
-            headerId.classList.remove('h-[100px]');
-            headerId.classList.add('h-[250px]');
-            header.classList.remove('h-[100px]');
-            header.classList.add('h-[250px]');
+            headerId.classList.remove('h-[80px]');
+            headerId.classList.add('h-[230px]');
+            header.classList.remove('h-[80px]');
+            header.classList.add('h-[230px]');
             subMenus.forEach(menu => {
                 menu.classList.remove('hidden');
                 menu.classList.add('flex');
@@ -128,10 +128,10 @@
 
         const collapseHeader = () => {
             hoverTimeout = setTimeout(() => {
-                headerId.classList.remove('h-[250px]');
-                headerId.classList.add('h-[100px]');
-                header.classList.remove('h-[250px]');
-                header.classList.add('h-[100px]');
+                headerId.classList.remove('h-[230px]');
+                headerId.classList.add('h-[80px]');
+                header.classList.remove('h-[230px]');
+                header.classList.add('h-[80px]');
                 subMenus.forEach(menu => {
                     menu.classList.remove('flex');
                     menu.classList.add('hidden');
