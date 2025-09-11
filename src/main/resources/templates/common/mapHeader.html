@@ -1,11 +1,14 @@
 <header th:fragment="header" xmlns:th="http://www.thymeleaf.org">
     <meta charset="UTF-8">
 
-    <div id="header-id" class="w-full h-[100px] box-border fixed top-0 left-0 z-50 bg-white transition-all duration-300">
-        <div id="header-wrapper" class="w-full h-[100px] flex items-start justify-between transition-all duration-300">
-            <div class="w-[240px] h-[100px] flex justify-start items-start">
-                <a href="../home/main" class="h-full flex items-center">
-                    <img src="/images/로고.png" class="w-[240px] h-[100px] object-cover cursor-pointer" />
+    <div id="header-id" class="w-full h-[80px] box-border fixed top-0 left-0 z-50 bg-white transition-all duration-300">
+        <div id="header-wrapper" class="w-full h-[80px] flex items-start justify-between transition-all duration-300">
+
+            <div class="w-[240px] h-[80px] flex justify-start items-center">
+                <a href="../home/main" class="flex items-center">
+                    <!-- 파란색 로고 -->
+                    <img src="/images/로고.png"
+                         class="w-[160px] h-[60px] object-cover cursor-pointer"/>
                 </a>
             </div>
 
@@ -13,10 +16,10 @@
                 <ul id="nav-list" class="flex justify-center items-center relative space-x-4">
                     <!-- 상권 분석 -->
                     <li class="relative group w-[240px]">
-                        <div class="flex justify-center items-center w-full h-[100px] cursor-pointer">
-                            <p class="text-[22px] text-black">상권 분석</p>
+                        <div class="flex justify-center items-center h-[80px] cursor-pointer">
+                            <p>상권 분석</p>
                         </div>
-                        <ul class="sub-menu absolute flex flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
+                        <ul class="sub-menu absolute flex flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden w-full text-center">
                             <li class="w-full">
                                 <a href="../map/commercialZoneMap"
                                    class="block px-4 py-2 hover:underline">지도 분석</a>
@@ -29,16 +32,18 @@
                     </li>
 
                     <!-- 부동산 매물 -->
-                    <li class="flex justify-center items-center w-[240px] h-[100px] relative">
-                        <p class="text-[22px] text-black">부동산 매물</p>
+                    <li class="relative group w-[240px]">
+                        <div class="flex justify-center items-center h-[80px] cursor-pointer">
+                            <p>부동산 매물</p>
+                        </div>
                     </li>
 
                     <!-- 상가 청약 -->
                     <li class="relative group w-[240px]">
-                        <div class="flex justify-center items-center w-full h-[100px] cursor-pointer">
-                            <p class="text-[22px] text-black">상가 청약</p>
+                        <div class="flex justify-center items-center h-[80px] cursor-pointer">
+                            <p>상가 청약</p>
                         </div>
-                        <ul class="sub-menu absolute flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
+                        <ul class="sub-menu absolute flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden w-full text-center">
                             <li>
                                 <a href="../home/notifications" class="block px-4 py-2 hover:underline">청약 알림</a>
                             </li>
@@ -49,18 +54,18 @@
                     </li>
 
                     <!-- 로그인 -->
-                    <li class="relative group">
+                    <li class="relative group w-[240px]">
                         <ul>
                             <li th:if="${rq != null and rq.isLogout()}">
                                 <a href="../member/joinAndLogin"
-                                   class="flex justify-center items-center w-[240px] h-[100px] relative cursor-pointer">
-                                    <p class="text-[22px] text-black">로그인</p>
+                                   class="flex justify-center items-center w-full h-[80px] relative cursor-pointer">
+                                    <p>로그인</p>
                                 </a>
                             </li>
                             <li th:if="${rq != null and rq.isLogined()}">
                                 <a href="../member/conditionalLogout"
-                                   class="flex justify-center items-center w-[160px] h-[100px] relative cursor-pointer">
-                                    <p class="text-[22px] text-black">로그아웃</p>
+                                   class="flex justify-center items-center w-full h-[80px] relative cursor-pointer">
+                                    <p>로그아웃</p>
                                 </a>
                             </li>
                         </ul>
@@ -69,7 +74,7 @@
                     <!-- 알림 아이콘 + 팝업 -->
                     <li id="notif-wrapper" class="relative group" th:if="${rq != null and rq.isLogined()}">
                         <!-- 알림벨 버튼 -->
-                        <button id="notif-icon" type="button" class="cursor-pointer select-none w-[80px] h-[100px]">
+                        <button id="notif-icon" type="button" class="cursor-pointer select-none w-[80px] h-[80px]">
                             <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24">
                                 <g fill="none" stroke="#444" stroke-linecap="round" stroke-linejoin="round"
                                    stroke-width="2">
