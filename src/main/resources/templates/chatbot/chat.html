@@ -147,35 +147,258 @@
 
                         $chatBox.append(`<div class="bot-msg"><b>챗봇: </b> ${upjongCode.upjongNm}의 매출액 데이터입니다.</div>`);
 
+
+                        // ✅ 최신 분기 데이터만 추출
+                        const latestData = dataSets[dataSets.length - 1];
+                        // 연령대별 데이터
+                        const ageLabels = ["10대", "20대", "30대", "40대", "50대", "60대 이상"];
+                        const ageSales = [
+                            latestData.age10SalesAmount,
+                            latestData.age20SalesAmount,
+                            latestData.age30SalesAmount,
+                            latestData.age40SalesAmount,
+                            latestData.age50SalesAmount,
+                            latestData.age60PlusSalesAmount
+                        ];
+
+                        // 총합
+                        const totalSales = ageSales.reduce((sum, val) => sum + val, 0);
+
+                        // 비율 계산
+                        const ageRatios = ageSales.map(v => (v / totalSales * 100).toFixed(1));
+
+                        // 차트 컨테이너 추가
+                        $("#ageSalesContainer").remove();
+                        $chatBox.append(`
+                          <div id="ageSalesContainer" style="width:220px; height:220px;">
+                            <canvas id="ageSalesChart"></canvas>
+                          </div>
+                        `);
+
+                        const ageCtx = document.getElementById("ageSalesChart").getContext("2d");
+
+                        if (window.ageSalesChart instanceof Chart) {
+                            window.ageSalesChart.destroy();
+                        }
+
+                        window.ageSalesChart = new Chart(ageCtx, {
+                            type: "doughnut",
+                            data: {
+                                labels: ageLabels,
+                                datasets: [{
+                                    data: ageRatios, // 👉 비율 데이터
+                                    backgroundColor: [
+                                        "#60a5fa", // 10대
+                                        "#34d399", // 20대
+                                        "#fbbf24", // 30대
+                                        "#f97316", // 40대
+                                        "#ef4444", // 50대
+                                        "#8b5cf6"  // 60대+
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    title: {
+                                        display: true,
+                                        text: `${latestData.baseYearQuarterCode} 분기 연령대별 매출 비율`
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function (context) {
+                                                return `${context.label}: ${context.raw}%`;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        // 요일별 데이터
+                        const dayLabels = ["월", "화", "수", "목", "금", "토", "일"];
+                        const daySales = [
+                            latestData.mondaySalesAmount,
+                            latestData.tuesdaySalesAmount,
+                            latestData.wednesdaySalesAmount,
+                            latestData.thursdaySalesAmount,
+                            latestData.fridaySalesAmount,
+                            latestData.saturdaySalesAmount,
+                            latestData.sundaySalesAmount
+                        ];
+
+                        // 차트 컨테이너 추가
+                        $("#daySalesContainer").remove();
+                        $chatBox.append(`
+                          <div id="daySalesContainer">
+                            <canvas id="daySalesChart" height="200"></canvas>
+                          </div>
+                        `);
+
+                        const dayCtx = document.getElementById("daySalesChart").getContext("2d");
+
+                        if (window.daySalesChart instanceof Chart) {
+                            window.daySalesChart.destroy();
+                        }
+
+                        window.daySalesChart = new Chart(dayCtx, {
+                            type: "bar",
+                            data: {
+                                labels: dayLabels,
+                                datasets: [{
+                                    label: "요일별 매출액",
+                                    data: daySales,
+                                    backgroundColor: [
+                                        "#60a5fa", // 월
+                                        "#34d399", // 화
+                                        "#fbbf24", // 수
+                                        "#f97316", // 목
+                                        "#ef4444", // 금
+                                        "#8b5cf6", // 토
+                                        "#10b981"  // 일
+                                    ]
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    title: {
+                                        display: true,
+                                        text: `${latestData.baseYearQuarterCode} 분기 요일별 매출액`
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function (context) {
+                                                const value = context.raw;
+                                                return context.label + ": " + (value / 100000000).toLocaleString() + " 억 원";
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            callback: function (value) {
+                                                return (value / 100000000).toLocaleString() + " 억";
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        // 시간대별 데이터
+                        const timeLabels = ["00~06시", "06~11시", "11~14시", "14~17시", "17~21시", "21~24시"];
+                        const timeSales = [
+                            latestData.time00to06SalesAmount,
+                            latestData.time06to11SalesAmount,
+                            latestData.time11to14SalesAmount,
+                            latestData.time14to17SalesAmount,
+                            latestData.time17to21SalesAmount,
+                            latestData.time21to24SalesAmount
+                        ];
+
+                        // 차트 컨테이너 추가
+                        $("#timeSalesContainer").remove();
+                        $chatBox.append(`
+                          <div id="timeSalesContainer" >
+                            <canvas id="timeSalesChart" height="200"></canvas>
+                          </div>
+                        `);
+
+                        const timeCtx = document.getElementById("timeSalesChart").getContext("2d");
+
+                        if (window.timeSalesChart && typeof window.timeSalesChart.destroy === "function") {
+                            window.timeSalesChart.destroy();
+                        }
+
+                        window.timeSalesChart = new Chart(timeCtx, {
+                            type: "line",
+                            data: {
+                                labels: timeLabels,
+                                datasets: [{
+                                    label: "시간대별 매출액",
+                                    data: timeSales,
+                                    borderColor: "rgba(54, 162, 235, 1)",
+                                    backgroundColor: "rgba(54, 162, 235, 0.2)",
+                                    fill: false,
+                                    tension: 0.4 // 곡선 정도 (0: 직선, 1: 곡선)
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    title: {
+                                        display: true,
+                                        text: `${latestData.baseYearQuarterCode} 분기 시간대별 매출액`
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function (context) {
+                                                const value = context.raw;
+                                                return `${context.label}: ${(value / 100000000).toLocaleString()} 억 원`;
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            callback: function (value) {
+                                                return (value / 100000000).toLocaleString() + " 억";
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+
                         if (window.salesChart) {
                             window.salesChart.destroy();
                         }
+
                         // 차트 container 초기화 후 다시 추가
                         $("#chartContainer").remove();
                         $chatBox.append(`
-                      <div id="chartContainer">
-                          <canvas id="salesChart"></canvas>
-                      </div>
-                    `);
+                          <div id="chartContainer">
+                              <canvas id="salesChart"></canvas>
+                          </div>
+                        `);
 
                         // Chart.js (Line 차트 예시)
                         const ctx = document.getElementById("salesChart").getContext("2d");
 
                         new Chart(ctx, {
-                            type: "bar", // 또는 "bar"
+                            type: "bar",
                             data: {
                                 labels: labels,
                                 datasets: [{
                                     label: "분기별 매출액",
                                     data: salesValues,
-                                    borderColor: "rgba(54, 162, 235, 1)",
-                                    backgroundColor: "rgba(54, 162, 235, 0.2)",
-                                    fill: true,
-                                    tension: 0.3
+                                    borderColor: "rgba(37, 99, 235, 1)",   // 파랑 테두리
+                                    backgroundColor: "rgba(37, 99, 235, 0.7)", // 막대기 색상 하나로 통일
+                                    borderWidth: 1
                                 }]
                             },
                             options: {
                                 responsive: true,
+                                plugins: {
+                                    title: {
+                                        display: true,
+                                        text: "📊 업종 분기별 매출액 추이", // 차트 제목
+                                        font: {
+                                            size: 16,
+                                            weight: "bold"
+                                        }
+                                    },
+                                    legend: {
+                                        display: false // 범례 숨기고 싶으면 false
+                                    }
+                                },
                                 scales: {
                                     y: {
                                         beginAtZero: true,
@@ -277,8 +500,8 @@
                         $chatBox.append(`
                           <div id="chartContainer" >
                                     <div style="width:220px; height:220px;">
-          <canvas id="genderChart"></canvas>
-      </div>
+                            <canvas id="genderChart"></canvas>
+                             </div>
                               <canvas id="populationChart"></canvas>
                           </div>
                         `);
@@ -462,7 +685,7 @@
         function animateRiskBar(value, barId) {
             let targetWidth = Math.round(value);
 
-            $({ val: 0 }).animate({ val: targetWidth }, {
+            $({val: 0}).animate({val: targetWidth}, {
                 duration: 1500,
                 step: function (now) {
                     let color = "#22c55e"; // 정상
@@ -476,6 +699,26 @@
                 }
             });
         }
+
+        // 처음 문구
+        function initChatBot() {
+            const $chatBox = $("#chat-box");
+            $chatBox.append(`
+                <div class="bot-msg">
+                    <b>챗봇 🤖:</b> 안녕하세요! 터마루 상담봇입니다.<br>
+                    아래와 같은 기능을 도와드릴 수 있어요 👇<br><br>
+                      1️⃣ <b>매출액</b> → “창성동 매출액 알려줘”<br>
+                      2️⃣ <b>유동인구</b> → “청운동 유동인구 분석해줘”<br>
+                      3️⃣ <b>청약 정보</b> → “청약 일정 보여줘”<br>
+                      4️⃣ <b>위험도 분석</b> → “신사동 업종 위험도 분석해줘”<br><br>
+                      원하시는 질문을 자유롭게 입력해 주세요 🚀
+                </div>
+            `);
+        }
+
+        $(document).ready(function () {
+            initChatBot();
+        });
     </script>
     <style>
         .candidate-btn {
