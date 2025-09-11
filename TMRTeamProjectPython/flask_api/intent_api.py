@@ -33,7 +33,7 @@ except Exception:
     pass
 
 # 크롤링 관련 import
-from typing import Optional, List, Dict, Tuple, Any
+from typing import Optional, List, Dict, Tuple, Any, Set
 from playwright.sync_api import sync_playwright, TimeoutError as PwTimeout
 
 # 업종 검색 관련 import
@@ -249,6 +249,12 @@ def analyze_input(user_input, intent, valid_emd_list):
         "raw_upjong": None,  # 매칭 안 되면 원문 보관
     }
 
+    # 1) (가장 먼저) 문자열 기반 행정동 인식
+    emd_index = build_emd_index(valid_emd_list)  # 실서비스는 모듈 로드시 1회만
+    emd_hits = find_emd_in_text(user_input, emd_index)
+    if emd_hits:
+        entities["emd_nm"] = emd_hits[0]  # 여러 개면 첫 번째를 기본값으로
+
     # 업종 선매핑 (동의어 없이)
     raw, nm, cd, score, method = find_upjong_pre_morph_from_map(
         user_input, upjong_keywords, fuzzy_threshold=80
@@ -396,6 +402,127 @@ INTENT_REQUIRED = {
     3: {"need": ["sido_or_sigungu_or_emd"], "optional": []},  # 청약: 지역 필수(필요에 맞게 수정)
 }
 
+# 1) 한글+숫자만 남기고 나머지 제거
+_NORM_RE = re.compile(r'[^가-힣0-9]')
+
+def normalize_kr(s: str) -> str:
+    return _NORM_RE.sub('', s or '')
+
+_ENUM_SEP_RE = re.compile(r'[·ㆍ\.\,\/]')
+
+# 예: "종로1·2·3·4가동"  /  "명륜1·2가동"
+#  - prefix: "종로" / "명륜"
+#  - numseq: "1·2·3·4" / "1·2"
+#  - suf   : "가동" (또는 "동", "가")
+_ENUM_PATTERN = re.compile(
+    r'^(?P<prefix>[가-힣]+)\s*(?P<numseq>\d+(?:[·ㆍ\.\,\/]\d+)+)\s*(?P<suf>가동|동|가)$'
+)
+
+def gen_emd_variants(name: str) -> Set[str]:
+    """
+    공식 행정동명 하나로부터 매칭에 사용할 '정규화 변형문자열' 집합 생성.
+    - 묶음형(종로1·2·3·4가동) → 각 번호별 파생(종로1가동, 종로2가동, ...)
+    - '가동'인 경우, 사람들이 많이 치는 '종로3가'도 허용 (규칙 기반, 별칭 테이블 아님)
+    - '제숫자' ↔ '숫자' 변형도 양방향 생성
+    """
+    variants: Set[str] = set()
+    raw = (name or '').strip()
+
+    # 기본형(공식명 자체)
+    base_norm = normalize_kr(raw)
+    if base_norm:
+        variants.add(base_norm)
+
+    # 1) 번호 나열(·/ㆍ/./,/ /)이 들어간 묶음형일 경우 → 자동 분해
+    m = _ENUM_PATTERN.match(raw)
+    if m:
+        prefix = m.group('prefix')
+        numseq = m.group('numseq')
+        suf    = m.group('suf')  # '가동' | '동' | '가'
+        nums = [n for n in _ENUM_SEP_RE.split(numseq) if n]
+
+        for num in nums:
+            # ex) 종로3가동
+            cand = f"{prefix}{num}{suf}"
+            variants.add(normalize_kr(cand))
+            # 사람들이 자주 치는 형태: '가동'이면 '...가'도 허용 (ex: 종로3가)
+            if suf == '가동':
+                variants.add(normalize_kr(f"{prefix}{num}가"))
+
+            # '제숫자' 표기 허용 (제3가동 / 제3가)
+            variants.add(normalize_kr(f"{prefix}제{num}{suf}"))
+            if suf == '가동':
+                variants.add(normalize_kr(f"{prefix}제{num}가"))
+
+        return variants  # 묶음형이면 여기서 끝
+
+    # 2) 일반형: '제숫자접미' ↔ '숫자접미' 양방향
+    #   예) '창신제1동' → '창신1동',  '창신1동' → '창신제1동'
+    m2 = re.search(r'제(\d+)(동|가동|읍|면|리|가)$', raw)
+    if m2:
+        num, suf = m2.groups()
+        variants.add(normalize_kr(re.sub(r'제(\d+)(동|가동|읍|면|리|가)$', f'{num}{suf}', raw)))
+
+    m3 = re.search(r'(\d+)(동|가동|읍|면|리|가)$', raw)
+    if m3:
+        num, suf = m3.groups()
+        variants.add(normalize_kr(re.sub(r'(\d+)(동|가동|읍|면|리|가)$', f'제{num}{suf}', raw)))
+
+    return variants
+
+# 3) (초기화 시 1회) 행정동 인덱스 구축: 변형들 -> 원본명 매핑
+def build_emd_index(valid_emd_list: List[str]) -> Dict[str, str]:
+    index = {}
+    for emd in valid_emd_list:
+        for v in gen_emd_variants(emd):
+            # 같은 키가 여러 원본에 매핑되면 더 긴(특이성이 높은) 원본을 우선
+            if v not in index or len(emd) > len(index[v]):
+                index[v] = emd
+    return index
+
+# 4) 원문에서 최장일치 탐색 (토큰 무시, 문자열 기반)
+def find_emd_in_text(user_input: str, emd_index: Dict[str, str]) -> List[str]:
+    """
+    정규화된 입력에서 사전 키(정규화된 변형)들을 길이순으로 스캔해 최장일치로 뽑는다.
+    입력 길이가 짧으니 O(N*M) 단순 스캔으로도 충분히 빠름.
+    """
+    text = normalize_kr(user_input)
+    if not text:
+        return []
+
+    # 키들을 길이 긴 순으로 정렬 → 최장일치 우선
+    keys = sorted(emd_index.keys(), key=len, reverse=True)
+
+    hits = []
+    used = [False] * len(text)  # 겹침 방지용 마스크
+
+    def can_place(start: int, end: int) -> bool:
+        return all(not used[i] for i in range(start, end))
+
+    def place(start: int, end: int):
+        for i in range(start, end):
+            used[i] = True
+
+    for k in keys:
+        start = 0
+        while True:
+            idx = text.find(k, start)
+            if idx == -1:
+                break
+            j = idx + len(k)
+            if can_place(idx, j):
+                place(idx, j)
+                hits.append(emd_index[k])  # 원본명 저장
+            start = idx + 1
+
+    # 중복 제거, 입력 내 등장 순서 유지
+    seen = set()
+    ordered = []
+    for h in hits:
+        if h not in seen:
+            seen.add(h)
+            ordered.append(h)
+    return ordered
 
 # ✅ API 라우팅
 @app.route("/predict", methods=["GET"])

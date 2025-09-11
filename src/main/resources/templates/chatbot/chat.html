@@ -145,7 +145,7 @@
                             salesValues.push(data.monthlySalesAmount); // 매출액 컬럼명 맞게 수정
                         });
 
-                        $chatBox.append(`<div class="bot-msg"><b>챗봇: </b> ${upjongCode.upjongNm}의 매출액 데이터입니다.</div>`);
+                        $chatBox.append(`<div class="bot-msg"><b>챗봇: </b> ${regionText} ${upjongCode.upjongNm}의 매출액 데이터입니다.</div>`);
 
 
                         // ✅ 최신 분기 데이터만 추출
@@ -372,7 +372,7 @@
                         // Chart.js (Line 차트 예시)
                         const ctx = document.getElementById("salesChart").getContext("2d");
 
-                        new Chart(ctx, {
+                        window.salesChart = new Chart(ctx, {
                             type: "bar",
                             data: {
                                 labels: labels,
