@@ -12,4 +12,6 @@ public interface ScheduleInterestRepository extends JpaRepository<ScheduleIntere
 
     @Query("select s.scheduleId from ScheduleInterest s where s.memberId = :memberId")
     List<Long> findScheduleIdsByMemberId(Long memberId);
+
+    double deleteByMemberIdAndScheduleId(Long memberId, Long scheduleId);
 }

@@ -319,21 +319,38 @@
             return; // 아래 코드 실행 안 함
         }
 
-        // 여기서 AJAX 요청 등 실행
-        $.ajax({
-            type: "POST",
-            url: "saveSchedule",   // 알림 설정 API
-            data: {scheduleId: listId, memberId: memberId},
-            success: function () {
-                alert("알림이 설정되었습니다!");
-                $btn
-                    .addClass("active")       // CSS 스타일 추가
-                    .text("알림 설정 🔔")      // 버튼 텍스트 변경
-            },
-            error: function () {
-                alert("알림 설정에 실패했습니다.");
-            }
-        });
+        // 현재 상태 확인
+        if ($btn.hasClass("active")) {
+            // 👉 이미 알림 설정됨 → 해제 요청
+            $.ajax({
+                type: "POST",
+                url: "deleteSchedule",   // 해제 API
+                data: { scheduleId: listId, memberId: memberId },
+                success: function () {
+                    alert("알림이 해제되었습니다!");
+                    $btn.removeClass("active")
+                        .text("알림")
+                },
+                error: function () {
+                    alert("알림 해제에 실패했습니다.");
+                }
+            });
+        } else {
+            // 👉 아직 알림 설정 안 됨 → 설정 요청
+            $.ajax({
+                type: "POST",
+                url: "saveSchedule",   // 설정 API
+                data: { scheduleId: listId, memberId: memberId },
+                success: function () {
+                    alert("알림이 설정되었습니다!");
+                    $btn.addClass("active")
+                        .text("알림 설정 🔔");
+                },
+                error: function () {
+                    alert("알림 설정에 실패했습니다.");
+                }
+            });
+        }
     });
 
 </script>

@@ -19,6 +19,7 @@ public class ScheduleInterestService {
     public List<ScheduleInterest> findAllByMemberId(Long memberId) {
         return scheduleInterestRepository.findAllByMemberId(memberId);
     }
+
     @Transactional
     public void saveSchedule(long memberId, long scheduleId) {
 
@@ -34,5 +35,9 @@ public class ScheduleInterestService {
 
     public List<Long> getScheduleIds(Long memberId) {
         return scheduleInterestRepository.findScheduleIdsByMemberId(memberId);
+    }
+
+    public void deleteSchedule(long memberId, long scheduleId) {
+        scheduleInterestRepository.deleteByMemberIdAndScheduleId(memberId, scheduleId);
     }
 }

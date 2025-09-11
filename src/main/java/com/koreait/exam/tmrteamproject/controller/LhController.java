@@ -57,4 +57,13 @@ public class LhController {
         scheduleInterestService.saveSchedule(memberId, scheduleId);
         return "OK";
     }
+
+
+    @PostMapping("/deleteSchedule")
+    @ResponseBody
+    public String deleteSchedule(long scheduleId, long memberId) {
+
+        scheduleInterestService.deleteSchedule(memberId, scheduleId);
+        return "OK";
+    }
 }
