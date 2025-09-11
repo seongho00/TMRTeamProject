@@ -17,13 +17,13 @@ import java.util.List;
 @Controller
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("usr/lh/notice")
+@RequestMapping("usr/lh")
 public class LhController {
 
     private final LhApplyInfoService lhApplyInfoService;
     private final ScheduleInterestService scheduleInterestService;
 
-    @GetMapping
+    @GetMapping("/notice")
     public String notice(
             @RequestParam(required = false, defaultValue = "") String type,
             @RequestParam(required = false, defaultValue = "") String region,
@@ -44,16 +44,12 @@ public class LhController {
     }
 
     // 알림설정하기
-    @PostMapping
+
+    @PostMapping("/saveSchedule")
     @ResponseBody
     public String saveSchedule(long scheduleId, long memberId) {
 
-
-        System.out.println("실행됨");
-        System.out.println("scheduleId:" + scheduleId);
-        System.out.println("memberId:" + memberId);
-
-//        scheduleInterestService.saveSchedule(null, 1);
+        scheduleInterestService.saveSchedule(memberId, scheduleId);
 
         return "subscription/noticeAdd";
     }
