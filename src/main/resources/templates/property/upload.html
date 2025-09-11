@@ -50,6 +50,7 @@
             분석하기
         </button>
     </div>
+
 </div>
 
 <!-- 분석결과 팝업창 -->
@@ -77,10 +78,60 @@
         <div id="riskDetail" class="mt-2 hidden">
             임대 리스크: <span id="rentRisk"></span><br>
             (예상 평균 월세 : <span id="rentBase"></span>)<br>
-            보증금 리스크: <span id="depositRisk"></span><br>
+            보증금 리스크
+            <div class="relative inline-block">
+                <!-- ? 버튼 -->
+                <button class="help-btn w-4 h-4 rounded-full bg-black text-white text-sm flex items-center justify-center"
+                        data-tooltip="depositHelpTooltip">
+                    ?
+                </button>
+
+                <!-- 툴팁 (기본 hidden) -->
+                <div id="depositHelpTooltip"
+                     class="tooltip-box absolute left-1/2 top-full mt-2 w-64 bg-black text-white text-xs
+              rounded-lg px-3 py-2 shadow-lg opacity-0 pointer-events-none
+              transition transform -translate-x-1/2">
+                    보증금은 인근 유사 면적 평균값을 기준으로 산정됩니다.
+                </div>
+            </div>
+            : <span id="depositRisk"></span><br>
             (예상 평균 보증금 : <span id="depositBase"></span>)<br>
-            채권보증금 리스크: <span id="bondRisk"></span><br>
-            근저당권 리스크: <span id="debtRisk"></span>
+            채권보증금 리스크
+            <div class="relative inline-block">
+                <!-- ? 버튼 -->
+                <button class="help-btn w-4 h-4 rounded-full bg-black text-white text-sm flex items-center justify-center"
+                        data-tooltip="bondHelpTooltip">
+                    ?
+                </button>
+
+                <!-- 툴팁 (기본 hidden) -->
+                <div id="bondHelpTooltip"
+                     class="tooltip-box absolute left-1/2 top-full mt-2 w-64 bg-black text-white text-xs
+              rounded-lg px-3 py-2 shadow-lg opacity-0 pointer-events-none
+              transition transform -translate-x-1/2">
+                    세입자가 맡긴 보증금을 법적으로 보호하기 위해 환산한 금액<br>
+                    “내 보증금이 안전하게 회수될 수 있는지”를 따지는 기준
+                </div>
+            </div>
+            : <span id="bondRisk"></span><br>
+            근저당권 리스크
+            <div class="relative inline-block">
+                <!-- ? 버튼 -->
+                <button class="help-btn w-4 h-4 rounded-full bg-black text-white text-sm flex items-center justify-center"
+                        data-tooltip="debtHelpTooltip">
+                    ?
+                </button>
+
+                <!-- 툴팁 (기본 hidden) -->
+                <div id="debtHelpTooltip"
+                     class="tooltip-box absolute left-1/2 top-full mt-2 w-64 bg-black text-white text-xs
+              rounded-lg px-3 py-2 shadow-lg opacity-0 pointer-events-none
+              transition transform -translate-x-1/2">
+                    은행 등이 집을 담보로 돈을 빌려줄 때 설정하는 권리<br>
+                    채무자가 돈을 못 갚으면 집을 경매로 넘겨 먼저 돈을 받아갈 수 있음
+                </div>
+            </div>
+            : <span id="debtRisk"></span>
         </div>
         <div class="text-right mt-4">
             <button onclick="closeModal()"
@@ -99,7 +150,8 @@
     </div>
 </div>
 
-
+<!-- 챗봇 불러오기 -->
+<div th:replace="chatbot/chat::chat"></div>
 <style>
     .no-spin::-webkit-inner-spin-button,
     .no-spin::-webkit-outer-spin-button {
@@ -111,6 +163,30 @@
         -moz-appearance: textfield;
     }
 </style>
+
+<script>
+    // 버튼 클릭 시 툴팁 토글
+    $(".help-btn").on("click", function (e) {
+        e.stopPropagation(); // 바깥 클릭 이벤트랑 겹치지 않게
+        const tooltipId = $(this).data("tooltip");
+        const $tooltip = $("#" + tooltipId);
+
+        $tooltip.toggleClass("opacity-0 pointer-events-none");
+    });
+
+    // 바깥 클릭 시 모든 툴팁 닫기
+    $(document).on("click", function (e) {
+        $(".tooltip-box").each(function () {
+            const $tooltip = $(this);
+            const $btn = $(`[data-tooltip='${$tooltip.attr("id")}']`);
+
+            if (!$tooltip.is(e.target) && $tooltip.has(e.target).length === 0 &&
+                !$btn.is(e.target) && $btn.has(e.target).length === 0) {
+                $tooltip.addClass("opacity-0 pointer-events-none");
+            }
+        });
+    });
+</script>
 
 <script>
     const depositInput = document.getElementById("deposit");
@@ -357,7 +433,6 @@
             $(this).html('<i class="fa-solid fa-chevron-up text-xs"></i> 접기');
         }
     });
-
 
 
 </script>
