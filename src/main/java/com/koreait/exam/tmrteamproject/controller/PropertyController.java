@@ -184,9 +184,8 @@ public class PropertyController {
         ResultData avgDepositRd = addressService.calculateAverageDeposit(response, currentArea);
         double avgDepositPerM2 = (double) avgDepositRd.getData1();
         // 12) 예상 선순위보증금 계산
-        // 선임차 환산보증금 + 채권금액
-        // 선임차 환산보증금 : 지역 평균 월세 * 전유면적
-        double seniorityTotal = avgMonthlyPerM2 * currentArea * 100 + weightedValue;
+        // 지역 평균 월세 * 전유면적
+        double seniorityTotal = avgMonthlyPerM2 * currentArea * 100;
 
         long seniorityTotalRounded = Math.round(seniorityTotal);
 
@@ -256,7 +255,7 @@ public class PropertyController {
 
 
         // 14) 채권보증금 리스크 계산
-        // 채권 최고액 + 예산 선순위보증금 금액 / 담보가치
+        // 채권 최고액 + 예상 선순위보증금 금액 / 담보가치
         double riskRatio = (weightedValue + seniorityTotalRounded) / collateralValue;
 
         System.out.println("weightedValue : " + weightedValue);
