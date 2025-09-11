@@ -1,6 +1,7 @@
 package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.ScheduleInterestRepository;
+import com.koreait.exam.tmrteamproject.vo.Member;
 import com.koreait.exam.tmrteamproject.vo.ScheduleInterest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,5 +18,17 @@ public class ScheduleInterestService {
 
     public List<ScheduleInterest> findAllByMemberId(Long memberId) {
         return scheduleInterestRepository.findAllByMemberId(memberId);
+    }
+    @Transactional
+    public void saveSchedule(Member member, long scheduleId) {
+
+        ScheduleInterest scheduleInterest = ScheduleInterest.builder()
+                .memberId(member.getId())
+                .scheduleId(scheduleId)
+                .isActive(1)
+                .build();
+
+        scheduleInterestRepository.save(scheduleInterest);
+
     }
 }
