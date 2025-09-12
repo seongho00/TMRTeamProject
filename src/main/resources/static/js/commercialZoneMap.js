@@ -563,18 +563,29 @@ function openReport() {
                         ]
                     };
 
-                    const ageLabels = ["10대", "20대", "30대", "40대", "50대", "60대+"];
+                    let ageLabels = ["20대", "30대", "40대", "50대", "60대+"]; // 처음엔 10대 제외
+
+                    function toggleWorkplace(visible) {
+                        if (!visible.workplace) {
+                            // 직장 꺼짐 → 라벨에 10대 추가
+                            ageLabels = ["10대", "20대", "30대", "40대", "50대", "60대+"];
+                        } else {
+                            // 직장 켜짐 → 라벨에서 10대 제거
+                            ageLabels = ["20대", "30대", "40대", "50대", "60대+"];
+                        }
+                        chart.data.labels = ageLabels;
+                        chart.update();
+                    }
 
                     function calculatePercentages(visible) {
                         const sum = (arr, skipFirst = false) =>
                             arr.reduce((a, b, i) => a + ((skipFirst && i === 0) ? 0 : (b || 0)), 0);
 
-                        // 직장인구가 보이는 상태라면 10대(인덱스 0)를 제외한 합계 사용
                         const totalResident = sum(rawData.resident, visible.workplace);
-                        const totalWorkplace = sum(rawData.workplace, true); // 직장 자체도 10대 제외
+                        const totalWorkplace = sum(rawData.workplace, true); // 직장은 항상 10대 제외
                         const totalFloating = sum(rawData.floating, visible.workplace);
 
-                        return {
+                        const result = {
                             resident: rawData.resident.map((v, i) =>
                                 visible.resident && (visible.workplace && i === 0 ? false : true) && totalResident
                                     ? parseFloat(((v || 0) / totalResident * 100).toFixed(1))
@@ -591,6 +602,15 @@ function openReport() {
                                     : null
                             )
                         };
+
+                        // 직장 보이는 상태라면 → 10대 데이터 잘라내기
+                        if (visible.workplace) {
+                            result.resident = result.resident.slice(1);  // 20대~60대
+                            result.workplace = result.workplace.slice(1);
+                            result.floating = result.floating.slice(1);
+                        }
+
+                        return result;
                     }
 
 
@@ -622,6 +642,13 @@ function openReport() {
                                             workplace: !ci.getDatasetMeta(1).hidden,
                                             floating: !ci.getDatasetMeta(2).hidden
                                         };
+
+                                        // 라벨 업데이트
+                                        if (visible.workplace) {
+                                            ci.data.labels = ["20대", "30대", "40대", "50대", "60대+"];
+                                        } else {
+                                            ci.data.labels = ["10대", "20대", "30대", "40대", "50대", "60대+"];
+                                        }
 
                                         // 새 비율 계산
                                         const newData = calculatePercentages(visible);
