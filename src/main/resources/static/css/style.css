@@ -32,7 +32,7 @@
 html, body {
     font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
     font-weight: 400; /* 기본은 Regular */
-    letter-spacing: -0.2px; /* 한글 가독성 개선 */
+    letter-spacing: -0.2px !important; /* 한글 가독성 개선 및 우선순위 */
 }
 
 .heading {
@@ -44,6 +44,5 @@ html, body {
 }
 
 .muted {
-    font-weight: 300; /* Light */
     color: #6b7280;
 }
