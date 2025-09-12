@@ -139,4 +139,6 @@ public class LhApplyInfoService {
             return cb.or(ors.toArray(new Predicate[0]));
         };
     }
+
+
 }

@@ -3,16 +3,25 @@
     <script>
         function toggleChatBotUI() {
             const $chatbot = $("#chatBotUI");
-            console.log("실행됨");
 
-            if ($chatbot.hasClass("translate-y-8")) {
-                // 보이기: 제자리 + 보이도록
-                $chatbot.removeClass("translate-y-8 opacity-0")
-                    .addClass("translate-y-0 opacity-100");
+            if ($chatbot.hasClass("hidden")) {
+                // 보이기
+                $chatbot.removeClass("hidden"); // 우선 hidden 제거
+                // 프레임 하나 기다렸다가 애니메이션 클래스 적용
+                setTimeout(() => {
+                    $chatbot.removeClass("translate-y-8 opacity-0")
+                        .addClass("translate-y-0 opacity-100");
+                }, 10);
+
             } else {
-                // 숨기기: 아래로 슬라이드 + 안 보이게
+                // 숨기기 (애니메이션 → hidden)
                 $chatbot.removeClass("translate-y-0 opacity-100")
                     .addClass("translate-y-8 opacity-0");
+
+                // 애니메이션 끝난 후 hidden 추가
+                setTimeout(() => {
+                    $chatbot.addClass("hidden");
+                }, 300); // transition duration과 맞춰주세요 (예: 300ms)
             }
         }
 
@@ -38,7 +47,13 @@
                 type: "POST",
                 url: "../chatbot/sendMessage",
                 data: {message: message},
+                beforeSend: function () {
+                    $chatBox.append(`<div id="loading" class="bot-msg"><b>챗봇: </b><span class="typing-dots">
+      <span></span><span></span><span></span>
+    </span></div>`);
+                },
                 success: function (data) {
+                    $("#loading").remove();
 
                     // 행정동 필요한 로직인데 없을 때
                     if (data.resultCode === "F-2") {
@@ -54,6 +69,7 @@
 
                     // 여러 개의 시군구가 있을 시
                     if (data.resultCode === "F-3") {
+
                         const candidates = data.data1;
                         console.log(data.data1)
                         // 안내 메시지 표시
@@ -721,6 +737,38 @@
         });
     </script>
     <style>
+        .typing-dots {
+            display: inline-block;
+            margin-left: 4px;
+        }
+
+        .typing-dots span {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            margin: 0 2px;
+            background: #555;
+            border-radius: 50%;
+            animation: blink 1.4s infinite both;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+            0%, 80%, 100% {
+                opacity: 0;
+            }
+            40% {
+                opacity: 1;
+            }
+        }
+
         .candidate-btn {
             display: block;
             width: 500px;
@@ -770,7 +818,7 @@
                onclick="toggleChatBotUI()"></i>
         </div>
         <div id="chat-box"
-             class="flex flex-col justify-start items-start self-stretch flex-grow w-[350px] h-[450px] overflow-auto gap-2.5 p-2.5"
+             class="flex flex-col justify-start items-start self-stretch flex-grow w-[350px] h-[450px] overflow-auto gap-2.5 p-2.5 "
         ></div>
         <div
                 class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[350px] relative overflow-hidden border-t border-black "

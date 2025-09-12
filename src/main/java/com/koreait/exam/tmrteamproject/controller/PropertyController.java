@@ -32,6 +32,7 @@ import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Controller
@@ -250,30 +251,34 @@ public class PropertyController {
         String formatCollateralValueTotal = formatToEokCheon(collateralValue);
         String formatCollateralValueByDealPrice = formatToEokCheon(collateralValueByDealPrice);
 
-        System.out.println("formatCollateralValueByDealPrice : " + formatCollateralValueTotal);
+        System.out.println("formatCollateralValueTotal : " + formatCollateralValueTotal);
         System.out.println("formatCollateralValueByDealPrice : " + formatCollateralValueByDealPrice);
 
 
         // 14) 채권보증금 리스크 계산
         // 채권 최고액 + 예상 선순위보증금 금액 / 담보가치
-        double riskRatio = (weightedValue + seniorityTotalRounded) / collateralValue;
+        // 채권보증금 리스크 (정적 담보가치)
+        double riskRatioStatic = (weightedValue + seniorityTotalRounded) / collateralValue;
+
+        // 채권보증금 리스크 (실거래가 담보가치)
+        double riskRatioDeal = (weightedValue + seniorityTotalRounded) / collateralValueByDealPrice;
 
         System.out.println("weightedValue : " + weightedValue);
         System.out.println("seniorityTotalRounded : " + seniorityTotalRounded);
         System.out.println("collateralValue : " + collateralValue);
-        System.out.println("riskRatio : " + riskRatio);
+        System.out.println("riskRatioStatic  : " + riskRatioStatic );
 
-        String bondDepositRisk;
 
-        if (riskRatio < 0.5) {
-            bondDepositRisk = "정상";
-        } else if (riskRatio < 0.7) {
-            bondDepositRisk = "주의";
-        } else if (riskRatio < 1.0) {
-            bondDepositRisk = "위험";
-        } else {
-            bondDepositRisk = "고위험";
-        }
+        // 리스크 레벨 판정 함수 (중복 방지용)
+        Function<Double, String> toRiskLevel = ratio -> {
+            if (ratio < 0.5) return "정상";
+            else if (ratio < 0.7) return "주의";
+            else if (ratio < 1.0) return "위험";
+            else return "고위험";
+        };
+
+        String bondDepositRiskStatic = toRiskLevel.apply(riskRatioStatic);
+        String bondDepositRiskDeal   = toRiskLevel.apply(riskRatioDeal);
 
         // 15) 근저당권 기반 위험
         // 채권최고액 / 담보가치
@@ -315,7 +320,8 @@ public class PropertyController {
         responseData.put("seniorityTotalFormatted", seniorityTotalFormatted); // 예상 선순위보증금
         responseData.put("rentRisk", rentRisk);       // 월세 시세괴리 단계
         responseData.put("depositRisk", depositRisk); // 보증금 시세괴리 단계
-        responseData.put("bondDepositRisk", bondDepositRisk); // 채권보증금 리스크
+        responseData.put("bondDepositRiskStatic", bondDepositRiskStatic); // 채권보증금 리스크
+        responseData.put("bondDepositRiskDeal", bondDepositRiskDeal); // 채권보증금 리스크
         responseData.put("debtRiskLevel", debtRiskLevel); // 근저당권 기반 위험
         responseData.put("collateralValue", collateralValue);
         responseData.put("avgMonthlyDisplay", avgMonthlyDisplay);
@@ -374,11 +380,6 @@ public class PropertyController {
         return false;
     }
 
-    @GetMapping("/test")
-    @ResponseBody
-    public String test() throws Exception {
-        propertyService.fetchAndCalculate("11680", "서초동");
-        return "성공";
-    }
+
 
 }

@@ -11,8 +11,9 @@
 <script type="text/javascript"
         src="//dapi.kakao.com/v2/maps/sdk.js?appkey=69544617df3febfc879cd18eed451ba3&libraries=services&autoload=false"></script>
 
+
 <!-- 지도 영역 -->
-<div id="map" class="w-full h-[1080px]"></div>
+<div id="map" class="w-full h-screen"></div>
 
 <!-- 상단 탭바: 매출/유동인구 전환 -->
 <div id="topMetricTabs"
@@ -100,7 +101,8 @@
                 <h3 class="text-sm font-semibold text-gray-800">유동인구</h3>
                 <!-- 그래프 보기(옵션) -->
                 <button id="show-fp-graph"
-                        class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-100 text-indigo-700">
+                        class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-100 text-indigo-700 cursor-pointer"
+                        onclick="openReport();">
                     그래프 보기
                 </button>
             </div>
@@ -132,13 +134,52 @@
             지도에서 행정동을 클릭하거나 상단의 지역 선택을 변경하면 카드가 갱신됩니다.
         </p>
     </div>
+
+
 </aside>
+
+<!-- 팝업창 -->
+<div class="report fixed top-[160px] left-[460px] w-[420px] h-[800px] z-10
+            bg-white/90 backdrop-blur rounded-2xl border border-gray-200 shadow-2xl
+            transform transition-all duration-300 ease-in-out opacity-0 -translate-x-4 overflow-auto">
+    <h2>
+        분석 리포트
+    </h2>
+
+    <!-- 인구 데이터 -->
+    <div class="p-4 bg-white rounded-xl shadow-md">
+        <h2 class="text-lg font-bold mb-2">🚻 성별 유동인구 비율</h2>
+        <canvas id="genderFloatingChart" height="120"></canvas>
+    </div>
+
+    <div class="flex justify-between">
+        <span class="font-bold text-xl"><i class="fa-solid fa-won-sign "></i> 매출 분석</span>
+        <span class="text-sm text-gray-600"> 25년 1분기 기준</span>
+    </div>
+
+    <canvas id="timeSalesChart" width="600" height="300"></canvas>
+    <canvas id="weeklyPopulationChart" width="600" height="300"></canvas>
+    <canvas id="populationByAgeChart" width="600" height="400"></canvas>
+    <div id="populationAnalysis" class="mt-4 text-sm text-gray-700"></div>
+
+    <!-- 닫기 버튼 -->
+    <button
+            class="p-0 flex items-center justify-center absolute
+         top-3 right-[-1.375rem] z-[225]
+         w-[2.75rem] h-[2.75rem]
+         rounded-full border border-gray-300
+         bg-white shadow-[2px_2px_8px_0_rgba(0,0,0,0.1)] cursor-pointer"
+            onclick="closeReport();">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+
+</div>
+
 
 <!-- 지도/업종 스크립트 -->
 <script type="text/javascript" th:src="@{/js/commercialZoneMap.js}"></script>
 
 <div th:replace="chatbot/chat::chat"></div>
 
-<footer th:replace="common/footer :: footer"></footer>
 </body>
 </html>
