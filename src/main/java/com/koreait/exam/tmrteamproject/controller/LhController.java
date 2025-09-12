@@ -63,6 +63,8 @@ public class LhController {
     @ResponseBody
     public String deleteSchedule(long scheduleId, long memberId) {
 
+        System.out.println("scheduleId : " + scheduleId);
+        System.out.println("memberId : " + memberId);
         scheduleInterestService.deleteSchedule(memberId, scheduleId);
         return "OK";
     }
