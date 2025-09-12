@@ -471,8 +471,8 @@ function openReport() {
                     });
 
                     // 요일별 그래프
-                    const dayLabels  = ["월", "화", "수", "목", "금", "토", "일"];
-                    const dayValues  = [
+                    const dayLabels = ["월", "화", "수", "목", "금", "토", "일"];
+                    const dayValues = [
                         currentData.mondayFloatingPopulation,
                         currentData.tuesdayFloatingPopulation,
                         currentData.wednesdayFloatingPopulation,
@@ -526,10 +526,131 @@ function openReport() {
                     });
 
 
+                    // 기존 차트 제거 (중복 생성 방지)
+                    if (window.populationByAgeChart instanceof Chart) {
+                        window.populationByAgeChart.destroy();
+                    }
+
+                    const rawData = {
+                        // 상주인구 (Resident)
+                        resident: [
+                            currentData.age10ResidentPopulation,
+                            currentData.age20ResidentPopulation,
+                            currentData.age30ResidentPopulation,
+                            currentData.age40ResidentPopulation,
+                            currentData.age50ResidentPopulation,
+                            currentData.age60PlusResidentPopulation
+                        ],
+
+                        // 직장인구 (Workplace) → 10대는 null 처리
+                        workplace: [
+                            null,
+                            currentData.age20WorkplacePopulation,
+                            currentData.age30WorkplacePopulation,
+                            currentData.age40WorkplacePopulation,
+                            currentData.age50WorkplacePopulation,
+                            currentData.age60PlusWorkplacePopulation
+                        ],
+
+                        // 유동인구 (Floating)
+                        floating: [
+                            currentData.age10FloatingPopulation,
+                            currentData.age20FloatingPopulation,
+                            currentData.age30FloatingPopulation,
+                            currentData.age40FloatingPopulation,
+                            currentData.age50FloatingPopulation,
+                            currentData.age60PlusFloatingPopulation
+                        ]
+                    };
+
+                    const ageLabels = ["10대", "20대", "30대", "40대", "50대", "60대+"];
+
+                    function calculatePercentages(visible) {
+                        const sum = (arr, skipFirst = false) =>
+                            arr.reduce((a, b, i) => a + ((skipFirst && i === 0) ? 0 : (b || 0)), 0);
+
+                        // 직장인구가 보이는 상태라면 10대(인덱스 0)를 제외한 합계 사용
+                        const totalResident = sum(rawData.resident, visible.workplace);
+                        const totalWorkplace = sum(rawData.workplace, true); // 직장 자체도 10대 제외
+                        const totalFloating = sum(rawData.floating, visible.workplace);
+
+                        return {
+                            resident: rawData.resident.map((v, i) =>
+                                visible.resident && (visible.workplace && i === 0 ? false : true) && totalResident
+                                    ? parseFloat(((v || 0) / totalResident * 100).toFixed(1))
+                                    : null
+                            ),
+                            workplace: rawData.workplace.map((v, i) =>
+                                visible.workplace && i > 0 && totalWorkplace
+                                    ? parseFloat(((v || 0) / totalWorkplace * 100).toFixed(1))
+                                    : null
+                            ),
+                            floating: rawData.floating.map((v, i) =>
+                                visible.floating && (visible.workplace && i === 0 ? false : true) && totalFloating
+                                    ? parseFloat(((v || 0) / totalFloating * 100).toFixed(1))
+                                    : null
+                            )
+                        };
+                    }
 
 
+                    const ageCtx = document.getElementById("populationByAgeChart").getContext("2d");
+                    const chart = new Chart(ageCtx, {
+                        type: "bar",
+                        data: {
+                            labels: ageLabels,
+                            datasets: [
+                                {label: "상주", data: [], backgroundColor: "rgba(59,130,246,0.7)"},
+                                {label: "직장", data: [], backgroundColor: "rgba(16,185,129,0.7)"},
+                                {label: "유동", data: [], backgroundColor: "rgba(239,68,68,0.7)"}
+                            ]
+                        },
+                        options: {
+                            plugins: {
+                                legend: {
+                                    onClick: (e, legendItem, legend) => {
+                                        const index = legendItem.datasetIndex;
+                                        const ci = legend.chart;
 
+                                        // dataset visibility 토글
+                                        const meta = ci.getDatasetMeta(index);
+                                        meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
 
+                                        // 현재 visible 여부
+                                        const visible = {
+                                            resident: !ci.getDatasetMeta(0).hidden,
+                                            workplace: !ci.getDatasetMeta(1).hidden,
+                                            floating: !ci.getDatasetMeta(2).hidden
+                                        };
+
+                                        // 새 비율 계산
+                                        const newData = calculatePercentages(visible);
+
+                                        ci.data.datasets[0].data = newData.resident;
+                                        ci.data.datasets[1].data = newData.workplace;
+                                        ci.data.datasets[2].data = newData.floating;
+
+                                        ci.update();
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (ageCtx) => {
+                                            const val = ageCtx.raw;
+                                            return val ? `${ageCtx.dataset.label}: ${val}%` : `${ageCtx.dataset.label}: 없음`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // 초기 비율 데이터 세팅
+                    const initData = calculatePercentages({resident: true, workplace: true, floating: true});
+                    chart.data.datasets[0].data = initData.resident;
+                    chart.data.datasets[1].data = initData.workplace;
+                    chart.data.datasets[2].data = initData.floating;
+                    chart.update();
 
 
                     // DOM 업데이트
