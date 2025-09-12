@@ -1,115 +1,132 @@
 <header th:fragment="header" xmlns:th="http://www.thymeleaf.org">
     <meta charset="UTF-8">
 
-    <div id="header-id" class="w-full h-[360px] box-border" style="background-image: url('/images/header_img_bold.png'); background-size: cover; background-position: center;">
-        <div id="header-wrapper"
-             class="w-full h-[80px] hover:bg-white group/hd flex items-start justify-between text-center border-b border-white/50 transition-all duration-300">
+    <div class="w-full h-[380px] align-top" style="background-image: url('/images/header_img_bold.png'); background-size: cover; background-position: center;">
+        <div class="w-full h-[80px] box-border hover:bg-white group/hd border-b border-white/50 transition-all duration-300">
+            <div class="flex justify-between ml-0 mr-auto">
+                <div class="w-[240px] h-[80px] flex justify-start items-center">
+                    <a href="../home/main" class="flex items-center">
+                        <!-- 흰색 로고 (기본 표시) -->
+                        <img src="/images/logo_white.png"
+                             class="w-[160px] h-[60px] object-cover cursor-pointer block group-hover/hd:hidden transition-opacity"/>
+                        <!-- 파란색 로고 (hover 시 표시) -->
+                        <img src="/images/로고.png"
+                             class="w-[160px] h-[60px] object-cover cursor-pointer hidden group-hover/hd:block transition-opacity"/>
+                    </a>
+                </div>
 
-            <div class="w-[240px] h-[80px] flex justify-start items-center">
-                <a href="../home/main" class="flex items-center">
-                    <!-- 흰색 로고 (기본 표시) -->
-                    <img src="/images/logo_white.png"
-                         class="w-[160px] h-[60px] object-cover cursor-pointer block group-hover/hd:hidden transition-opacity"/>
-                    <!-- 파란색 로고 (hover 시 표시) -->
-                    <img src="/images/로고.png"
-                         class="w-[160px] h-[60px] object-cover cursor-pointer hidden group-hover/hd:block transition-opacity"/>
-                </a>
-            </div>
+                <nav class="w-[60%] flex text-center text-white group-hover/hd:text-[#333]">
+                    <ul class="relative flex justify-center items-center">
+                        <!-- 상권 분석 -->
+                        <li class="relative flex mx-[90px] h-[80px] justify-center items-center group/menu
+                                   after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                                   after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                   hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                            <a class="relative inline-block w-auto flex-none subheading text-[16px] leading-none cursor-pointer">
+                                상권 분석
+                            </a>
+                            <div class="fixed left-0 w-screen hidden top-[80px] h-[50px] bg-white border-t border-b border-[#ccc] group-hover/menu:flex transition-all duration-200">
+                                <ul class="flex items-center ml-[680px] mr-auto">
+                                    <li>
+                                        <a href="../map/commercialZoneMap" class="inline-block text-[14px] muted px-2 transition-all duration-300 hover:subheading">유동인구/매출</a>
+                                    </li>
+                                    <li>
+                                        <a href="../map/riskMap" class="inline-block text-[14px] muted px-2 transition-all duration-300 hover:subheading">위험도분석</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
 
-            <nav class="w-[60%] text-center text-white group-hover/hd:text-[#333]">
-                <ul id="nav-list" class="flex justify-center items-center relative">
-                    <!-- 상권 분석 -->
-                    <li class="relative w-[240px] group/menu">
-                        <div class="flex justify-center items-center h-[80px] cursor-pointer">
-                            <p class="subheading text-[16px]">상권 분석</p>
-                        </div>
-                        <div class="absolute left-0 hidden group-hover/menu:block bg-white border mt-2 shadow-lg">
-                            <ul class="w-40">
-                                <li>
-                                    <a href="../map/commercialZoneMap" class="block px-4 py-2 hover:bg-gray-100">유동인구/매출</a>
+                        <!-- 등기부등본 -->
+                        <li class="relative flex justify-center items-center mx-[90px] h-[80px] group
+                                   after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                                   after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                   hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                            <a href="../property/upload" class="inline-block w-auto flex-none leading-none subheading text-[16px]">
+                                등기부등본
+                            </a>
+                        </li>
+
+                        <!-- 상가 청약 -->
+                        <li class="relative flex mx-[90px] h-[80px] justify-center items-center group/menu2
+                                   after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                                   after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                   hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                            <a class="relative inline-block w-auto flex-none subheading text-[16px] leading-none cursor-pointer">
+                                상가 청약
+                            </a>
+                            <div class="fixed left-0 w-screen hidden top-[80px] h-[50px] bg-white border-t border-b border-[#ccc] group-hover/menu2:flex transition-all duration-200">
+                                <ul class="flex items-center ml-[1175px] mr-auto">
+                                    <li>
+                                        <a href="../home/notifications" class="inline-block text-[14px] muted px-2 transition-all duration-300 hover:subheading">청약 알림</a>
+                                    </li>
+                                    <li>
+                                        <a href="../lh/notice" class="inline-block text-[14px] muted px-2 transition-all duration-300 hover:subheading">공고문</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+
+                        <!-- 로그인 -->
+                        <li class="relative flex justify-center items-center w-[240px] h-[80px] group">
+                            <ul>
+                                <li th:if="${rq != null and rq.isLogout()}">
+                                    <a href="../member/joinAndLogin"
+                                       class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer
+                                              after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-[-32px]
+                                              after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                              hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                                        로그인
+                                    </a>
                                 </li>
-                                <li>
-                                    <a href="../map/riskMap" class="block px-4 py-2 hover:bg-gray-100">위험도분석</a>
+                                <li th:if="${rq != null and rq.isLogined()}">
+                                    <a href="../member/conditionalLogout"
+                                       class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer
+                                              after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-[-32px]
+                                              after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                              hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                                        로그아웃
+                                    </a>
                                 </li>
                             </ul>
-                        </div>
-                    </li>
+                        </li>
 
-                    <!-- 등기부등본 -->
-                    <li class="relative group w-[240px]">
-                        <a href="../property/upload" class="flex justify-center items-center h-[80px] cursor-pointer">
-                            <p class="subheading text-[16px]">등기부등본</p>
-                        </a>
-                    </li>
+                        <!-- 알림 아이콘 + 팝업 -->
+                        <li id="notif-wrapper" class="relative group w-[80px]" th:if="${rq != null and rq.isLogined()}">
+                            <!-- 알림벨 버튼 -->
+                            <button id="notif-icon" type="button" class="cursor-pointer select-none w-full h-[80px]">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24">
+                                    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                       stroke-width="2">
+                                        <path stroke-dasharray="4" stroke-dashoffset="4" d="M12 3v2">
+                                            <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.2s"
+                                                     values="4;0"/>
+                                        </path>
+                                        <path fill="currentColor" fill-opacity="0" stroke-dasharray="28" stroke-dashoffset="28"
+                                              d="M12 5c-3.31 0 -6 2.69 -6 6l0 6c-1 0 -2 1 -2 2h8M12 5c3.31 0 6 2.69 6 6l0 6c1 0 2 1 2 2h-8">
+                                            <animate fill="freeze" attributeName="fill-opacity" begin="0.9s" dur="0.5s"
+                                                     values="0;1"/>
+                                            <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.2s" dur="0.4s"
+                                                     values="28;0"/>
+                                        </path>
+                                        <path stroke-dasharray="8" stroke-dashoffset="8"
+                                              d="M10 20c0 1.1 0.9 2 2 2c1.1 0 2 -0.9 2 -2">
+                                            <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.6s" dur="0.2s"
+                                                     values="8;0"/>
+                                        </path>
+                                    </g>
+                                </svg>
+                            </button>
 
-                    <!-- 상가 청약 -->
-                    <li class="relative group w-[240px]">
-                        <div class="flex justify-center items-center h-[80px] cursor-pointer">
-                            <p class="subheading text-[16px]">상가 청약</p>
-                        </div>
-                        <ul class="sub-menu absolute flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden w-full text-center">
-                            <li>
-                                <a href="../home/notifications" class="block px-4 py-2 hover:underline">청약 알림</a>
-                            </li>
-                            <li>
-                                <a href="../lh/notice" class="block px-4 py-2 hover:underline">공고문</a>
-                            </li>
-                        </ul>
-                    </li>
-
-                    <!-- 로그인 -->
-                    <li class="relative group w-[240px]">
-                        <ul>
-                            <li th:if="${rq != null and rq.isLogout()}">
-                                <a href="../member/joinAndLogin"
-                                   class="flex justify-center items-center w-full h-[80px] relative cursor-pointer">
-                                    <p class="subheading text-[16px]">로그인</p>
-                                </a>
-                            </li>
-                            <li th:if="${rq != null and rq.isLogined()}">
-                                <a href="../member/conditionalLogout"
-                                   class="flex justify-center items-center w-full h-[80px] relative cursor-pointer">
-                                    <p class="subheading text-[16px]">로그아웃</p>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-
-                    <!-- 알림 아이콘 + 팝업 -->
-                    <li id="notif-wrapper" class="relative group w-[80px]" th:if="${rq != null and rq.isLogined()}">
-                        <!-- 알림벨 버튼 -->
-                        <button id="notif-icon" type="button" class="cursor-pointer select-none w-full h-[80px]">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24">
-                                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                   stroke-width="2">
-                                    <path stroke-dasharray="4" stroke-dashoffset="4" d="M12 3v2">
-                                        <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.2s"
-                                                 values="4;0"/>
-                                    </path>
-                                    <path fill="currentColor" fill-opacity="0" stroke-dasharray="28" stroke-dashoffset="28"
-                                          d="M12 5c-3.31 0 -6 2.69 -6 6l0 6c-1 0 -2 1 -2 2h8M12 5c3.31 0 6 2.69 6 6l0 6c1 0 2 1 2 2h-8">
-                                        <animate fill="freeze" attributeName="fill-opacity" begin="0.9s" dur="0.5s"
-                                                 values="0;1"/>
-                                        <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.2s" dur="0.4s"
-                                                 values="28;0"/>
-                                    </path>
-                                    <path stroke-dasharray="8" stroke-dashoffset="8"
-                                          d="M10 20c0 1.1 0.9 2 2 2c1.1 0 2 -0.9 2 -2">
-                                        <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.6s" dur="0.2s"
-                                                 values="8;0"/>
-                                    </path>
-                                </g>
-                            </svg>
-                        </button>
-
-                        <!-- 팝업 알림함 불러오기 -->
-                        <div th:replace="common/subscription :: subscription"></div>
-                    </li>
-                </ul>
-            </nav>
+                            <!-- 팝업 알림함 불러오기 -->
+                            <div th:replace="common/subscription :: subscription"></div>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
         </div>
 
-        <div class="absolute top-40 left-1/2 transform -translate-x-1/2 flex justify-center items-center gap-16">
+        <div class="w-full flex justify-center items-center gap-16 mt-[80px]">
             <!-- 첫 번째 아이콘 -->
             <div class="w-[90px] h-[90px] rounded-[5px] bg-white flex items-center justify-center">
                 <a href="../map/riskMap">
@@ -177,41 +194,6 @@
     </div>
 
     <script>
-        const headerId = document.getElementById('header-id');
-        const header = document.getElementById('header-wrapper');
-        const navList = document.getElementById('nav-list');
-        const subMenus = document.querySelectorAll('.sub-menu');
-
-        let hoverTimeout;
-
-        const expandHeader = () => {
-            clearTimeout(hoverTimeout);
-            headerId.classList.remove('h-[80px]');
-            headerId.classList.add('h-[230px]');
-            header.classList.remove('h-[80px]');
-            header.classList.add('h-[230px]');
-            subMenus.forEach(menu => {
-                menu.classList.remove('hidden');
-                menu.classList.add('flex');
-            });
-        };
-
-        const collapseHeader = () => {
-            hoverTimeout = setTimeout(() => {
-                headerId.classList.remove('h-[230px]');
-                headerId.classList.add('h-[80px]');
-                header.classList.remove('h-[230px]');
-                header.classList.add('h-[80px]');
-                subMenus.forEach(menu => {
-                    menu.classList.remove('flex');
-                    menu.classList.add('hidden');
-                });
-            }, 100);
-        };
-
-        navList.addEventListener('mouseenter', expandHeader);
-        navList.addEventListener('mouseleave', collapseHeader);
-
         // 알림 팝업 토글 + 외부 클릭 닫기
         const notifIcon = document.getElementById('notif-icon');
         const notifPopover = document.getElementById('notif-popover');
