@@ -405,6 +405,58 @@ function openReport() {
                 // 예: 특정 값 화면에 표시
                 if (data) {
 
+
+// 성별 데이터
+                    const male = currentData.maleFloatingPopulation || 0;
+                    const female = currentData.femaleFloatingPopulation || 0;
+
+                    if (window.genderFloatingChart instanceof Chart) {
+                        window.genderFloatingChart.destroy();
+                    }
+
+                    const genderCtx = document.getElementById("genderFloatingChart").getContext("2d");
+                    window.genderFloatingChart = new Chart(genderCtx, {
+                        type: "doughnut", // 또는 "pie"
+                        data: {
+                            labels: ["남성", "여성"],
+                            datasets: [{
+                                label: "성별 유동인구",
+                                data: [male, female],
+                                backgroundColor: [
+                                    "rgba(59, 130, 246, 0.7)",   // 파랑: 남성
+                                    "rgba(236, 72, 153, 0.7)"    // 분홍: 여성
+                                ],
+                                borderColor: [
+                                    "rgba(59, 130, 246, 1)",
+                                    "rgba(236, 72, 153, 1)"
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: "성별 유동인구 비율"
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (genderCtx) => {
+                                            const total = male + female;
+                                            const val = genderCtx.raw || 0;
+                                            const percent = total ? ((val / total) * 100).toFixed(1) : 0;
+                                            return `${genderCtx.label}: ${val.toLocaleString()}명 (${percent}%)`;
+                                        }
+                                    }
+                                },
+                                legend: {
+                                    position: "bottom"
+                                }
+                            }
+                        }
+                    });
+
                     const labels = [
                         "00~06시", "06~11시", "11~14시",
                         "14~17시", "17~21시", "21~24시"
@@ -678,6 +730,55 @@ function openReport() {
                     chart.data.datasets[1].data = initData.workplace;
                     chart.data.datasets[2].data = initData.floating;
                     chart.update();
+
+
+                    // ✅ 간단한 분석 로직
+                    function analyzePopulationByRatio(resident, workplace, floating) {
+                        const sum = (arr) => arr.reduce((a, b) => a + (b || 0), 0);
+
+                        // 전체 합
+                        const totalResident = sum(resident);
+                        const totalWorkplace = sum(workplace);
+                        const totalFloating = sum(floating);
+
+                        // 비율 계산
+                        const residentRatio = resident.map(v => totalResident ? (v / totalResident * 100).toFixed(1) : 0);
+                        const workplaceRatio = workplace.map(v => totalWorkplace ? (v / totalWorkplace * 100).toFixed(1) : 0);
+                        const floatingRatio = floating.map(v => totalFloating ? (v / totalFloating * 100).toFixed(1) : 0);
+
+                        // 주요 연령대 찾기
+                        const maxResidentIdx = residentRatio.indexOf(Math.max(...residentRatio));
+                        const maxWorkplaceIdx = workplaceRatio.indexOf(Math.max(...workplaceRatio));
+                        const maxFloatingIdx = floatingRatio.indexOf(Math.max(...floatingRatio));
+
+                        let analysis = [];
+
+                        analysis.push(`🏠 상주인구 비율은 <b>${ageLabels[maxResidentIdx]}</b>가 가장 많아 ${residentRatio[maxResidentIdx]}% 차지합니다.`);
+                        analysis.push(`💼 직장인구 비율은 <b>${ageLabels[maxWorkplaceIdx]}</b>가 가장 높아 ${workplaceRatio[maxWorkplaceIdx]}%입니다.`);
+                        analysis.push(`🚶 유동인구 비율은 <b>${ageLabels[maxFloatingIdx]}</b>가 가장 많아 ${floatingRatio[maxFloatingIdx]}%를 기록합니다.`);
+
+                        // 비교 분석
+                        if (maxResidentIdx !== maxFloatingIdx) {
+                            analysis.push(`👉 상주(${ageLabels[maxResidentIdx]})와 유동(${ageLabels[maxFloatingIdx]}) 인구의 주력 연령대가 다릅니다. 
+      거주민 타깃 업종과 방문객 타깃 업종을 분리해야 합니다.`);
+                        } else {
+                            analysis.push(`✅ 상주와 유동 모두 ${ageLabels[maxResidentIdx]} 비중이 높아, 동일 연령층을 핵심 고객으로 설정할 수 있습니다.`);
+                        }
+
+                        if (maxWorkplaceIdx === maxFloatingIdx) {
+                            analysis.push(`📈 직장과 유동 모두 ${ageLabels[maxFloatingIdx]} 중심이므로, 근무 인구가 소비 주도층과 겹칩니다.`);
+                        }
+
+                        // 세부 차이 강조
+                        analysis.push(`상주 ${ageLabels[maxResidentIdx]} 비율: ${residentRatio[maxResidentIdx]}%, 
+                 직장 ${ageLabels[maxWorkplaceIdx]} 비율: ${workplaceRatio[maxWorkplaceIdx]}%, 
+                 유동 ${ageLabels[maxFloatingIdx]} 비율: ${floatingRatio[maxFloatingIdx]}%.`);
+
+                        return analysis.join("<br>");
+                    }
+
+                    document.getElementById("populationAnalysis").innerHTML =
+                        analyzePopulationByRatio(rawData.resident, rawData.workplace, rawData.floating);
 
 
                     // DOM 업데이트
