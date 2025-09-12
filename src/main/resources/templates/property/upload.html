@@ -67,8 +67,25 @@
                 상세보기
             </button>
         </div>
-        <div class="w-full bg-gray-200 rounded-full h-4">
-            <div id="riskBar" class="h-4 rounded-full"></div>
+        <!-- 위험도 bar + 기준 선택 버튼 -->
+        <div class="mb-3">
+            <div class="flex justify-between items-center mb-2">
+                <p class="text-sm text-gray-600 font-medium">위험도 기준 선택</p>
+                <div class="flex gap-2">
+                    <button id="btnStatic" class="px-2 py-1 bg-blue-600 text-white rounded text-xs">기준시가 기준</button>
+                    <button id="btnDeal" class="px-2 py-1 bg-gray-300 text-black rounded text-xs">실거래가 기준</button>
+                </div>
+            </div>
+
+            <!-- Static bar -->
+            <div id="riskBarStaticWrapper" class="w-full bg-gray-200 rounded-full h-4 mb-2 hidden">
+                <div id="riskBarStatic" class="h-4 rounded-full"></div>
+            </div>
+
+            <!-- Deal bar -->
+            <div id="riskBarDealWrapper" class="w-full bg-gray-200 rounded-full h-4 hidden">
+                <div id="riskBarDeal" class="h-4 rounded-full"></div>
+            </div>
         </div>
         <div class="mt-1 text-lg text-gray-700">
             위험도 점수: <span id="totalScore"></span> (단계: <span id="totalLevel"></span>)
@@ -90,7 +107,7 @@
                 <div id="depositHelpTooltip"
                      class="tooltip-box absolute left-1/2 top-full mt-2 w-64 bg-black text-white text-xs
               rounded-lg px-3 py-2 shadow-lg opacity-0 pointer-events-none
-              transition transform -translate-x-1/2">
+              transition transform -translate-x-1/2 z-10">
                     보증금은 인근 유사 면적 평균값을 기준으로 산정됩니다.
                 </div>
             </div>
@@ -108,7 +125,7 @@
                 <div id="bondHelpTooltip"
                      class="tooltip-box absolute left-1/2 top-full mt-2 w-64 bg-black text-white text-xs
               rounded-lg px-3 py-2 shadow-lg opacity-0 pointer-events-none
-              transition transform -translate-x-1/2">
+              transition transform -translate-x-1/2 z-10">
                     세입자가 맡긴 보증금을 법적으로 보호하기 위해 환산한 금액<br>
                     “내 보증금이 안전하게 회수될 수 있는지”를 따지는 기준
                 </div>
@@ -126,7 +143,7 @@
                 <div id="debtHelpTooltip"
                      class="tooltip-box absolute left-1/2 top-full mt-2 w-64 bg-black text-white text-xs
               rounded-lg px-3 py-2 shadow-lg opacity-0 pointer-events-none
-              transition transform -translate-x-1/2">
+              transition transform -translate-x-1/2 z-10">
                     은행 등이 집을 담보로 돈을 빌려줄 때 설정하는 권리<br>
                     채무자가 돈을 못 갚으면 집을 경매로 넘겨 먼저 돈을 받아갈 수 있음
                 </div>
@@ -189,6 +206,15 @@
 </script>
 
 <script>
+
+    const state = {
+        totalScoreStatic: 0,
+        totalLevelStatic: "",
+        totalScoreDeal: 0,
+        totalLevelDeal: "",
+        resultJson: null
+    };
+
     const depositInput = document.getElementById("deposit");
     const monthlyRentInput = document.getElementById("monthlyRent");
     const uploadBtn = document.getElementById("upload");
@@ -285,6 +311,21 @@
         setPdf(file);
     });
 
+    function getRiskClass(level) {
+        switch (level) {
+            case "정상":
+                return "text-green-600 font-bold";
+            case "주의":
+                return "text-yellow-600 font-bold";
+            case "위험":
+                return "text-orange-600 font-bold";
+            case "고위험":
+                return "text-red-600 font-bold";
+            default:
+                return "text-gray-600";
+        }
+    }
+
     document.getElementById("upload").addEventListener("click", async () => {
 
         const form = new FormData();
@@ -306,11 +347,11 @@
 
             if (json.ok) {
                 overlay.classList.add("hidden");
+                resultJson = json;
 
                 // 팝업 열기 (DaisyUI modal-toggle)
                 $("#result-modal").removeClass("hidden");
 
-                console.log(json);
 
                 // 위험 색 넣기
                 function getRiskClass(level) {
@@ -352,24 +393,31 @@
 
                 let rentRiskClass = getRiskClass(json.rentRisk);
                 let depositRiskClass = getRiskClass(json.depositRisk);
-                let bondDepositRiskClass = getRiskClass(json.bondDepositRisk);
+                let bondDepositRiskClass = getRiskClass(json.bondDepositRiskStatic);
+                let bondDealRiskClass = getRiskClass(json.bondDepositRiskDeal);
                 let debtRiskLevelClass = getRiskClass(json.debtRiskLevel);
 
                 let rent = riskToScore(json.rentRisk);
                 let deposit = riskToScore(json.depositRisk);
-                let bond = riskToScore(json.bondDepositRisk);
+                let bondStatic = riskToScore(json.bondDepositRiskStatic);
+                let bondDeal = riskToScore(json.bondDepositRiskDeal)
                 let debt = riskToScore(json.debtRiskLevel);
 
-                // 단순 평균 (가중치 필요시 weight 적용)
-                let totalScore = (rent + deposit + bond + debt) / 4.0;
-                let totalLevel = scoreToLevel(totalScore);
+                // Static 기준 총점
+                let totalScoreStatic = (rent + deposit + bondStatic + debt) / 4.0;
+                let totalLevelStatic = scoreToLevel(totalScoreStatic);
 
-                let totalLevelClass = getRiskClass(totalLevel);
-                let totalScoreDisplay = totalScore.toFixed(1); // 소수점 1자리
+                // Deal 기준 총점
+                let totalScoreDeal = (rent + deposit + bondDeal + debt) / 4.0;
+                let totalLevelDeal = scoreToLevel(totalScoreDeal);
 
-                // 결과 데이터 바인딩 (요약만)
-                $("#totalScore").text(totalScoreDisplay);
-                $("#totalLevel").html(`<span class="${totalLevelClass}">${totalLevel}</span>`);
+                // --- 전역 state에 저장 ---
+                state.totalScoreStatic = totalScoreStatic;
+                state.totalLevelStatic = totalLevelStatic;
+                state.totalScoreDeal = totalScoreDeal;
+                state.totalLevelDeal = totalLevelDeal;
+                state.resultJson = json;
+
 
                 function formatMoney(valueInManwon) {
                     valueInManwon = parseInt(valueInManwon, 10);
@@ -392,32 +440,91 @@
                 $("#bondRisk").html(`<span class="${bondDepositRiskClass}">${json.bondDepositRisk}</span>`);
                 $("#debtRisk").html(`<span class="${debtRiskLevelClass}">${json.debtRiskLevel}</span>`);
 
-                // 위험도 bar
-                let targetWidth = Math.round(totalScore); // 목표 %
-
-                $({val: 0}).animate({val: targetWidth}, {
-                    duration: 1500,
-                    step: function (now) {
-                        let color = "#22c55e"; // 기본값 (정상)
-                        if (now >= 100) {
-                            color = "#dc2626"; // 고위험
-                        } else if (now >= 70) {
-                            color = "#ef4444"; // 위험
-                        } else if (now >= 50) {
-                            color = "#eab308"; // 주의
-                        }
-
-                        $("#riskBar")
-                            .css("width", now + "%")
-                            .css("background-color", color);
-                    }
-                });
+                // bar 애니메이션: 최소 지점 → 최대 지점
+                showView("static");
 
             }
 
         } catch (err) {
         }
     });
+
+    // bar 애니메이션 함수
+    function animateBar(selector, score) {
+        $({val: 0}).animate({val: score}, {
+            duration: 1500,
+            step: function (now) {
+                let color = "#22c55e"; // 정상
+                if (now >= 100) color = "#dc2626";
+                else if (now >= 70) color = "#ef4444";
+                else if (now >= 50) color = "#eab308";
+
+                $(selector)
+                    .css("width", now + "%")
+                    .css("background-color", color);
+            }
+        });
+    }
+
+    // ---- 공통 함수들 (upload 핸들러 바깥) ----
+    function animateBar(selector, score) {
+        const $el = $(selector);
+        $el.stop(true, true).css("width", "0"); // 이전 애니메이션 정리 + 초기화
+        $({val: 0}).animate({val: score}, {
+            duration: 1500,
+            step(now) {
+                let color = "#22c55e";
+                if (now >= 100) color = "#dc2626";
+                else if (now >= 70) color = "#ef4444";
+                else if (now >= 50) color = "#eab308";
+                $el.css({width: now + "%", backgroundColor: color});
+            }
+        });
+    }
+
+    function updateScoreAndLevel(score, level) {
+        $("#totalScore").text(score.toFixed(1));
+        $("#totalLevel").html(`<span class="${getRiskClass(level)}">${level}</span>`);
+    }
+
+    function updateBondRisk(type, json) {
+        if (type === "static") {
+            $("#bondRisk").html(
+                `<span class="${getRiskClass(json.bondDepositRiskStatic)}">${json.bondDepositRiskStatic}</span>`
+            );
+        } else {
+            $("#bondRisk").html(
+                `<span class="${getRiskClass(json.bondDepositRiskDeal)}">${json.bondDepositRiskDeal}</span>`
+            );
+        }
+    }
+
+    function showView(kind) {
+        if (kind === "static") {
+            $("#riskBarDealWrapper").addClass("hidden");
+            $("#riskBarStaticWrapper").removeClass("hidden");
+            animateBar("#riskBarStatic", Math.round(state.totalScoreStatic));
+            updateScoreAndLevel(state.totalScoreStatic, state.totalLevelStatic);
+            updateBondRisk("static", state.resultJson);
+            // 버튼 스타일
+            $("#btnStatic").removeClass("bg-gray-300 text-black").addClass("bg-blue-600 text-white");
+            $("#btnDeal").removeClass("bg-blue-600 text-white").addClass("bg-gray-300 text-black");
+        } else {
+            $("#riskBarStaticWrapper").addClass("hidden");
+            $("#riskBarDealWrapper").removeClass("hidden");
+            animateBar("#riskBarDeal", Math.round(state.totalScoreDeal));
+            updateScoreAndLevel(state.totalScoreDeal, state.totalLevelDeal);
+            updateBondRisk("deal", state.resultJson);
+            // 버튼 스타일
+            $("#btnDeal").removeClass("bg-gray-300 text-black").addClass("bg-blue-600 text-white");
+            $("#btnStatic").removeClass("bg-blue-600 text-white").addClass("bg-gray-300 text-black");
+        }
+    }
+
+    // 버튼 리스너는 단 한 번만 바깥에!
+    $("#btnStatic").on("click", () => showView("static"));
+    $("#btnDeal").on("click", () => showView("deal"));
+
 
     function closeModal() {
         document.getElementById("result-modal").classList.add("hidden");

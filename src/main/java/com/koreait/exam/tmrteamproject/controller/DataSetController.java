@@ -1,6 +1,8 @@
 package com.koreait.exam.tmrteamproject.controller;
 
+import com.koreait.exam.tmrteamproject.service.AdminDongService;
 import com.koreait.exam.tmrteamproject.service.DataSetService;
+import com.koreait.exam.tmrteamproject.vo.AdminDong;
 import com.koreait.exam.tmrteamproject.vo.DataSet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 public class DataSetController {
 
     private final DataSetService dataSetService;
+    private final AdminDongService adminDongService;
 
     @GetMapping("/upload")
     @ResponseBody
@@ -50,5 +53,21 @@ public class DataSetController {
 
         return dataSets.get(0);
     }
+
+    @PostMapping("/getDataSetByAdminDong")
+    @ResponseBody
+    public List<DataSet> dgetAverageSales(
+            @RequestParam("sgg") String sggNm,
+            @RequestParam("emd") String emdNm
+    ) {
+        System.out.println("실행됨");
+
+        AdminDong adminDong = adminDongService.findAdminDongBySggNmAndEmdNm(sggNm, emdNm);
+
+        String emdCd = adminDong.getEmdCd();
+
+        return dataSetService.findAllByAdminDongCodeGroupByAdminDongCode(emdCd);
+    }
+
 
 }
