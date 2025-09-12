@@ -11,6 +11,24 @@
 <script type="text/javascript"
         src="//dapi.kakao.com/v2/maps/sdk.js?appkey=69544617df3febfc879cd18eed451ba3&libraries=services&autoload=false"></script>
 
+<script>
+    function openReport() {
+        const $report = $(".report");
+        $report.removeClass("hidden"); // DOM에 표시
+        setTimeout(() => {
+            $report.removeClass("opacity-0 -translate-x-4");
+        }, 10); // 애니메이션 적용
+    }
+
+    function closeReport() {
+        const $report = $(".report");
+        $report.addClass("opacity-0 -translate-x-4"); // 살짝 오른쪽 이동 + 투명도 0
+        setTimeout(() => {
+            $report.addClass("hidden"); // 애니메이션 끝나고 완전히 숨김
+        }, 300); // duration-300ms와 맞춤
+    }
+</script>
+
 <!-- 지도 영역 -->
 <div id="map" class="w-full h-[1080px]"></div>
 
@@ -100,7 +118,8 @@
                 <h3 class="text-sm font-semibold text-gray-800">유동인구</h3>
                 <!-- 그래프 보기(옵션) -->
                 <button id="show-fp-graph"
-                        class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-100 text-indigo-700">
+                        class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-100 text-indigo-700"
+                        onclick="openReport();">
                     그래프 보기
                 </button>
             </div>
@@ -132,7 +151,27 @@
             지도에서 행정동을 클릭하거나 상단의 지역 선택을 변경하면 카드가 갱신됩니다.
         </p>
     </div>
+
+
 </aside>
+
+<!-- 팝업창 -->
+<div class="report fixed top-[160px] left-[460px] w-[420px] h-[100px] z-10
+            bg-white/90 backdrop-blur rounded-2xl border border-gray-200 shadow-2xl
+            transform transition-all duration-300 ease-in-out opacity-0 -translate-x-4">
+
+    <button
+            class="p-0 flex items-center justify-center absolute
+         top-3 right-[-1.375rem] z-[225]
+         w-[2.75rem] h-[2.75rem]
+         rounded-full border border-gray-300
+         bg-white shadow-[2px_2px_8px_0_rgba(0,0,0,0.1)] cursor-pointer"
+            onclick="closeReport();">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+
+</div>
+
 
 <!-- 지도/업종 스크립트 -->
 <script type="text/javascript" th:src="@{/js/commercialZoneMap.js}"></script>

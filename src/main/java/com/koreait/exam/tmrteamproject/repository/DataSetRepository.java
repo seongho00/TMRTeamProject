@@ -145,10 +145,7 @@ public interface DataSetRepository extends JpaRepository<DataSet, Long> {
         SUM(d.monthly_sales_amount)
         FROM data_set d
         WHERE d.admin_dong_code = :adminDongCode
-        AND d.base_year_quarter_code = (
-        SELECT MAX(base_year_quarter_code)
-        FROM data_set
-        );
+        AND d.base_year_quarter_code = "20251";
         """, nativeQuery = true)
     List<Object[]> findTotalFloatingPopulationAndMonthlySalesAmountByAdminDongCode(String adminDongCode);
 
