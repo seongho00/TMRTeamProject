@@ -380,9 +380,6 @@ public class PropertyController {
         return false;
     }
 
-    @GetMapping("/test")
-    public String test() throws Exception {
-        return "property/test";
-    }
+
 
 }

@@ -467,4 +467,9 @@ public class DataSetService {
     public List<DataSet> findAllByAdminDongCodeAndServiceIndustryCode(String emdCode, String upjongCd) {
         return dataSetRepository.findAllByAdminDongCodeAndServiceIndustryCodeAndBaseYearQuarterCode(emdCode, upjongCd,"20251");
     }
+
+
+    public List<DataSet> findAllByAdminDongCodeGroupByAdminDongCode(String emdCd) {
+        return dataSetRepository.findAllByAdminDongCodeGroupByBaseYearQuarterCode(emdCd);
+    }
 }
