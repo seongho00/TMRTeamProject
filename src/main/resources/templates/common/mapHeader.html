@@ -1,8 +1,8 @@
 <header th:fragment="header" xmlns:th="http://www.thymeleaf.org">
     <meta charset="UTF-8">
 
-    <div class="w-full h-[80px] box-border align-top left-0 bg-white transition-all duration-300">
-        <div class="w-full h-[80px] flex items-start justify-between transition-all duration-300">
+    <div class="w-full h-[80px] box-border align-top left-0 bg-white transition-all duration-300 z-50">
+        <div class="w-full h-[80px] flex items-start justify-between transition-all duration-300 z-50">
 
             <div class="w-[240px] h-[80px] flex justify-start items-center">
                 <a href="../home/main" class="flex items-center">
@@ -12,13 +12,16 @@
                 </a>
             </div>
 
-            <nav class="w-[60%] text-center">
-                <ul id="nav-list" class="flex justify-center items-center relative space-x-4">
+            <nav class="w-[60%] h-[80px] flex text-center">
+                <ul class="relative flex justify-center items-center">
                     <!-- 상권 분석 -->
-                    <li class="relative w-[240px] group">
-                        <div class="flex subheading justify-center items-center h-[80px] cursor-pointer text-[16px]">
+                    <li class="relative flex justify-center items-center mx-[90px] h-[80px] group
+                               after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                               after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                               hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                        <a class="inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer">
                             상권 분석
-                        </div>
+                        </a>
                         <div class="fixed left-0 w-screen hidden top-[80px] h-[50px] bg-white border-t border-b border-[#ccc] group-hover:flex transition-all duration-200 z-50">
                             <ul class="flex items-center ml-[680px] mr-auto">
                                 <li>
@@ -32,19 +35,25 @@
                     </li>
 
                     <!-- 등기부등본 -->
-                    <li class="relative group w-[240px]">
-                        <a href="../property/upload" class="flex justify-center items-center h-[80px] cursor-pointer">
-                            <p class="subheading text-[16px]">등기부등본</p>
+                    <li class="relative group flex justify-center items-center mx-[90px] h-[80px]
+                               after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                               after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                               hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                        <a href="../property/upload" class="inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer">
+                            등기부등본
                         </a>
                     </li>
 
                     <!-- 상가 청약 -->
-                    <li class="relative group/menu2 w-[240px]">
-                        <div class="flex subheading text-[16px] justify-center items-center h-[80px] cursor-pointer">
+                    <li class="relative flex justify-center items-center group/menu2 mx-[90px] h-[80px] after:content-['']
+                               after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                               after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                               hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                        <a class="inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer">
                             상가 청약
-                        </div>
+                        </a>
                         <div class="fixed left-0 w-screen hidden top-[80px] h-[50px] bg-white border-t border-b border-[#ccc] group-hover/menu2:flex transition-all duration-200 z-50">
-                            <ul class="flex items-center ml-[1150px] mr-auto">
+                            <ul class="flex items-center ml-[1160px] mr-auto">
                                 <li>
                                     <a href="../home/notifications" class="inline-block text-[14px] px-2 transition-all duration-300 hover:text-black">청약 알림</a>
                                 </li>
@@ -56,18 +65,24 @@
                     </li>
 
                     <!-- 로그인 -->
-                    <li class="relative group w-[240px]">
+                    <li class="relative flex justify-center items-center w-[240px] h-[80px] group">
                         <ul>
                             <li th:if="${rq != null and rq.isLogout()}">
                                 <a href="../member/joinAndLogin"
-                                   class="flex justify-center items-center w-full h-[80px] relative cursor-pointer">
-                                    <p>로그인</p>
+                                   class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer
+                                              after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-[-32px]
+                                              after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                              hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                                    로그인
                                 </a>
                             </li>
                             <li th:if="${rq != null and rq.isLogined()}">
                                 <a href="../member/conditionalLogout"
-                                   class="flex justify-center items-center w-full h-[80px] relative cursor-pointer w-[160px]">
-                                    <p>로그아웃</p>
+                                   class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer
+                                              after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-[-32px]
+                                              after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                              hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                                    로그아웃
                                 </a>
                             </li>
                         </ul>
@@ -107,4 +122,42 @@
             </nav>
         </div>
     </div>
+
+    <script>
+        // 알림 팝업 토글 + 외부 클릭 닫기
+        const notifIcon = document.getElementById('notif-icon');
+        const notifPopover = document.getElementById('notif-popover');
+        const notifClose = document.getElementById('notif-close');
+        const wrapper = document.getElementById('notif-wrapper');
+
+        // 더보기 토글(팝업 내부)
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.more-btn')) {
+                const btn = e.target.closest('.more-btn');
+                const panel = btn.parentElement.querySelector('.more-panel');
+                const icon = btn.querySelector('svg path');
+                const hidden = panel.classList.contains('hidden');
+
+                panel.classList.toggle('hidden');
+
+                if (icon) icon.setAttribute('d', hidden ? 'M7 14l5-5 5 5z' : 'M7 10l5 5 5-5z');
+            }
+        });
+
+        // 아이콘 클릭 → 팝업 열기/닫기
+        notifIcon.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            // 페이지 이동 방지
+            notifPopover.classList.toggle('hidden');
+        });
+
+        // 닫기 버튼
+        notifClose.addEventListener('click', () => notifPopover.classList.add('hidden'));
+
+        // 바깥 클릭 시 닫기
+        document.addEventListener('click', (e) => {
+            if (!wrapper.contains(e.target)) notifPopover.classList.add('hidden');
+        });
+    </script>
 </header>
