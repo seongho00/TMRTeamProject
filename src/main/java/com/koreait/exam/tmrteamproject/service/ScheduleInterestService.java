@@ -37,6 +37,7 @@ public class ScheduleInterestService {
         return scheduleInterestRepository.findScheduleIdsByMemberId(memberId);
     }
 
+    @Transactional
     public void deleteSchedule(long memberId, long scheduleId) {
         scheduleInterestRepository.deleteByMemberIdAndScheduleId(memberId, scheduleId);
     }

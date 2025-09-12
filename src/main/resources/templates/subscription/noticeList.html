@@ -160,27 +160,27 @@
                 <!-- 고정 헤더: 스크롤 시 상단에 고정 -->
                 <thead class="bg-gray-50 text-gray-700">
                 <tr class="border-b">
-                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">번호</th>
-                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">유형</th>
-                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">공고명</th>
-                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">지역</th>
-                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">등록일</th>
-                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">접수 날짜</th>
-                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">마감일</th>
-                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">접수 상태</th>
-                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-left font-medium">알림설정</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-center font-medium">번호</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-center font-medium">유형</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-center font-medium">공고명</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-center font-medium">지역</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-center font-medium">등록일</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-center font-medium">접수 날짜</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-center font-medium">마감일</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-center font-medium">접수 상태</th>
+                    <th class="sticky top-0 z-10 bg-gray-50 px-4 py-3 text-center font-medium">알림설정</th>
                 </tr>
                 </thead>
 
                 <tbody class="divide-y divide-gray-100">
                 <!-- 주석: 리스트를 row 라는 이름으로 순회 -->
                 <tr th:each="lhList : ${lhApplyInfoList}"
-                    class="hover:bg-gray-50 transition-colors">
+                    class="hover:bg-gray-50 transition-colors text-center">
                     <!-- 번호: 필요하면 stat.count 사용 -->
                     <td class="px-4 py-4 text-gray-800" th:text="${lhList.getListNo()}"></td>
 
                     <!-- 유형: 칩 스타일 -->
-                    <td class="px-4 py-4">
+                    <td class="px-4 py-4 text-center">
                         <span class="inline-flex items-center px-2 py-0.5 text-xs"
                               th:text="${lhList.getPostType()}">
                         </span>
@@ -194,25 +194,25 @@
                     </td>
 
                     <!-- 지역 -->
-                    <td class="px-4 py-4 text-gray-800 truncate" th:text="${lhList.getRegion()}"></td>
+                    <td class="px-4 py-4 text-gray-800 truncate text-center" th:text="${lhList.getRegion()}"></td>
 
                     <!-- 등록일 -->
-                    <td class="px-4 py-4 text-gray-800"
+                    <td class="px-4 py-4 text-gray-800 text-center"
                         th:text="${lhList.getPostedDate()}">
                     </td>
 
                     <!-- 접수 날짜 -->
                     <td class="px-4 py-4 text-gray-800"
-                        th:text="${lhList.getApplyStart()}">
+                        th:text="${#strings.replace(lhList.getApplyStart(), 'T', ' ')}">
                     </td>
 
                     <!-- 마감일 -->
-                    <td class="px-4 py-4 text-gray-800"
+                    <td class="px-4 py-4 text-gray-800 text-center"
                         th:text="${lhList.getDueDate()}">
                     </td>
 
                     <!-- 접수 상태: 배지 색상 매핑 -->
-                    <td class="px-4 py-4">
+                    <td class="px-4 py-4 text-center">
                         <span th:switch="${lhList.getStatus()}">
                             <span th:case="'공고중'"
                                   class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs font-medium">공고중</span>
@@ -226,12 +226,13 @@
                     </td>
 
                     <!-- 알림설정: 토글 버튼 예시 -->
-                    <td class="px-4 py-4">
+                    <td class="px-4 py-4 text-center">
                         <button type="button"
                                 th:classappend="${notifiedIds.contains(lhList.getId())} ? 'active' : ''"
-                                class="notify-btn inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                                class="notify-btn inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs text-gray-700 hover:border-gray-300 hover:bg-gray-50 cursor-pointer"
                                 th:attr="data-id=${lhList.getId()}"
-                                title="알림 설정">알림
+                                title="알림 설정"><span
+                                th:text="${notifiedIds.contains(lhList.getId())} ? '알림 중 🔔' : '알림'"></span>
                         </button>
                     </td>
                 </tr>
@@ -325,7 +326,7 @@
             $.ajax({
                 type: "POST",
                 url: "deleteSchedule",   // 해제 API
-                data: { scheduleId: listId, memberId: memberId },
+                data: {scheduleId: listId, memberId: memberId},
                 success: function () {
                     alert("알림이 해제되었습니다!");
                     $btn.removeClass("active")
@@ -340,11 +341,11 @@
             $.ajax({
                 type: "POST",
                 url: "saveSchedule",   // 설정 API
-                data: { scheduleId: listId, memberId: memberId },
+                data: {scheduleId: listId, memberId: memberId},
                 success: function () {
                     alert("알림이 설정되었습니다!");
                     $btn.addClass("active")
-                        .text("알림 설정 🔔");
+                        .text("알림 중 🔔");
                 },
                 error: function () {
                     alert("알림 설정에 실패했습니다.");
