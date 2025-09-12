@@ -578,66 +578,53 @@ function openReport() {
                     });
 
 
-                    // 기존 차트 제거 (중복 생성 방지)
-                    if (window.populationByAgeChart instanceof Chart) {
-                        window.populationByAgeChart.destroy();
+                    const rawData = getRawData(currentData);
+
+// visible 상태는 그대로 legend에서 관리
+                    const visible = {resident: true, workplace: true, floating: true};
+                    const newData = calculatePercentages(rawData, visible);
+
+                    function getRawData(currentData) {
+                        return {
+                            resident: [
+                                currentData.age10ResidentPopulation,
+                                currentData.age20ResidentPopulation,
+                                currentData.age30ResidentPopulation,
+                                currentData.age40ResidentPopulation,
+                                currentData.age50ResidentPopulation,
+                                currentData.age60PlusResidentPopulation
+                            ],
+                            workplace: [
+                                null,
+                                currentData.age20WorkplacePopulation,
+                                currentData.age30WorkplacePopulation,
+                                currentData.age40WorkplacePopulation,
+                                currentData.age50WorkplacePopulation,
+                                currentData.age60PlusWorkplacePopulation
+                            ],
+                            floating: [
+                                currentData.age10FloatingPopulation,
+                                currentData.age20FloatingPopulation,
+                                currentData.age30FloatingPopulation,
+                                currentData.age40FloatingPopulation,
+                                currentData.age50FloatingPopulation,
+                                currentData.age60PlusFloatingPopulation
+                            ]
+                        };
                     }
 
-                    const rawData = {
-                        // 상주인구 (Resident)
-                        resident: [
-                            currentData.age10ResidentPopulation,
-                            currentData.age20ResidentPopulation,
-                            currentData.age30ResidentPopulation,
-                            currentData.age40ResidentPopulation,
-                            currentData.age50ResidentPopulation,
-                            currentData.age60PlusResidentPopulation
-                        ],
-
-                        // 직장인구 (Workplace) → 10대는 null 처리
-                        workplace: [
-                            null,
-                            currentData.age20WorkplacePopulation,
-                            currentData.age30WorkplacePopulation,
-                            currentData.age40WorkplacePopulation,
-                            currentData.age50WorkplacePopulation,
-                            currentData.age60PlusWorkplacePopulation
-                        ],
-
-                        // 유동인구 (Floating)
-                        floating: [
-                            currentData.age10FloatingPopulation,
-                            currentData.age20FloatingPopulation,
-                            currentData.age30FloatingPopulation,
-                            currentData.age40FloatingPopulation,
-                            currentData.age50FloatingPopulation,
-                            currentData.age60PlusFloatingPopulation
-                        ]
-                    };
 
                     let ageLabels = ["20대", "30대", "40대", "50대", "60대+"]; // 처음엔 10대 제외
 
-                    function toggleWorkplace(visible) {
-                        if (!visible.workplace) {
-                            // 직장 꺼짐 → 라벨에 10대 추가
-                            ageLabels = ["10대", "20대", "30대", "40대", "50대", "60대+"];
-                        } else {
-                            // 직장 켜짐 → 라벨에서 10대 제거
-                            ageLabels = ["20대", "30대", "40대", "50대", "60대+"];
-                        }
-                        chart.data.labels = ageLabels;
-                        chart.update();
-                    }
-
-                    function calculatePercentages(visible) {
+                    function calculatePercentages(rawData, visible) {
                         const sum = (arr, skipFirst = false) =>
                             arr.reduce((a, b, i) => a + ((skipFirst && i === 0) ? 0 : (b || 0)), 0);
 
                         const totalResident = sum(rawData.resident, visible.workplace);
-                        const totalWorkplace = sum(rawData.workplace, true); // 직장은 항상 10대 제외
+                        const totalWorkplace = sum(rawData.workplace, true);
                         const totalFloating = sum(rawData.floating, visible.workplace);
 
-                        const result = {
+                        let result = {
                             resident: rawData.resident.map((v, i) =>
                                 visible.resident && (visible.workplace && i === 0 ? false : true) && totalResident
                                     ? parseFloat(((v || 0) / totalResident * 100).toFixed(1))
@@ -655,9 +642,8 @@ function openReport() {
                             )
                         };
 
-                        // 직장 보이는 상태라면 → 10대 데이터 잘라내기
                         if (visible.workplace) {
-                            result.resident = result.resident.slice(1);  // 20대~60대
+                            result.resident = result.resident.slice(1);
                             result.workplace = result.workplace.slice(1);
                             result.floating = result.floating.slice(1);
                         }
@@ -666,70 +652,75 @@ function openReport() {
                     }
 
 
-                    const ageCtx = document.getElementById("populationByAgeChart").getContext("2d");
-                    const chart = new Chart(ageCtx, {
-                        type: "bar",
-                        data: {
-                            labels: ageLabels,
-                            datasets: [
-                                {label: "상주", data: [], backgroundColor: "rgba(59,130,246,0.7)"},
-                                {label: "직장", data: [], backgroundColor: "rgba(16,185,129,0.7)"},
-                                {label: "유동", data: [], backgroundColor: "rgba(239,68,68,0.7)"}
-                            ]
-                        },
-                        options: {
-                            plugins: {
-                                legend: {
-                                    onClick: (e, legendItem, legend) => {
-                                        const index = legendItem.datasetIndex;
-                                        const ci = legend.chart;
+                    if (window.populationByAgeChart instanceof Chart) {
+                        // 재사용 업데이트
+                        const c = window.populationByAgeChart;
+                        c.data.datasets[0].data = newData.resident;
+                        c.data.datasets[1].data = newData.workplace;
+                        c.data.datasets[2].data = newData.floating;
+                        c.data.labels = visible.workplace
+                            ? ["20대", "30대", "40대", "50대", "60대+"]
+                            : ["10대", "20대", "30대", "40대", "50대", "60대+"];
+                        c.update();
+                    } else {
+                        const ctx = document.getElementById("populationByAgeChart").getContext("2d");
+                        window.populationByAgeChart = new Chart(ctx, {
+                            type: "bar",
+                            data: {
+                                labels: visible.workplace
+                                    ? ["20대", "30대", "40대", "50대", "60대+"]
+                                    : ["10대", "20대", "30대", "40대", "50대", "60대+"],
+                                datasets: [
+                                    { label: "상주", data: newData.resident, backgroundColor: "rgba(59,130,246,0.7)" },
+                                    { label: "직장", data: newData.workplace, backgroundColor: "rgba(16,185,129,0.7)" },
+                                    { label: "유동", data: newData.floating, backgroundColor: "rgba(239,68,68,0.7)" }
+                                ]
+                            },
+                            options: {
+                                plugins: {
+                                    legend: {
+                                        onClick: (e, legendItem, legend) => {
+                                            const ci = legend.chart;
+                                            const index = legendItem.datasetIndex;
 
-                                        // dataset visibility 토글
-                                        const meta = ci.getDatasetMeta(index);
-                                        meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
+                                            // 기본 토글 동작
+                                            const meta = ci.getDatasetMeta(index);
+                                            meta.hidden = meta.hidden === null ? !ci.data.datasets[index].hidden : null;
 
-                                        // 현재 visible 여부
-                                        const visible = {
-                                            resident: !ci.getDatasetMeta(0).hidden,
-                                            workplace: !ci.getDatasetMeta(1).hidden,
-                                            floating: !ci.getDatasetMeta(2).hidden
-                                        };
+                                            // 현재 보임 상태 재계산
+                                            const vis = {
+                                                resident: !ci.getDatasetMeta(0).hidden,
+                                                workplace: !ci.getDatasetMeta(1).hidden,
+                                                floating: !ci.getDatasetMeta(2).hidden
+                                            };
 
-                                        // 라벨 업데이트
-                                        if (visible.workplace) {
-                                            ci.data.labels = ["20대", "30대", "40대", "50대", "60대+"];
-                                        } else {
-                                            ci.data.labels = ["10대", "20대", "30대", "40대", "50대", "60대+"];
+                                            // 라벨
+                                            ci.data.labels = vis.workplace
+                                                ? ["20대", "30대", "40대", "50대", "60대+"]
+                                                : ["10대", "20대", "30대", "40대", "50대", "60대+"];
+
+                                            // 🔧 2) 올바른 인자 전달
+                                            const recalced = calculatePercentages(rawData, vis);
+
+                                            ci.data.datasets[0].data = recalced.resident;
+                                            ci.data.datasets[1].data = recalced.workplace;
+                                            ci.data.datasets[2].data = recalced.floating;
+
+                                            ci.update();
                                         }
-
-                                        // 새 비율 계산
-                                        const newData = calculatePercentages(visible);
-
-                                        ci.data.datasets[0].data = newData.resident;
-                                        ci.data.datasets[1].data = newData.workplace;
-                                        ci.data.datasets[2].data = newData.floating;
-
-                                        ci.update();
-                                    }
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: (ageCtx) => {
-                                            const val = ageCtx.raw;
-                                            return val ? `${ageCtx.dataset.label}: ${val}%` : `${ageCtx.dataset.label}: 없음`;
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: (ageCtx) => {
+                                                const val = ageCtx.raw;
+                                                return val != null ? `${ageCtx.dataset.label}: ${val}%` : `${ageCtx.dataset.label}: 없음`;
+                                            }
                                         }
                                     }
                                 }
                             }
-                        }
-                    });
-
-                    // 초기 비율 데이터 세팅
-                    const initData = calculatePercentages({resident: true, workplace: true, floating: true});
-                    chart.data.datasets[0].data = initData.resident;
-                    chart.data.datasets[1].data = initData.workplace;
-                    chart.data.datasets[2].data = initData.floating;
-                    chart.update();
+                        });
+                    }
 
 
                     // ✅ 간단한 분석 로직
