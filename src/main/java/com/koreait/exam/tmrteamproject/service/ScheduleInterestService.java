@@ -1,7 +1,6 @@
 package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.ScheduleInterestRepository;
-import com.koreait.exam.tmrteamproject.vo.Member;
 import com.koreait.exam.tmrteamproject.vo.ScheduleInterest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

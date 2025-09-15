@@ -1,6 +1,5 @@
 package com.koreait.exam.tmrteamproject.controller;
 
-import com.koreait.exam.tmrteamproject.repository.LhApplyInfoRepository;
 import com.koreait.exam.tmrteamproject.security.MemberContext;
 import com.koreait.exam.tmrteamproject.service.ScheduleInterestService;
 import com.koreait.exam.tmrteamproject.vo.LhApplyInfo;
