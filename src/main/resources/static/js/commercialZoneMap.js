@@ -457,12 +457,13 @@ function openReport() {
                         }
                     });
 
-                    const labels = [
+                    // 시간대별 그래프
+                    const timeLabels = [
                         "00~06시", "06~11시", "11~14시",
                         "14~17시", "17~21시", "21~24시"
                     ];
 
-                    const values = [
+                    const timeValues = [
                         currentData.time00to06FloatingPopulation,
                         currentData.time06to11FloatingPopulation,
                         currentData.time11to14FloatingPopulation,
@@ -471,26 +472,54 @@ function openReport() {
                         currentData.time21to24FloatingPopulation
                     ];
 
+                    // ✅ 합계 구하기
+                    const timeTotal = timeValues.reduce((a, b) => a + b, 0);
+
+                    // 퍼센트 변환
+                    const timePercentValues = timeValues.map(v => timeTotal > 0 ? (v / timeTotal * 100) : 0);
+
+
+                    // ✅ 최고값 찾기
+                    const timeMaxValue = Math.max(...timePercentValues);
+                    const timeMaxIndex = timePercentValues.indexOf(timeMaxValue);
+                    const maxTimeLabel = timeLabels[timeMaxIndex];
+
+                    const minTimeValue = Math.min(...timePercentValues);
+                    const minTimeIndex = timePercentValues.indexOf(minTimeValue);
+                    const minTimeLabel = timeLabels[minTimeIndex];
+
+
+                    // ✅ 색상 배열 (최고값만 빨강 강조)
+                    const timePointColors = timePercentValues.map((v, i) =>
+                        i === timeMaxIndex ? "rgba(239, 68, 68, 1)" : "rgba(37, 99, 235, 1)"
+                    );
+                    const timeBgColors = timePercentValues.map((v, i) =>
+                        i === timeMaxIndex ? "rgba(239, 68, 68, 0.6)" : "rgba(37, 99, 235, 0.3)"
+                    );
+
+                    // ✅ Y축 최대값 = 최고값 + 2 (최소 100 제한 제거)
+                    const timeYMax = Math.ceil(timeMaxValue + 2);
+
                     // ✅ 기존 차트 있으면 안전하게 제거
                     if (timeSalesChart instanceof Chart) {
                         timeSalesChart.destroy();
                     }
 
                     // 새 차트 생성
-                    const ctx = document.getElementById("timeSalesChart").getContext("2d");
-                    timeSalesChart = new Chart(ctx, {
+                    const timeCtx = document.getElementById("timeSalesChart").getContext("2d");
+                    window.timeSalesChart = new Chart(timeCtx, {
                         type: "line",
                         data: {
-                            labels: labels,
+                            labels: timeLabels,
                             datasets: [{
-                                label: "총 유동인구",
-                                data: values,
+                                label: "시간대별 유동인구 비율",
+                                data: timePercentValues,
                                 borderColor: "rgba(37, 99, 235, 1)",
-                                backgroundColor: "rgba(37, 99, 235, 0.3)",
-                                tension: 0.4,
-                                fill: true,
-                                pointRadius: 5,
-                                pointBackgroundColor: "rgba(37, 99, 235, 1)"
+                                backgroundColor: timeBgColors,
+                                tension: 0,
+                                fill: false,
+                                pointRadius: 6,
+                                pointBackgroundColor: timePointColors
                             }]
                         },
                         options: {
@@ -498,28 +527,39 @@ function openReport() {
                             plugins: {
                                 title: {
                                     display: true,
-                                    text: "📊 시간대별 유동인구 추이"
+                                    text: "📊 시간대별 유동인구 비율"
                                 },
                                 tooltip: {
                                     callbacks: {
                                         label: function (context) {
                                             return context.dataset.label + ": "
-                                                + context.raw.toLocaleString() + "원";
+                                                + context.raw.toFixed(1) + "%";
                                         }
+                                    }
+                                },
+                                datalabels: {
+                                    anchor: "end",
+                                    align: "top",
+                                    formatter: (value) => value.toFixed(1) + "%",
+                                    color: (ctx) => ctx.raw === timeMaxValue ? "#e11d48" : "#000",
+                                    font: {
+                                        weight: "bold"
                                     }
                                 }
                             },
                             scales: {
                                 y: {
                                     beginAtZero: true,
+                                    max: timeYMax,  // 최고값 + 2%
                                     ticks: {
                                         callback: function (value) {
-                                            return value.toLocaleString() + "명";
+                                            return value + "%";
                                         }
                                     }
                                 }
                             }
-                        }
+                        },
+                        plugins: [ChartDataLabels]
                     });
 
                     // 요일별 그래프
@@ -534,10 +574,37 @@ function openReport() {
                         currentData.sundayFloatingPopulation
                     ];
 
+                    // 합계 구하기
+                    const total = dayValues.reduce((a, b) => a + b, 0);
+
+                    // 퍼센트 값으로 변환
+                    const percentValues = dayValues.map(v => total > 0 ? (v / total * 100) : 0);
+
+                    // ✅ Y축 최대값 = 최고값 + 2 (최소 100 제한 제거)
+                    const dayYMax = Math.ceil(timeMaxValue + 2);
+
                     // 기존 차트 제거
                     if (window.weeklyPopulationChart instanceof Chart) {
                         window.weeklyPopulationChart.destroy();
                     }
+
+                    // 가장 큰 값 찾기
+                    const maxValue = Math.max(...percentValues);
+                    const maxIndex = percentValues.indexOf(maxValue);
+                    const maxDay = dayLabels[maxIndex];
+
+                    const minDayValue = Math.min(...percentValues);
+                    const minDayIndex = percentValues.indexOf(minDayValue);
+                    const minDayLabel = dayLabels[minDayIndex];
+
+
+                    const backgroundColors = percentValues.map(v =>
+                        v === maxValue ? "rgba(239, 68, 68, 0.8)" : "rgba(37, 99, 235, 0.7)"
+                    );
+                    const borderColors = percentValues.map(v =>
+                        v === maxValue ? "rgba(220, 38, 38, 1)" : "rgba(37, 99, 235, 1)"
+                    );
+
 
                     // Bar 차트 생성
                     const dayCtx = document.getElementById("weeklyPopulationChart").getContext("2d");
@@ -547,9 +614,9 @@ function openReport() {
                             labels: dayLabels,
                             datasets: [{
                                 label: "요일별 유동인구",
-                                data: dayValues,
-                                backgroundColor: "rgba(37, 99, 235, 0.7)", // 파랑
-                                borderColor: "rgba(37, 99, 235, 1)",
+                                data: percentValues,
+                                backgroundColor: backgroundColors,  // 배열 적용
+                                borderColor: borderColors,          // 배열 적용
                                 borderWidth: 1
                             }]
                         },
@@ -562,25 +629,57 @@ function openReport() {
                                 },
                                 tooltip: {
                                     callbacks: {
-                                        label: dayCtx => dayCtx.dataset.label + ": " + dayCtx.raw.toLocaleString() + "명"
+                                        label: ctx => ctx.dataset.label + ": " + ctx.raw.toFixed(1) + "%"
+                                    }
+                                },
+                                datalabels: {
+                                    anchor: "end",
+                                    align: "end",
+                                    formatter: (value) => value.toFixed(1) + "%",
+                                    color: (ctx) => {
+                                        // 최고값은 흰 글씨로 표시, 나머지는 검정
+                                        return ctx.raw === maxValue ? "#fff" : "#000";
+                                    },
+                                    font: {
+                                        weight: "bold"
                                     }
                                 }
                             },
                             scales: {
                                 y: {
                                     beginAtZero: true,
+                                    max: dayYMax,
                                     ticks: {
-                                        callback: v => v.toLocaleString() + "명"
+                                        callback: v => v + "%"
                                     }
                                 }
                             }
-                        }
+                        },
+                        plugins: [ChartDataLabels]
                     });
+
+                    // 해설 div 업데이트
+                    const analysisDiv = document.getElementById("weeklyPopulationAnalysis");
+                    analysisDiv.innerHTML = `
+                        <div class="flex absolute -top-[20px] left-2 font-bold bg-red-500 text-white rounded-lg px-3 py-2">
+                            <i class="fa-solid fa-chart-line"></i>
+                            &nbsp;
+                            <span>분석결과 해석</span>
+                        </div>
+                        <p><span class="font-bold text-red-500">${maxDay}요일</span> (${maxValue.toFixed(1)}%)과 
+                        <span class="font-bold text-red-500">${maxTimeLabel}</span> (${timeMaxValue.toFixed(1)}%)에 
+                        유동인구가 가장 많습니다.</p>
+                    
+                        <p>반대로 <span class="font-bold text-blue-500">${minDayLabel}요일</span> 
+                        (${minDayValue.toFixed(1)}%)과 
+                        <span class="font-bold text-blue-500">${minTimeLabel}</span> 
+                        (${minTimeValue.toFixed(1)}%)에는 가장 적습니다.</p>
+                    `;
 
 
                     const rawData = getRawData(currentData);
 
-// visible 상태는 그대로 legend에서 관리
+                    // visible 상태는 그대로 legend에서 관리
                     const visible = {resident: true, workplace: true, floating: true};
                     const newData = calculatePercentages(rawData, visible);
 
@@ -671,9 +770,9 @@ function openReport() {
                                     ? ["20대", "30대", "40대", "50대", "60대+"]
                                     : ["10대", "20대", "30대", "40대", "50대", "60대+"],
                                 datasets: [
-                                    { label: "상주", data: newData.resident, backgroundColor: "rgba(59,130,246,0.7)" },
-                                    { label: "직장", data: newData.workplace, backgroundColor: "rgba(16,185,129,0.7)" },
-                                    { label: "유동", data: newData.floating, backgroundColor: "rgba(239,68,68,0.7)" }
+                                    {label: "상주", data: newData.resident, backgroundColor: "rgba(59,130,246,0.7)"},
+                                    {label: "직장", data: newData.workplace, backgroundColor: "rgba(16,185,129,0.7)"},
+                                    {label: "유동", data: newData.floating, backgroundColor: "rgba(239,68,68,0.7)"}
                                 ]
                             },
                             options: {
@@ -791,7 +890,6 @@ function openReport() {
 }
 
 function closeReport() {
-
 
     // 설명창 열기
     const $report = $(".report");
