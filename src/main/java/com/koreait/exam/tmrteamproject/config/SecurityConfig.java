@@ -41,11 +41,26 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider(customUserDetailsService, passwordEncoder()))
                 .csrf().disable()
                 .authorizeHttpRequests((auth) -> auth
-                        .antMatchers("usr/static/**", "usr/images/**", "/css/**", "/static/js/**").permitAll()  // 정적 리소스 먼저 허용
+                        .antMatchers("/usr/static/**", "/usr/images/**", "/css/**", "/static/js/**").permitAll()  // 정적 리소스 먼저 허용
                         .antMatchers("/admin/**").hasRole("ADMIN")
-                        .antMatchers("usr/chatbot/chat").hasAnyRole("USER", "ADMIN") // 여기에 막을 url 적기
-                        .antMatchers("usr/home/notifications").hasAnyRole("USER", "ADMIN")
+                        .antMatchers("/usr/chatbot/chat").hasAnyRole("USER", "ADMIN")
+                        .antMatchers("/usr/home/notifications").hasAnyRole("USER", "ADMIN")
+                        .antMatchers( // 여기에 막을 URL 적기
+                                "/usr/member/conditionalLogout",
+                                "/usr/member/myPage",
+                                "/usr/member/checkPw"
+                        ).authenticated()
                         .anyRequest().permitAll()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // 로그인 안 했는데 보호된 url 접근시
+                            response.setContentType("text/html;charset=UTF-8");
+                            response.getWriter().write(
+                                    "<script>alert('로그인이 필요한 서비스 입니다.');" +
+                                        "location.href='/usr/member/joinAndLogin';</script>"
+                            );
+                        })
                 )
                 .formLogin((login) -> login
                         .loginPage("/usr/member/joinAndLogin") // 사용자 정의 로그인 페이지
