@@ -166,31 +166,54 @@
 
 <!-- 팝업창 -->
 <div class="report fixed top-[160px] left-[470px] w-[500px] h-[800px] z-10
-            bg-white/90 backdrop-blur rounded-2xl border border-gray-200 shadow-2xl
+            bg-white/90 backdrop-blur rounded-2xl border border-gray-200 shadow-2xl rounded-lg
             transform transition-all duration-300 ease-in-out opacity-0 -translate-x-4 overflow-auto hidden">
     <h2 class="flex justify-center h-[70px] text-lg font-bold p-4">
         유동인구 분석 그래프
     </h2>
 
-    <!-- 인구 데이터 -->
+    <!-- 성별 데이터 -->
+    <div class="flex justify-between p-2">
+        <span class="font-bold text-lg"><i class="fa-solid fa-venus-mars"></i>성별 유동인구</span>
+        <span class="text-sm text-gray-600"> 25년 1분기 기준</span>
+    </div>
+    <div class="flex items-start m-3">
+        <canvas id="genderFloatingChart" class="my-3 border border-gray-300 rounded-lg shadow-lg" width="250"
+                height="250"></canvas>
+        <div class="flex items-center h-[250px]">
+            <div id="genderPopulationAnalysis"
+                 class="flex flex-col relative py-5 px-2 border-2 rounded-lg m-3 text-sm text-gray-700 border border-red-500 w-[200px]"
+            >
+            </div>
+        </div>
+    </div>
 
     <div class="flex justify-between p-2">
-        <span class="font-bold text-lg"><i class="fa-solid fa-users"></i> 유동인구 분석</span>
+        <span class="font-bold text-lg">
+            <i class="fa-solid fa-clock"></i>
+            시간대, 요일별 유동인구</span>
         <span class="text-sm text-gray-600"> 25년 1분기 기준</span>
     </div>
 
-    <canvas id="genderFloatingChart" class="m-3 border border-gray-300 rounded-lg shadow-lg" height="120"></canvas>
     <canvas id="timeSalesChart" class="m-3 border border-gray-300 rounded-lg shadow-lg" width="600"
             height="300"></canvas>
-    <canvas id="weeklyPopulationChart" class="m-3 mb-4 border border-gray-300 rounded-lg shadow-lg" width="600"
+    <canvas id="weeklyPopulationChart" class="m-3 mb-6 border border-gray-300 rounded-lg shadow-lg" width="600"
             height="300"></canvas>
     <div id="weeklyPopulationAnalysis"
          class="flex flex-col relative p-5 border-2 rounded-lg m-3 mt-2 text-sm text-gray-700 border border-red-500">
     </div>
 
-    <canvas id="populationByAgeChart" class="m-3 border border-gray-300 rounded-lg shadow-lg" width="600"
+    <div class="flex justify-between p-2">
+        <span class="font-bold text-lg">
+            <i class="fa-solid fa-users"></i>
+            상주,직장,유동인구</span>
+        <span class="text-sm text-gray-600"> 25년 1분기 기준</span>
+    </div>
+
+    <canvas id="populationByAgeChart" class="m-3 mb-6 border border-gray-300 rounded-lg shadow-lg" width="600"
             height="400"></canvas>
-    <div id="populationAnalysis" class="mt-4 text-sm text-gray-700"></div>
+    <div id="populationAnalysis"
+         class="flex flex-col relative p-5 border-2 rounded-lg m-3 mt-2 text-sm text-gray-700 border border-red-500"></div>
 
     <!-- 닫기 버튼 -->
     <button

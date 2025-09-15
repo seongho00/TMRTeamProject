@@ -406,9 +406,10 @@ function openReport() {
                 if (data) {
 
 
-// 성별 데이터
+                    // 성별 데이터
                     const male = currentData.maleFloatingPopulation || 0;
                     const female = currentData.femaleFloatingPopulation || 0;
+                    const genderTotal = male + female;
 
                     if (window.genderFloatingChart instanceof Chart) {
                         window.genderFloatingChart.destroy();
@@ -434,11 +435,11 @@ function openReport() {
                             }]
                         },
                         options: {
-                            responsive: true,
+                            responsive: false,   // 자동 리사이즈 끔
+                            maintainAspectRatio: false, // 가로세로 비율 고정 해제
                             plugins: {
                                 title: {
-                                    display: true,
-                                    text: "성별 유동인구 비율"
+                                    display: false,
                                 },
                                 tooltip: {
                                     callbacks: {
@@ -456,6 +457,30 @@ function openReport() {
                             }
                         }
                     });
+
+
+                    // ✅ 해석 div 채우기
+                    const genderAnalysis = document.getElementById("genderPopulationAnalysis");
+                    const malePercent = ((male / genderTotal) * 100).toFixed(1);
+                    const femalePercent = ((female / genderTotal) * 100).toFixed(1);
+
+                    const dominant = male > female ? "남성" : "여성";
+                    const dominantPercent = male > female ? malePercent : femalePercent;
+
+                    genderAnalysis.innerHTML = `
+                       <div class="flex absolute -top-[20px] left-2 font-bold bg-red-500 text-white rounded-lg px-3 py-2">
+                            <i class="fa-solid fa-chart-line"></i>
+                            &nbsp;
+                            <span>분석결과 해석</span>
+                        </div>
+                        <p>성별 유동인구는 
+                           <span class="font-bold text-blue-500">남성 ${malePercent}%</span>, 
+                           <span class="font-bold text-pink-500">여성 ${femalePercent}%</span>로 
+                           <span class="font-bold text-red-500">${dominant} 유동인구가 더 많습니다.</span>
+                        </p>
+                        <p><span class="font-bold text-red-500">${dominant}</span> 소비층을 주요 타깃으로 한 업종·마케팅 전략에 유리합니다.</p>
+                    `;
+
 
                     // 시간대별 그래프
                     const timeLabels = [
@@ -526,7 +551,7 @@ function openReport() {
                             responsive: true,
                             plugins: {
                                 title: {
-                                    display: true,
+                                    display: false,
                                     text: "📊 시간대별 유동인구 비율"
                                 },
                                 tooltip: {
@@ -624,7 +649,7 @@ function openReport() {
                             responsive: true,
                             plugins: {
                                 title: {
-                                    display: true,
+                                    display: false,
                                     text: "📊 요일별 유동인구"
                                 },
                                 tooltip: {
@@ -822,53 +847,46 @@ function openReport() {
                     }
 
 
-                    // ✅ 간단한 분석 로직
-                    function analyzePopulationByRatio(resident, workplace, floating) {
-                        const sum = (arr) => arr.reduce((a, b) => a + (b || 0), 0);
+                    const ageLabelsByAnalyze = ["20대", "30대", "40대", "50대", "60대+"];
 
-                        // 전체 합
-                        const totalResident = sum(resident);
-                        const totalWorkplace = sum(workplace);
-                        const totalFloating = sum(floating);
+                    // ✅ 10대 제외한 데이터만 사용
+                    const residentData = newData.resident;
+                    const workplaceData = newData.workplace;
+                    const floatingData = newData.floating;
 
-                        // 비율 계산
-                        const residentRatio = resident.map(v => totalResident ? (v / totalResident * 100).toFixed(1) : 0);
-                        const workplaceRatio = workplace.map(v => totalWorkplace ? (v / totalWorkplace * 100).toFixed(1) : 0);
-                        const floatingRatio = floating.map(v => totalFloating ? (v / totalFloating * 100).toFixed(1) : 0);
-
-                        // 주요 연령대 찾기
-                        const maxResidentIdx = residentRatio.indexOf(Math.max(...residentRatio));
-                        const maxWorkplaceIdx = workplaceRatio.indexOf(Math.max(...workplaceRatio));
-                        const maxFloatingIdx = floatingRatio.indexOf(Math.max(...floatingRatio));
-
-                        let analysis = [];
-
-                        analysis.push(`🏠 상주인구 비율은 <b>${ageLabels[maxResidentIdx]}</b>가 가장 많아 ${residentRatio[maxResidentIdx]}% 차지합니다.`);
-                        analysis.push(`💼 직장인구 비율은 <b>${ageLabels[maxWorkplaceIdx]}</b>가 가장 높아 ${workplaceRatio[maxWorkplaceIdx]}%입니다.`);
-                        analysis.push(`🚶 유동인구 비율은 <b>${ageLabels[maxFloatingIdx]}</b>가 가장 많아 ${floatingRatio[maxFloatingIdx]}%를 기록합니다.`);
-
-                        // 비교 분석
-                        if (maxResidentIdx !== maxFloatingIdx) {
-                            analysis.push(`👉 상주(${ageLabels[maxResidentIdx]})와 유동(${ageLabels[maxFloatingIdx]}) 인구의 주력 연령대가 다릅니다. 
-      거주민 타깃 업종과 방문객 타깃 업종을 분리해야 합니다.`);
-                        } else {
-                            analysis.push(`✅ 상주와 유동 모두 ${ageLabels[maxResidentIdx]} 비중이 높아, 동일 연령층을 핵심 고객으로 설정할 수 있습니다.`);
-                        }
-
-                        if (maxWorkplaceIdx === maxFloatingIdx) {
-                            analysis.push(`📈 직장과 유동 모두 ${ageLabels[maxFloatingIdx]} 중심이므로, 근무 인구가 소비 주도층과 겹칩니다.`);
-                        }
-
-                        // 세부 차이 강조
-                        analysis.push(`상주 ${ageLabels[maxResidentIdx]} 비율: ${residentRatio[maxResidentIdx]}%, 
-                 직장 ${ageLabels[maxWorkplaceIdx]} 비율: ${workplaceRatio[maxWorkplaceIdx]}%, 
-                 유동 ${ageLabels[maxFloatingIdx]} 비율: ${floatingRatio[maxFloatingIdx]}%.`);
-
-                        return analysis.join("<br>");
+                    // ✅ 각 그룹에서 최댓값 찾기
+                    function getMaxGroup(dataArr, labels) {
+                        let maxVal = -1;
+                        let maxIndex = -1;
+                        dataArr.forEach((v, i) => {
+                            if (v != null && v > maxVal) {
+                                maxVal = v;
+                                maxIndex = i;
+                            }
+                        });
+                        return { label: labels[maxIndex], value: maxVal };
                     }
 
-                    document.getElementById("populationAnalysis").innerHTML =
-                        analyzePopulationByRatio(rawData.resident, rawData.workplace, rawData.floating);
+                    const maxResident = getMaxGroup(residentData, ageLabelsByAnalyze);
+                    const maxWorkplace = getMaxGroup(workplaceData, ageLabelsByAnalyze);
+                    const maxFloating = getMaxGroup(floatingData, ageLabelsByAnalyze);
+
+                    // ✅ 해설 문구 생성
+                    let analysisHtml = `
+                        <div class="flex absolute -top-[20px] left-2 font-bold bg-red-500 text-white rounded-lg px-3 py-2">
+                            <i class="fa-solid fa-chart-line"></i>
+                            &nbsp;
+                            <span>분석결과 해석</span>
+                        </div>
+                        <p>상주인구는 <span class="font-bold text-blue-500">${maxResident.label} (${maxResident.value}%)</span>가 가장 많아 지역 내 안정적 수요를 이끕니다.</p>
+                        <p>직장인구는 <span class="font-bold text-green-500">${maxWorkplace.label} (${maxWorkplace.value}%)</span>가 우세해 평일 소비 주도층으로 작용합니다.</p>
+                        <p>유동인구는 <span class="font-bold text-red-500">${maxFloating.label} (${maxFloating.value}%)</span>가 두드러져 외부 방문 수요가 활발합니다.</p>
+                        <p>따라서 <span class="font-bold text-red-600">${maxFloating.label}</span> 방문 수요, 
+                           <span class="font-bold text-green-600">${maxWorkplace.label}</span> 직장 수요, 
+                           <span class="font-bold text-blue-600">${maxResident.label}</span> 거주 수요가 공존하는 지역으로 평가됩니다.</p>
+                    `;
+
+                    document.getElementById("populationAnalysis").innerHTML = analysisHtml;
 
 
                     // DOM 업데이트
