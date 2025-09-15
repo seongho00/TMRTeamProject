@@ -160,12 +160,22 @@
 
 
 <!-- 로딩 오버레이 -->
-<div id="loadingOverlay" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden z-50">
-    <div class="flex flex-col items-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid"></div>
-        <p class="mt-3 text-white font-semibold">분석 중...</p>
+<div id="overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="w-[420px] rounded-xl bg-white p-6 shadow-2xl">
+        <h2 class="mb-4 text-lg font-bold">📊 분석 진행중...</h2>
+
+        <!-- Progress bar wrapper -->
+        <div class="w-full overflow-hidden rounded-full bg-gray-200 h-3">
+            <!-- 실제 진행 막대 -->
+            <div id="progress-bar"
+                 class="h-full w-0 bg-blue-500 transition-[width] duration-500 ease-out"></div>
+        </div>
+
+        <!-- 진행 단계 텍스트 -->
+        <p id="progress-text" class="mt-2 text-sm text-gray-600">시작 중...</p>
     </div>
 </div>
+
 
 <!-- 챗봇 불러오기 -->
 <div th:replace="chatbot/chat::chat"></div>
@@ -206,7 +216,6 @@
 </script>
 
 <script>
-
     const state = {
         totalScoreStatic: 0,
         totalLevelStatic: "",
@@ -215,10 +224,11 @@
         resultJson: null
     };
 
+
     const depositInput = document.getElementById("deposit");
     const monthlyRentInput = document.getElementById("monthlyRent");
     const uploadBtn = document.getElementById("upload");
-    const overlay = document.getElementById("loadingOverlay");
+    const overlay = document.getElementById("overlay");
 
     // 입력값 검사 함수
     function checkInputs() {
@@ -327,144 +337,184 @@
     }
 
     document.getElementById("upload").addEventListener("click", async () => {
-
         const form = new FormData();
         form.append("file", selectedFile);
 
-        // 사용자 입력값 추가
         const deposit = document.getElementById("deposit").value || 0;
         const monthlyRent = document.getElementById("monthlyRent").value || 0;
         form.append("deposit", deposit);
         form.append("monthlyRent", monthlyRent);
 
-        // 로딩 오버레이 표시
+        // 로딩 오버레이 표시 + 0% 초기화
         overlay.classList.remove("hidden");
+        updateProgress(5, "시작 중...");
 
         try {
-            const r = await fetch("/usr/property/upload", {method: "POST", body: form});
-            const json = await r.json();
+            const res = await fetch("/usr/property/upload", {method: "POST", body: form});
+            const json = await res.json();
 
-
-            if (json.ok) {
-                overlay.classList.add("hidden");
-                resultJson = json;
-
-                // 팝업 열기 (DaisyUI modal-toggle)
-                $("#result-modal").removeClass("hidden");
-
-
-                // 위험 색 넣기
-                function getRiskClass(level) {
-                    switch (level) {
-                        case "정상":
-                            return "text-green-600 font-bold";
-                        case "주의":
-                            return "text-yellow-600 font-bold";
-                        case "위험":
-                            return "text-orange-600 font-bold";
-                        case "고위험":
-                            return "text-red-600 font-bold";
-                        default:
-                            return "text-gray-600";
-                    }
-                }
-
-                function riskToScore(level) {
-                    switch (level) {
-                        case "정상":
-                            return 25;
-                        case "주의":
-                            return 50;
-                        case "위험":
-                            return 75;
-                        case "고위험":
-                            return 100;
-                        default:
-                            return 0;
-                    }
-                }
-
-                function scoreToLevel(score) {
-                    if (score < 40) return "정상";
-                    else if (score < 60) return "주의";
-                    else if (score < 80) return "위험";
-                    else return "고위험";
-                }
-
-                let rentRiskClass = getRiskClass(json.rentRisk);
-                let depositRiskClass = getRiskClass(json.depositRisk);
-                let bondDepositRiskClass = getRiskClass(json.bondDepositRiskStatic);
-                let bondDealRiskClass = getRiskClass(json.bondDepositRiskDeal);
-                let debtRiskLevelClass = getRiskClass(json.debtRiskLevel);
-
-                let rent = riskToScore(json.rentRisk);
-                let deposit = riskToScore(json.depositRisk);
-                let bondStatic = riskToScore(json.bondDepositRiskStatic);
-                let bondDeal = riskToScore(json.bondDepositRiskDeal)
-                let debt = riskToScore(json.debtRiskLevel);
-
-                // Static 기준 총점
-                let totalScoreStatic = (rent + deposit + bondStatic + debt) / 4.0;
-                let totalLevelStatic = scoreToLevel(totalScoreStatic);
-
-                // Deal 기준 총점
-                let totalScoreDeal = (rent + deposit + bondDeal + debt) / 4.0;
-                let totalLevelDeal = scoreToLevel(totalScoreDeal);
-
-                // --- 전역 state에 저장 ---
-                state.totalScoreStatic = totalScoreStatic;
-                state.totalLevelStatic = totalLevelStatic;
-                state.totalScoreDeal = totalScoreDeal;
-                state.totalLevelDeal = totalLevelDeal;
-                state.resultJson = json;
-
-
-                function formatMoney(valueInManwon) {
-                    valueInManwon = parseInt(valueInManwon, 10);
-                    if (isNaN(valueInManwon)) return "-";
-
-                    if (valueInManwon >= 10000) {
-                        const eok = Math.floor(valueInManwon / 10000);
-                        const man = valueInManwon % 10000;
-                        return man === 0 ? `${eok}억` : `${eok}억 ${man}만`;
-                    } else {
-                        return `${valueInManwon}만`;
-                    }
-                }
-
-                // 상세 내용 (처음엔 hidden → 상세보기 버튼으로 토글)
-                $("#rentRisk").html(`<span class="${rentRiskClass}">${json.rentRisk}</span>`);
-                $("#rentBase").html(`<span>${formatMoney(json.avgMonthlyDisplay)}</span>`);
-                $("#depositRisk").html(`<span class="${depositRiskClass}">${json.depositRisk}</span>`);
-                $("#depositBase").html(`<span>${formatMoney(json.avgDepositDisplay)}</span>`);
-                $("#bondRisk").html(`<span class="${bondDepositRiskClass}">${json.bondDepositRisk}</span>`);
-                $("#debtRisk").html(`<span class="${debtRiskLevelClass}">${json.debtRiskLevel}</span>`);
-
-                // bar 애니메이션: 최소 지점 → 최대 지점
-                showView("static");
-
+            if (!json || !json.ok || !json.jobId) {
+                updateProgress(100, "❌ 업로드 응답 오류");
+                setTimeout(() => overlay.classList.add("hidden"), 800);
+                return;
             }
 
+            // ✅ 여기서부터 결과 렌더링하지 말고 상태 폴링 시작
+            pollStatus(json.jobId);
+
         } catch (err) {
+            console.error(err);
+            updateProgress(100, "❌ 네트워크 오류");
+            setTimeout(() => overlay.classList.add("hidden"), 800);
         }
     });
 
-    // bar 애니메이션 함수
-    function animateBar(selector, score) {
-        $({val: 0}).animate({val: score}, {
-            duration: 1500,
-            step: function (now) {
-                let color = "#22c55e"; // 정상
-                if (now >= 100) color = "#dc2626";
-                else if (now >= 70) color = "#ef4444";
-                else if (now >= 50) color = "#eab308";
 
-                $(selector)
-                    .css("width", now + "%")
-                    .css("background-color", color);
+    async function pollStatus(jobId) {
+        try {
+            const res = await fetch(`/usr/property/status/${jobId}`);
+            const {status, percent} = await res.json();
+
+            // 서버가 percent 안 줄 수도 있으니 fallback 매핑
+            const p = (typeof percent === "number") ? percent : statusToPercent(status);
+            updateProgress(p, statusToText(status));
+
+            if (status === "done") {
+                // 최종 결과 받아와서 렌더
+                const result = await fetch(`/usr/property/result/${jobId}`).then(r => r.json());
+                overlay.classList.add("hidden");
+                renderResult(result);   // ← 아래 3) 참고
+                return;
             }
-        });
+
+            if (status === "error") {
+                updateProgress(100, "❌ 오류 발생");
+                setTimeout(() => overlay.classList.add("hidden"), 800);
+                return;
+            }
+
+            setTimeout(() => pollStatus(jobId), 1000); // 1초 간격
+        } catch (e) {
+            console.error(e);
+            updateProgress(100, "❌ 상태 조회 실패");
+            setTimeout(() => overlay.classList.add("hidden"), 800);
+        }
     }
+
+    function statusToText(status) {
+        return {
+            init: "시작 중...",
+            pdf: "📑 PDF 분석 중...",
+            crawl: "🏠 실거래가 조회 중...",
+            area: "공동매물 지역 검색 중...",
+            rent: "평균 월세·보증금 조회 중...",
+            calc: "📊 위험도 계산 중...",
+            collateralValue: "담보가치 계산 중...",
+            done: "✅ 완료",
+            error: "❌ 오류"
+        }[status] || "대기 중...";
+    }
+
+    // 진행률 UI 업데이트 (progress bar + 텍스트)
+    function updateProgress(percent, text) {
+        const bar = document.getElementById("progress-bar");
+        const label = document.getElementById("progress-text");
+        if (bar) bar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+        if (label) label.textContent = text || "";
+    }
+
+    function renderResult(result) {
+        resultJson = result;
+
+        // 팝업 열기
+        $("#result-modal").removeClass("hidden");
+
+        // 위험 색/점수 함수들 그대로 사용
+        function getRiskClass(level) {
+            switch (level) {
+                case "정상":
+                    return "text-green-600 font-bold";
+                case "주의":
+                    return "text-yellow-600 font-bold";
+                case "위험":
+                    return "text-orange-600 font-bold";
+                case "고위험":
+                    return "text-red-600 font-bold";
+                default:
+                    return "text-gray-600";
+            }
+        }
+
+        function riskToScore(level) {
+            switch (level) {
+                case "정상":
+                    return 25;
+                case "주의":
+                    return 50;
+                case "위험":
+                    return 75;
+                case "고위험":
+                    return 100;
+                default:
+                    return 0;
+            }
+        }
+
+        function scoreToLevel(score) {
+            if (score < 40) return "정상";
+            else if (score < 60) return "주의";
+            else if (score < 80) return "위험";
+            else return "고위험";
+        }
+
+        function formatMoney(valueInManwon) {
+            valueInManwon = parseInt(valueInManwon, 10);
+            if (isNaN(valueInManwon)) return "-";
+            if (valueInManwon >= 10000) {
+                const eok = Math.floor(valueInManwon / 10000);
+                const man = valueInManwon % 10000;
+                return man === 0 ? `${eok}억` : `${eok}억 ${man}만`;
+            } else {
+                return `${valueInManwon}만`;
+            }
+        }
+
+        // 클래스/점수 계산
+        const rentRiskClass = getRiskClass(result.rentRisk);
+        const depositRiskClass = getRiskClass(result.depositRisk);
+        const bondDepositRiskClass = getRiskClass(result.bondDepositRiskStatic);
+        const debtRiskLevelClass = getRiskClass(result.debtRiskLevel);
+
+        const rent = riskToScore(result.rentRisk);
+        const deposit = riskToScore(result.depositRisk);
+        const bondStatic = riskToScore(result.bondDepositRiskStatic);
+        const bondDeal = riskToScore(result.bondDepositRiskDeal);
+        const debt = riskToScore(result.debtRiskLevel);
+
+        const totalScoreStatic = (rent + deposit + bondStatic + debt) / 4.0;
+        const totalLevelStatic = scoreToLevel(totalScoreStatic);
+        const totalScoreDeal = (rent + deposit + bondDeal + debt) / 4.0;
+        const totalLevelDeal = scoreToLevel(totalScoreDeal);
+
+        // 전역 state 저장
+        state.totalScoreStatic = totalScoreStatic;
+        state.totalLevelStatic = totalLevelStatic;
+        state.totalScoreDeal = totalScoreDeal;
+        state.totalLevelDeal = totalLevelDeal;
+        state.resultJson = result;
+
+        // DOM 업데이트
+        $("#rentRisk").html(`<span class="${rentRiskClass}">${result.rentRisk}</span>`);
+        $("#rentBase").html(`<span>${formatMoney(result.avgMonthlyDisplay)}</span>`);
+        $("#depositRisk").html(`<span class="${depositRiskClass}">${result.depositRisk}</span>`);
+        $("#depositBase").html(`<span>${formatMoney(result.avgDepositDisplay)}</span>`);
+        $("#bondRisk").html(`<span class="${bondDepositRiskClass}">${result.bondDepositRisk}</span>`);
+        $("#debtRisk").html(`<span class="${debtRiskLevelClass}">${result.debtRiskLevel}</span>`);
+
+        // bar 애니메이션/뷰 전환
+        showView("static");
+    }
+
 
     // ---- 공통 함수들 (upload 핸들러 바깥) ----
     function animateBar(selector, score) {
