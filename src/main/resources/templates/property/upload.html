@@ -228,7 +228,6 @@
     const depositInput = document.getElementById("deposit");
     const monthlyRentInput = document.getElementById("monthlyRent");
     const uploadBtn = document.getElementById("upload");
-    const overlay = document.getElementById("overlay");
 
     // 입력값 검사 함수
     function checkInputs() {
@@ -336,71 +335,63 @@
         }
     }
 
-    document.getElementById("upload").addEventListener("click", async () => {
-        const form = new FormData();
-        form.append("file", selectedFile);
+    // ===================== Progress Animator =====================
+    let visualPercent = 0;      // 화면에 보이는 퍼센트
+    let targetPercent = 0;      // 단계별 목표 퍼센트
+    let progressTimer = null;
+    let currentStatusText = "";
+    let currentJobId = null;
 
-        const deposit = document.getElementById("deposit").value || 0;
-        const monthlyRent = document.getElementById("monthlyRent").value || 0;
-        form.append("deposit", deposit);
-        form.append("monthlyRent", monthlyRent);
+    const TICK_MS = 80;         // 틱 간격(ms) → 숫자 키우면 더 느려짐
+    const SPEED_PER_TICK = 0.4; // 틱당 증가량(%) → 숫자 줄이면 더 느려짐
 
-        // 로딩 오버레이 표시 + 0% 초기화
-        overlay.classList.remove("hidden");
-        updateProgress(5, "시작 중...");
+    const overlay = document.getElementById("overlay");
 
-        try {
-            const res = await fetch("/usr/property/upload", {method: "POST", body: form});
-            const json = await res.json();
+    function renderProgressBar() {
+        const bar = document.getElementById("progress-bar");
+        const label = document.getElementById("progress-text");
+        if (bar) bar.style.width = `${visualPercent}%`;
+        if (label) label.textContent = currentStatusText || "";
+    }
 
-            if (!json || !json.ok || !json.jobId) {
-                updateProgress(100, "❌ 업로드 응답 오류");
-                setTimeout(() => overlay.classList.add("hidden"), 800);
-                return;
-            }
+    function setStatusText(text) {
+        currentStatusText = text || "";
+        renderProgressBar();
+    }
 
-            // ✅ 여기서부터 결과 렌더링하지 말고 상태 폴링 시작
-            pollStatus(json.jobId);
-
-        } catch (err) {
-            console.error(err);
-            updateProgress(100, "❌ 네트워크 오류");
-            setTimeout(() => overlay.classList.add("hidden"), 800);
-        }
-    });
-
-
-    async function pollStatus(jobId) {
-        try {
-            const res = await fetch(`/usr/property/status/${jobId}`);
-            const {status, percent} = await res.json();
-
-            // 서버가 percent 안 줄 수도 있으니 fallback 매핑
-            const p = (typeof percent === "number") ? percent : statusToPercent(status);
-            updateProgress(p, statusToText(status));
-
-            if (status === "done") {
-                // 최종 결과 받아와서 렌더
-                const result = await fetch(`/usr/property/result/${jobId}`).then(r => r.json());
-                overlay.classList.add("hidden");
-                renderResult(result);   // ← 아래 3) 참고
-                return;
-            }
-
-            if (status === "error") {
-                updateProgress(100, "❌ 오류 발생");
-                setTimeout(() => overlay.classList.add("hidden"), 800);
-                return;
-            }
-
-            setTimeout(() => pollStatus(jobId), 1000); // 1초 간격
-        } catch (e) {
-            console.error(e);
-            updateProgress(100, "❌ 상태 조회 실패");
-            setTimeout(() => overlay.classList.add("hidden"), 800);
+    function stopProgress() {
+        if (progressTimer) {
+            clearInterval(progressTimer);
+            progressTimer = null;
         }
     }
 
+    function resetProgress() {
+        stopProgress();
+        visualPercent = 0;
+        targetPercent = 0;
+        setStatusText("시작 중...");
+        const bar = document.getElementById("progress-bar");
+        if (bar) bar.style.width = "0%";
+    }
+
+    // 타겟 퍼센트를 갱신 (뒤로 가지 않도록 보장)
+    function setTargetProgress(p) {
+        const clamped = Math.max(0, Math.min(100, p));
+        targetPercent = Math.max(targetPercent, clamped); // 역주행 방지
+
+        if (!progressTimer) {
+            progressTimer = setInterval(() => {
+                if (visualPercent < targetPercent) {
+                    visualPercent = Math.min(targetPercent, visualPercent + SPEED_PER_TICK);
+                    renderProgressBar();
+                }
+                // 같거나 크면 대기 (감소는 허용 안 함)
+            }, TICK_MS);
+        }
+    }
+
+    // 단계 → 텍스트
     function statusToText(status) {
         return {
             init: "시작 중...",
@@ -415,58 +406,139 @@
         }[status] || "대기 중...";
     }
 
-    // 진행률 UI 업데이트 (progress bar + 텍스트)
-    function updateProgress(percent, text) {
-        const bar = document.getElementById("progress-bar");
-        const label = document.getElementById("progress-text");
-        if (bar) bar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
-        if (label) label.textContent = text || "";
+    // 단계 → 목표 퍼센트(그 단계의 상한선)
+    function statusToPercent(status) {
+        return {
+            init: 5,
+            pdf: 30,
+            crawl: 55,
+            area: 65,
+            rent: 75,
+            calc: 90,
+            collateralValue: 95,
+            done: 100,
+            error: 100
+        }[status] ?? 0;
     }
 
+    // 진행률/문구 갱신(게이지는 setInterval로 서서히 타겟까지 이동)
+    function updateProgressByStatus(status, percentFromServer) {
+        const target = (typeof percentFromServer === "number")
+            ? percentFromServer
+            : statusToPercent(status);
+        setTargetProgress(target);
+        setStatusText(statusToText(status));
+    }
+
+    // ===================== 업로드 버튼 핸들러 =====================
+    document.getElementById("upload").addEventListener("click", async () => {
+        const form = new FormData();
+        form.append("file", selectedFile);
+
+        const deposit = document.getElementById("deposit").value || 0;
+        const monthlyRent = document.getElementById("monthlyRent").value || 0;
+        form.append("deposit", deposit);
+        form.append("monthlyRent", monthlyRent);
+
+        // Progress 초기화 + 오버레이 표시
+        resetProgress();
+        overlay.classList.remove("hidden");
+        setTargetProgress(5);
+        setStatusText("시작 중...");
+
+        try {
+            const res = await fetch("/usr/property/upload", { method: "POST", body: form });
+            const json = await res.json();
+
+            if (!json || !json.ok || !json.jobId) {
+                setTargetProgress(100);
+                setStatusText("❌ 업로드 응답 오류");
+                setTimeout(() => { overlay.classList.add("hidden"); stopProgress(); }, 800);
+                return;
+            }
+
+            currentJobId = json.jobId; // 중복 클릭/이전 job 가드용
+            pollStatus(json.jobId);
+
+        } catch (err) {
+            console.error(err);
+            setTargetProgress(100);
+            setStatusText("❌ 네트워크 오류");
+            setTimeout(() => { overlay.classList.add("hidden"); stopProgress(); }, 800);
+        }
+    });
+
+    // ===================== 상태 폴링 =====================
+    async function pollStatus(jobId) {
+        // 최신 job만 유효
+        if (jobId !== currentJobId) return;
+
+        try {
+            const res = await fetch(`/usr/property/status/${jobId}`);
+            const { status, percent } = await res.json();
+
+            updateProgressByStatus(status, percent);
+
+            if (status === "done") {
+                const result = await fetch(`/usr/property/result/${jobId}`).then(r => r.json());
+                setStatusText(statusToText("done"));
+                setTargetProgress(100);
+                setTimeout(() => {
+                    overlay.classList.add("hidden");
+                    stopProgress();
+                    renderResult(result); // ← 아래 함수 그대로 사용
+                }, 400);
+                return;
+            }
+
+            if (status === "error") {
+                setTargetProgress(100);
+                setStatusText(statusToText("error"));
+                setTimeout(() => { overlay.classList.add("hidden"); stopProgress(); }, 800);
+                return;
+            }
+
+            setTimeout(() => pollStatus(jobId), 1000); // 1초 간격
+
+        } catch (e) {
+            console.error(e);
+            setTargetProgress(100);
+            setStatusText("❌ 상태 조회 실패");
+            setTimeout(() => { overlay.classList.add("hidden"); stopProgress(); }, 800);
+        }
+    }
+
+    // ===================== 결과 렌더링 (기존 로직 유지) =====================
     function renderResult(result) {
         resultJson = result;
 
         // 팝업 열기
         $("#result-modal").removeClass("hidden");
 
-        // 위험 색/점수 함수들 그대로 사용
         function getRiskClass(level) {
             switch (level) {
-                case "정상":
-                    return "text-green-600 font-bold";
-                case "주의":
-                    return "text-yellow-600 font-bold";
-                case "위험":
-                    return "text-orange-600 font-bold";
-                case "고위험":
-                    return "text-red-600 font-bold";
-                default:
-                    return "text-gray-600";
+                case "정상": return "text-green-600 font-bold";
+                case "주의": return "text-yellow-600 font-bold";
+                case "위험": return "text-orange-600 font-bold";
+                case "고위험": return "text-red-600 font-bold";
+                default: return "text-gray-600";
             }
         }
-
         function riskToScore(level) {
             switch (level) {
-                case "정상":
-                    return 25;
-                case "주의":
-                    return 50;
-                case "위험":
-                    return 75;
-                case "고위험":
-                    return 100;
-                default:
-                    return 0;
+                case "정상": return 25;
+                case "주의": return 50;
+                case "위험": return 75;
+                case "고위험": return 100;
+                default: return 0;
             }
         }
-
         function scoreToLevel(score) {
             if (score < 40) return "정상";
             else if (score < 60) return "주의";
             else if (score < 80) return "위험";
             else return "고위험";
         }
-
         function formatMoney(valueInManwon) {
             valueInManwon = parseInt(valueInManwon, 10);
             if (isNaN(valueInManwon)) return "-";
@@ -479,7 +551,6 @@
             }
         }
 
-        // 클래스/점수 계산
         const rentRiskClass = getRiskClass(result.rentRisk);
         const depositRiskClass = getRiskClass(result.depositRisk);
         const bondDepositRiskClass = getRiskClass(result.bondDepositRiskStatic);
@@ -496,14 +567,12 @@
         const totalScoreDeal = (rent + deposit + bondDeal + debt) / 4.0;
         const totalLevelDeal = scoreToLevel(totalScoreDeal);
 
-        // 전역 state 저장
         state.totalScoreStatic = totalScoreStatic;
         state.totalLevelStatic = totalLevelStatic;
         state.totalScoreDeal = totalScoreDeal;
         state.totalLevelDeal = totalLevelDeal;
         state.resultJson = result;
 
-        // DOM 업데이트
         $("#rentRisk").html(`<span class="${rentRiskClass}">${result.rentRisk}</span>`);
         $("#rentBase").html(`<span>${formatMoney(result.avgMonthlyDisplay)}</span>`);
         $("#depositRisk").html(`<span class="${depositRiskClass}">${result.depositRisk}</span>`);
@@ -511,7 +580,6 @@
         $("#bondRisk").html(`<span class="${bondDepositRiskClass}">${result.bondDepositRisk}</span>`);
         $("#debtRisk").html(`<span class="${debtRiskLevelClass}">${result.debtRiskLevel}</span>`);
 
-        // bar 애니메이션/뷰 전환
         showView("static");
     }
 
