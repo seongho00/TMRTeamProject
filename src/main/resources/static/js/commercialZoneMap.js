@@ -871,6 +871,37 @@ function openReport() {
                     const maxWorkplace = getMaxGroup(workplaceData, ageLabelsByAnalyze);
                     const maxFloating = getMaxGroup(floatingData, ageLabelsByAnalyze);
 
+                    function getAgeComment(ageLabel, value, type) {
+                        // type: "resident", "workplace", "floating"
+                        const percent = `${value}%`;
+
+                        const comments = {
+                            resident: {
+                                "20대": `상주인구는 20대(${percent})가 많아, 젊은 층 거주 기반이 강합니다.`,
+                                "30대": `상주인구는 30대(${percent})가 가장 많아, 가계와 직장 모두 균형 잡힌 소비층을 형성합니다.`,
+                                "40대": `상주인구는 40대(${percent})가 중심을 이루며, 안정적인 지역 수요를 뒷받침합니다.`,
+                                "50대": `상주인구는 50대(${percent})가 두드러져, 구매력이 높은 중장년층 기반이 강합니다.`,
+                                "60대+": `상주인구는 60대 이상(${percent})이 많아, 여가·생활편의 업종 수요가 강합니다.`
+                            },
+                            workplace: {
+                                "20대": `직장인구는 20대(${percent})가 우세해, 젊은 직장인 소비가 활발합니다.`,
+                                "30대": `직장인구는 30대(${percent})가 가장 많아, 평일 소비 주도층으로 작용합니다.`,
+                                "40대": `직장인구는 40대(${percent})가 높아, 가족·가계 기반의 평일 소비가 강합니다.`,
+                                "50대": `직장인구는 50대(${percent})가 많아, 안정적이고 보수적인 소비층이 중심입니다.`,
+                                "60대+": `직장인구는 60대 이상(${percent})이 높은 비중을 차지하며, 퇴직 연령대 소비가 일부 반영됩니다.`
+                            },
+                            floating: {
+                                "20대": `유동인구는 20대(${percent})가 가장 많아, 외부 방문 수요가 젊은 층 중심으로 형성됩니다.`,
+                                "30대": `유동인구는 30대(${percent})가 높아, 사회활동 연령대 방문이 활발합니다.`,
+                                "40대": `유동인구는 40대(${percent})가 두드러져, 가족 단위 외출·소비 수요가 강합니다.`,
+                                "50대": `유동인구는 50대(${percent})가 많아, 안정적인 중장년층 방문 수요가 중심입니다.`,
+                                "60대+": `유동인구는 60대 이상(${percent})이 많아, 전통시장·생활편의 방문 수요가 강합니다.`
+                            }
+                        };
+
+                        return comments[type][ageLabel];
+                    }
+
                     // ✅ 해설 문구 생성
                     let analysisHtml = `
                         <div class="flex absolute -top-[20px] left-2 font-bold bg-red-500 text-white rounded-lg px-3 py-2">
@@ -878,12 +909,12 @@ function openReport() {
                             &nbsp;
                             <span>분석결과 해석</span>
                         </div>
-                        <p>상주인구는 <span class="font-bold text-blue-500">${maxResident.label} (${maxResident.value}%)</span>가 가장 많아 지역 내 안정적 수요를 이끕니다.</p>
-                        <p>직장인구는 <span class="font-bold text-green-500">${maxWorkplace.label} (${maxWorkplace.value}%)</span>가 우세해 평일 소비 주도층으로 작용합니다.</p>
-                        <p>유동인구는 <span class="font-bold text-red-500">${maxFloating.label} (${maxFloating.value}%)</span>가 두드러져 외부 방문 수요가 활발합니다.</p>
-                        <p>따라서 <span class="font-bold text-red-600">${maxFloating.label}</span> 방문 수요, 
-                           <span class="font-bold text-green-600">${maxWorkplace.label}</span> 직장 수요, 
-                           <span class="font-bold text-blue-600">${maxResident.label}</span> 거주 수요가 공존하는 지역으로 평가됩니다.</p>
+                      <p>${getAgeComment(maxResident.label, maxResident.value, "resident")}</p>
+                      <p>${getAgeComment(maxWorkplace.label, maxWorkplace.value, "workplace")}</p>
+                      <p>${getAgeComment(maxFloating.label, maxFloating.value, "floating")}</p>
+                      <p>따라서 <span class="font-bold text-red-600">${maxFloating.label}</span> 방문 수요, 
+                       <span class="font-bold text-green-600">${maxWorkplace.label}</span> 직장 수요, 
+                       <span class="font-bold text-blue-600">${maxResident.label}</span> 거주 수요가 공존하는 지역으로 평가됩니다.</p>
                     `;
 
                     document.getElementById("populationAnalysis").innerHTML = analysisHtml;
