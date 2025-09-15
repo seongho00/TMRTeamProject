@@ -215,4 +215,23 @@ public class MemberController {
     public String profile() {
         return "member/myPage";
     }
+
+    @GetMapping("/checkPw")
+    public String checkPw() {
+        return "member/checkPw";
+    }
+
+    @GetMapping("/doCheckPw")
+    @ResponseBody
+    public String doCheckPw(String pw) {
+        if (Ut.isEmptyOrNull(pw)) {
+            return Ut.jsHistoryBack("F-1", "비번 써");
+        }
+
+        if (rq.getLoginedMember().getLoginPw().equals(pw) == false) {
+            return Ut.jsHistoryBack("F-2", "비번 틀림");
+        }
+
+        return Ut.jsReplace("S-1", Ut.f("비밀번호 확인 성공"), "modify");
+    }
 }
