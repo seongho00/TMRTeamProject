@@ -8,7 +8,7 @@
 <header th:replace="common/mapheader :: header"></header>
 
 <!-- 전체 레이아웃 -->
-<div class="relative flex max-w-[1440px] mx-auto pb-5">
+<div class="relative flex max-w-[1440px] mt-[50px] mx-auto pb-5">
     <!-- 사이드 바 -->
     <div class="box-border">
         <aside class="relative w-[330px] overflow-y-auto bg-white z-[1000]">
@@ -17,8 +17,8 @@
                 <!-- 사이드바 타이틀 -->
                 <div class="box-border pt-[50px]">
                     <h2 class="relative overflow-hidden w-[280px] min-h-[180px] text-center pt-[40px]
-                               bg-[linear-gradient(90deg,rgb(0,123,230)_0%,rgb(64,93,193)_69%,rgb(85,82,180)_100%)]
-                               font-extrabold text-[30px] rounded-lg text-white">
+                               bg-gradient-to-r from-indigo-600 to-indigo-500
+                               font-black text-[30px] rounded-lg text-white">
                         마이페이지
                     </h2>
                 </div>
@@ -27,7 +27,9 @@
                            z-[90] subheading">
                     <!-- 회원정보관리 -->
                     <li class="px-[20px] first:rounded-t-[10px] first:pt-[27px]">
-                        <a class="relative block text-[16px] px-[10px] py-[16px] active:text-[#5552b4]">
+                        <a class="relative block text-[16px] px-[10px] py-[16px] active:text-[#5c56d2]
+                                  after:content-[''] after:absolute after:bottom-0 after:left-0
+                                  after:w-full after:h-[2px] after:bg-[#5c56d2]">
                             회원정보관리
                         </a>
 
@@ -39,7 +41,7 @@
                                 </a>
                             </li>
                             <li>
-                                <a href="https://sso.sbiz24.kr/#/memPwChng?returnUrl=https%3A%2F%2Fwww.sbiz24.kr%2F%23%2Fmypage%2Fmem%2FmemInfoChng"
+                                <a href="#"
                                    target="_self" class="group block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
                                   <span class="inline-flex items-center gap-1">
                                     비밀번호변경
@@ -50,7 +52,7 @@
                                 </a>
                             </li>
                             <li>
-                                <a href="https://sso.sbiz24.kr/#/memWhdwl?returnUrl=https%3A%2F%2Fwww.sbiz24.kr%2F%23%2Fmypage%2Fmem%2FmemInfoChng"
+                                <a href="#"
                                    target="_self" class="group block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
                                   <span class="inline-flex items-center gap-1">
                                     회원탈퇴
@@ -61,7 +63,7 @@
                                 </a>
                             </li>
                             <li>
-                                <a href="https://sso.sbiz24.kr/#/memNmChng?returnUrl=https%3A%2F%2Fwww.sbiz24.kr%2F%23%2Fmypage%2Fmem%2FmemInfoChng"
+                                <a href="#"
                                    target="_self" class="group block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
                                   <span class="inline-flex items-center gap-1">
                                     개명신청
@@ -81,7 +83,7 @@
                         </a>
                         <ul class="mt-2 space-y-1 pl-3">
                             <li>
-                                <a href="#/mypage/bmk" class="block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
+                                <a href="#" class="block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
                                     관심일정
                                 </a>
                             </li>
@@ -90,6 +92,45 @@
                 </ul>
             </div>
         </aside>
+    </div>
+
+    <!-- 마이페이지 메인 -->
+    <div class="w-full max-w-[1090px] box-border">
+        <main class="relative min-h-[120px] block">
+            <div class="p-[20px] box-border text-[16px] min-h-[calc(100vh-130px)]">
+                <div class="relative w-full pt-[55px] pb-[20px] mb-[40px] border-b border-gray-300">
+                    <h2 class="relative pb-[10px] text-black font-black text-[30px]">기본정보</h2>
+                    <div class="relative flex items-center py-[10px] left-[5px]">
+                        <svg class="mr-1" xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 640 640">
+                            <!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                            <path d="M298.2 72.6C310.5 61.2 329.5 61.2 341.7 72.6L432 156.3L432 144C432 126.3 446.3 112 464 112L496 112C513.7 112 528 126.3 528 144L528 245.5L565.8 280.6C575.4 289.6 578.6 303.5 573.8 315.7C569 327.9 557.2 336 544 336L528 336L528 512C528 547.3 499.3 576 464 576L176 576C140.7 576 112 547.3 112 512L112 336L96 336C82.8 336 71 327.9 66.2 315.7C61.4 303.5 64.6 289.5 74.2 280.6L298.2 72.6zM280 288C266.7 288 256 298.7 256 312L256 392C256 405.3 266.7 416 280 416L360 416C373.3 416 384 405.3 384 392L384 312C384 298.7 373.3 288 360 288L280 288z"
+                                  fill="#767676"/>
+                        </svg>
+                        <ul class="w-full h-full">
+                            <li class="inline-block text-[14px] text-[#767676]">
+                                <a href="/usr/home/main">홈</a>
+                            </li>
+                            <li class="inline-block text-[14px] text-[#767676]">
+                                <i class="fa-solid fa-caret-right before:inline-block before:w-[25px] before:h-[12px]
+                                          before:text-center before:px-[5px] text-[14px]"></i>
+                                <a href="/usr/member/myPage">마이페이지</a>
+                            </li>
+                            <li class="inline-block text-[14px] text-[#767676]">
+                                <i class="fa-solid fa-caret-right before:inline-block before:w-[25px] before:h-[12px]
+                                          before:text-center before:px-[5px] text-[14px]"></i>
+                                <a href="#">회원정보관리</a>
+                            </li>
+                            <li class="inline-block text-[14px] text-[#767676]">
+                                <i class="fa-solid fa-caret-right before:inline-block before:w-[25px] before:h-[12px]
+                                          before:text-center before:px-[5px] text-[14px]"></i>
+                                <a href="#">기본정보</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div></div>
+            </div>
+        </main>
     </div>
 </div>
 
