@@ -1,152 +1,99 @@
 <!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile Page</title>
-
-    <!-- Custom Css -->
-    <link rel="stylesheet" th:href="@{/css/myPage.css}"/>
-
-    <!-- FontAwesome 5 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head">
+    <meta charset="UTF-8" />
+    <title>내 정보</title>
 </head>
 <body>
-<!-- Navbar top -->
-<div class="navbar-top">
-    <div class="title">
-        <h1>Profile</h1>
-    </div>
+<header th:replace="common/mapheader :: header"></header>
 
-    <!-- Navbar -->
-    <ul>
-        <li>
-            <a href="#message">
-                <span class="icon-count">29</span>
-                <i class="fa fa-envelope fa-2x"></i>
-            </a>
-        </li>
-        <li>
-            <a href="#notification">
-                <span class="icon-count">59</span>
-                <i class="fa fa-bell fa-2x"></i>
-            </a>
-        </li>
-        <li>
-            <a href="#sign-out">
-                <i class="fa fa-sign-out-alt fa-2x"></i>
-            </a>
-        </li>
-    </ul>
-    <!-- End -->
-</div>
-<!-- End -->
+<!-- 전체 레이아웃 -->
+<div class="relative flex max-w-[1440px] mx-auto pb-5">
+    <!-- 사이드 바 -->
+    <div class="box-border">
+        <aside class="relative w-[330px] overflow-y-auto bg-white z-[1000]">
+            <div class="w-full h-full overflow-auto">
 
-<!-- Sidenav -->
-<div class="sidenav">
-    <div class="profile">
-        <img src="https://imdezcode.files.wordpress.com/2020/02/imdezcode-logo.png" alt="" width="100" height="100">
+                <!-- 사이드바 타이틀 -->
+                <div class="box-border pt-[50px]">
+                    <h2 class="relative overflow-hidden w-[280px] min-h-[180px] text-center pt-[40px]
+                               bg-[linear-gradient(90deg,rgb(0,123,230)_0%,rgb(64,93,193)_69%,rgb(85,82,180)_100%)]
+                               font-extrabold text-[30px] rounded-lg text-white">
+                        마이페이지
+                    </h2>
+                </div>
+                <!-- 사이드바 메뉴 -->
+                <ul class="relative w-[250px] ml-[15px] rounded-[10px] bg-white -mt-[72px] min-h-screen
+                           z-[90] subheading">
+                    <!-- 회원정보관리 -->
+                    <li class="px-[20px] first:rounded-t-[10px] first:pt-[27px]">
+                        <a class="relative block text-[16px] px-[10px] py-[16px] active:text-[#5552b4]">
+                            회원정보관리
+                        </a>
 
-        <div class="name">
-            ImDezCode
-        </div>
-        <div class="job">
-            Web Developer
-        </div>
-    </div>
+                        <!-- 2차 메뉴 -->
+                        <ul class="block bg-[#f5f6f9] my-[10px] py-[10px]">
+                            <li>
+                                <a href="#" class="block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
+                                    기본정보
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://sso.sbiz24.kr/#/memPwChng?returnUrl=https%3A%2F%2Fwww.sbiz24.kr%2F%23%2Fmypage%2Fmem%2FmemInfoChng"
+                                   target="_self" class="group block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
+                                  <span class="inline-flex items-center gap-1">
+                                    비밀번호변경
+                                    <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                      <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5z"/>
+                                    </svg>
+                                  </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://sso.sbiz24.kr/#/memWhdwl?returnUrl=https%3A%2F%2Fwww.sbiz24.kr%2F%23%2Fmypage%2Fmem%2FmemInfoChng"
+                                   target="_self" class="group block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
+                                  <span class="inline-flex items-center gap-1">
+                                    회원탈퇴
+                                    <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                      <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5z"/>
+                                    </svg>
+                                  </span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://sso.sbiz24.kr/#/memNmChng?returnUrl=https%3A%2F%2Fwww.sbiz24.kr%2F%23%2Fmypage%2Fmem%2FmemInfoChng"
+                                   target="_self" class="group block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
+                                  <span class="inline-flex items-center gap-1">
+                                    개명신청
+                                    <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                      <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5z"/>
+                                    </svg>
+                                  </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
 
-    <div class="sidenav-url">
-        <div class="url">
-            <a href="#profile" class="active">Profile</a>
-            <hr align="center">
-        </div>
-        <div class="url">
-            <a href="#settings">Settings</a>
-            <hr align="center">
-        </div>
-    </div>
-</div>
-<!-- End -->
-
-<!-- Main -->
-<div class="main">
-    <h2>IDENTITY</h2>
-    <div class="card">
-        <div class="card-body">
-            <i class="fa fa-pen fa-xs edit"></i>
-            <table>
-                <tbody>
-                <tr>
-                    <td>Name</td>
-                    <td>:</td>
-                    <td>ImDezCode</td>
-                </tr>
-                <tr>
-                    <td>Email</td>
-                    <td>:</td>
-                    <td>imdezcode@gmail.com</td>
-                </tr>
-                <tr>
-                    <td>Address</td>
-                    <td>:</td>
-                    <td>Bali, Indonesia</td>
-                </tr>
-                <tr>
-                    <td>Hobbies</td>
-                    <td>:</td>
-                    <td>Diving, Reading Book</td>
-                </tr>
-                <tr>
-                    <td>Job</td>
-                    <td>:</td>
-                    <td>Web Developer</td>
-                </tr>
-                <tr>
-                    <td>Skill</td>
-                    <td>:</td>
-                    <td>PHP, HTML, CSS, Java</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <h2>SOCIAL MEDIA</h2>
-    <div class="card">
-        <div class="card-body">
-            <i class="fa fa-pen fa-xs edit"></i>
-            <div class="social-media">
-                    <span class="fa-stack fa-sm">
-                        <i class="fas fa-circle fa-stack-2x"></i>
-                        <i class="fab fa-facebook fa-stack-1x fa-inverse"></i>
-                    </span>
-                <span class="fa-stack fa-sm">
-                        <i class="fas fa-circle fa-stack-2x"></i>
-                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
-                    </span>
-                <span class="fa-stack fa-sm">
-                        <i class="fas fa-circle fa-stack-2x"></i>
-                        <i class="fab fa-instagram fa-stack-1x fa-inverse"></i>
-                    </span>
-                <span class="fa-stack fa-sm">
-                        <i class="fas fa-circle fa-stack-2x"></i>
-                        <i class="fab fa-invision fa-stack-1x fa-inverse"></i>
-                    </span>
-                <span class="fa-stack fa-sm">
-                        <i class="fas fa-circle fa-stack-2x"></i>
-                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
-                    </span>
-                <span class="fa-stack fa-sm">
-                        <i class="fas fa-circle fa-stack-2x"></i>
-                        <i class="fab fa-whatsapp fa-stack-1x fa-inverse"></i>
-                    </span>
-                <span class="fa-stack fa-sm">
-                        <i class="fas fa-circle fa-stack-2x"></i>
-                        <i class="fab fa-snapchat fa-stack-1x fa-inverse"></i>
-                    </span>
+                    <!-- 관심정보 -->
+                    <li class="px-[20px]">
+                        <a href="#" class="relative block text-[16px] px-[10px] py-[16px]">
+                            관심정보
+                        </a>
+                        <ul class="mt-2 space-y-1 pl-3">
+                            <li>
+                                <a href="#/mypage/bmk" class="block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
+                                    관심일정
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
             </div>
-        </div>
+        </aside>
     </div>
 </div>
+
+<footer th:replace="common/footer :: footer"></footer>
+
 </body>
 </html>

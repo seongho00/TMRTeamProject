@@ -47,7 +47,8 @@ public class SecurityConfig {
                         .antMatchers("/usr/home/notifications").hasAnyRole("USER", "ADMIN")
                         .antMatchers( // 여기에 막을 URL 적기
                                 "/usr/member/conditionalLogout",
-                                "/usr/member/myPage",
+                                //"/usr/member/myPage",
+                                "/usr/member/modify",
                                 "/usr/member/checkPw"
                         ).authenticated()
                         .anyRequest().permitAll()
