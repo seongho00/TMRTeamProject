@@ -8,6 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -50,5 +52,35 @@ public class MemberService {
         System.out.println(loginedMember);
 
         return loginedMember;
+    }
+
+    /* 회원정보 수정 */
+    public ResultData modifyWithoutPw(Long loginedMemberId, String name, String phoneNum, String email) {
+        Member member = memberRepository.findById(loginedMemberId).orElseThrow(() -> new RuntimeException("회원이 존재하지 않습니다."));
+
+        if (name != null) member.setName(name);
+        if (phoneNum != null) member.setPhoneNum(phoneNum);
+        if (email != null) member.setEmail(email);
+
+        memberRepository.save(member);
+
+        return ResultData.from("S-1", "회원정보가 수정되었습니다.", "member", member);
+    }
+
+    public ResultData modify(Long loginedMemberId, String loginPw, String name, String phoneNum, String email) {
+        Member member = memberRepository.findById(loginedMemberId).orElseThrow(() -> new RuntimeException("회원이 존재하지 않습니다."));
+
+        if (name != null) member.setName(name);
+        if (loginPw != null) member.setLoginPw(passwordEncoder.encode(loginPw));
+        if (phoneNum != null) member.setPhoneNum(phoneNum);
+        if (email != null) member.setEmail(email);
+
+        memberRepository.save(member);
+
+        return ResultData.from("S-1", "회원정보가 수정되었습니다.", "member", member);
+    }
+
+    public Member getMemberById(Long loginedMemberId) {
+        return memberRepository.findById(loginedMemberId).orElseThrow(() -> new RuntimeException("회원이 존재하지 않습니다. id=" + loginedMemberId));
     }
 }

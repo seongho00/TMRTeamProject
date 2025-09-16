@@ -50,6 +50,7 @@ public class Rq {
         resp.getWriter().append(str);
     }
 
+    // 로그인 여부
     public boolean isLogined() {
         return getMemberContext() != null;
     }
@@ -58,13 +59,13 @@ public class Rq {
         return !isLogined();
     }
 
-    /** 로그인된 회원 객체 */
+    // 로그인된 회원 객체
     public Member getLoginedMember() {
         MemberContext mc = getMemberContext();
         return mc != null ? mc.getMember() : null;
     }
 
-    /** 로그인된 회원 ID */
+    // 로그인된 회원 ID
     public Long getLoginedMemberId() {
         Member m = getLoginedMember();
         return m != null ? m.getId() : null;
