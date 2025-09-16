@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -48,6 +49,8 @@ public class MemberController {
 
     @Autowired
     private Rq rq;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping("/joinAndLogin")
     public String joinAndLogin() {
@@ -74,7 +77,7 @@ public class MemberController {
 
     @GetMapping("/login")
     @ResponseBody
-    public String loginPage(HttpServletRequest request, Model model) {
+    public String loginPage(HttpServletRequest request) {
         Object errorMessage = request.getSession().getAttribute("errorMessage");
         System.out.println(errorMessage);
 
@@ -82,6 +85,34 @@ public class MemberController {
             request.getSession().removeAttribute("errorMessage");
             return Ut.jsHistoryBack("F-1", errorMessage.toString());
         }
+        return "redirect:../home/main";
+    }
+
+    @PostMapping("/doLogin")
+    @ResponseBody
+    public String doLogin(@RequestParam String email, @RequestParam String loginPw) {
+
+        Member member = memberService.getMemberByProviderAndEmail("local", email);
+
+        if (member == null) {
+            return Ut.jsHistoryBack("F-1", "가입되지 않은 이메일입니다.");
+        }
+        if (!"local".equals(member.getProvider())) {
+            // 소셜 계정이면 여기서 차단
+            return Ut.jsHistoryBack("F-2", "소셜 계정입니다. 소셜 로그인을 사용하세요.");
+        }
+
+        // 비밀번호 검증
+        if (Ut.isEmptyOrNull(member.getLoginPw()) || !passwordEncoder.matches(loginPw, member.getLoginPw())) {
+            return Ut.jsHistoryBack("F-3", "비밀번호가 일치하지 않습니다.");
+        }
+
+        // SecurityContext에 사용자 로그인 처리
+        MemberContext memberContext = new MemberContext(member);
+        Authentication auth = new UsernamePasswordAuthenticationToken(memberContext, null, memberContext.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        // 이동
         return "redirect:../home/main";
     }
 
@@ -212,7 +243,11 @@ public class MemberController {
     }
 
     @GetMapping("/myPage")
-    public String profile() {
+    public String profile(Model model) {
+
+        //Member member = memberService.getMemberById(rq.getLoginedMemberId());
+        //model.addAttribute("member", member);
+
         return "member/myPage";
     }
 
@@ -228,10 +263,36 @@ public class MemberController {
             return Ut.jsHistoryBack("F-1", "비번 써");
         }
 
-        if (rq.getLoginedMember().getLoginPw().equals(pw) == false) {
+        if (!rq.getLoginedMember().getLoginPw().equals(pw)) {
             return Ut.jsHistoryBack("F-2", "비번 틀림");
         }
 
         return Ut.jsReplace("S-1", Ut.f("비밀번호 확인 성공"), "modify");
+    }
+
+    @GetMapping("/doModify")
+    @ResponseBody
+    public String doModify(String loginPw, String name, String phoneNum, String email) {
+
+        // 비번은 안바꾸는거 가능(사용자) 비번 null 체크는 x
+        if (Ut.isEmptyOrNull(name)) {
+            return Ut.jsHistoryBack("F-3", "이름 입력 x");
+        }
+        if (Ut.isEmptyOrNull(phoneNum)) {
+            return Ut.jsHistoryBack("F-5", "전화번호 입력 x");
+        }
+        if (Ut.isEmptyOrNull(email)) {
+            return Ut.jsHistoryBack("F-6", "이메일 입력 x");
+        }
+
+        ResultData modifyRd;
+
+        if (Ut.isEmptyOrNull(loginPw)) {
+            modifyRd = memberService.modifyWithoutPw(rq.getLoginedMemberId(), name, phoneNum, email);
+        } else {
+            modifyRd = memberService.modify(rq.getLoginedMemberId(), loginPw, name, phoneNum, email);
+        }
+
+        return Ut.jsReplace(modifyRd.getResultCode(), modifyRd.getMsg(), "../member/myPage");
     }
 }

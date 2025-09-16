@@ -131,7 +131,7 @@ public interface DataSetRepository extends JpaRepository<DataSet, Long> {
         SELECT t.base_year_quarter_code, t.admin_dong_code, t.admin_dong_name, t.sum_store FROM (
             SELECT d.base_year_quarter_code, d.admin_dong_code, d.admin_dong_name, SUM(d.store_count) AS sum_store
             FROM data_set d
-            WHERE d.base_year_quarter_code = 20251
+            WHERE d.base_year_quarter_code = '20251'
             GROUP BY d.admin_dong_code
         ) AS t ORDER BY t.sum_store DESC LIMIT 1;
         """, nativeQuery = true)
@@ -145,18 +145,18 @@ public interface DataSetRepository extends JpaRepository<DataSet, Long> {
         SUM(d.monthly_sales_amount)
         FROM data_set d
         WHERE d.admin_dong_code = :adminDongCode
-        AND d.base_year_quarter_code = "20251";
+        AND d.base_year_quarter_code = '20251';
         """, nativeQuery = true)
     List<Object[]> findTotalFloatingPopulationAndMonthlySalesAmountByAdminDongCode(String adminDongCode);
 
     List<DataSet> findAllByAdminDongCodeAndServiceIndustryCodeAndBaseYearQuarterCode(String adminDongCode, String serviceIndustryCode, String baseYearQuarterCode);
 
     @Query(value = """
-                SELECT d.*
-                                                   FROM data_set d
-                                                   WHERE d.admin_dong_code = :emdCd
-                                                   GROUP BY d.base_year_quarter_code
-            ORDER BY d.base_year_quarter_code;
-            """, nativeQuery = true)
+        SELECT d.*
+        FROM data_set d
+        WHERE d.admin_dong_code = :emdCd
+        GROUP BY d.base_year_quarter_code
+        ORDER BY d.base_year_quarter_code;
+        """, nativeQuery = true)
     List<DataSet> findAllByAdminDongCodeGroupByBaseYearQuarterCode(String emdCd);
 }
