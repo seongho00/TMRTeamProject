@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>내 정보</title>
+
+    <!-- 커스텀 CSS -->
+    <link rel="stylesheet" th:href="@{/css/myPage.css}" />
+
+    <!-- FontAwesome 5 -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" />
+</head>
+<body>
+<!-- 상단 네비게이션 -->
+<div class="navbar-top">
+    <div class="title">
+        <h1>Profile</h1>
+    </div>
+    <ul>
+        <li>
+            <a href="#message">
+                <span class="icon-count">29</span>
+                <i class="fa fa-envelope fa-2x"></i>
+            </a>
+        </li>
+        <li>
+            <a href="#notification">
+                <span class="icon-count">59</span>
+                <i class="fa fa-bell fa-2x"></i>
+            </a>
+        </li>
+        <li>
+            <a th:href="@{/usr/member/logout}">
+                <i class="fa fa-sign-out-alt fa-2x"></i>
+            </a>
+        </li>
+    </ul>
+</div>
+
+<!-- 사이드 네비게이션 -->
+<div class="sidenav">
+    <div class="profile">
+        <!-- 프로필 이미지 -->
+        <img src="https://imdezcode.files.wordpress.com/2020/02/imdezcode-logo.png"
+             alt="profile" width="100" height="100" />
+
+        <!-- 이름 -->
+        <div class="name" th:text="${member != null ? member.name : '게스트'}">이름</div>
+        <div class="job">Member</div>
+    </div>
+
+    <div class="sidenav-url">
+        <div class="url">
+            <a href="#profile" class="active">Profile</a>
+            <hr align="center" />
+        </div>
+        <div class="url">
+            <a href="#settings">Settings</a>
+            <hr align="center" />
+        </div>
+    </div>
+</div>
+
+<!-- 메인 -->
+<div class="main">
+    <!-- 프로필 고정 정보 -->
+    <h2 id="profile">IDENTITY</h2>
+    <div class="card">
+        <div class="card-body">
+            <table>
+                <tbody>
+                <tr>
+                    <td>Provider</td>
+                    <td>:</td>
+                    <td th:text="${member.provider}">local</td>
+                </tr>
+                <tr>
+                    <td>Name</td>
+                    <td>:</td>
+                    <td th:text="${member.name}">–</td>
+                </tr>
+                <tr>
+                    <td>Email</td>
+                    <td>:</td>
+                    <td th:text="${member.email}">–</td>
+                </tr>
+                <tr>
+                    <td>Phone</td>
+                    <td>:</td>
+                    <td th:text="${member.phoneNum}">–</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 소셜 미디어 -->
+    <h2>SOCIAL MEDIA</h2>
+    <div class="card">
+        <div class="card-body">
+            <div class="social-media">
+                <span class="fa-stack fa-sm">
+                    <i class="fas fa-circle fa-stack-2x"></i>
+                    <i class="fab fa-facebook fa-stack-1x fa-inverse"></i>
+                </span>
+                <span class="fa-stack fa-sm">
+                    <i class="fas fa-circle fa-stack-2x"></i>
+                    <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                </span>
+                <span class="fa-stack fa-sm">
+                    <i class="fas fa-circle fa-stack-2x"></i>
+                    <i class="fab fa-instagram fa-stack-1x fa-inverse"></i>
+                </span>
+                <span class="fa-stack fa-sm">
+                    <i class="fas fa-circle fa-stack-2x"></i>
+                    <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 설정 -->
+    <h2 id="settings">SETTINGS</h2>
+
+    <!-- 로컬 회원: 비밀번호 제외 수정 -->
+    <div class="card" th:if="${member.provider == 'local'}">
+        <div class="card-body">
+            <form th:action="@{/usr/member/doModify}" method="post">
+                <input type="hidden" th:if="${_csrf != null}"
+                       th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <h3>기본 정보 수정</h3>
+                <div class="form-row">
+                    <label for="name_wo">이름</label>
+                    <input id="name_wo" name="name" type="text" th:value="${member.name}" />
+                </div>
+                <div class="form-row">
+                    <label for="email_wo">이메일</label>
+                    <input id="email_wo" name="email" type="email" th:value="${member.email}" />
+                </div>
+                <div class="form-row">
+                    <label for="phone_wo">전화번호</label>
+                    <input id="phone_wo" name="phoneNum" type="text" th:value="${member.phoneNum}" />
+                </div>
+                <button type="submit" class="btn-primary">저장</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 로컬 회원: 비밀번호 포함 수정 -->
+    <div class="card" th:if="${member.provider == 'local'}">
+        <div class="card-body">
+            <form th:action="@{/usr/member/doModify}" method="post">
+                <input type="hidden" th:if="${_csrf != null}"
+                       th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <h3>비밀번호 포함 수정</h3>
+                <div class="form-row">
+                    <label for="loginPw">새 비밀번호</label>
+                    <input id="loginPw" name="loginPw" type="password" placeholder="새 비밀번호" />
+                </div>
+                <div class="form-row">
+                    <label for="name_w">이름</label>
+                    <input id="name_w" name="name" type="text" th:value="${member.name}" />
+                </div>
+                <div class="form-row">
+                    <label for="email_w">이메일</label>
+                    <input id="email_w" name="email" type="email" th:value="${member.email}" />
+                </div>
+                <div class="form-row">
+                    <label for="phone_w">전화번호</label>
+                    <input id="phone_w" name="phoneNum" type="text" th:value="${member.phoneNum}" />
+                </div>
+                <button type="submit" class="btn-primary">저장</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
