@@ -47,7 +47,7 @@ public class SecurityConfig {
                         .antMatchers("/usr/home/notifications").hasAnyRole("USER", "ADMIN")
                         .antMatchers( // 여기에 막을 URL 적기
                                 "/usr/member/conditionalLogout",
-                                //"/usr/member/myPage",
+                                "/usr/member/myPage",
                                 "/usr/member/modify",
                                 "/usr/member/checkPw"
                         ).authenticated()
@@ -66,8 +66,10 @@ public class SecurityConfig {
                 .formLogin((login) -> login
                         .loginPage("/usr/member/joinAndLogin") // 사용자 정의 로그인 페이지
                         .loginProcessingUrl("/usr/member/doLogin")
+                        .usernameParameter("username")
+                        .passwordParameter("password")
                         .successHandler(loginSuccessHandler()) // 성공 핸들러
-                        .failureHandler(customFailureHandler())  // 여기가 핵심
+                        .failureHandler(customFailureHandler())  // 실패 핸들러
                         .permitAll()
                 )
                 .logout((logout) -> logout
