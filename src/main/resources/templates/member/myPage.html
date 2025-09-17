@@ -157,15 +157,15 @@
                                                 <tbody class="relative w-full">
                                                 <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
                                                     <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">사용자아이디</th>
-                                                    <td class="w-[calc(100% - 140px)] p-[10px]">sdfasdf</td>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]" th:text="${member.id != null ? member.id : '-'}">-</td>
                                                 </tr>
                                                 <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
                                                     <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">사용자성명</th>
-                                                    <td class="w-[calc(100% - 140px)] p-[10px]">홍길동</td>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]" th:text="${member.name != null ? member.name : '-' }">-</td>
                                                 </tr>
                                                 <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
                                                     <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">휴대전화번호</th>
-                                                    <td class="w-[calc(100% - 140px)] p-[10px]">010-####-####</td>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]" th:text="${member.phoneNum != null ? member.phoneNum : '-'}">-</td>
                                                 </tr>
                                                 <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
                                                     <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">SMS 수신 동의 여부</th>
@@ -173,7 +173,7 @@
                                                 </tr>
                                                 <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
                                                     <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">이메일</th>
-                                                    <td class="w-[calc(100% - 140px)] p-[10px]">####@abc.com</td>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]" th:text="${member.email != null ? member.email : '-'}">-</td>
                                                 </tr>
                                                 <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
                                                     <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">이메일 수신 동의 여부</th>
