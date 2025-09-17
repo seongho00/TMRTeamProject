@@ -1,6 +1,6 @@
 <header th:fragment="header" xmlns:th="http://www.thymeleaf.org">
 
-    <div class="w-full h-[80px] box-border align-top left-0 bg-white transition-all duration-300 border-b border-[#ccc] z-50">
+    <div class="relative w-full h-[80px] box-border bg-white transition-all duration-300 border-b border-[#ccc]">
         <div class="w-full h-[80px] flex items-start justify-between transition-all duration-300 z-50">
 
             <div class="w-[240px] h-[80px] flex justify-start items-center">
@@ -12,86 +12,84 @@
             </div>
 
             <nav class="w-[60%] h-[80px] flex text-center">
-                <ul class="relative flex justify-center items-center">
+                <ul class="relative flex justify-center items-center w-full h-full">
                     <!-- 상권 분석 -->
-                    <li class="relative flex justify-center items-center mx-[90px] h-[80px] group
+                    <li class="relative flex justify-center items-center mx-[90px] h-[80px] group/menu
                                after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
                                after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
                                hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
-                        <a class="inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer">
+                        <a class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer">
                             상권 분석
                         </a>
-                        <div class="fixed left-0 w-screen hidden top-[80px] h-[50px] bg-[#f5f6f9] border-t border-b border-[#ccc] group-hover:flex transition-all duration-200 z-50">
+                        <div class="fixed left-0 w-screen hidden top-[80px] h-[50px] bg-[#f5f6f9] border-t border-b border-[#ccc] group-hover/menu:flex transition-all duration-200 z-50">
                             <ul class="flex items-center ml-[680px] mr-auto">
                                 <li>
-                                    <a href="../map/commercialZoneMap" class="inline-block text-[14px] px-2 transition-all duration-300 hover:text-black">유동인구/매출</a>
+                                    <a href="../map/commercialZoneMap" class="inline-block text-[14px] font-light muted px-2 transition-all duration-300 hover:font-medium">유동인구/매출</a>
                                 </li>
                                 <li>
-                                    <a href="../map/riskMap" class="inline-block text-[14px] px-2 transition-all duration-300 hover:text-black">위험도분석</a>
+                                    <a href="../map/riskMap" class="inline-block text-[14px] font-light muted px-2 transition-all duration-300 hover:font-medium">위험도분석</a>
                                 </li>
                             </ul>
                         </div>
                     </li>
 
                     <!-- 등기부등본 -->
-                    <li class="relative group flex justify-center items-center mx-[90px] h-[80px]
-                               after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
-                               after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
-                               hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
-                        <a href="../property/upload" class="inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer">
+                    <li class="relative flex justify-center items-center mx-[90px] h-[80px] group
+                                   after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                                   after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                   hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                        <a href="../property/upload" class="inline-block w-auto flex-none leading-none subheading text-[16px]">
                             등기부등본
                         </a>
                     </li>
 
                     <!-- 상가 청약 -->
-                    <li class="relative flex justify-center items-center group/menu2 mx-[90px] h-[80px] after:content-['']
-                               after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                    <li class="relative flex mx-[90px] h-[80px] justify-center items-center group/menu2
+                               after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
                                after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
                                hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
-                        <a class="inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer">
+                        <a class="relative inline-block w-auto flex-none subheading text-[16px] leading-none cursor-pointer">
                             상가 청약
                         </a>
-                        <div class="fixed left-0 w-screen hidden top-[80px] h-[50px] bg-[#f5f6f9] border-t border-b border-[#ccc] group-hover/menu2:flex transition-all duration-200 z-50">
-                            <ul class="flex items-center ml-[1160px] mr-auto">
-                                <li>
-                                    <a href="../home/notifications" class="inline-block text-[14px] px-2 transition-all duration-300 hover:text-black">청약 알림</a>
+                        <div class="fixed top-[80px] left-0 right-0 hidden h-[50px] bg-[#f5f6f9] border-t border-b border-[#ccc] group-hover/menu2:flex transition-all duration-200 z-50">
+                            <ul class="relative flex items-center">
+                                <li class="ml-[1160px]">
+                                    <a href="../home/notifications" class="inline-block text-[14px] font-light muted px-2 transition-all duration-300 hover:font-medium">청약 알림</a>
                                 </li>
                                 <li>
-                                    <a href="../lh/notice" class="inline-block text-[14px] px-2 transition-all duration-300 hover:text-black">공고문</a>
+                                    <a href="../lh/notice" class="inline-block text-[14px] font-light muted px-2 transition-all duration-300 hover:font-medium">공고문</a>
                                 </li>
                             </ul>
                         </div>
                     </li>
 
                     <!-- 로그인 -->
-                    <li class="relative flex justify-center items-center w-[240px] h-[80px] group">
-                        <ul>
-                            <li th:if="${rq != null and rq.isLogout()}">
-                                <a href="../member/joinAndLogin"
-                                   class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer
+                    <li th:if="${rq != null and rq.isLogout()}" class="relative flex justify-center items-center mx-[90px] h-[80px] group">
+                        <a href="../member/joinAndLogin"
+                           class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer
                                               after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-[-32px]
                                               after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
                                               hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
-                                    로그인
-                                </a>
-                            </li>
-                            <li th:if="${rq != null and rq.isLogined()}">
-                                <a href="../member/conditionalLogout"
-                                   class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer
+                            로그인
+                        </a>
+                    </li>
+
+                    <!-- 로그아웃 -->
+                    <li th:if="${rq != null and rq.isLogined()}" class="relative flex justify-center items-center min-w-[150px] h-[80px] group">
+                        <a href="../member/conditionalLogout"
+                           class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer
                                               after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-[-32px]
                                               after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
                                               hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
-                                    로그아웃
-                                </a>
-                            </li>
-                        </ul>
+                            로그아웃
+                        </a>
                     </li>
 
                     <!-- 알림 아이콘 + 팝업 -->
-                    <li id="notif-wrapper" class="relative group" th:if="${rq != null and rq.isLogined()}">
+                    <li id="notif-wrapper" class="relative flex group w-[70px] h-[80px]" th:if="${rq != null and rq.isLogined()}">
                         <!-- 알림벨 버튼 -->
-                        <button id="notif-icon" type="button" class="cursor-pointer select-none w-[80px] h-[80px]">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24">
+                        <button id="notif-icon" type="button" class="cursor-pointer select-none w-auto h-[80px]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
                                 <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                                    stroke-width="2">
                                     <path stroke-dasharray="4" stroke-dashoffset="4" d="M12 3v2">
