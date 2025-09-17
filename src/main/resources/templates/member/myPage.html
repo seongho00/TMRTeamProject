@@ -8,14 +8,14 @@
 <header th:replace="common/mapheader :: header"></header>
 
 <!-- 전체 레이아웃 -->
-<div class="relative flex max-w-[1440px] mt-[50px] mx-auto pb-5">
+<div class="relative flex max-w-[1440px] mx-auto pb-5">
     <!-- 사이드 바 -->
     <div class="box-border">
-        <aside class="relative w-[330px] overflow-y-auto bg-white z-[1000]">
+        <aside class="relative w-[330px] overflow-y-auto">
             <div class="w-full h-full overflow-auto">
 
                 <!-- 사이드바 타이틀 -->
-                <div class="box-border pt-[50px]">
+                <div class="box-border pt-[100px]">
                     <h2 class="relative overflow-hidden w-[280px] min-h-[180px] text-center pt-[40px]
                                bg-gradient-to-r from-indigo-600 to-indigo-500
                                font-black text-[30px] rounded-lg text-white">
@@ -23,8 +23,7 @@
                     </h2>
                 </div>
                 <!-- 사이드바 메뉴 -->
-                <ul class="relative w-[250px] ml-[15px] rounded-[10px] bg-white -mt-[72px] min-h-screen
-                           z-[90] subheading">
+                <ul class="relative w-[250px] ml-[15px] rounded-[10px] bg-white -mt-[72px] z-[90] subheading">
                     <!-- 회원정보관리 -->
                     <li class="px-[20px] first:rounded-t-[10px] first:pt-[27px]">
                         <a class="relative block text-[16px] px-[10px] py-[16px] active:text-[#5c56d2]
@@ -35,42 +34,33 @@
 
                         <!-- 2차 메뉴 -->
                         <ul class="block bg-[#f5f6f9] my-[10px] py-[10px]">
-                            <li>
-                                <a href="#" class="block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
+                            <li class="relative px-[15px]">
+                                <a href="#" class="relative block px-3 py-2 text-[14px]
+                                                   before:content-[''] before:inline-block
+                                                   before:absolute before:left-0 before:top-[16px]
+                                                   before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
+                                                   before:rounded-full">
                                     기본정보
                                 </a>
                             </li>
-                            <li>
-                                <a href="#"
-                                   target="_self" class="group block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
-                                  <span class="inline-flex items-center gap-1">
+                            <li class="relative px-[15px]">
+                                <a href="#" target="_self"
+                                   class="relative block px-3 py-2 text-[14px]
+                                          before:content-[''] before:inline-block
+                                          before:absolute before:left-0 before:top-[16px]
+                                          before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
+                                          before:rounded-full">
                                     비밀번호변경
-                                    <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                      <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5z"/>
-                                    </svg>
-                                  </span>
                                 </a>
                             </li>
-                            <li>
-                                <a href="#"
-                                   target="_self" class="group block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
-                                  <span class="inline-flex items-center gap-1">
+                            <li class="relative px-[15px]">
+                                <a href="#" target="_self"
+                                   class="relative block px-3 py-2 text-[14px]
+                                          before:content-[''] before:inline-block
+                                          before:absolute before:left-0 before:top-[16px]
+                                          before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
+                                          before:rounded-full">
                                     회원탈퇴
-                                    <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                      <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5z"/>
-                                    </svg>
-                                  </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="#"
-                                   target="_self" class="group block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
-                                  <span class="inline-flex items-center gap-1">
-                                    개명신청
-                                    <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                      <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5z"/>
-                                    </svg>
-                                  </span>
                                 </a>
                             </li>
                         </ul>
@@ -98,6 +88,7 @@
     <div class="w-full max-w-[1090px] box-border">
         <main class="relative min-h-[120px] block">
             <div class="p-[20px] box-border text-[16px] min-h-[calc(100vh-130px)]">
+
                 <div class="relative w-full pt-[55px] pb-[20px] mb-[40px] border-b border-gray-300">
                     <h2 class="relative pb-[10px] text-black font-black text-[30px]">기본정보</h2>
                     <div class="relative flex items-center py-[10px] left-[5px]">
@@ -128,7 +119,89 @@
                         </ul>
                     </div>
                 </div>
-                <div></div>
+
+                <div class="relative w-full mx-auto mb-[10px] min-h-[260px]">
+                    <div class="relative box-border">
+
+                        <div class="flex flex-1 items-center flex-nowrap transition-colors duration-300 overflow-hidden">
+                            <div class="px-[30px] rounded-t-[10px] border-t border-l border-r border-[#b5b7ba] before:content-[''] before:block before:absolute before:w-full before:h-[2px] before:bg-white before:bottom-[-2px] before:z-[999]">
+                                <div class="absolute top-0 left-0 w-full h-full pointer-events-none rounded-inherit opacity-0"></div>
+                                <div class="relative py-1 text-[#00274e] min-w-[40px]">
+                                    <div class="leading-normal py-1">기본정보</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 선 -->
+                        <hr class="block text-[#b5b7ba]">
+
+                        <div class="relative pt-[30px] overflow-hidden">
+                            <div class="w-full h-full overflow-auto transition duration-300">
+                                <div class="w-full h-full p-4">
+                                    <div class="w-full p-0 border-0 clear-both">
+
+                                        <!-- 상단 영역 -->
+                                        <div class="relative flex min-h-[32px] mt-[5px] mb-[15px]">
+                                            <div class="w-auto float-left"></div>
+                                            <div class="absolute right-0 bottom-0 block text-right after:clear-both">
+                                                <button type="button"
+                                                        class="px-[10px] rounded mx-[3px] min-w-[70px] h-[30px] leading-7 border border-[#091a4d]">
+                                                    개인정보 표시
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- 폼 -->
+                                        <form class="relative flex flex-wrap border-t-2 border-[#091a4d] text-[14px]">
+                                            <table class="relative w-full mb-[10px]">
+                                                <tbody class="relative w-full">
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">사용자아이디</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]">hwshin1627</td>
+                                                </tr>
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">사용자성명</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]">신현우</td>
+                                                </tr>
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">휴대전화번호</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]">01022087215</td>
+                                                </tr>
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">SMS 수신 동의 여부</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]">예</td>
+                                                </tr>
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">이메일</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]">hwshin1627@naver.com</td>
+                                                </tr>
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">이메일 수신 동의 여부</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]">예</td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+
+                                            <!-- 버튼 영역 -->
+                                            <div class="relative w-full flex justify-end">
+                                                <button type="submit"
+                                                        class="px-[10px] text-white bg-[#091a4d] min-w-[85px] h-[50px] text-[15px] border border-[#b0b0b1] rounded-[5px] ml-[10px] subheading">
+                                                    수정
+                                                </button>
+                                                <button type="button"
+                                                        class="px-[10px] text-[#444] bg-white min-w-[85px] h-[50px] text-[15px] border border-[#b0b0b1] rounded-[5px] ml-[10px] subheading">
+                                                    목록
+                                                </button>
+                                            </div>
+                                        </form>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </div>
         </main>
     </div>
