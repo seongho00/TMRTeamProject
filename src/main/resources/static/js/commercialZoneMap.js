@@ -406,9 +406,10 @@ function openReport() {
                 if (data) {
 
 
-// 성별 데이터
+                    // 성별 데이터
                     const male = currentData.maleFloatingPopulation || 0;
                     const female = currentData.femaleFloatingPopulation || 0;
+                    const genderTotal = male + female;
 
                     if (window.genderFloatingChart instanceof Chart) {
                         window.genderFloatingChart.destroy();
@@ -434,11 +435,11 @@ function openReport() {
                             }]
                         },
                         options: {
-                            responsive: true,
+                            responsive: false,   // 자동 리사이즈 끔
+                            maintainAspectRatio: false, // 가로세로 비율 고정 해제
                             plugins: {
                                 title: {
-                                    display: true,
-                                    text: "성별 유동인구 비율"
+                                    display: false,
                                 },
                                 tooltip: {
                                     callbacks: {
@@ -457,12 +458,37 @@ function openReport() {
                         }
                     });
 
-                    const labels = [
+
+                    // ✅ 해석 div 채우기
+                    const genderAnalysis = document.getElementById("genderPopulationAnalysis");
+                    const malePercent = ((male / genderTotal) * 100).toFixed(1);
+                    const femalePercent = ((female / genderTotal) * 100).toFixed(1);
+
+                    const dominant = male > female ? "남성" : "여성";
+                    const dominantPercent = male > female ? malePercent : femalePercent;
+
+                    genderAnalysis.innerHTML = `
+                       <div class="flex absolute -top-[20px] left-2 font-bold bg-red-500 text-white rounded-lg px-3 py-2">
+                            <i class="fa-solid fa-chart-line"></i>
+                            &nbsp;
+                            <span>분석결과 해석</span>
+                        </div>
+                        <p>성별 유동인구는 
+                           <span class="font-bold text-blue-500">남성 ${malePercent}%</span>, 
+                           <span class="font-bold text-pink-500">여성 ${femalePercent}%</span>로 
+                           <span class="font-bold text-red-500">${dominant} 유동인구가 더 많습니다.</span>
+                        </p>
+                        <p><span class="font-bold text-red-500">${dominant}</span> 소비층을 주요 타깃으로 한 업종·마케팅 전략에 유리합니다.</p>
+                    `;
+
+
+                    // 시간대별 그래프
+                    const timeLabels = [
                         "00~06시", "06~11시", "11~14시",
                         "14~17시", "17~21시", "21~24시"
                     ];
 
-                    const values = [
+                    const timeValues = [
                         currentData.time00to06FloatingPopulation,
                         currentData.time06to11FloatingPopulation,
                         currentData.time11to14FloatingPopulation,
@@ -471,55 +497,94 @@ function openReport() {
                         currentData.time21to24FloatingPopulation
                     ];
 
+                    // ✅ 합계 구하기
+                    const timeTotal = timeValues.reduce((a, b) => a + b, 0);
+
+                    // 퍼센트 변환
+                    const timePercentValues = timeValues.map(v => timeTotal > 0 ? (v / timeTotal * 100) : 0);
+
+
+                    // ✅ 최고값 찾기
+                    const timeMaxValue = Math.max(...timePercentValues);
+                    const timeMaxIndex = timePercentValues.indexOf(timeMaxValue);
+                    const maxTimeLabel = timeLabels[timeMaxIndex];
+
+                    const minTimeValue = Math.min(...timePercentValues);
+                    const minTimeIndex = timePercentValues.indexOf(minTimeValue);
+                    const minTimeLabel = timeLabels[minTimeIndex];
+
+
+                    // ✅ 색상 배열 (최고값만 빨강 강조)
+                    const timePointColors = timePercentValues.map((v, i) =>
+                        i === timeMaxIndex ? "rgba(239, 68, 68, 1)" : "rgba(37, 99, 235, 1)"
+                    );
+                    const timeBgColors = timePercentValues.map((v, i) =>
+                        i === timeMaxIndex ? "rgba(239, 68, 68, 0.6)" : "rgba(37, 99, 235, 0.3)"
+                    );
+
+                    // ✅ Y축 최대값 = 최고값 + 2 (최소 100 제한 제거)
+                    const timeYMax = Math.ceil(timeMaxValue + 2);
+
                     // ✅ 기존 차트 있으면 안전하게 제거
                     if (timeSalesChart instanceof Chart) {
                         timeSalesChart.destroy();
                     }
 
                     // 새 차트 생성
-                    const ctx = document.getElementById("timeSalesChart").getContext("2d");
-                    timeSalesChart = new Chart(ctx, {
+                    const timeCtx = document.getElementById("timeSalesChart").getContext("2d");
+                    window.timeSalesChart = new Chart(timeCtx, {
                         type: "line",
                         data: {
-                            labels: labels,
+                            labels: timeLabels,
                             datasets: [{
-                                label: "총 유동인구",
-                                data: values,
+                                label: "시간대별 유동인구 비율",
+                                data: timePercentValues,
                                 borderColor: "rgba(37, 99, 235, 1)",
-                                backgroundColor: "rgba(37, 99, 235, 0.3)",
-                                tension: 0.4,
-                                fill: true,
-                                pointRadius: 5,
-                                pointBackgroundColor: "rgba(37, 99, 235, 1)"
+                                backgroundColor: timeBgColors,
+                                tension: 0,
+                                fill: false,
+                                pointRadius: 6,
+                                pointBackgroundColor: timePointColors
                             }]
                         },
                         options: {
                             responsive: true,
                             plugins: {
                                 title: {
-                                    display: true,
-                                    text: "📊 시간대별 유동인구 추이"
+                                    display: false,
+                                    text: "📊 시간대별 유동인구 비율"
                                 },
                                 tooltip: {
                                     callbacks: {
                                         label: function (context) {
                                             return context.dataset.label + ": "
-                                                + context.raw.toLocaleString() + "원";
+                                                + context.raw.toFixed(1) + "%";
                                         }
+                                    }
+                                },
+                                datalabels: {
+                                    anchor: "end",
+                                    align: "top",
+                                    formatter: (value) => value.toFixed(1) + "%",
+                                    color: (ctx) => ctx.raw === timeMaxValue ? "#e11d48" : "#000",
+                                    font: {
+                                        weight: "bold"
                                     }
                                 }
                             },
                             scales: {
                                 y: {
                                     beginAtZero: true,
+                                    max: timeYMax,  // 최고값 + 2%
                                     ticks: {
                                         callback: function (value) {
-                                            return value.toLocaleString() + "명";
+                                            return value + "%";
                                         }
                                     }
                                 }
                             }
-                        }
+                        },
+                        plugins: [ChartDataLabels]
                     });
 
                     // 요일별 그래프
@@ -534,10 +599,37 @@ function openReport() {
                         currentData.sundayFloatingPopulation
                     ];
 
+                    // 합계 구하기
+                    const total = dayValues.reduce((a, b) => a + b, 0);
+
+                    // 퍼센트 값으로 변환
+                    const percentValues = dayValues.map(v => total > 0 ? (v / total * 100) : 0);
+
+                    // ✅ Y축 최대값 = 최고값 + 2 (최소 100 제한 제거)
+                    const dayYMax = Math.ceil(timeMaxValue + 2);
+
                     // 기존 차트 제거
                     if (window.weeklyPopulationChart instanceof Chart) {
                         window.weeklyPopulationChart.destroy();
                     }
+
+                    // 가장 큰 값 찾기
+                    const maxValue = Math.max(...percentValues);
+                    const maxIndex = percentValues.indexOf(maxValue);
+                    const maxDay = dayLabels[maxIndex];
+
+                    const minDayValue = Math.min(...percentValues);
+                    const minDayIndex = percentValues.indexOf(minDayValue);
+                    const minDayLabel = dayLabels[minDayIndex];
+
+
+                    const backgroundColors = percentValues.map(v =>
+                        v === maxValue ? "rgba(239, 68, 68, 0.8)" : "rgba(37, 99, 235, 0.7)"
+                    );
+                    const borderColors = percentValues.map(v =>
+                        v === maxValue ? "rgba(220, 38, 38, 1)" : "rgba(37, 99, 235, 1)"
+                    );
+
 
                     // Bar 차트 생성
                     const dayCtx = document.getElementById("weeklyPopulationChart").getContext("2d");
@@ -547,9 +639,9 @@ function openReport() {
                             labels: dayLabels,
                             datasets: [{
                                 label: "요일별 유동인구",
-                                data: dayValues,
-                                backgroundColor: "rgba(37, 99, 235, 0.7)", // 파랑
-                                borderColor: "rgba(37, 99, 235, 1)",
+                                data: percentValues,
+                                backgroundColor: backgroundColors,  // 배열 적용
+                                borderColor: borderColors,          // 배열 적용
                                 borderWidth: 1
                             }]
                         },
@@ -557,30 +649,62 @@ function openReport() {
                             responsive: true,
                             plugins: {
                                 title: {
-                                    display: true,
+                                    display: false,
                                     text: "📊 요일별 유동인구"
                                 },
                                 tooltip: {
                                     callbacks: {
-                                        label: dayCtx => dayCtx.dataset.label + ": " + dayCtx.raw.toLocaleString() + "명"
+                                        label: ctx => ctx.dataset.label + ": " + ctx.raw.toFixed(1) + "%"
+                                    }
+                                },
+                                datalabels: {
+                                    anchor: "end",
+                                    align: "end",
+                                    formatter: (value) => value.toFixed(1) + "%",
+                                    color: (ctx) => {
+                                        // 최고값은 흰 글씨로 표시, 나머지는 검정
+                                        return ctx.raw === maxValue ? "#fff" : "#000";
+                                    },
+                                    font: {
+                                        weight: "bold"
                                     }
                                 }
                             },
                             scales: {
                                 y: {
                                     beginAtZero: true,
+                                    max: dayYMax,
                                     ticks: {
-                                        callback: v => v.toLocaleString() + "명"
+                                        callback: v => v + "%"
                                     }
                                 }
                             }
-                        }
+                        },
+                        plugins: [ChartDataLabels]
                     });
+
+                    // 해설 div 업데이트
+                    const analysisDiv = document.getElementById("weeklyPopulationAnalysis");
+                    analysisDiv.innerHTML = `
+                        <div class="flex absolute -top-[20px] left-2 font-bold bg-red-500 text-white rounded-lg px-3 py-2">
+                            <i class="fa-solid fa-chart-line"></i>
+                            &nbsp;
+                            <span>분석결과 해석</span>
+                        </div>
+                        <p><span class="font-bold text-red-500">${maxDay}요일</span> (${maxValue.toFixed(1)}%)과 
+                        <span class="font-bold text-red-500">${maxTimeLabel}</span> (${timeMaxValue.toFixed(1)}%)에 
+                        유동인구가 가장 많습니다.</p>
+                    
+                        <p>반대로 <span class="font-bold text-blue-500">${minDayLabel}요일</span> 
+                        (${minDayValue.toFixed(1)}%)과 
+                        <span class="font-bold text-blue-500">${minTimeLabel}</span> 
+                        (${minTimeValue.toFixed(1)}%)에는 가장 적습니다.</p>
+                    `;
 
 
                     const rawData = getRawData(currentData);
 
-// visible 상태는 그대로 legend에서 관리
+                    // visible 상태는 그대로 legend에서 관리
                     const visible = {resident: true, workplace: true, floating: true};
                     const newData = calculatePercentages(rawData, visible);
 
@@ -671,9 +795,9 @@ function openReport() {
                                     ? ["20대", "30대", "40대", "50대", "60대+"]
                                     : ["10대", "20대", "30대", "40대", "50대", "60대+"],
                                 datasets: [
-                                    { label: "상주", data: newData.resident, backgroundColor: "rgba(59,130,246,0.7)" },
-                                    { label: "직장", data: newData.workplace, backgroundColor: "rgba(16,185,129,0.7)" },
-                                    { label: "유동", data: newData.floating, backgroundColor: "rgba(239,68,68,0.7)" }
+                                    {label: "상주", data: newData.resident, backgroundColor: "rgba(59,130,246,0.7)"},
+                                    {label: "직장", data: newData.workplace, backgroundColor: "rgba(16,185,129,0.7)"},
+                                    {label: "유동", data: newData.floating, backgroundColor: "rgba(239,68,68,0.7)"}
                                 ]
                             },
                             options: {
@@ -723,53 +847,77 @@ function openReport() {
                     }
 
 
-                    // ✅ 간단한 분석 로직
-                    function analyzePopulationByRatio(resident, workplace, floating) {
-                        const sum = (arr) => arr.reduce((a, b) => a + (b || 0), 0);
+                    const ageLabelsByAnalyze = ["20대", "30대", "40대", "50대", "60대+"];
 
-                        // 전체 합
-                        const totalResident = sum(resident);
-                        const totalWorkplace = sum(workplace);
-                        const totalFloating = sum(floating);
+                    // ✅ 10대 제외한 데이터만 사용
+                    const residentData = newData.resident;
+                    const workplaceData = newData.workplace;
+                    const floatingData = newData.floating;
 
-                        // 비율 계산
-                        const residentRatio = resident.map(v => totalResident ? (v / totalResident * 100).toFixed(1) : 0);
-                        const workplaceRatio = workplace.map(v => totalWorkplace ? (v / totalWorkplace * 100).toFixed(1) : 0);
-                        const floatingRatio = floating.map(v => totalFloating ? (v / totalFloating * 100).toFixed(1) : 0);
-
-                        // 주요 연령대 찾기
-                        const maxResidentIdx = residentRatio.indexOf(Math.max(...residentRatio));
-                        const maxWorkplaceIdx = workplaceRatio.indexOf(Math.max(...workplaceRatio));
-                        const maxFloatingIdx = floatingRatio.indexOf(Math.max(...floatingRatio));
-
-                        let analysis = [];
-
-                        analysis.push(`🏠 상주인구 비율은 <b>${ageLabels[maxResidentIdx]}</b>가 가장 많아 ${residentRatio[maxResidentIdx]}% 차지합니다.`);
-                        analysis.push(`💼 직장인구 비율은 <b>${ageLabels[maxWorkplaceIdx]}</b>가 가장 높아 ${workplaceRatio[maxWorkplaceIdx]}%입니다.`);
-                        analysis.push(`🚶 유동인구 비율은 <b>${ageLabels[maxFloatingIdx]}</b>가 가장 많아 ${floatingRatio[maxFloatingIdx]}%를 기록합니다.`);
-
-                        // 비교 분석
-                        if (maxResidentIdx !== maxFloatingIdx) {
-                            analysis.push(`👉 상주(${ageLabels[maxResidentIdx]})와 유동(${ageLabels[maxFloatingIdx]}) 인구의 주력 연령대가 다릅니다. 
-      거주민 타깃 업종과 방문객 타깃 업종을 분리해야 합니다.`);
-                        } else {
-                            analysis.push(`✅ 상주와 유동 모두 ${ageLabels[maxResidentIdx]} 비중이 높아, 동일 연령층을 핵심 고객으로 설정할 수 있습니다.`);
-                        }
-
-                        if (maxWorkplaceIdx === maxFloatingIdx) {
-                            analysis.push(`📈 직장과 유동 모두 ${ageLabels[maxFloatingIdx]} 중심이므로, 근무 인구가 소비 주도층과 겹칩니다.`);
-                        }
-
-                        // 세부 차이 강조
-                        analysis.push(`상주 ${ageLabels[maxResidentIdx]} 비율: ${residentRatio[maxResidentIdx]}%, 
-                 직장 ${ageLabels[maxWorkplaceIdx]} 비율: ${workplaceRatio[maxWorkplaceIdx]}%, 
-                 유동 ${ageLabels[maxFloatingIdx]} 비율: ${floatingRatio[maxFloatingIdx]}%.`);
-
-                        return analysis.join("<br>");
+                    // ✅ 각 그룹에서 최댓값 찾기
+                    function getMaxGroup(dataArr, labels) {
+                        let maxVal = -1;
+                        let maxIndex = -1;
+                        dataArr.forEach((v, i) => {
+                            if (v != null && v > maxVal) {
+                                maxVal = v;
+                                maxIndex = i;
+                            }
+                        });
+                        return { label: labels[maxIndex], value: maxVal };
                     }
 
-                    document.getElementById("populationAnalysis").innerHTML =
-                        analyzePopulationByRatio(rawData.resident, rawData.workplace, rawData.floating);
+                    const maxResident = getMaxGroup(residentData, ageLabelsByAnalyze);
+                    const maxWorkplace = getMaxGroup(workplaceData, ageLabelsByAnalyze);
+                    const maxFloating = getMaxGroup(floatingData, ageLabelsByAnalyze);
+
+                    function getAgeComment(ageLabel, value, type) {
+                        // type: "resident", "workplace", "floating"
+                        const percent = `${value}%`;
+
+                        const comments = {
+                            resident: {
+                                "20대": `상주인구는 20대(${percent})가 많아, 젊은 층 거주 기반이 강합니다.`,
+                                "30대": `상주인구는 30대(${percent})가 가장 많아, 가계와 직장 모두 균형 잡힌 소비층을 형성합니다.`,
+                                "40대": `상주인구는 40대(${percent})가 중심을 이루며, 안정적인 지역 수요를 뒷받침합니다.`,
+                                "50대": `상주인구는 50대(${percent})가 두드러져, 구매력이 높은 중장년층 기반이 강합니다.`,
+                                "60대+": `상주인구는 60대 이상(${percent})이 많아, 여가·생활편의 업종 수요가 강합니다.`
+                            },
+                            workplace: {
+                                "20대": `직장인구는 20대(${percent})가 우세해, 젊은 직장인 소비가 활발합니다.`,
+                                "30대": `직장인구는 30대(${percent})가 가장 많아, 평일 소비 주도층으로 작용합니다.`,
+                                "40대": `직장인구는 40대(${percent})가 높아, 가족·가계 기반의 평일 소비가 강합니다.`,
+                                "50대": `직장인구는 50대(${percent})가 많아, 안정적이고 보수적인 소비층이 중심입니다.`,
+                                "60대+": `직장인구는 60대 이상(${percent})이 높은 비중을 차지하며, 퇴직 연령대 소비가 일부 반영됩니다.`
+                            },
+                            floating: {
+                                "20대": `유동인구는 20대(${percent})가 가장 많아, 외부 방문 수요가 젊은 층 중심으로 형성됩니다.`,
+                                "30대": `유동인구는 30대(${percent})가 높아, 사회활동 연령대 방문이 활발합니다.`,
+                                "40대": `유동인구는 40대(${percent})가 두드러져, 가족 단위 외출·소비 수요가 강합니다.`,
+                                "50대": `유동인구는 50대(${percent})가 많아, 안정적인 중장년층 방문 수요가 중심입니다.`,
+                                "60대+": `유동인구는 60대 이상(${percent})이 많아, 전통시장·생활편의 방문 수요가 강합니다.`
+                            }
+                        };
+
+                        return comments[type][ageLabel];
+                    }
+
+                    // ✅ 해설 문구 생성
+                    let analysisHtml = `
+                        <div class="flex absolute -top-[20px] left-2 font-bold bg-red-500 text-white rounded-lg px-3 py-2">
+                            <i class="fa-solid fa-chart-line"></i>
+                            &nbsp;
+                            <span>분석결과 해석</span>
+                        </div>
+                      <p>${getAgeComment(maxResident.label, maxResident.value, "resident")}</p>
+                      <p>${getAgeComment(maxWorkplace.label, maxWorkplace.value, "workplace")}</p>
+                      <p>${getAgeComment(maxFloating.label, maxFloating.value, "floating")}</p>
+                      <p>따라서 <span class="font-bold text-red-600">${maxFloating.label}</span> 방문 수요, 
+                       <span class="font-bold text-green-600">${maxWorkplace.label}</span> 직장 수요, 
+                       <span class="font-bold text-blue-600">${maxResident.label}</span> 거주 수요가 공존하는 지역으로 평가됩니다.</p>
+                    `;
+
+                    document.getElementById("populationAnalysis").innerHTML = analysisHtml;
 
 
                     // DOM 업데이트
@@ -791,7 +939,6 @@ function openReport() {
 }
 
 function closeReport() {
-
 
     // 설명창 열기
     const $report = $(".report");
