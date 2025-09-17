@@ -72,13 +72,12 @@
         <div class="grid grid-cols-1 gap-10 md:grid-cols-2 xl:grid-cols-3">
             <!-- 카드 1 -->
             <article class="flex flex-col items-center">
-                <!-- 카드 썸네일(대신 일러스트/그래프 자리) -->
+                <!-- 카드 썸네일(일러스트 자리) -->
                 <div class="aspect-[16/10] w-full rounded-t-2xl bg-gradient-to-br from-blue-100 to-blue-200/60 grid place-items-center">
-                    <!-- 캔버스 느낌의 미니 도넛 -->
                     <div class="relative w-28 h-28 rounded-full"
                          style="background: conic-gradient(#2563eb 68%, #e5e7eb 0);">
                         <div class="absolute inset-3 rounded-full bg-white grid place-items-center">
-                            <span class="text-sm font-semibold text-gray-800">분석</span>
+                            <span class="text-sm font-semibold text-gray-800">RISK</span>
                         </div>
                     </div>
                 </div>
@@ -92,7 +91,9 @@
 
                     <!-- 하단 정보 배지 -->
                     <div class="mt-4 flex flex-wrap gap-2">
-                        <span class="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-1 text-xs text-gray-600 ring-1 ring-inset ring-gray-200">최근 분기: 2025 Q1</span>
+                        <span class="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-1 text-xs text-gray-600 ring-1 ring-inset ring-gray-200">
+                            최근 분기: 2025 1분기
+                        </span>
                     </div>
 
                     <!-- 버튼 -->
@@ -107,8 +108,8 @@
             <article class="flex flex-col items-center">
                 <!-- 카드 썸네일 -->
                 <div class="aspect-[16/10] w-full rounded-t-2xl bg-gradient-to-br from-yellow-100 to-yellow-200/60 grid place-items-center">
-                    <div>
-                    </div>
+                    <img src="http://map2.daum.net/map/imageservice?IW=357&IH=223&MX=495140&MY=1129705&SCALE=40&CX=495140&CY=1129712&service=open"
+                         class="w-full h-full rounded-t-2xl">
                 </div>
 
                 <!-- 본문 -->
@@ -121,11 +122,13 @@
 
                     <!-- 하단 정보 배지 -->
                     <div class="mt-4 flex flex-wrap gap-2">
-                        <span class="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-1 text-xs text-gray-600 ring-1 ring-inset ring-gray-200">최근 분기: 2025 Q1</span>
+                        <span class="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-1 text-xs text-gray-600 ring-1 ring-inset ring-gray-200">
+                            최근 분기: 2025 1분기
+                        </span>
                     </div>
 
                     <!-- 버튼 -->
-                    <button type="button" onclick="location.href='../map/riskMap'"
+                    <button type="button" onclick="location.href='../map/commercialZoneMap'"
                             class="mt-4 rounded bg-gray-200 px-4 py-2 text-sm text-gray-800 hover:bg-gray-300">
                         자세히 보기
                     </button>
@@ -163,12 +166,12 @@
             const meta = chart.getDatasetMeta(0);
             if (!meta || !meta.data || !meta.data[0]) return;
 
-            const { x, y } = meta.data[0];     // 도넛 중심 좌표
-            const { ctx } = chart;
+            const {x, y} = meta.data[0];     // 도넛 중심 좌표
+            const {ctx} = chart;
 
             // 플러그인 옵션 읽기 (옵션이 없으면 기본값)
             const opts = chart.options?.plugins?.centerText || {};
-            const sub  = String(opts.sub ?? '');
+            const sub = String(opts.sub ?? '');
             const main = String(opts.main ?? '');
 
             ctx.save();
@@ -227,7 +230,7 @@
                 maintainAspectRatio: false, // 부모 w/h를 따르게
                 cutout: '70%',
                 plugins: {
-                    legend: { display: false },
+                    legend: {display: false},
                     tooltip: {
                         callbacks: {
                             // 퍼센트 표기
@@ -248,7 +251,7 @@
 
     // 7) DOM 로드 후 실제로 3개 차트 렌더링
     document.addEventListener('DOMContentLoaded', () => {
-        const footEl  = document.getElementById('footChart');
+        const footEl = document.getElementById('footChart');
         const salesEl = document.getElementById('salesChart');
         const storeEl = document.getElementById('storeChart');
 
@@ -291,5 +294,6 @@
 </script>
 
 <footer th:replace="common/footer::footer"></footer>
+
 </body>
 </html>
