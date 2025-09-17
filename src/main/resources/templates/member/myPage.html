@@ -11,64 +11,56 @@
 <div class="relative flex max-w-[1440px] mx-auto pb-5">
     <!-- 사이드 바 -->
     <div class="box-border">
-        <aside class="relative w-[330px] overflow-y-auto bg-white z-[1000]">
+        <aside class="relative w-[330px] overflow-y-auto">
             <div class="w-full h-full overflow-auto">
 
                 <!-- 사이드바 타이틀 -->
-                <div class="box-border pt-[50px]">
+                <div class="box-border pt-[100px]">
                     <h2 class="relative overflow-hidden w-[280px] min-h-[180px] text-center pt-[40px]
-                               bg-[linear-gradient(90deg,rgb(0,123,230)_0%,rgb(64,93,193)_69%,rgb(85,82,180)_100%)]
-                               font-extrabold text-[30px] rounded-lg text-white">
+                               bg-gradient-to-r from-indigo-600 to-indigo-500
+                               font-black text-[30px] rounded-lg text-white">
                         마이페이지
                     </h2>
                 </div>
                 <!-- 사이드바 메뉴 -->
-                <ul class="relative w-[250px] ml-[15px] rounded-[10px] bg-white -mt-[72px] min-h-screen
-                           z-[90] subheading">
+                <ul class="relative w-[250px] ml-[15px] rounded-[10px] bg-white -mt-[72px] z-[90] subheading">
                     <!-- 회원정보관리 -->
                     <li class="px-[20px] first:rounded-t-[10px] first:pt-[27px]">
-                        <a class="relative block text-[16px] px-[10px] py-[16px] active:text-[#5552b4]">
+                        <a class="relative block text-[16px] px-[10px] py-[16px] active:text-[#5c56d2]
+                                  after:content-[''] after:absolute after:bottom-0 after:left-0
+                                  after:w-full after:h-[2px] after:bg-[#5c56d2]">
                             회원정보관리
                         </a>
 
                         <!-- 2차 메뉴 -->
                         <ul class="block bg-[#f5f6f9] my-[10px] py-[10px]">
-                            <li>
-                                <a href="#" class="block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
+                            <li class="relative px-[15px]">
+                                <a href="#" class="relative block px-3 py-2 text-[14px]
+                                                   before:content-[''] before:inline-block
+                                                   before:absolute before:left-0 before:top-[16px]
+                                                   before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
+                                                   before:rounded-full">
                                     기본정보
                                 </a>
                             </li>
-                            <li>
-                                <a href="https://sso.sbiz24.kr/#/memPwChng?returnUrl=https%3A%2F%2Fwww.sbiz24.kr%2F%23%2Fmypage%2Fmem%2FmemInfoChng"
-                                   target="_self" class="group block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
-                                  <span class="inline-flex items-center gap-1">
+                            <li class="relative px-[15px]">
+                                <a href="#" target="_self"
+                                   class="relative block px-3 py-2 text-[14px]
+                                          before:content-[''] before:inline-block
+                                          before:absolute before:left-0 before:top-[16px]
+                                          before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
+                                          before:rounded-full">
                                     비밀번호변경
-                                    <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                      <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5z"/>
-                                    </svg>
-                                  </span>
                                 </a>
                             </li>
-                            <li>
-                                <a href="https://sso.sbiz24.kr/#/memWhdwl?returnUrl=https%3A%2F%2Fwww.sbiz24.kr%2F%23%2Fmypage%2Fmem%2FmemInfoChng"
-                                   target="_self" class="group block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
-                                  <span class="inline-flex items-center gap-1">
+                            <li class="relative px-[15px]">
+                                <a href="#" target="_self"
+                                   class="relative block px-3 py-2 text-[14px]
+                                          before:content-[''] before:inline-block
+                                          before:absolute before:left-0 before:top-[16px]
+                                          before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
+                                          before:rounded-full">
                                     회원탈퇴
-                                    <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                      <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5z"/>
-                                    </svg>
-                                  </span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="https://sso.sbiz24.kr/#/memNmChng?returnUrl=https%3A%2F%2Fwww.sbiz24.kr%2F%23%2Fmypage%2Fmem%2FmemInfoChng"
-                                   target="_self" class="group block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
-                                  <span class="inline-flex items-center gap-1">
-                                    개명신청
-                                    <svg class="h-4 w-4 text-gray-400 group-hover:text-gray-600" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                      <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"/><path d="M5 5h5V3H3v7h2V5z"/>
-                                    </svg>
-                                  </span>
                                 </a>
                             </li>
                         </ul>
@@ -81,7 +73,7 @@
                         </a>
                         <ul class="mt-2 space-y-1 pl-3">
                             <li>
-                                <a href="#/mypage/bmk" class="block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
+                                <a href="#" class="block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
                                     관심일정
                                 </a>
                             </li>
@@ -90,6 +82,128 @@
                 </ul>
             </div>
         </aside>
+    </div>
+
+    <!-- 마이페이지 메인 -->
+    <div class="w-full max-w-[1090px] box-border">
+        <main class="relative min-h-[120px] block">
+            <div class="p-[20px] box-border text-[16px] min-h-[calc(100vh-130px)]">
+
+                <div class="relative w-full pt-[55px] pb-[20px] mb-[40px] border-b border-gray-300">
+                    <h2 class="relative pb-[10px] text-black font-black text-[30px]">기본정보</h2>
+                    <div class="relative flex items-center py-[10px] left-[5px]">
+                        <svg class="mr-1" xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 640 640">
+                            <!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                            <path d="M298.2 72.6C310.5 61.2 329.5 61.2 341.7 72.6L432 156.3L432 144C432 126.3 446.3 112 464 112L496 112C513.7 112 528 126.3 528 144L528 245.5L565.8 280.6C575.4 289.6 578.6 303.5 573.8 315.7C569 327.9 557.2 336 544 336L528 336L528 512C528 547.3 499.3 576 464 576L176 576C140.7 576 112 547.3 112 512L112 336L96 336C82.8 336 71 327.9 66.2 315.7C61.4 303.5 64.6 289.5 74.2 280.6L298.2 72.6zM280 288C266.7 288 256 298.7 256 312L256 392C256 405.3 266.7 416 280 416L360 416C373.3 416 384 405.3 384 392L384 312C384 298.7 373.3 288 360 288L280 288z"
+                                  fill="#767676"/>
+                        </svg>
+                        <ul class="w-full h-full">
+                            <li class="inline-block text-[14px] text-[#767676]">
+                                <a href="/usr/home/main">홈</a>
+                            </li>
+                            <li class="inline-block text-[14px] text-[#767676]">
+                                <i class="fa-solid fa-caret-right before:inline-block before:w-[25px] before:h-[12px]
+                                          before:text-center before:px-[5px] text-[14px]"></i>
+                                <a href="/usr/member/myPage">마이페이지</a>
+                            </li>
+                            <li class="inline-block text-[14px] text-[#767676]">
+                                <i class="fa-solid fa-caret-right before:inline-block before:w-[25px] before:h-[12px]
+                                          before:text-center before:px-[5px] text-[14px]"></i>
+                                <a href="#">회원정보관리</a>
+                            </li>
+                            <li class="inline-block text-[14px] text-[#767676]">
+                                <i class="fa-solid fa-caret-right before:inline-block before:w-[25px] before:h-[12px]
+                                          before:text-center before:px-[5px] text-[14px]"></i>
+                                <a href="#">기본정보</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="relative w-full mx-auto mb-[10px] min-h-[260px]">
+                    <div class="relative box-border">
+
+                        <div class="flex flex-1 items-center flex-nowrap transition-colors duration-300 overflow-hidden">
+                            <div class="px-[30px] rounded-t-[10px] border-t border-l border-r border-[#b5b7ba] before:content-[''] before:block before:absolute before:w-full before:h-[2px] before:bg-white before:bottom-[-2px] before:z-[999]">
+                                <div class="absolute top-0 left-0 w-full h-full pointer-events-none rounded-inherit opacity-0"></div>
+                                <div class="relative py-1 text-[#00274e] min-w-[40px]">
+                                    <div class="leading-normal py-1">기본정보</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 선 -->
+                        <hr class="block text-[#b5b7ba]">
+
+                        <div class="relative pt-[30px] overflow-hidden">
+                            <div class="w-full h-full overflow-auto transition duration-300">
+                                <div class="w-full h-full p-4">
+                                    <div class="w-full p-0 border-0 clear-both">
+
+                                        <!-- 상단 영역 -->
+                                        <div class="relative flex min-h-[32px] mt-[5px] mb-[15px]">
+                                            <div class="w-auto float-left"></div>
+                                            <div class="absolute right-0 bottom-0 block text-right after:clear-both">
+                                                <button type="button"
+                                                        class="px-[10px] rounded mx-[3px] min-w-[70px] h-[30px] leading-7 border border-[#091a4d]">
+                                                    개인정보 표시
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- 폼 -->
+                                        <form class="relative flex flex-wrap border-t-2 border-[#091a4d] text-[14px]">
+                                            <table class="relative w-full mb-[10px]">
+                                                <tbody class="relative w-full">
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">사용자아이디</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]">sdfasdf</td>
+                                                </tr>
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">사용자성명</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]">홍길동</td>
+                                                </tr>
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">휴대전화번호</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]">010-####-####</td>
+                                                </tr>
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">SMS 수신 동의 여부</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]">아니오</td>
+                                                </tr>
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">이메일</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]">####@abc.com</td>
+                                                </tr>
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">이메일 수신 동의 여부</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]">예</td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+
+                                            <!-- 버튼 영역 -->
+                                            <div class="relative w-full flex justify-end">
+                                                <button type="submit"
+                                                        class="px-[10px] text-white bg-[#091a4d] min-w-[85px] h-[50px] text-[15px] border border-[#b0b0b1] rounded-[5px] ml-[10px] subheading">
+                                                    수정
+                                                </button>
+                                                <button type="button"
+                                                        class="px-[10px] text-[#444] bg-white min-w-[85px] h-[50px] text-[15px] border border-[#b0b0b1] rounded-[5px] ml-[10px] subheading">
+                                                    목록
+                                                </button>
+                                            </div>
+                                        </form>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 </div>
 
