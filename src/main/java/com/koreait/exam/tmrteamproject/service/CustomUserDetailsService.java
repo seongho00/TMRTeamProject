@@ -1,6 +1,7 @@
 package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.repository.MemberRepository;
+import com.koreait.exam.tmrteamproject.security.MemberContext;
 import com.koreait.exam.tmrteamproject.vo.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -29,10 +30,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         }
 
         // 로그인 시 사용할 UserDetails 객체 반환
-        return org.springframework.security.core.userdetails.User
-                .withUsername(member.getEmail())
-                .password(member.getLoginPw())
-                .roles("USER")  // 또는 member.getRole()로 권한 가져오기
-                .build();
+        // MemberContext로 갈 수 있도록 변경
+        return new MemberContext(member);
     }
 }

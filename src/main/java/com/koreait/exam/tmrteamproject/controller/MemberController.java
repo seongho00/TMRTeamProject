@@ -89,7 +89,6 @@ public class MemberController {
     }
 
     @PostMapping("/doLogin")
-    @ResponseBody
     public String doLogin(@RequestParam String email, @RequestParam String loginPw) {
 
         Member member = memberService.getMemberByProviderAndEmail("local", email);
@@ -245,8 +244,8 @@ public class MemberController {
     @GetMapping("/myPage")
     public String profile(Model model) {
 
-        //Member member = memberService.getMemberById(rq.getLoginedMemberId());
-        //model.addAttribute("member", member);
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
+        model.addAttribute("member", member);
 
         return "member/myPage";
     }
