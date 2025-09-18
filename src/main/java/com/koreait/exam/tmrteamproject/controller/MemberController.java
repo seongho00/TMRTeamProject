@@ -292,9 +292,9 @@ public class MemberController {
 
     @PostMapping("/doModify")
     @ResponseBody
-    public String doModify(String loginPw, String name, String phoneNum) {
+    public String doModify(String name, String phoneNum) {
 
-        // 비번은 안바꾸는거 가능(사용자) 비번 null 체크는 x
+        // 사용자 정보 수정
         if (Ut.isEmptyOrNull(name)) {
             return Ut.jsHistoryBack("F-3", "이름 입력 x");
         }
