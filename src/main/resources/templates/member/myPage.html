@@ -35,7 +35,7 @@
                         <!-- 2차 메뉴 -->
                         <ul class="block bg-[#f5f6f9] my-[10px] py-[10px]">
                             <li class="relative px-[15px]">
-                                <a href="#" class="relative block px-3 py-2 text-[14px]
+                                <a href="../member/myPage" class="relative block px-3 py-2 text-[14px]
                                                    before:content-[''] before:inline-block
                                                    before:absolute before:left-0 before:top-[16px]
                                                    before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
@@ -44,7 +44,7 @@
                                 </a>
                             </li>
                             <li class="relative px-[15px]">
-                                <a href="#" target="_self"
+                                <a href="../member/changePw" target="_self"
                                    class="relative block px-3 py-2 text-[14px]
                                           before:content-[''] before:inline-block
                                           before:absolute before:left-0 before:top-[16px]
@@ -144,9 +144,9 @@
                                         <div class="relative flex min-h-[32px] mt-[5px] mb-[15px]">
                                             <div class="w-auto float-left"></div>
                                             <div class="absolute right-0 bottom-0 block text-right after:clear-both">
-                                                <button type="button"
+                                                <button type="button" onclick="location.href='/usr/member/changePw'"
                                                         class="px-[10px] rounded mx-[3px] min-w-[70px] h-[30px] leading-7 border border-[#091a4d]">
-                                                    개인정보 표시
+                                                    비밀번호 변경
                                                 </button>
                                             </div>
                                         </div>
@@ -156,11 +156,15 @@
                                             <table class="relative w-full mb-[10px]">
                                                 <tbody class="relative w-full">
                                                 <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
-                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">사용자아이디</th>
-                                                    <td class="w-[calc(100% - 140px)] p-[10px]" th:text="${member.id != null ? member.id : '-'}">-</td>
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">로그인 방식</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]" th:text="${member.provider != null ? member.provider : '-'}">-</td>
                                                 </tr>
                                                 <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
-                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">사용자성명</th>
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">사용자 이메일</th>
+                                                    <td class="w-[calc(100% - 140px)] p-[10px]" th:text="${member.email != null ? member.email : '-'}">-</td>
+                                                </tr>
+                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">사용자 성명</th>
                                                     <td class="w-[calc(100% - 140px)] p-[10px]" th:text="${member.name != null ? member.name : '-' }">-</td>
                                                 </tr>
                                                 <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
@@ -169,14 +173,6 @@
                                                 </tr>
                                                 <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
                                                     <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">SMS 수신 동의 여부</th>
-                                                    <td class="w-[calc(100% - 140px)] p-[10px]">아니오</td>
-                                                </tr>
-                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
-                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">이메일</th>
-                                                    <td class="w-[calc(100% - 140px)] p-[10px]" th:text="${member.email != null ? member.email : '-'}">-</td>
-                                                </tr>
-                                                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
-                                                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">이메일 수신 동의 여부</th>
                                                     <td class="w-[calc(100% - 140px)] p-[10px]">예</td>
                                                 </tr>
                                                 </tbody>
@@ -184,7 +180,7 @@
 
                                             <!-- 버튼 영역 -->
                                             <div class="relative w-full flex justify-end">
-                                                <button type="submit"
+                                                <button type="button" onclick="location.href='/usr/member/modify'"
                                                         class="px-[10px] text-white bg-[#091a4d] min-w-[85px] h-[50px] text-[15px] border border-[#b0b0b1] rounded-[5px] ml-[10px] subheading">
                                                     수정
                                                 </button>
