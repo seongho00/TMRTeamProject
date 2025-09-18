@@ -1,41 +1,24 @@
 package com.koreait.exam.tmrteamproject.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.koreait.exam.tmrteamproject.service.AddressService;
 import com.koreait.exam.tmrteamproject.service.JobStatusService;
-import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.PropertyService;
 import com.koreait.exam.tmrteamproject.vo.AddressPickReq;
 import com.koreait.exam.tmrteamproject.vo.NormalizedAddress;
-import com.koreait.exam.tmrteamproject.vo.PropertyFile;
 import com.koreait.exam.tmrteamproject.vo.ResultData;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Address;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("usr/property")
@@ -45,7 +28,6 @@ public class PropertyController {
 
     private final PropertyService propertyService;
     private final AddressService addressService;
-    private final KakaoOAuthService kakaoOAuthService;
     private final JobStatusService jobStatusService;
 
     @GetMapping("/upload")
@@ -423,6 +405,4 @@ public class PropertyController {
         }
         return false;
     }
-
-
 }

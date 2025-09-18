@@ -1,20 +1,18 @@
-<!-- templates/member/modifyMyPage.html -->
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head th:replace="common/head :: head">
-    <meta charset="UTF-8" />
-    <title>내 정보 수정</title>
+    <meta charset="UTF-8">
+    <title>비밀번호 변경</title>
 </head>
 <body>
-<!-- 주석: 공통 헤더 프래그먼트 -->
 <header th:replace="common/mapHeader :: header"></header>
 
-<!-- 전체 레이아웃 -->
 <div class="relative flex max-w-[1440px] mx-auto pb-5">
     <!-- 사이드 바 -->
     <div class="box-border">
         <aside class="relative w-[330px] overflow-y-auto">
             <div class="w-full h-full overflow-auto">
+
                 <!-- 사이드바 타이틀 -->
                 <div class="box-border pt-[100px]">
                     <h2 class="relative overflow-hidden w-[280px] min-h-[180px] text-center pt-[40px]
@@ -23,18 +21,20 @@
                         마이페이지
                     </h2>
                 </div>
-
                 <!-- 사이드바 메뉴 -->
                 <ul class="relative w-[250px] ml-[15px] rounded-[10px] bg-white -mt-[72px] z-[90] subheading">
+                    <!-- 회원정보관리 -->
                     <li class="px-[20px] first:rounded-t-[10px] first:pt-[27px]">
                         <a class="relative block text-[16px] px-[10px] py-[16px] active:text-[#5c56d2]
                                   after:content-[''] after:absolute after:bottom-0 after:left-0
                                   after:w-full after:h-[2px] after:bg-[#5c56d2]">
                             회원정보관리
                         </a>
+
+                        <!-- 2차 메뉴 -->
                         <ul class="block bg-[#f5f6f9] my-[10px] py-[10px]">
                             <li class="relative px-[15px]">
-                                <a href="/usr/member/myPage" class="relative block px-3 py-2 text-[14px]
+                                <a href="#" class="relative block px-3 py-2 text-[14px]
                                                    before:content-[''] before:inline-block
                                                    before:absolute before:left-0 before:top-[16px]
                                                    before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
@@ -43,7 +43,8 @@
                                 </a>
                             </li>
                             <li class="relative px-[15px]">
-                                <a href="/usr/member/changePw" class="relative block px-3 py-2 text-[14px]
+                                <a href="#" target="_self"
+                                   class="relative block px-3 py-2 text-[14px]
                                           before:content-[''] before:inline-block
                                           before:absolute before:left-0 before:top-[16px]
                                           before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
@@ -52,7 +53,8 @@
                                 </a>
                             </li>
                             <li class="relative px-[15px]">
-                                <a href="/usr/member/withdraw" class="relative block px-3 py-2 text-[14px]
+                                <a href="#" target="_self"
+                                   class="relative block px-3 py-2 text-[14px]
                                           before:content-[''] before:inline-block
                                           before:absolute before:left-0 before:top-[16px]
                                           before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
@@ -63,20 +65,20 @@
                         </ul>
                     </li>
 
+                    <!-- 관심정보 -->
                     <li class="px-[20px]">
                         <a href="#" class="relative block text-[16px] px-[10px] py-[16px]">
                             관심정보
                         </a>
                         <ul class="mt-2 space-y-1 pl-3">
                             <li>
-                                <a href="/usr/scheduleInterest/list" class="block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
+                                <a href="#" class="block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
                                     관심일정
                                 </a>
                             </li>
                         </ul>
                     </li>
                 </ul>
-
             </div>
         </aside>
     </div>
@@ -86,72 +88,49 @@
         <main class="relative min-h-[120px] block">
             <div class="p-[20px] box-border text-[16px] min-h-[calc(100vh-130px)]">
 
-                <!-- 상단 브레드크럼/타이틀 -->
+                <!-- 타이틀 -->
                 <div class="relative w-full pt-[55px] pb-[20px] mb-[40px] border-b border-gray-300">
-                    <h2 class="relative pb-[10px] text-black font-black text-[30px]">기본정보 수정</h2>
-                    <div class="relative flex items-center py-[10px] left-[5px]">
-                        <svg class="mr-1" xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 640 640">
-                            <path d="M298.2 72.6C310.5 61.2 329.5 61.2 341.7 72.6L432 156.3L432 144C432 126.3 446.3 112 464 112L496 112C513.7 112 528 126.3 528 144L528 245.5L565.8 280.6C575.4 289.6 578.6 303.5 573.8 315.7C569 327.9 557.2 336 544 336L528 336L528 512C528 547.3 499.3 576 464 576L176 576C140.7 576 112 547.3 112 512L112 336L96 336C82.8 336 71 327.9 66.2 315.7C61.4 303.5 64.6 289.5 74.2 280.6L298.2 72.6zM280 288C266.7 288 256 298.7 256 312L256 392C256 405.3 266.7 416 280 416L360 416C373.3 416 384 405.3 384 392L384 312C384 298.7 373.3 288 360 288L280 288z"
-                                  fill="#767676"/>
-                        </svg>
-                        <ul class="w-full h-full">
-                            <li class="inline-block text-[14px] text-[#767676]">
-                                <a href="/usr/home/main">홈</a>
-                            </li>
-                            <li class="inline-block text-[14px] text-[#767676]">
-                                <i class="fa-solid fa-caret-right before:inline-block before:w-[25px] before:h-[12px]
-                                          before:text-center before:px-[5px] text-[14px]"></i>
-                                <a href="/usr/member/myPage">마이페이지</a>
-                            </li>
-                            <li class="inline-block text-[14px] text-[#767676]">
-                                <i class="fa-solid fa-caret-right before:inline-block before:w-[25px] before:h-[12px]
-                                          before:text-center before:px-[5px] text-[14px]"></i>
-                                <a href="#">기본정보 수정</a>
-                            </li>
-                        </ul>
-                    </div>
+                    <h2 class="relative pb-[10px] text-black font-black text-[30px]">비밀번호 변경</h2>
                 </div>
 
                 <!-- 수정 폼 -->
-                <!-- 주석: 컨트롤러가 개별 파라미터(loginPw, name, phoneNum, email)로 받으므로 th:object 없이 name만 맞춘다 -->
-                <form th:action="@{/usr/member/doModify}" method="post" class="relative pt-[30px] overflow-hidden">
+                <form th:action="@{/usr/member/doChangePw}" method="post" class="relative pt-[30px] overflow-hidden">
                     <table class="relative w-full mb-[10px] text-[14px] border-t-2 border-[#091a4d]">
                         <tbody class="relative w-full">
 
-                        <!-- 이메일: 읽기 전용 -->
+                        <!-- 현재 비밀번호 -->
                         <tr class="p-[10px] border-b border-[#dbdbdb]">
                             <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-bold text-[#091a4d]">
-                                사용자 이메일
+                                현재 비밀번호
                             </th>
                             <td class="w-[calc(100% - 140px)] p-[10px]">
-                                <!-- 주석: span으로 표시하고 hidden input으로 값 전송 -->
-                                <span th:text="${member.email}"></span>
-                                <input type="hidden" name="email" th:value="${member.email}"/>
+                                <input type="password" name="oldPw" placeholder="현재 비밀번호를 입력해주세요."
+                                       class="w-full rounded border px-3 py-2 outline-none focus:ring"
+                                       maxlength="100" required />
                             </td>
                         </tr>
 
-                        <!-- 이름 -->
+                        <!-- 새 비밀번호 -->
                         <tr class="p-[10px] border-b border-[#dbdbdb]">
                             <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-bold text-[#091a4d]">
-                                사용자 성명
+                                새 비밀번호
                             </th>
                             <td class="w-[calc(100% - 140px)] p-[10px]">
-                                <input type="text" name="name" th:value="${member.name}" placeholder="이름을 입력해줘"
+                                <input type="password" name="newPw" placeholder="새 비밀번호를 입력해주세요."
                                        class="w-full rounded border px-3 py-2 outline-none focus:ring"
-                                       maxlength="50" required />
+                                       maxlength="100" required />
                             </td>
                         </tr>
 
-                        <!-- 휴대전화번호 -->
+                        <!-- 새 비밀번호 확인 -->
                         <tr class="p-[10px] border-b border-[#dbdbdb]">
                             <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-bold text-[#091a4d]">
-                                휴대전화번호
+                                새 비밀번호 확인
                             </th>
                             <td class="w-[calc(100% - 140px)] p-[10px]">
-                                <input type="text" name="phoneNum" th:value="${member.phoneNum}" placeholder="010-1234-5678"
-                                       pattern="^[0-9\-]{10,13}$"
+                                <input type="password" name="newPwConfirm" placeholder="새 비밀번호를 다시 입력해주세요."
                                        class="w-full rounded border px-3 py-2 outline-none focus:ring"
-                                       maxlength="13" required />
+                                       maxlength="100" required />
                             </td>
                         </tr>
 
@@ -176,21 +155,7 @@
     </div>
 </div>
 
-<footer th:replace="common/footer :: footer"></footer>
+<footer th:replace="common/footer::footer"></footer>
 
-<!-- 간단 클라이언트 검증: 공백 트림 -->
-<script>
-    // 주석: 제출 전 공백 제거
-    document.addEventListener('DOMContentLoaded', function () {
-        var form = document.querySelector('form[th\\:action]');
-        if (!form) return;
-        form.addEventListener('submit', function () {
-            ['name','phoneNum','email'].forEach(function (n) {
-                var el = form.querySelector('[name="' + n + '"]');
-                if (el) el.value = el.value.trim();
-            });
-        });
-    });
-</script>
 </body>
 </html>
