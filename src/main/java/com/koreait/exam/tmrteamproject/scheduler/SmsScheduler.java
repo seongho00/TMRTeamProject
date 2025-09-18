@@ -27,7 +27,7 @@ public class SmsScheduler {
     private final ScheduleInterestRepository scheduleInterestRepository;
     private final MemberRepository memberRepository;
 
-    @Scheduled(cron = "0 0 10 * * *") // 시간설정
+    @Scheduled(cron = "30 0 10 * * *") // 시간설정
     public void checkAndSendSms() {
         LocalDate today = LocalDate.now();
 
@@ -70,8 +70,8 @@ public class SmsScheduler {
 
             if (msg != null && si.getIsActive() == 1) {
 
-                /* SNS 보내기 (전송 보유 토큰 무료 분 다 씀)
-                smsService.sendSms(phoneNum, msg); */
+                /* SNS 보내기 (전송 보유 토큰 무료 분 다 씀) */
+                smsService.sendSms(phoneNum, msg);
                 log.info("문자 전송 완료 -> {} / {}", phoneNum, msg);
             }
         }
