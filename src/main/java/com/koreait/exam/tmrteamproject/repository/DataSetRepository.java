@@ -18,9 +18,6 @@ public interface DataSetRepository extends JpaRepository<DataSet, Long> {
     List<String> findExistingKeys(@Param("keys") Collection<String> keys);
 
 
-    List<DataSet> findAllByAdminDongCodeAndServiceIndustryCode(String adminDongCode, String serviceIndustryCode);
-
-
     @Query(value = "SELECT * FROM data_set d " +
             "WHERE d.admin_dong_code = :emdCd " +
             "AND d.base_year_quarter_code = :quarter " +
