@@ -250,28 +250,49 @@ public class MemberController {
         return "member/myPage";
     }
 
-    @GetMapping("/checkPw")
-    public String checkPw() {
-        return "member/checkPw";
+    @GetMapping("/changePw")
+    public String checkPw(Model model) {
+
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
+        model.addAttribute("member", member);
+
+        return "member/changePw";
     }
 
-    @GetMapping("/doCheckPw")
+    // 비밀번호 변경 처리 (소셜 회원 거르기)
+    @PostMapping("/doChangePw")
     @ResponseBody
-    public String doCheckPw(String pw) {
-        if (Ut.isEmptyOrNull(pw)) {
-            return Ut.jsHistoryBack("F-1", "비번 써");
+    public String doChangePw(String oldPw, String newPw, String newPwConfirm) {
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
+
+        // 주석: 소셜 로그인 회원은 비밀번호 변경 금지 (컨트롤러 단 방어)
+        if (!"LOCAL".equalsIgnoreCase(member.getProvider())) {
+            return Ut.jsHistoryBack("F-SOC-1", "소셜 로그인 회원은 비밀번호를 변경할 수 없어");
         }
 
-        if (!rq.getLoginedMember().getLoginPw().equals(pw)) {
-            return Ut.jsHistoryBack("F-2", "비번 틀림");
-        }
+        if (Ut.isEmptyOrNull(oldPw)) return Ut.jsHistoryBack("F-1", "현재 비밀번호를 입력해줘");
+        if (Ut.isEmptyOrNull(newPw)) return Ut.jsHistoryBack("F-2", "새 비밀번호를 입력해줘");
+        if (Ut.isEmptyOrNull(newPwConfirm)) return Ut.jsHistoryBack("F-3", "새 비밀번호 확인을 입력해줘");
+        if (!newPw.equals(newPwConfirm)) return Ut.jsHistoryBack("F-4", "새 비밀번호가 서로 일치하지 않아");
 
-        return Ut.jsReplace("S-1", Ut.f("비밀번호 확인 성공"), "modify");
+        ResultData rd = memberService.changePassword(member.getId(), oldPw, newPw);
+        if (rd.isFail()) return Ut.jsHistoryBack(rd.getResultCode(), rd.getMsg());
+
+        return Ut.jsReplace("S-1", "비밀번호를 변경했어", "/usr/member/myPage");
     }
 
-    @GetMapping("/doModify")
+    @GetMapping("/modify")
+    public String showMyModify(Model model) {
+
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
+        model.addAttribute("member", member);
+
+        return "member/modifyMyPage";
+    }
+
+    @PostMapping("/doModify")
     @ResponseBody
-    public String doModify(String loginPw, String name, String phoneNum, String email) {
+    public String doModify(String loginPw, String name, String phoneNum) {
 
         // 비번은 안바꾸는거 가능(사용자) 비번 null 체크는 x
         if (Ut.isEmptyOrNull(name)) {
@@ -280,17 +301,10 @@ public class MemberController {
         if (Ut.isEmptyOrNull(phoneNum)) {
             return Ut.jsHistoryBack("F-5", "전화번호 입력 x");
         }
-        if (Ut.isEmptyOrNull(email)) {
-            return Ut.jsHistoryBack("F-6", "이메일 입력 x");
-        }
 
         ResultData modifyRd;
 
-        if (Ut.isEmptyOrNull(loginPw)) {
-            modifyRd = memberService.modifyWithoutPw(rq.getLoginedMemberId(), name, phoneNum, email);
-        } else {
-            modifyRd = memberService.modify(rq.getLoginedMemberId(), loginPw, name, phoneNum, email);
-        }
+        modifyRd = memberService.modifyWithoutPw(rq.getLoginedMemberId(), name, phoneNum);
 
         return Ut.jsReplace(modifyRd.getResultCode(), modifyRd.getMsg(), "../member/myPage");
     }
