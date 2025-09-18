@@ -13,8 +13,8 @@ public class LHCrawlerScheduler {
 
     private final CrawlExecService crawlExecService;
 
-    // 10시 00분 30초 실행
-    @Scheduled(cron = "30 0 10 * * *", zone = "Asia/Seoul")
+    // 10시 00분 01초 실행
+    @Scheduled(cron = "01 0 10 * * *", zone = "Asia/Seoul")
     public void runCrawlerAt100030() {
         log.info("[Scheduler] 10:00:30 크롤러 작업 시작");
         int exit = crawlExecService.runPythonOnce();
