@@ -45,8 +45,6 @@
         <section>
             <div class="flex items-center justify-between mb-2">
                 <span class="text-sm text-gray-600">업종 목록</span>
-                <button type="button" class="text-xs text-gray-500 hover:text-gray-800"
-                        onclick="clearUpjongSelection()">초기화</button>
             </div>
             <div id="upjongList" class="grid grid-cols-2 gap-2 max-h-56 overflow-auto border rounded-lg p-2 bg-gray-50">
                 <div th:if="${upjongNames.isEmpty()}" class="col-span-2 text-center text-gray-400 py-6 text-sm">
@@ -98,33 +96,6 @@
         </select>
     </li>
 </ul>
-
-<canvas id="myDonut" width="300" height="300"></canvas>
-
-<script>
-    const ctx = document.getElementById('myDonut').getContext('2d');
-
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['유동인구', '매출액', '업종 수'],
-            datasets: [{
-                data: [45, 30, 25], // 샘플 데이터
-                backgroundColor: ['#5c56d2', '#22c55e', '#f97316'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            cutout: '70%', // 도넛 구멍 크기
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-</script>
 
 <!-- 지도/업종 스크립트 -->
 <script type="text/javascript" th:src="@{/js/riskMap.js}"></script>
