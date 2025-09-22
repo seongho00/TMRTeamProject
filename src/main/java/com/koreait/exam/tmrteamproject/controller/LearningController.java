@@ -16,7 +16,7 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("usr/learn")
+@RequestMapping("/usr/learn")
 public class LearningController {
 
     @Autowired

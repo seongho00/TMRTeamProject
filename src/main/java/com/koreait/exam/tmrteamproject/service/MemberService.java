@@ -8,8 +8,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -96,5 +94,19 @@ public class MemberService {
         memberRepository.save(member);
 
         return ResultData.from("S-1", "비밀번호 변경 완료", "memberId", member.getId());
+    }
+
+    @Transactional
+    public void withdrawMemberWithPasswordCheck(Long memberId, String rawPw, PasswordEncoder encoder) {
+        Member member = getMemberById(memberId);
+
+        // 저장된 비밀번호가 null 이거나 매칭 실패 시 예외
+        String savedPw = member.getLoginPw();
+        if (savedPw == null || !encoder.matches(rawPw, savedPw)) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+
+        // 외래키 제약으로 삭제 실패 가능 시, 선행 정리 필요
+        memberRepository.delete(member);
     }
 }

@@ -21,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 @Controller
-@RequestMapping("usr/property")
+@RequestMapping("/usr/property")
 @Slf4j
 @RequiredArgsConstructor
 public class PropertyController {

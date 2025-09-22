@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("usr/sms")
+@RequestMapping("/usr/sms")
 @Slf4j
 @RequiredArgsConstructor
 public class SmsController {

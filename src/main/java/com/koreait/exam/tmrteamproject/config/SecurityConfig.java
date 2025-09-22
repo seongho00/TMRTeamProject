@@ -49,7 +49,8 @@ public class SecurityConfig {
                                 "/usr/member/conditionalLogout",
                                 "/usr/member/myPage",
                                 "/usr/member/modify",
-                                "/usr/member/changePw"
+                                "/usr/member/changePw",
+                                "/usr/member/withdraw"
                         ).authenticated()
                         .anyRequest().permitAll()
                 )

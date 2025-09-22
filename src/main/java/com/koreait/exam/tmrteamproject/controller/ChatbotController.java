@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.List;
 
 @Controller
-@RequestMapping("usr/chatbot")
+@RequestMapping("/usr/chatbot")
 @Slf4j
 @RequiredArgsConstructor
 public class ChatbotController {

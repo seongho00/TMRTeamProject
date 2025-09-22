@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-@RequestMapping("usr/home")
+@RequestMapping("/usr/home")
 @Slf4j
 @RequiredArgsConstructor
 public class UsrHomeController {

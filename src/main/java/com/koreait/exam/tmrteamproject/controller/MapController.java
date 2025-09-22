@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.List;
 
 @Controller
-@RequestMapping("usr/map")
+@RequestMapping("/usr/map")
 @Slf4j
 @RequiredArgsConstructor
 public class MapController {

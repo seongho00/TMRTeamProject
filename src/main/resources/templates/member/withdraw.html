@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head :: head">
+    <meta charset="UTF-8"/>
+    <title>회원탈퇴</title>
+</head>
+<body>
+<header th:replace="common/mapHeader :: header"></header>
+
+<div class="max-w-[1440px] mx-auto p-[30px] box-border">
+    <div class="w-full my-[30px] py-[25px] px-[55px]"></div>
+    <h3 class="mb-[5px] light-mode relative before:content-[''] before:inline-block before:w-[18px] before:h-[18px] before:mr-[4px] before:border-[5px] before:border-[#1976D2]">
+        회원탈퇴
+    </h3>
+    <div class="w-full p-0 clear-both">
+        <form class="relative" th:action="@{../member/withdraw}" method="post">
+            <table class="relative w-full mb-[10px]">
+                <tbody class="relative w-full">
+                <tr class="p-[10px] border-b border-[#dbdbdb] border-t-0 border-l-0 max-w-full">
+                    <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-Bold text-[#091a4d]">회원탈퇴 비밀번호 확인</th>
+                    <td class="block w-[calc(100% - 140px)] text-[14px]">
+                        <div class="flex w-full">
+                            <input type="password" id="loginPw" name="loginPw"
+                                   class="relative w-full min-h-[1px] rounded border focus:outline-none focus:ring focus:ring-indigo-300" />
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <!-- 버튼 -->
+            <div class="block relative text-center mt-[40px]">
+                <button type="submit" class="min-w-[85px] h-[50px] border border-[#091a4d] px-[20px] bg-[#091a4d] rounded-[5px] ml-[10px] text-white subheading cursor-pointer">
+                    회원탈퇴
+                </button>
+                <button type="button" onclick="history.back();"
+                        class="min-w-[85px] h-[50px] text-[15px] border border-[#b0b0b1] px-[20px] text-[#444] bg-white rounded-[5px] ml-[10px] subheading cursor-pointer">
+                    취소
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<footer th:replace="common/footer :: footer"></footer>
+</body>
+</html>

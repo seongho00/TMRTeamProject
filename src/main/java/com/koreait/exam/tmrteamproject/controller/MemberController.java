@@ -16,11 +16,14 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLEncoder;
@@ -29,7 +32,7 @@ import java.security.SecureRandom;
 import java.util.Map;
 
 @Controller
-@RequestMapping("usr/member")
+@RequestMapping("/usr/member")
 @Slf4j
 @RequiredArgsConstructor
 public class MemberController {
@@ -307,5 +310,27 @@ public class MemberController {
         modifyRd = memberService.modifyWithoutPw(rq.getLoginedMemberId(), name, phoneNum);
 
         return Ut.jsReplace(modifyRd.getResultCode(), modifyRd.getMsg(), "../member/myPage");
+    }
+
+    @GetMapping("/withdraw")
+    public String showWithdraw(Model model) {
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
+        model.addAttribute("member", member);
+        return "member/withdraw";
+    }
+
+    @PostMapping("/withdraw")
+    public String doWithdraw(@RequestParam String loginPw, HttpServletRequest request, HttpServletResponse response) {
+        Long memberId = rq.getLoginedMemberId();
+
+        // 비밀번호 검증 및 탈퇴
+        memberService.withdrawMemberWithPasswordCheck(memberId, loginPw, passwordEncoder);
+
+        // 로그아웃
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        new SecurityContextLogoutHandler().logout(request, response, auth);
+
+        String msg = UriUtils.encode("회원 탈퇴 되었습니다.", StandardCharsets.UTF_8);
+        return "redirect:../home/main?msg=" + msg;
     }
 }

@@ -293,6 +293,12 @@
     });
 </script>
 
+<!-- 알림창(alert)로 띄우고 싶으면 대신 이 스크립트 사용 (배너와 둘 중 하나만) -->
+<script th:if="${param.msg}" th:inline="javascript">
+    // 페이지 진입 시 1회 알림
+    alert([[${param.msg}]]);
+</script>
+
 <footer th:replace="common/footer::footer"></footer>
 
 </body>

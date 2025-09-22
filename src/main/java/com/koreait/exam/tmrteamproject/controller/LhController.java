@@ -16,7 +16,7 @@ import java.util.List;
 @Controller
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("usr/lh")
+@RequestMapping("/usr/lh")
 public class LhController {
 
     private final LhApplyInfoService lhApplyInfoService;
