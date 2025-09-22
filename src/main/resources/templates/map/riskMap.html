@@ -11,7 +11,7 @@
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=69544617df3febfc879cd18eed451ba3&libraries=services&autoload=false"></script>
 
 <!-- 지도 영역 -->
-<div id="map" class="w-full h-[1080px]"></div>
+<div id="map" class="w-full h-screen"></div>
 
 <!-- 좌측 패널 -->
 <aside class="absolute top-[160px] left-[40px] z-20 w-[420px] bg-white/95 backdrop-blur rounded-2xl border border-gray-200 shadow-xl overflow-hidden">
@@ -99,7 +99,6 @@
     </li>
 </ul>
 
-<canvas id="myDonut" width="300" height="300"></canvas>
 
 <script>
     const ctx = document.getElementById('myDonut').getContext('2d');
@@ -132,6 +131,5 @@
 <!-- 챗봇 불러오기 -->
 <div th:replace="chatbot/chat::chat"></div>
 
-<footer th:replace="common/footer :: footer"></footer>
 </body>
 </html>
