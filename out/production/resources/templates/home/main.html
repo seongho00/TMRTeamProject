@@ -1,5 +1,305 @@
-<h1>HOME</h1>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head::head">
+    <meta charset="UTF-8">
+</head>
+<body>
+<header th:replace="common/mainHeader::header"></header>
 
-<a href="../member/join">회원가입</a>
+<div class="relative w-full h-[440px] bg-[#5c56d2] text-white">
+    <div class="mx-auto max-w-[1600px] px-6 lg:px-10 py-10">
+        <div class="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-8 items-start">
+            <!-- 왼쪽 타이틀 -->
+            <div class="space-y-4">
+                <h1 class="text-2xl font-semibold leading-tight"
+                    th:text="${dashboard.getAdminDongName() != null ? dashboard.getAdminDongName() : '행정동 미지정'}"></h1>
+                <p class="text-lg font-semibold leading-tight"
+                   th:text="'기준 분기:' + ${dashboard.getBaseYearQuarterCode() != null ? dashboard.getBaseYearQuarterCode() : '분기 -'}"></p>
+                <p class="text-xs text-white/80">최근 분기의 최댓값 비교</p>
+            </div>
 
-<a href="../member/doLogout">로그아웃</a>
+            <!-- 카드 3개 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <!-- 유동인구 -->
+                <section class="rounded-2xl bg-white text-gray-900 p-6 lg:p-8">
+                    <div class="relative w-60 h-60 mx-auto">
+                        <canvas id="footChart"
+                                th:attr="data-percent=${dashboard.getFootPercent() != null ? dashboard.getFootPercent() : 0},
+                                data-value=${dashboard.getTotalFloatingPopulation() != null ? @fmt.peopleCompact(dashboard.getTotalFloatingPopulation()) : '-'}">
+                        </canvas>
+                    </div>
+                    <h3 class="mt-6 text-center text-lg font-semibold">유동인구</h3>
+                </section>
+
+                <!-- 평균 매출액 -->
+                <section class="rounded-2xl bg-white text-gray-900 p-6 lg:p-8">
+                    <div class="relative w-60 h-60 mx-auto">
+                        <canvas id="salesChart"
+                                th:attr="data-percent=${dashboard.getSalesPercent() != null ? dashboard.getSalesPercent() : 0},
+                                data-value=${dashboard.getMonthlySalesAmount() != null ? @fmt.krwCompact(dashboard.getMonthlySalesAmount()) : '-'}"></canvas>
+                    </div>
+                    <h3 class="mt-6 text-center text-lg font-semibold">평균 매출액</h3>
+                </section>
+
+                <!-- 업소수 -->
+                <section class="rounded-2xl bg-white text-gray-900 p-6 lg:p-8">
+                    <div class="relative w-60 h-60 mx-auto">
+                        <canvas id="storeChart"
+                                th:attr="data-percent=${dashboard.getStorPercent() != null ? dashboard.getStorPercent() : 0},
+                                data-value=${dashboard.getStoreCount() != null ? dashboard.getStoreCount() : '-'}"></canvas>
+                    </div>
+                    <h3 class="mt-6 text-center text-lg font-semibold">업종 수</h3>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="relative w-full bg-white">
+    <!-- 메인 섹션: 상권 분석 + 부동산 매물 카드 그리드 -->
+    <!-- Tailwind CSS 사용 가정 -->
+    <div class="mx-auto max-w-[1200px] px-6 py-16">
+
+        <!-- ===== 상단: 상권 분석하기 ===== -->
+        <header class="mb-10 text-center">
+            <!-- 제목 -->
+            <h2 class="text-3xl font-semibold tracking-tight">상권 분석하기</h2>
+            <!-- 부제목 -->
+            <p class="mt-2 text-sm text-gray-500">상세한 분석과 유용한 정보 보기</p>
+        </header>
+
+        <!-- 카드 3개 그리드 -->
+        <div class="grid grid-cols-1 gap-10 md:grid-cols-2 xl:grid-cols-3">
+            <!-- 카드 1 -->
+            <article class="flex flex-col items-center">
+                <!-- 카드 썸네일(일러스트 자리) -->
+                <div class="aspect-[16/10] w-full rounded-t-2xl bg-gradient-to-br from-blue-100 to-blue-200/60 grid place-items-center">
+                    <div class="relative w-28 h-28 rounded-full"
+                         style="background: conic-gradient(#2563eb 68%, #e5e7eb 0);">
+                        <div class="absolute inset-3 rounded-full bg-white grid place-items-center">
+                            <span class="text-sm font-semibold text-gray-800">RISK</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 본문 -->
+                <div class="w-full h-full p-6">
+                    <h3 class="text-xl font-semibold">위험도 분석</h3>
+                    <p class="mt-2 text-gray-600 leading-6">
+                        유동인구·매출 변동성·폐업률 지표로 상권 리스크를 점수화해서 보여주기!
+                    </p>
+
+                    <!-- 하단 정보 배지 -->
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-1 text-xs text-gray-600 ring-1 ring-inset ring-gray-200">
+                            최근 분기: 2025 1분기
+                        </span>
+                    </div>
+
+                    <!-- 버튼 -->
+                    <button type="button" onclick="location.href='../map/riskMap'"
+                            class="mt-4 rounded bg-gray-200 px-4 py-2 text-sm text-gray-800 hover:bg-gray-300">
+                        자세히 보기
+                    </button>
+                </div>
+            </article>
+
+            <!-- 카드 2 -->
+            <article class="flex flex-col items-center">
+                <!-- 카드 썸네일 -->
+                <div class="aspect-[16/10] w-full rounded-t-2xl bg-gradient-to-br from-yellow-100 to-yellow-200/60 grid place-items-center">
+                    <img src="http://map2.daum.net/map/imageservice?IW=357&IH=223&MX=495140&MY=1129705&SCALE=40&CX=495140&CY=1129712&service=open"
+                         class="w-full h-full rounded-t-2xl">
+                </div>
+
+                <!-- 본문 -->
+                <div class="w-full h-full p-6">
+                    <h3 class="text-xl font-semibold">지도 분석</h3>
+                    <p class="mt-2 text-gray-600 leading-6">
+                        유동인구·매출액을 행동별로 보여주기!<br>
+                        최근 분기 기준 비교도 가능!
+                    </p>
+
+                    <!-- 하단 정보 배지 -->
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="inline-flex items-center rounded-full bg-gray-50 px-2.5 py-1 text-xs text-gray-600 ring-1 ring-inset ring-gray-200">
+                            최근 분기: 2025 1분기
+                        </span>
+                    </div>
+
+                    <!-- 버튼 -->
+                    <button type="button" onclick="location.href='../map/commercialZoneMap'"
+                            class="mt-4 rounded bg-gray-200 px-4 py-2 text-sm text-gray-800 hover:bg-gray-300">
+                        자세히 보기
+                    </button>
+                </div>
+            </article>
+
+            <!-- 카드 3 -->
+            <article class="relative flex flex-col items-center">
+                <div class="absolute right-0 top-0">
+                    <span class="rounded-bl-2xl rounded-tr-2xl bg-gray-900/90 px-3 py-1 text-xs font-medium text-white">준비 중</span>
+                </div>
+
+                <div class="aspect-[16/10] w-full rounded-t-2xl bg-gradient-to-br from-gray-100 to-gray-200/60 grid place-items-center">
+                    <div class="h-10 w-10 rounded-xl bg-gray-300"></div>
+                </div>
+
+                <!-- 버튼 -->
+                <button type="button"
+                        class="mt-4 rounded bg-gray-200 px-4 py-2 text-sm text-gray-800 hover:bg-gray-300">
+                    자세히 보기
+                </button>
+            </article>
+        </div>
+    </div>
+</div>
+<!-- 챗봇 불러오기 -->
+<div th:replace="chatbot/chat::chat"></div>
+
+<script>
+    // 3) 중앙 텍스트 플러그인 정의 (Chart.js v4 호환)
+    //    플러그인 옵션은 options.plugins.centerText 에서 읽는다.
+    const CenterTextPlugin = {
+        id: 'centerText',
+        afterDraw(chart, args, pluginOptions) {
+            const meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data || !meta.data[0]) return;
+
+            const {x, y} = meta.data[0];     // 도넛 중심 좌표
+            const {ctx} = chart;
+
+            // 플러그인 옵션 읽기 (옵션이 없으면 기본값)
+            const opts = chart.options?.plugins?.centerText || {};
+            const sub = String(opts.sub ?? '');
+            const main = String(opts.main ?? '');
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#111827';
+
+            // 상단: 소제목
+            ctx.globalAlpha = 0.72;
+            ctx.font = '12px sans-serif';
+            ctx.fillText(sub, x, y - 10);
+
+            // 중앙: 메인 값
+            ctx.globalAlpha = 1;
+            ctx.font = '700 16px sans-serif';
+            ctx.fillText(main, x, y + 12);
+
+            ctx.restore();
+        }
+    };
+
+    // 4) 플러그인 전역 등록 (각 차트 config에 plugins 배열 안 넣어도 됨)
+    Chart.register(CenterTextPlugin);
+
+    // 5) 퍼센트 안전 처리
+    function clampPercent(p) {
+        const v = Number(p);
+        if (!isFinite(v)) return 0;
+        return Math.max(0, Math.min(100, v));
+    }
+
+    // 6) 공통 초기화 함수
+    function initChart(canvasId, label, percent, value, color, subLabel) {
+        const el = document.getElementById(canvasId);
+        if (!el) return;
+
+        const p = clampPercent(percent);
+
+        // 데이터 구성
+        const data = {
+            labels: ['현재', '나머지'],
+            datasets: [{
+                label,
+                data: [p, 100 - p],
+                backgroundColor: [color, '#e5e7eb'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        };
+
+        // 구성: 중앙 텍스트는 options.plugins.centerText 로 전달
+        const config = {
+            type: 'doughnut',
+            data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // 부모 w/h를 따르게
+                cutout: '70%',
+                plugins: {
+                    legend: {display: false},
+                    tooltip: {
+                        callbacks: {
+                            // 퍼센트 표기
+                            label: (ctx) => `${ctx.label}: ${ctx.parsed.toFixed(0)}%`
+                        }
+                    },
+                    // 여기서 플러그인 옵션 제공
+                    centerText: {
+                        sub: subLabel, // 예: '분기별 평균' 또는 '업종 수'
+                        main: value    // 예: '12.3만명', '5.1억원', '123개'
+                    }
+                }
+            }
+        };
+
+        new Chart(el.getContext('2d'), config);
+    }
+
+    // 7) DOM 로드 후 실제로 3개 차트 렌더링
+    document.addEventListener('DOMContentLoaded', () => {
+        const footEl = document.getElementById('footChart');
+        const salesEl = document.getElementById('salesChart');
+        const storeEl = document.getElementById('storeChart');
+
+        // 유동인구: 중앙에 "분기별 평균" + 값
+        if (footEl) {
+            initChart(
+                'footChart',
+                '유동인구',
+                footEl.dataset.percent || 0,
+                footEl.dataset.value || '-',
+                '#5c56d2',
+                '분기별 평균'
+            );
+        }
+
+        // 평균 매출액: 중앙에 "분기별 평균" + 값
+        if (salesEl) {
+            initChart(
+                'salesChart',
+                '평균 매출액',
+                salesEl.dataset.percent || 0,
+                salesEl.dataset.value || '-',
+                '#22c55e',
+                '분기별 평균'
+            );
+        }
+
+        // 업종 수: 중앙에 "업종 수" + 값
+        if (storeEl) {
+            initChart(
+                'storeChart',
+                '업종 수',
+                storeEl.dataset.percent || 0,
+                storeEl.dataset.value || '-',
+                '#f59e0b',
+                '업종 수'
+            );
+        }
+    });
+</script>
+
+<!-- 알림창(alert)로 띄우고 싶으면 대신 이 스크립트 사용 (배너와 둘 중 하나만) -->
+<script th:if="${param.msg}" th:inline="javascript">
+    // 페이지 진입 시 1회 알림
+    alert([[${param.msg}]]);
+</script>
+
+<footer th:replace="common/footer::footer"></footer>
+
+</body>
+</html>

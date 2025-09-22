@@ -1,18 +1,16 @@
-<!-- templates/common/footer.html -->
 <div th:fragment="footer" xmlns:th="http://www.thymeleaf.org">
     <meta charset="UTF-8">
     <footer class="w-full h-[380px] bg-gray-800 text-white px-4 py-8">
         <div class="max-w-6xl mx-auto h-full flex flex-col justify-between">
-
             <!-- 상단 콘텐츠 -->
             <div class="flex flex-col items-center text-center md:flex-row md:justify-between md:items-start md:text-left">
+                <div class="text-xl font-semibold mb-4">터마루</div>
                 <!-- Left -->
                 <div>
-                    <h2 class="text-xl font-semibold mb-4">터마루</h2>
-                    <ul class="space-y-2 text-sm text-gray-300">
-                        <li>회사 소개</li>
+                    <ul class="space-y-2 text-sm text-gray-200">
                         <li>이용 약관</li>
                         <li>제휴 문의</li>
+                        <li>로그인 / 로그아웃</li>
                     </ul>
                 </div>
 
@@ -21,11 +19,15 @@
 
                 <!-- Center -->
                 <div>
-                    <ul class="space-y-2 text-sm">
-                        <li>회사 소개</li>
-                        <li>회사 소개</li>
-                        <li>회사 소개</li>
-                        <li>회사 소개</li>
+                    <ul class="space-y-2 text-sm text-gray-200">
+                        <li>
+                            <a href="../usr/lh/notice">공고문</a>
+                        </li>
+                        <li>부동산 매물</li>
+                        <li>관심 일정 등록</li>
+                        <li>
+                            <a href="../map/correlationMap">상권 분석 지도</a>
+                        </li>
                     </ul>
                 </div>
 

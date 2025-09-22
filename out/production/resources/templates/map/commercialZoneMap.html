@@ -1,542 +1,223 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="common/head::head"></head>
-<footer th:replace="common/header::header"></footer>
+<head th:replace="common/head::head">
+    <meta charset="UTF-8">
+    <title>지도기반 유동인구와 매출액 분석</title>
+</head>
+<body>
+<header th:replace="common/mapHeader::header"></header>
 
-<!-- 카카오맵 -->
+<!-- 카카오맵 SDK: autoload=false 이므로 kakao.maps.load(...) 필수 -->
 <script type="text/javascript"
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=819000337dba5ebac1dbf7847f383c66&libraries=services&autoload=false"></script>
-
-<script>
-    let map;
-    let currentPolygon = null;
-    let emdPolygons = [], emdOverlayList = [];
-    let sggPolygons = [], sggOverlayList = [];
-    let currentLevel = 6;
-
-    document.addEventListener("DOMContentLoaded", function () {
-        kakao.maps.load(function () {
-            const mapContainer = document.getElementById('map');
-            const mapOption = {
-                center: new kakao.maps.LatLng(37.5665, 126.9780),
-                level: 6
-            };
-            map = new kakao.maps.Map(mapContainer, mapOption);
-
-            // GeoJSON 불러오기
-            Promise.all([
-                loadPolygons("/seoul_emds.geojson", emdPolygons, emdOverlayList, "#004c80", "ADSTRD_NM"),
-                loadPolygons("/seoul_sggs.geojson", sggPolygons, sggOverlayList, "#e45c2f", "SIGUNGU_NM")
-            ]).then(() => {
-                updatePolygonsByZoom();
-            });
-
-            // 줌 변경 시 표시 항목 변경
-            kakao.maps.event.addListener(map, 'zoom_changed', function () {
-                currentLevel = map.getLevel();
-                updatePolygonsByZoom();
-            });
-
-            // 클릭 시 강조 polygon 표시
-            kakao.maps.event.addListener(map, 'click', function (mouseEvent) {
-                const clickedLatLng = mouseEvent.latLng;
-                const targets = currentLevel >= 7 ? sggPolygons : emdPolygons;
-                for (let i = 0; i < targets.length; i++) {
-                    const {path, properties} = targets[i];
-                    if (!isPointInPolygon(clickedLatLng, path)) continue;
-
-                    if (currentPolygon && isSamePath(currentPolygon.getPath(), path)) {
-                        currentPolygon.setMap(null);
-                        currentPolygon = null;
-                        return;
-                    }
-
-                    if (currentPolygon) currentPolygon.setMap(null);
-
-                    const polygon = new kakao.maps.Polygon({
-                        map: map,
-                        path: path,
-                        strokeWeight: 2,
-                        strokeColor: '#004c80',
-                        strokeOpacity: 0.8,
-                        fillColor: '#00a0e9',
-                        fillOpacity: 0.3
-                    });
-
-                    currentPolygon = polygon;
-                    break;
-                }
-            });
-        });
-    });
-
-    function loadPolygons(url, container, overlayList, color, nameKey) {
-        return fetch(url)
-            .then(res => res.json())
-            .then(geojson => {
-                geojson.features.forEach(feature => {
-                    const geometry = feature.geometry;
-                    const properties = feature.properties;
-
-                    const multiCoords = (geometry.type === "Polygon")
-                        ? [geometry.coordinates]
-                        : geometry.coordinates;
-
-                    multiCoords.forEach(polygonCoords => {
-                        const coords = polygonCoords[0];
-                        const path = coords.map(c => new kakao.maps.LatLng(c[1], c[0]));
-
-
-                        const guide = new kakao.maps.Polygon({
-                            path: path,
-                            strokeWeight: nameKey === 'SIGUNGU_NM' ? 2 : 1,
-                            strokeColor: nameKey === 'SIGUNGU_NM' ? "#e60000" : color,
-                            strokeOpacity: 1,
-                            strokeStyle: nameKey === 'SIGUNGU_NM' ? "solid" : "dash",
-                            fillOpacity: 0
-                        });
-
-                        const latSum = path.reduce((sum, p) => sum + p.getLat(), 0);
-                        const lngSum = path.reduce((sum, p) => sum + p.getLng(), 0);
-                        const center = new kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
-
-                        const overlayContent = document.createElement('div');
-                        overlayContent.innerText = properties[nameKey];
-                        overlayContent.style.cssText = `
-                        background: white;
-                        border: 1px solid #444;
-                        padding: 3px 6px;
-                        font-size: 13px;
-                        position: relative;
-                    `;
-
-                        const overlay = new kakao.maps.CustomOverlay({
-                            content: overlayContent,
-                            position: center,
-                            yAnchor: 1,
-                            zIndex: 3
-                        });
-
-                        container.push({path, properties, guide, overlay});
-                        overlayList.push(overlay);
-                    });
-                });
-            });
-    }
-
-
-    function updatePolygonsByZoom() {
-        currentLevel = map.getLevel();
-
-        const showEMD = currentLevel < 7; // EMD는 레벨 6 이하면 표시
-
-        // ✅ EMD polygon/overlay만 보여주기
-        emdPolygons.forEach(p => p.guide.setMap(showEMD ? map : null));
-        emdOverlayList.forEach(o => o.setMap(showEMD ? map : null));
-
-        // ✅ SGG는 항상 표시되도록 고정
-        sggPolygons.forEach(p => p.guide.setMap(map));
-        sggOverlayList.forEach(o => o.setMap(map));
-
-        // ✅ 선택한 polygon은 항상 제거
-        if (currentPolygon) {
-            currentPolygon.setMap(null);
-            currentPolygon = null;
-        }
-    }
-
-    function isSamePath(path1, path2) {
-        if (!path1 || !path2 || path1.length !== path2.length) return false;
-        for (let i = 0; i < path1.length; i++) {
-            if (path1[i].getLat().toFixed(6) !== path2[i].getLat().toFixed(6) ||
-                path1[i].getLng().toFixed(6) !== path2[i].getLng().toFixed(6)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    function isPointInPolygon(latLng, path) {
-        let x = latLng.getLng(), y = latLng.getLat();
-        let inside = false;
-        for (let i = 0, j = path.length - 1; i < path.length; j = i++) {
-            let xi = path[i].getLng(), yi = path[i].getLat();
-            let xj = path[j].getLng(), yj = path[j].getLat();
-            let intersect = ((yi > y) !== (yj > y)) &&
-                (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-10) + xi);
-            if (intersect) inside = !inside;
-        }
-        return inside;
-    }
-
-
-</script>
-
-
-<script>
-    $(document).ready(function () {
-        // 지역 선택 UI 시군구 선택 시 그에 해당되는 행정동 나오게끔
-        $('#sggSelect').on('change', function () {
-            const sgg = $(this).val();
-
-            // 행정동 초기화
-            $('#emdSelect').empty().append('<option value="">행정동</option>');
-
-            if (sgg) {
-                $.ajax({
-                    url: 'getEmds',
-                    method: 'GET',
-                    data: {sgg: sgg},
-                    success: function (adminDongs) {
-
-                        $.each(adminDongs, function (index, adminDong) {
-                            $('#emdSelect').append(
-                                $('<option>', {value: adminDong.emdNm, text: adminDong.emdNm})
-                            );
-                        });
-                    },
-                    error: function () {
-                        alert('행정동 정보를 가져오는데 실패했습니다.');
-                    }
-                });
-            }
-        });
-
-        // 대분류 클릭 시 그에 해당하는 중분류 나오는 코드
-        $(".major-item").click(function () {
-            const majorCd = $(this).data("majorcd");
-
-            $.ajax({
-                url: "getMiddleCategories",   // 🔁 실제 서버 엔드포인트로 수정
-                method: "GET",                  // 또는 "POST"
-                data: {majorCd: majorCd},
-                success: function (upjongCodes) {
-                    // li 항목만 생성
-                    let liHTML = "";
-
-                    upjongCodes.forEach(item => {
-                        liHTML += `
-                          <li class="middle-item h-12 w-full text-xl font-medium text-center text-black cursor-pointer hover:bg-gray-100"
-                              data-middleCd="${item.middleCd}">
-                            ${item.middleNm}
-                          </li>
-                        `;
-                    });
-
-                    // 기존 ul 안에 li 추가 (ul은 유지)
-                    $(".middleSelector ul").html(liHTML);
-                    $(".middleSelector").removeClass('hidden');
-                },
-                error: function () {
-                    alert("중분류 데이터를 불러오는 데 실패했습니다.");
-                }
-            });
-
-        });
-
-
-        // 중분류 클릭 시 그에 해당하는 소분류 나오는 코드
-        $(document).on("click", ".middle-item", function () {
-            const middleCd = $(this).data("middlecd");
-
-            $.ajax({
-                url: "getMinorCategories",   // 🔁 실제 서버 엔드포인트로 수정
-                method: "GET",                  // 또는 "POST"
-                data: {middleCd: middleCd},
-                success: function (upjongCodes) {
-                    // li 항목만 생성
-                    let liHTML = "";
-
-                    upjongCodes.forEach(item => {
-                        liHTML += `
-                          <li class="minor-item h-12 w-full text-xl font-medium text-center text-black cursor-pointer hover:bg-gray-100"
-                              data-minorCd="${item.minorCd}">
-                            ${item.minorNm}
-                          </li>
-                        `;
-                    });
-
-                    // 기존 ul 안에 li 추가 (ul은 유지)
-                    $(".minorSelector ul").html(liHTML);
-                    $(".minorSelector").removeClass('hidden');
-                },
-                error: function () {
-                    alert("소분류 데이터를 불러오는 데 실패했습니다.");
-                }
-            });
-        });
-
-        // 소분류 클릭 시
-        $(document).on("click", ".minor-item", function () {
-            const minorCd = $(this).data("minorcd");
-
-            $.ajax({
-                url: "getUpjongCodeByMinorCd",   // 🔁 실제 서버 엔드포인트로 수정
-                method: "GET",                  // 또는 "POST"
-                data: {minorCd: minorCd},
-                success: function (upjongCode) {
-
-                    $('.upjongInput').val(upjongCode.majorNm + " > " + upjongCode.middleNm + " > " + upjongCode.minorNm);
-
-                    $('.middleSelector').addClass('hidden');
-                    $('.minorSelector').addClass('hidden');
-                },
-                error: function () {
-                    alert("데이터를 불러오는 데 실패했습니다.");
-                }
-            });
-        });
-
-        // 업종 입력 시 자동완성 코드
-        $('.upjongInput').on('compositionend', function () {
-            const keyword = $(this).val().trim();
-
-            // ✅ 여기서도 검색 호출 가능
-            handleSearch(keyword);
-
-
-        }).on('keydown', function (e) {
-            // keyCode 8 = Backspace, 46 = Delete
-            if (e.keyCode === 8 || e.keyCode === 46) {
-                setTimeout(() => {
-                    const keyword = $(this).val().trim();
-                    handleSearch(keyword);
-                }, 10);
-            }
-        });
-
-        // 리스트 클릭 시 input에 값 설정
-        $('#autocompleteList').on('click', 'div', function () {
-            const selected = $(this).data('value');
-            $('.upjongInput').val(selected);
-            $('#autocompleteList').empty().addClass('hidden');
-        });
-    });
-
-    function handleSearch(keyword) {
-        if (keyword.length === 0) {
-            $('#autocompleteList').empty().addClass('hidden');
-            return;
-        }
-
-        $.ajax({
-            url: 'searchUpjong', // 백엔드 엔드포인트에 맞게 수정
-            method: 'GET',
-            data: {keyword: keyword},
-            success: function (upjongCodeList) {
-                console.log(upjongCodeList);
-                // if (upjongCodeList.length === 0) {
-                //     $('#autocompleteList').empty().addClass('hidden');
-                //     return;
-                // }
-                //
-                // let html = '';
-                // upjongCodeList.forEach(item => {
-                //     html += `<div class="p-2 hover:bg-gray-100 cursor-pointer" data-value="${item}">
-                //             ${item}
-                //          </div>`;
-                // });
-                //
-                // $('#autocompleteList').html(html).removeClass('hidden');
-            },
-            error: function () {
-                console.log('업종 검색 실패');
-            }
-        });
-    }
-
-</script>
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=69544617df3febfc879cd18eed451ba3&libraries=services&autoload=false"></script>
 
 <style>
-    .majorSelector li {
-        cursor: pointer;
+    /* Chrome, Edge, Safari */
+    .report::-webkit-scrollbar {
+        width: 10px; /* 세로 스크롤바 두께 */
+        height: 10px; /* 가로 스크롤바 두께 */
     }
 
-    .middelSelector li {
-        cursor: pointer;
+    .report::-webkit-scrollbar-track {
+        background: #f1f1f1; /* 트랙(배경) 색상 */
+        border-radius: 8px;
     }
 
+    .report::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #2563eb, #1e40af); /* 파랑 그라데이션 */
+        border-radius: 8px;
+    }
+
+    .report::-webkit-scrollbar-thumb:hover {
+        background: #1d4ed8; /* hover 시 진한 파랑 */
+    }
+
+    /* Firefox */
+    .report {
+        scrollbar-width: thin; /* auto, thin */
+        scrollbar-color: #2563eb #f1f1f1; /* thumb 색상 / 트랙 색상 */
+    }
 </style>
+<!-- 지도 영역 -->
+<div id="map" class="w-full h-screen"></div>
 
-<!-- 카카오맵 -->
-<div id="map" style="width: 100%; height: 1000px;"></div>
 
-<!-- 지역 선택 UI -->
-<ul class="flex justify-between items-center w-[450px] h-[47px] overflow-hidden px-[10px] py-[15px] rounded-[10px] bg-white border border-black absolute left-1/2 -translate-x-1/2 top-[110px] z-10">
-    <li class="flex justify-center items-center h-[41px] cursor-pointer">
+<!-- 좌측 패널 -->
+<aside class="absolute top-[160px] left-[40px] z-20 w-[420px] bg-white/90 backdrop-blur rounded-2xl border border-gray-200 shadow-2xl overflow-hidden">
 
-        <select class="flex justify-center items-center text-[22px] text-center text-black cursor-pointer focus:outline-none focus:ring-0 focus:border-transparent"
-                name="sidoSelect"
-                id="sidoSelect">
-            <option>서울특별시</option>
-        </select>
+    <!-- 패널 헤더 : 제목 + 메트릭 탭 -->
+    <header class="sticky top-0 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-6 py-5">
+        <!-- 제목 -->
+        <h2 class="text-xl font-extrabold tracking-tight">행정동 분석 정보</h2>
+        <!-- 부제(선택된 행정동 라벨) -->
+        <p id="emdName" class="mt-1 text-sm/6 text-indigo-100">행정동을 선택해 주세요</p>
+    </header>
 
-    </li>
-    <li class="flex justify-center items-center h-[41px]  ">
-        <select class="flex justify-center items-center text-[22px] text-center text-black cursor-pointer focus:outline-none focus:ring-0 focus:border-transparent"
-                name="sggSelect"
-                id="sggSelect">
-            <option value="">시/군/구</option>
-            <option value="동구">동구</option>
-            <option value="중구">중구</option>
-            <option value="서구">서구</option>
-            <option value="유성구">유성구</option>
-            <option value="대덕구">대덕구</option>
-        </select>
-    </li>
-    <li class="flex justify-center items-center h-[41px] ">
-        <select class="flex justify-center items-center text-[22px] text-center text-black cursor-pointer focus:outline-none focus:ring-0 focus:border-transparent"
-                name="emdSelect"
-                id="emdSelect">
-            <option>행정동</option>
-        </select>
-    </li>
-</ul>
+    <!-- 본문 컨테이너 -->
+    <div class="p-6 space-y-6">
 
-<!-- 업종 선택 UI -->
-<div class="flex absolute top-[180px] left-[150px] justify-start items-start overflow-hidden gap-2.5 px-[7px] py-1 z-10">
-    <div
-            class="flex flex-col justify-start items-center flex-grow-0 flex-shrink-0 h-[615px] w-[445px] overflow-hidden gap-[31px] pt-[30px] pb-[99px] rounded-[15px] bg-white border border-black"
-    >
-        <div
-                class="flex justify-start items-center self-stretch flex-grow-0 flex-shrink-0 h-[46px] relative overflow-hidden gap-2.5 pl-[30px] pr-[83px]"
-        >
-            <p
-                    class="flex-grow-0 flex-shrink-0 w-[165px] h-[46px] text-xl font-medium text-left text-black"
-            >
-                점수 확인
-            </p>
-        </div>
-        <div
-                class="flex flex-col justify-start items-start flex-grow-0 flex-shrink-0 overflow-hidden gap-5"
-        >
-            <div
-                    class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-2.5 px-[104px] py-2.5"
-            >
-                <div
-                        class="flex justify-between items-center flex-grow-0 flex-shrink-0 w-[381px] h-[41px] relative gap-2.5 px-2.5 py-[7px] rounded-[15px] bg-white border border-black relative"
-                >
-                    <input placeholder="업종을 입력해주세요"
-                           class="upjongInput flex-grow flex-shrink-0  text-xl font-medium text-left focus:outline-none focus:border-none"
-                    />
+        <!-- 영역 선택 섹션 : 셀렉트 3종 -->
+        <section class="rounded-xl border border-gray-100 bg-white shadow-sm p-4">
+            <!-- 섹션 제목 -->
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-800">지역 선택</h3>
+                <!-- 기준일 표시 영역(옵션) -->
+                <span id="panel-updated-at" class="text-xs text-gray-500"></span>
+            </div>
 
-                    <svg
-                            width="22"
-                            height="22"
-                            viewBox="0 0 22 22"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                            class="flex-grow-0 flex-shrink-0 w-[21px] h-[21.5px]"
-                            preserveAspectRatio="none"
-                    >
-                        <circle cx="9" cy="9" r="8.5" transform="matrix(-1 0 0 1 18 0)" stroke="black"></circle>
-                        <path d="M15 15.5L21 21.5" stroke="black" stroke-linecap="round"></path>
-                    </svg>
-                    <div id="autocompleteList"
-                         class="border border-gray-300 bg-white absolute z-10 hidden w-full max-h-48 overflow-auto">
-                        <!-- 자동완성 결과가 여기에 들어감 -->
-                    </div>
+            <!-- 3분할 그리드 -->
+            <div class="grid grid-cols-1 gap-2">
+                <!-- 시/도 -->
+                <label class="flex items-center gap-2">
+                    <span class="w-16 shrink-0 text-xs text-gray-500">시/도</span>
+                    <select id="sidoSelect"
+                            class="w-full rounded-lg border-gray-300 text-sm px-3 py-2
+                         focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option>서울특별시</option>
+                    </select>
+                </label>
+
+                <!-- 시/군/구 -->
+                <label class="flex items-center gap-2">
+                    <span class="w-16 shrink-0 text-xs text-gray-500">시/군/구</span>
+                    <select id="sggSelect"
+                            class="w-full rounded-lg border-gray-300 text-sm px-3 py-2
+                         focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">선택</option>
+                        <!-- 서버 렌더링 영역 -->
+                        <th:block th:each="adminDong : ${adminDongsGroupBySggCd}">
+                            <option th:value="${adminDong.sggNm}" th:text="${adminDong.sggNm}"></option>
+                        </th:block>
+                    </select>
+                </label>
+
+                <!-- 행정동 -->
+                <label class="flex items-center gap-2">
+                    <span class="w-16 shrink-0 text-xs text-gray-500">행정동</span>
+                    <select id="emdSelect"
+                            class="w-full rounded-lg border-gray-300 text-sm px-3 py-2
+                         focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="">선택</option>
+                    </select>
+                </label>
+            </div>
+        </section>
+
+        <!-- 메트릭 카드 : 유동인구 -->
+        <section id="card-floating"
+                 class="rounded-xl border border-gray-100 bg-gradient-to-b from-white to-indigo-50/60
+                    shadow-sm p-4">
+            <!-- 카드 헤더 -->
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-800">유동인구</h3>
+                <!-- 그래프 보기(옵션) -->
+                <button id="show-fp-graph"
+                        class="px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-100 text-indigo-700 cursor-pointer"
+                        onclick="openReport();">
+                    그래프 보기
+                </button>
+            </div>
+
+            <!-- 핵심 숫자 -->
+            <p id="floatingPopulation"
+               class="mt-2 text-3xl font-extrabold tracking-tight text-gray-900">-</p>
+
+            <!-- 보조 라벨 -->
+            <p class="mt-1 text-xs text-gray-500">단위: 만명</p>
+
+            <!-- 미세 지표 2열 (옵션) -->
+            <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
+                <div class="rounded-lg bg-white border border-gray-100 p-3">
+                    <p class="text-gray-500 text-xs">당월 매출 추정</p>
+                    <p id="sales-per-capita-fp" class="font-semibold text-gray-800">-</p>
+                    <!-- 보조 라벨 -->
+                    <p class="mt-1 text-[8px] text-gray-500">단위: 억원</p>
+                </div>
+                <div class="rounded-lg bg-white border border-gray-100 p-3">
+                    <p class="text-gray-500 text-xs">최근 분기</p>
+                    <p id="recent-period-fp" class="font-semibold text-gray-800">-</p>
                 </div>
             </div>
-            <div
-                    class="majorSelector flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 w-[407px] overflow-hidden gap-[19px]"
-            >
-                <ul class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden px-[5px]">
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black border border-black cursor-pointer"
-                        data-majorCd="L1">
-                        부동산
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="I1">
-                        숙박
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="M1">
-                        과학/기술
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        +
-                        data-majorCd="Q1">
-                        보건/의료
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[79.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="N1">
-                        관리/임대
-                    </li>
-                </ul>
+        </section>
 
-                <ul class="flex justify-between items-center self-stretch flex-grow-0 flex-shrink-0 h-[35px] relative overflow-hidden">
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="G2">
-                        소매
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="I2">
-                        음식
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="S2">
-                        수리
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="R1">
-                        예체능
-                    </li>
-                    <li class="major-item flex justify-center items-center self-stretch flex-grow w-[81.4px] h-[35px] text-[15px] text-center text-black cursor-pointer"
-                        data-majorCd="P1">
-                        교육
-                    </li>
-                </ul>
+        <!-- 도움말 -->
+        <p class="text-[12px] text-gray-500">
+            지도에서 행정동을 클릭하거나 상단의 지역 선택을 변경하면 카드가 갱신됩니다.
+        </p>
+    </div>
 
-            </div>
-        </div>
-        <div
-                class="flex justify-center items-center flex-grow-0 flex-shrink-0 relative overflow-hidden gap-2.5 px-[115px] py-2.5 rounded-[10px] bg-[#10f] cursor-pointer"
-        >
-            <p class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-36 h-[38px] text-xl font-medium text-center text-white ">
-                확인
-            </p>
-        </div>
-        <div
-                class="flex flex-col justify-center items-center flex-grow-0 flex-shrink-0 h-[181px] relative overflow-hidden gap-[35px] px-[53px]"
-        >
-            <p
-                    class="flex-grow-0 flex-shrink-0 w-[150px] h-[88px] text-xl font-medium text-center text-black"
+
+</aside>
+
+<!-- 팝업창 -->
+<div class="report fixed top-[160px] left-[470px] w-[500px] h-[800px] z-10
+            bg-white/90 backdrop-blur rounded-2xl border border-gray-200 shadow-2xl rounded-lg
+            transform transition-all duration-300 ease-in-out opacity-0 -translate-x-4 overflow-auto hidden">
+    <h2 class="flex justify-center h-[70px] text-lg font-bold p-4">
+        유동인구 분석 그래프
+    </h2>
+
+    <!-- 성별 데이터 -->
+    <div class="flex justify-between p-2">
+        <span class="font-bold text-lg"><i class="fa-solid fa-venus-mars"></i>성별 유동인구</span>
+        <span class="text-sm text-gray-600"> 25년 1분기 기준</span>
+    </div>
+    <div class="flex items-start m-3">
+        <canvas id="genderFloatingChart" class="my-3 border border-gray-300 rounded-lg shadow-lg" width="250"
+                height="250"></canvas>
+        <div class="flex items-center h-[250px]">
+            <div id="genderPopulationAnalysis"
+                 class="flex flex-col relative py-5 px-2 border-2 rounded-lg m-3 text-sm text-gray-700 border border-red-500 w-[200px]"
             >
-        <span
-                class="flex-grow-0 flex-shrink-0 w-[150px] h-[88px] text-xl font-medium text-center text-black"
-        >확인 입력 시 </span
-        ><br/><span
-                    class="flex-grow-0 flex-shrink-0 w-[150px] h-[88px] text-xl font-medium text-center text-black"
-            >점수 뜨는 곳</span
-            >
-            </p>
-            <div
-                    class="flex justify-center items-center flex-grow-0 flex-shrink-0 w-[205px] h-12 relative overflow-hidden gap-2.5 px-[58px] rounded-[5px] bg-[#10f]"
-            >
-                <p
-                        class="flex-grow-0 flex-shrink-0 w-[102px] h-8 text-xl font-medium text-center text-white cursor-pointer"
-                >
-                    상세보기
-                </p>
             </div>
         </div>
     </div>
-    <div
-            class="middleSelector hidden flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[10px] rounded-[15px] bg-white border border-black"
-    >
-        <ul
-                class="flex flex-col justify-start items-center w-full self-stretch flex-grow-0 flex-shrink-0 relative overflow-auto gap-2.5 p-2.5"
-        >
 
-        </ul>
+    <div class="flex justify-between p-2">
+        <span class="font-bold text-lg">
+            <i class="fa-solid fa-clock"></i>
+            시간대, 요일별 유동인구</span>
+        <span class="text-sm text-gray-600"> 25년 1분기 기준</span>
     </div>
-    <div
-            class="minorSelector hidden flex justify-center items-center flex-grow-0 flex-shrink-0 w-[386px] h-[200px] gap-2.5 px-[23px] py-[13px] rounded-[15px] bg-white border border-black"
-    >
-        <ul
-                class="flex flex-col justify-start w-full items-center self-stretch flex-grow-0 flex-shrink-0 relative overflow-auto gap-2.5 p-2.5"
-        >
-        </ul>
+
+    <canvas id="timeSalesChart" class="m-3 border border-gray-300 rounded-lg shadow-lg" width="600"
+            height="300"></canvas>
+    <canvas id="weeklyPopulationChart" class="m-3 mb-6 border border-gray-300 rounded-lg shadow-lg" width="600"
+            height="300"></canvas>
+    <div id="weeklyPopulationAnalysis"
+         class="flex flex-col relative p-5 border-2 rounded-lg m-3 mt-2 text-sm text-gray-700 border border-red-500">
     </div>
+
+    <div class="flex justify-between p-2">
+        <span class="font-bold text-lg">
+            <i class="fa-solid fa-users"></i>
+            상주,직장,유동인구</span>
+        <span class="text-sm text-gray-600"> 25년 1분기 기준</span>
+    </div>
+
+    <canvas id="populationByAgeChart" class="m-3 mb-6 border border-gray-300 rounded-lg shadow-lg" width="600"
+            height="400"></canvas>
+    <div id="populationAnalysis"
+         class="flex flex-col relative p-5 border-2 rounded-lg m-3 mt-2 text-sm text-gray-700 border border-red-500"></div>
+
+    <!-- 닫기 버튼 -->
+    <button
+            class="p-0 flex items-center justify-center sticky
+         top-3 right-[-1.375rem] z-[225]
+         w-[2.75rem] h-[2.75rem]
+         rounded-full border border-gray-300
+         bg-white shadow-[2px_2px_8px_0_rgba(0,0,0,0.1)] cursor-pointer"
+            onclick="closeReport();">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+
 </div>
+
+
+<!-- 지도/업종 스크립트 -->
+<script type="text/javascript" th:src="@{/js/commercialZoneMap.js}"></script>
+
+<div th:replace="chatbot/chat::chat"></div>
+
+</body>
+</html>

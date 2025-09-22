@@ -1,5 +1,8 @@
 server:
   port: 8080
+  servlet:
+    session:
+      persistent: false
 spring:
   thymeleaf:
     cache: false
@@ -13,7 +16,7 @@ spring:
     restart:
       enabled: true
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
+    url: jdbc:mysql://localhost:3306/TMRTeamProject?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password:
@@ -23,10 +26,25 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect  # ← 요게 핵심!!
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 80MB
 
+logging:
+  level:
+    org.springframework.security: DEBUG
 
-
+lh:
+  crawler:
+    enabled: true
+    mode: script
+    python: 'C:\Users\admin\anaconda3\envs\TMRTeamProject\python.exe'
+    script: PythonJPA/run_lh.py
+    workdir: "TMRTeamProjectPython"
+    timeout-sec: 600
 
 # 카카오 api 키
 kakao:
@@ -45,3 +63,24 @@ solapi:
   apiKey: NCS8X6JXYL5LGJ0B
   apiSecret: OPMRNQJAWXRAEDUGNAOPOI8AZNRTTSCO
   sender: 01030417745
+
+# 주소 검색 API
+address:
+  confmKey: devU01TX0FVVEgyMDI1MDgyMTA5NDEzNzExNjA5NTk=  # 발급받은 승인키
+
+# vworld API
+vworld:
+  key: 0D1E185A-F71A-3D74-AE65-579E01CC79CD
+
+# 건축물대장 API
+bldrgst:
+  apiKey: CtMWbR+mYCIwYQmPYdFuMiP4LsJ6aVV3CcbyZUXI5bGiblyS1OilOVAYopA9VxwIcRyQ7pT/ADS7FzuMVs3uEw==
+  apiKeyEncoded: false  # ← 인코딩된 키를 쓴다는 표시
+
+# R-ONE API
+rOne:
+  apiKey: 11ff00dfd57d4af28c5d3c16ed576fc1
+
+# python API
+ingest:
+  apiKey: "SECRET_KEY_123"
