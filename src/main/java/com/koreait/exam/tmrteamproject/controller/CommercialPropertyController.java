@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/usr/commercialProperty")
+@RequestMapping("usr/commercialProperty")
 @Slf4j
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")

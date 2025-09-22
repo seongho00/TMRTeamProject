@@ -326,7 +326,7 @@
 
                         const timeCtx = document.getElementById("timeSalesChart").getContext("2d");
 
-                        if (window.timeSalesChart && typeof window.timeSalesChart.destroy === "function") {
+                        if (window.timeSalesChart instanceof Chart) {
                             window.timeSalesChart.destroy();
                         }
 
@@ -339,7 +339,7 @@
                                     data: timeSales,
                                     borderColor: "rgba(54, 162, 235, 1)",
                                     backgroundColor: "rgba(54, 162, 235, 0.2)",
-                                    fill: false,
+                                    fill: true,
                                     tension: 0.4 // 곡선 정도 (0: 직선, 1: 곡선)
                                 }]
                             },
@@ -372,61 +372,6 @@
                             }
                         });
 
-
-                        if (window.salesChart) {
-                            window.salesChart.destroy();
-                        }
-
-                        // 차트 container 초기화 후 다시 추가
-                        $("#chartContainer").remove();
-                        $chatBox.append(`
-                          <div id="chartContainer">
-                              <canvas id="salesChart"></canvas>
-                          </div>
-                        `);
-
-                        // Chart.js (Line 차트 예시)
-                        const ctx = document.getElementById("salesChart").getContext("2d");
-
-                        window.salesChart = new Chart(ctx, {
-                            type: "bar",
-                            data: {
-                                labels: labels,
-                                datasets: [{
-                                    label: "분기별 매출액",
-                                    data: salesValues,
-                                    borderColor: "rgba(37, 99, 235, 1)",   // 파랑 테두리
-                                    backgroundColor: "rgba(37, 99, 235, 0.7)", // 막대기 색상 하나로 통일
-                                    borderWidth: 1
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                plugins: {
-                                    title: {
-                                        display: true,
-                                        text: "📊 업종 분기별 매출액 추이", // 차트 제목
-                                        font: {
-                                            size: 16,
-                                            weight: "bold"
-                                        }
-                                    },
-                                    legend: {
-                                        display: false // 범례 숨기고 싶으면 false
-                                    }
-                                },
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        ticks: {
-                                            callback: function (value) {
-                                                return (value / 100000000).toLocaleString() + " 억";
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        });
 
                     }
 

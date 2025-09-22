@@ -1,20 +1,19 @@
 package com.koreait.exam.tmrteamproject.controller;
 
+import com.koreait.exam.tmrteamproject.entity.LhApplyInfo;
 import com.koreait.exam.tmrteamproject.security.MemberContext;
-import com.koreait.exam.tmrteamproject.service.ScheduleInterestService;
-import com.koreait.exam.tmrteamproject.vo.LhApplyInfo;
 import com.koreait.exam.tmrteamproject.service.LhApplyInfoService;
+import com.koreait.exam.tmrteamproject.service.ScheduleInterestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Controller
 @Slf4j
+@Controller
 @RequiredArgsConstructor
 @RequestMapping("/usr/lh")
 public class LhController {

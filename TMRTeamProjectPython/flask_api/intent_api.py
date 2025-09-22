@@ -1840,7 +1840,7 @@ def get_base_price():
         browser = p.chromium.launch_persistent_context(
             user_data_dir=USER_DATA_DIR,
             channel="chrome",
-            headless=False,  # API 서버에서는 headless 권장
+            headless=False,  # 서버에서는 True 권장
             locale="ko-KR",
             viewport={"width": 1280, "height": 860},
             ignore_https_errors=True,
@@ -1852,14 +1852,21 @@ def get_base_price():
         )
         page = browser.new_page()
 
-        # 홈택스 접속
+        # debugger 무력화 스크립트 주입
+        page.add_init_script("""
+            Object.defineProperty(window, 'debugger', { get: () => undefined });
+            setInterval(() => { try { delete window.debugger; } catch(e) {} }, 500);
+        """)
+
+        # ───────────── 홈택스 접속 ─────────────
         page.goto(
-            "https://hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index_pp.xml&tmIdx=47&tm2lIdx=4712090000&tm3lIdx=4712090300")
+            "https://hometax.go.kr/websquare/websquare.html?"
+            "w2xPath=/ui/pp/index_pp.xml&tmIdx=47&tm2lIdx=4712090000&tm3lIdx=4712090300"
+        )
 
         # 법정동 버튼 클릭
         btn = wait_for_element(page, "#mf_txppWframe_btnLdCdPop")
         btn.click()
-
         time.sleep(0.5)
 
         # 행정동 입력
@@ -1869,22 +1876,21 @@ def get_base_price():
         # 조회 버튼 클릭
         btn = wait_for_element(page, "#mf_txppWframe_UTECMAAA08_wframe_trigger6")
         btn.click()
+        time.sleep(1)
 
-        time.sleep(0.5)
-
-        # 테이블 선택
-        tbody = wait_for_element(page, "#mf_txppWframe_UTECMAAA08_wframe_ldCdAdmDVOList_body_tbody")
-        rows = tbody.locator("tr")
+        # 테이블 행들 (locator 방식)
+        rows = page.locator("#mf_txppWframe_UTECMAAA08_wframe_ldCdAdmDVOList_body_table tbody tr")
         row_count = rows.count()
 
         for i in range(row_count):
             row = rows.nth(i)
             cols = row.locator("td")
-            first_col = cols.nth(0).inner_text().strip()
-            second_col = cols.nth(1).inner_text().strip()
+            first_col = cols.nth(0).text_content().strip()
+            second_col = cols.nth(1).text_content().strip()
+
             if target_sido in first_col and target_sgg in second_col:
-                btn = row.locator("td:nth-child(8) button[title='선택']")
-                btn.click()
+                btn = cols.nth(8).locator("button[title='선택']")
+                btn.click(force=True)
                 break
 
         # 번지 입력
@@ -1920,11 +1926,11 @@ def get_base_price():
         detail_search_button.click()
 
         # 기준시가 테이블
-        tbody = wait_for_element(page, "#mf_txppWframe_grdCmrcBldTsvList_body_tbody")
-        first_row = tbody.locator("tr").nth(0)
+        rows2 = page.locator("#mf_txppWframe_grdCmrcBldTsvList_body_tbody tr")
+        first_row = rows2.nth(0)
 
-        td2 = first_row.locator("td").nth(1).inner_text().strip()
-        td3 = first_row.locator("td").nth(2).inner_text().strip()
+        td2 = first_row.locator("td").nth(1).text_content().strip()
+        td3 = first_row.locator("td").nth(2).text_content().strip()
 
         val2 = float(td2.replace(",", ""))
         val3 = float(td3)
@@ -1947,7 +1953,7 @@ def get_base_price():
         page2.wait_for_selector("#dataList tr", timeout=10000)
 
         first_row2 = page2.locator("#dataList tr").first
-        price_text = first_row2.locator("td").nth(3).inner_text().strip()
+        price_text = first_row2.locator("td").nth(3).text_content().strip()
         land_price = int(re.sub(r"[^0-9]", "", price_text))
 
         browser.close()

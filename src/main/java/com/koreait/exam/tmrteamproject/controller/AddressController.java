@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/usr/address")
+@RequestMapping("usr/address")
 @Slf4j
 @RequiredArgsConstructor
 public class AddressController {

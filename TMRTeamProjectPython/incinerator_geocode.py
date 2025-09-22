@@ -1,4 +1,4 @@
-import requests
+import requests, urllib.parse
 from pyproj import Transformer
 
 VWORLD_KEY = "0D1E185A-F71A-3D74-AE65-579E01CC79CD"
