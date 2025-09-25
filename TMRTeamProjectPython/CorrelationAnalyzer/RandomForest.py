@@ -92,7 +92,7 @@ def read_csv_any(path):
         return pd.read_csv(path, encoding="utf-8")
     except UnicodeDecodeError:
         return pd.read_csv(path, encoding="cp949")
-
+    
 def unify_columns(df: pd.DataFrame) -> pd.DataFrame:
     # 컬럼 문자열화 및 공백 제거, 중복 제거
     df = df.rename(columns=lambda c: str(c).strip())
