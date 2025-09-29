@@ -1,4 +1,3 @@
-<img width="1920" height="1080" alt="슬라이드2" src="https://github.com/user-attachments/assets/d34e9766-9337-447e-8834-e5f20b87b280" />
 <img width="1920" height="1080" alt="슬라이드1" src="https://github.com/user-attachments/assets/1ea1d27d-50a7-4c82-97ee-24abfc684352" />
 <img width="1920" height="1080" alt="슬라이드2" src="https://github.com/user-attachments/assets/8751af41-ae88-43a0-8988-41825052cb19" />
 <img width="1920" height="1080" alt="슬라이드3" src="https://github.com/user-attachments/assets/b742aa08-3a93-4d1c-b6cc-54f6f133d187" />
