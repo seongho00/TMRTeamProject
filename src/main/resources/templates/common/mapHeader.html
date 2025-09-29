@@ -1,53 +1,162 @@
 <header th:fragment="header" xmlns:th="http://www.thymeleaf.org">
-    <meta charset="UTF-8">
 
-    <div id="header-id" class="w-full h-[100px] box-border fixed top-0 left-0 z-50 bg-white transition-all duration-300">
-        <div id="header-wrapper" class="w-full h-[100px] flex items-start justify-between transition-all duration-300">
-            <div class="w-[240px] h-[100px] flex justify-start items-start">
-                <a href="../home/main" class="h-full flex items-center">
-                    <img src="/images/로고.png" class="object-contain cursor-pointer" />
+    <div class="fixed w-full h-[80px] box-border bg-white transition-all duration-300 border-b border-[#ccc]">
+        <div class="w-full h-[80px] flex items-start justify-between transition-all duration-300 z-50">
+
+            <div class="w-[240px] h-[80px] flex justify-start items-center">
+                <a href="../home/main" class="flex items-center">
+                    <!-- 파란색 로고 -->
+                    <img src="/images/로고.png"
+                         class="w-[160px] h-[60px] object-cover cursor-pointer"/>
                 </a>
             </div>
 
-            <nav class="w-[60%] text-center">
-                <ul id="nav-list" class="flex justify-center items-center relative space-x-4">
+            <nav class="w-[60%] h-[80px] flex text-center">
+                <ul class="relative flex justify-center items-center w-full h-full">
                     <!-- 상권 분석 -->
-                    <li class="relative group w-[240px]">
-                        <a href="../map/commercialZoneMap"
-                           class="flex justify-center items-center w-full h-[100px] cursor-pointer">
-                            <p class="text-[22px] text-black">상권 분석</p>
+                    <li class="relative flex justify-center items-center mx-[90px] h-[80px] group/menu
+                               after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                               after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                               hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                        <a class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer">
+                            상권 분석
                         </a>
-                        <ul class="sub-menu absolute items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
-                            <li>
-                                <a href="../map/correlationMap"
-                                   class="block px-4 py-2 hover:underline">위험도 분석 상관관계</a>
-                            </li>
-                        </ul>
+                        <div class="fixed left-0 top-[80px] w-screen h-[50px] border-t border-b border-[#ccc] bg-white
+                                        opacity-0 pointer-events-none transition-opacity duration-200
+                                        group-hover/menu:opacity-100 group-hover/menu:pointer-events-auto z-50">
+                            <div class="max-w-[1600px] mx-auto h-full flex items-center justify-between">
+                                <!-- 좌측 로고/패딩 영역 동일 정렬 유지 -->
+                                <div class="w-[880px]"></div>
+
+                                <!-- 2뎁스 링크 -->
+                                <ul class="flex gap-4 w-[60%]">
+                                    <li>
+                                        <a href="../map/commercialZoneMap"
+                                           class="inline-block px-2 text-[14px] font-light text-[#555] transition-all duration-200 hover:font-medium hover:text-[#222]">
+                                            유동인구/매출
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="../map/riskMap"
+                                           class="inline-block px-2 text-[14px] font-light text-[#555] transition-all duration-200 hover:font-medium hover:text-[#222]">
+                                            위험도분석
+                                        </a>
+                                    </li>
+                                </ul>
+
+                                <!-- 우측 여백 -->
+                                <div class="flex-1"></div>
+                            </div>
+                        </div>
                     </li>
 
-                    <!-- 부동산 매물 -->
-                    <li class="flex justify-center items-center w-[240px] h-[100px] relative">
-                        <p class="text-[22px] text-black">부동산 매물</p>
+                    <!-- 등기부등본 -->
+                    <li class="relative flex justify-center items-center mx-[90px] h-[80px] group
+                                   after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                                   after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                   hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                        <a href="../property/upload" class="inline-block w-auto flex-none leading-none subheading text-[16px]">
+                            등기부등본
+                        </a>
                     </li>
 
                     <!-- 상가 청약 -->
-                    <li class="relative group w-[240px]">
-                        <div class="flex justify-center items-center w-full h-[100px] cursor-pointer">
-                            <p class="text-[22px] text-black">상가 청약</p>
+                    <li class="relative flex mx-[90px] h-[80px] justify-center items-center group/menu2
+                               after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                               after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                               hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                        <a class="relative inline-block w-auto flex-none subheading text-[16px] leading-none cursor-pointer">
+                            상가 청약
+                        </a>
+                        <div class="fixed left-0 top-[80px] w-screen h-[50px] border-t border-b border-[#ccc] bg-white
+                                        opacity-0 pointer-events-none transition-opacity duration-200
+                                        group-hover/menu2:opacity-100 group-hover/menu2:pointer-events-auto z-50">
+                            <div class="max-w-[1600px] mx-auto h-full flex items-center justify-between">
+                                <!-- 좌측 로고/패딩 영역 동일 정렬 유지 -->
+                                <div class="w-[1870px]"></div>
+
+                                <!-- 2뎁스 링크 -->
+                                <ul class="flex gap-4 w-[30%]">
+                                    <li>
+                                        <a href="../home/notifications"
+                                           class="inline-block px-2 text-[14px] font-light text-[#555] transition-all duration-200 hover:font-medium hover:text-[#222]">
+                                            청약 알림
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="../lh/notice"
+                                           class="inline-block px-2 text-[14px] font-light text-[#555] transition-all duration-200 hover:font-medium hover:text-[#222]">
+                                            공고문
+                                        </a>
+                                    </li>
+                                </ul>
+
+                                <!-- 우측 여백 -->
+                                <div class="flex-1"></div>
+                            </div>
                         </div>
-                        <ul class="sub-menu absolute flex-col items-center top-full left-1/2 transform -translate-x-1/2 hidden bg-white w-full z-10 text-center">
-                            <li><a href="#" class="block px-4 py-2 hover:underline">청약 알림</a></li>
-                            <li><a href="#" class="block px-4 py-2 hover:underline">공고문</a></li>
-                            <li><a href="../member/usr/member/conditionalLogout" class="block px-4 py-2 hover:underline">로그아웃</a></li>
-                        </ul>
                     </li>
 
                     <!-- 로그인 -->
-                    <li>
+                    <li th:if="${rq != null and rq.isLogout()}" class="relative flex justify-center items-center mx-[90px] h-[80px] group">
                         <a href="../member/joinAndLogin"
-                           class="flex justify-center items-center w-[240px] h-[100px] relative cursor-pointer">
-                            <p class="text-[22px] text-black">로그인</p>
+                           class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer
+                                              after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-[-32px]
+                                              after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                              hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                            로그인
                         </a>
+                    </li>
+
+                    <!-- 로그아웃 -->
+                    <li th:if="${rq != null and rq.isLogined()}" class="relative flex justify-center items-center min-w-[150px] h-[80px] group">
+                        <a href="../member/conditionalLogout"
+                           class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer
+                                              after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-[-32px]
+                                              after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                              hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                            로그아웃
+                        </a>
+                    </li>
+
+                    <!-- 알림 아이콘 + 팝업 -->
+                    <li id="notif-wrapper" class="relative flex group w-[70px] h-[80px]" th:if="${rq != null and rq.isLogined()}">
+                        <!-- 알림벨 버튼 -->
+                        <button id="notif-icon" type="button" class="cursor-pointer select-none w-auto h-[80px] mx-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                   stroke-width="2">
+                                    <path stroke-dasharray="4" stroke-dashoffset="4" d="M12 3v2">
+                                        <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.2s"
+                                                 values="4;0"/>
+                                    </path>
+                                    <path fill="currentColor" fill-opacity="0" stroke-dasharray="28" stroke-dashoffset="28"
+                                          d="M12 5c-3.31 0 -6 2.69 -6 6l0 6c-1 0 -2 1 -2 2h8M12 5c3.31 0 6 2.69 6 6l0 6c1 0 2 1 2 2h-8">
+                                        <animate fill="freeze" attributeName="fill-opacity" begin="0.9s" dur="0.5s"
+                                                 values="0;1"/>
+                                        <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.2s" dur="0.4s"
+                                                 values="28;0"/>
+                                    </path>
+                                    <path stroke-dasharray="8" stroke-dashoffset="8"
+                                          d="M10 20c0 1.1 0.9 2 2 2c1.1 0 2 -0.9 2 -2">
+                                        <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.6s" dur="0.2s"
+                                                 values="8;0"/>
+                                    </path>
+                                </g>
+                            </svg>
+                        </button>
+
+                        <!-- 설정 아이콘 -->
+                        <button id="setting-icon" type="button" class="cursor-pointer select-none w-auto h-[80px] mx-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 640 640">
+                                <!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                                <path fill="currentColor"
+                                      d="M256.5 72C322.8 72 376.5 125.7 376.5 192C376.5 258.3 322.8 312 256.5 312C190.2 312 136.5 258.3 136.5 192C136.5 125.7 190.2 72 256.5 72zM226.7 368L286.1 368L287.6 368C274.7 394.8 279.8 426.2 299.1 447.5C278.9 469.8 274.3 503.3 289.7 530.9L312.2 571.3C313.1 572.9 314.1 574.5 315.1 576L78.1 576C61.7 576 48.4 562.7 48.4 546.3C48.4 447.8 128.2 368 226.7 368zM432.6 311.6C432.6 298.3 443.3 287.6 456.6 287.6L504.6 287.6C517.9 287.6 528.6 298.3 528.6 311.6L528.6 317.7C528.6 336.6 552.7 350.5 569.1 341.1L574.1 338.2C585.7 331.5 600.6 335.6 607.1 347.3L629.5 387.5C635.7 398.7 632.1 412.7 621.3 419.5L616.6 422.4C600.4 432.5 600.4 462.3 616.6 472.5L621.2 475.4C632 482.2 635.7 496.2 629.5 507.4L607 547.8C600.5 559.5 585.6 563.7 574 556.9L569.1 554C552.7 544.5 528.6 558.5 528.6 577.4L528.6 583.5C528.6 596.8 517.9 607.5 504.6 607.5L456.6 607.5C443.3 607.5 432.6 596.8 432.6 583.5L432.6 577.6C432.6 558.6 408.4 544.6 391.9 554.1L387.1 556.9C375.5 563.6 360.7 559.5 354.1 547.8L331.5 507.4C325.3 496.2 328.9 482.1 339.8 475.3L344.2 472.6C360.5 462.5 360.5 432.5 344.2 422.4L339.7 419.6C328.8 412.8 325.2 398.7 331.4 387.5L353.9 347.2C360.4 335.5 375.3 331.4 386.8 338.1L391.6 340.9C408.1 350.4 432.3 336.4 432.3 317.4L432.3 311.5zM532.5 447.8C532.5 419.1 509.2 395.8 480.5 395.8C451.8 395.8 428.5 419.1 428.5 447.8C428.5 476.5 451.8 499.8 480.5 499.8C509.2 499.8 532.5 476.5 532.5 447.8z"/>
+                            </svg>
+                        </button>
+
+                        <!-- 팝업 알림함 불러오기 -->
+                        <div th:replace="common/subscription :: subscription"></div>
                     </li>
                 </ul>
             </nav>
@@ -55,39 +164,55 @@
     </div>
 
     <script>
-        const headerId = document.getElementById('header-id');
-        const header = document.getElementById('header-wrapper');
-        const navList = document.getElementById('nav-list');
-        const subMenus = document.querySelectorAll('.sub-menu');
+        // 알림 팝업 토글 + 외부 클릭 닫기
+        const notifIcon = document.getElementById('notif-icon');
+        const notifPopover = document.getElementById('notif-popover');
+        const notifClose = document.getElementById('notif-close');
+        const wrapper = document.getElementById('notif-wrapper');
 
-        let hoverTimeout;
+        // 더보기 토글(팝업 내부)
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.more-btn')) {
+                const btn = e.target.closest('.more-btn');
+                const panel = btn.parentElement.querySelector('.more-panel');
+                const icon = btn.querySelector('svg path');
+                const hidden = panel.classList.contains('hidden');
 
-        const expandHeader = () => {
-            clearTimeout(hoverTimeout);
-            headerId.classList.remove('h-[100px]');
-            headerId.classList.add('h-[250px]');
-            header.classList.remove('h-[100px]');
-            header.classList.add('h-[250px]');
-            subMenus.forEach(menu => {
-                menu.classList.remove('hidden');
-                menu.classList.add('flex');
+                panel.classList.toggle('hidden');
+
+                if (icon) icon.setAttribute('d', hidden ? 'M7 14l5-5 5 5z' : 'M7 10l5 5 5-5z');
+            }
+        });
+
+        // 아이콘 클릭 → 팝업 열기/닫기
+        notifIcon.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            // 페이지 이동 방지
+            notifPopover.classList.toggle('hidden');
+        });
+
+        // 닫기 버튼
+        notifClose.addEventListener('click', () => notifPopover.classList.add('hidden'));
+
+        // 바깥 클릭 시 닫기
+        document.addEventListener('click', (e) => {
+            if (!wrapper.contains(e.target)) notifPopover.classList.add('hidden');
+        });
+
+        //마이페이지
+        document.addEventListener('DOMContentLoaded', () => {
+            const settingIcon = document.getElementById('setting-icon');
+            if (!settingIcon) return; // 아이콘이 없으면 중단
+
+            settingIcon.addEventListener('click', (e) => {
+                // 만약 버튼이 <a href="..."> 안에 있거나 기본 동작이 있으면 막아줌
+                e.preventDefault();
+                e.stopPropagation();
+
+                // 이동
+                window.location.href = '/usr/member/myPage';
             });
-        };
-
-        const collapseHeader = () => {
-            hoverTimeout = setTimeout(() => {
-                headerId.classList.remove('h-[250px]');
-                headerId.classList.add('h-[100px]');
-                header.classList.remove('h-[250px]');
-                header.classList.add('h-[100px]');
-                subMenus.forEach(menu => {
-                    menu.classList.remove('flex');
-                    menu.classList.add('hidden');
-                });
-            }, 100);
-        };
-
-        navList.addEventListener('mouseenter', expandHeader);
-        navList.addEventListener('mouseleave', collapseHeader);
+        });
     </script>
 </header>

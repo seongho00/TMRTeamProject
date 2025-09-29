@@ -4,7 +4,6 @@ import com.koreait.exam.tmrteamproject.security.MemberContext;
 import com.koreait.exam.tmrteamproject.service.KakaoOAuthService;
 import com.koreait.exam.tmrteamproject.service.MemberService;
 import com.koreait.exam.tmrteamproject.service.NaverOAuthService;
-import com.koreait.exam.tmrteamproject.service.SolapiSmsService;
 import com.koreait.exam.tmrteamproject.util.Ut;
 import com.koreait.exam.tmrteamproject.vo.Member;
 import com.koreait.exam.tmrteamproject.vo.ResultData;
@@ -16,11 +15,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLEncoder;
@@ -29,7 +32,7 @@ import java.security.SecureRandom;
 import java.util.Map;
 
 @Controller
-@RequestMapping("usr/member")
+@RequestMapping("/usr/member")
 @Slf4j
 @RequiredArgsConstructor
 public class MemberController {
@@ -49,6 +52,8 @@ public class MemberController {
 
     @Autowired
     private Rq rq;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping("/joinAndLogin")
     public String joinAndLogin() {
@@ -56,11 +61,9 @@ public class MemberController {
         return "member/joinAndLogin";
     }
 
-
     @PostMapping("/createAccount")
     @ResponseBody
     public String createAccount(String name, String loginPw, String email, String phoneNum) {
-
 
         // 겹치는 이메일 있는지 확인
         ResultData checkDupMemberRd = memberService.checkDupMemberByEmail(email);
@@ -77,7 +80,7 @@ public class MemberController {
 
     @GetMapping("/login")
     @ResponseBody
-    public String loginPage(HttpServletRequest request, Model model) {
+    public String loginPage(HttpServletRequest request) {
         Object errorMessage = request.getSession().getAttribute("errorMessage");
         System.out.println(errorMessage);
 
@@ -85,6 +88,33 @@ public class MemberController {
             request.getSession().removeAttribute("errorMessage");
             return Ut.jsHistoryBack("F-1", errorMessage.toString());
         }
+        return "redirect:../home/main";
+    }
+
+    @PostMapping("/doLogin")
+    public String doLogin(@RequestParam String email, @RequestParam String loginPw) {
+
+        Member member = memberService.getMemberByProviderAndEmail("local", email);
+
+        if (member == null) {
+            return Ut.jsHistoryBack("F-1", "가입되지 않은 이메일입니다.");
+        }
+        if (!"local".equals(member.getProvider())) {
+            // 소셜 계정이면 여기서 차단
+            return Ut.jsHistoryBack("F-2", "소셜 계정입니다. 소셜 로그인을 사용하세요.");
+        }
+
+        // 비밀번호 검증
+        if (Ut.isEmptyOrNull(member.getLoginPw()) || !passwordEncoder.matches(loginPw, member.getLoginPw())) {
+            return Ut.jsHistoryBack("F-3", "비밀번호가 일치하지 않습니다.");
+        }
+
+        // SecurityContext에 사용자 로그인 처리
+        MemberContext memberContext = new MemberContext(member);
+        Authentication auth = new UsernamePasswordAuthenticationToken(memberContext, null, memberContext.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        // 이동
         return "redirect:../home/main";
     }
 
@@ -119,10 +149,8 @@ public class MemberController {
         return "redirect:../home/main";
     }
 
-
     @GetMapping("/loginNaver")
     public String loginNaver() {
-
 
         String redirectURI = "http://localhost:8080/usr/member/naverCallback";
         SecureRandom random = new SecureRandom();
@@ -216,5 +244,93 @@ public class MemberController {
 
     }
 
+    @GetMapping("/myPage")
+    public String profile(Model model) {
 
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
+        model.addAttribute("member", member);
+
+        return "member/myPage";
+    }
+
+    @GetMapping("/changePw")
+    public String checkPw(Model model) {
+
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
+        model.addAttribute("member", member);
+
+        return "member/changePw";
+    }
+
+    // 비밀번호 변경 처리 (소셜 회원 거르기)
+    @PostMapping("/doChangePw")
+    @ResponseBody
+    public String doChangePw(String oldPw, String newPw, String newPwConfirm) {
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
+
+        // 주석: 소셜 로그인 회원은 비밀번호 변경 금지 (컨트롤러 단 방어)
+        if (!"LOCAL".equalsIgnoreCase(member.getProvider())) {
+            return Ut.jsHistoryBack("F-SOC-1", "소셜 로그인 회원은 비밀번호를 변경할 수 없어");
+        }
+
+        if (Ut.isEmptyOrNull(oldPw)) return Ut.jsHistoryBack("F-1", "현재 비밀번호를 입력해줘");
+        if (Ut.isEmptyOrNull(newPw)) return Ut.jsHistoryBack("F-2", "새 비밀번호를 입력해줘");
+        if (Ut.isEmptyOrNull(newPwConfirm)) return Ut.jsHistoryBack("F-3", "새 비밀번호 확인을 입력해줘");
+        if (!newPw.equals(newPwConfirm)) return Ut.jsHistoryBack("F-4", "새 비밀번호가 서로 일치하지 않아");
+
+        ResultData rd = memberService.changePassword(member.getId(), oldPw, newPw);
+        if (rd.isFail()) return Ut.jsHistoryBack(rd.getResultCode(), rd.getMsg());
+
+        return Ut.jsReplace("S-1", "비밀번호를 변경했어", "/usr/member/myPage");
+    }
+
+    @GetMapping("/modify")
+    public String showMyModify(Model model) {
+
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
+        model.addAttribute("member", member);
+
+        return "member/modifyMyPage";
+    }
+
+    @PostMapping("/doModify")
+    @ResponseBody
+    public String doModify(String name, String phoneNum) {
+
+        // 사용자 정보 수정
+        if (Ut.isEmptyOrNull(name)) {
+            return Ut.jsHistoryBack("F-3", "이름 입력 x");
+        }
+        if (Ut.isEmptyOrNull(phoneNum)) {
+            return Ut.jsHistoryBack("F-5", "전화번호 입력 x");
+        }
+
+        ResultData modifyRd;
+
+        modifyRd = memberService.modifyWithoutPw(rq.getLoginedMemberId(), name, phoneNum);
+
+        return Ut.jsReplace(modifyRd.getResultCode(), modifyRd.getMsg(), "../member/myPage");
+    }
+
+    @GetMapping("/withdraw")
+    public String showWithdraw(Model model) {
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
+        model.addAttribute("member", member);
+        return "member/withdraw";
+    }
+
+    @PostMapping("/withdraw")
+    public String doWithdraw(@RequestParam String loginPw, HttpServletRequest request, HttpServletResponse response) {
+        Long memberId = rq.getLoginedMemberId();
+
+        // 비밀번호 검증 및 탈퇴
+        memberService.withdrawMemberWithPasswordCheck(memberId, loginPw, passwordEncoder);
+
+        // 로그아웃
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        new SecurityContextLogoutHandler().logout(request, response, auth);
+
+        String msg = UriUtils.encode("회원 탈퇴 되었습니다.", StandardCharsets.UTF_8);
+        return "redirect:../home/main?msg=" + msg;
+    }
 }

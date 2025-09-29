@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head th:replace="common/head::head">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>알림함</title>
+</head>
+<body class="bg-[#f7f8fa] text-gray-900">
+<!-- 상단 바: 메인과 분리된 전용 헤더 -->
+<header class="sticky top-0 z-50 bg-white">
+    <div class="mx-auto max-w-md px-4 h-14 flex items-center justify-between">
+        <!-- 뒤로가기: 필요 시 history.back() 연결하면 됨 -->
+        <button class="p-2 -ml-2" onclick="window.history.back()">
+            <svg width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M14.7 5.3a1 1 0 0 1 0 1.4L9.4 12l5.3 5.3a1 1 0 1 1-1.4 1.4l-6-6a1 1 0 0 1 0-1.4l6-6a1 1 0 0 1 1.4 0z"/></svg>
+        </button>
+        <h1 class="text-lg font-semibold">알림함</h1>
+        <div class="flex items-center gap-2">
+            <a href="/usr/home/main" class="p-2" aria-label="홈으로">
+                <svg width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-10.5z"/></svg>
+            </a>
+        </div>
+    </div>
+</header>
+
+<!-- 본문: 날짜 그룹과 알림 카드 리스트 -->
+<main class="mx-auto max-w-md px-4" id="listRoot">
+    <!-- 날짜 구분선 -->
+    <div class="relative flex items-center my-4">
+        <div class="flex-1 h-px bg-gray-200"></div>
+        <div class="px-3 text-xs text-gray-500"
+             th:text="|오늘 ${#temporals.format(T(java.time.LocalDateTime).now(), 'yy년 MM월 dd일 (E)', T(java.util.Locale).KOREAN)}|">
+        </div>
+        <div class="flex-1 h-px bg-gray-200"></div>
+    </div>
+
+    <!-- 알림 목록 -->
+    <div class="max-h-[460px] overflow-auto bg-[#f7f8fa] px-3 py-3">
+        <div class="space-y-4">
+
+            <!-- 관심일정 반복 -->
+            <article th:each="schedule : ${nowLhApplySchedules}"
+                     class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-start gap-3 p-4">
+                    <div class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600">
+                        <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current">
+                            <path d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v4H3V5a1 1 0 0 1 1-1h3V2zm14 8v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9h18zM7 14h4v4H7v-4z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-[12px] text-gray-500">관심 일정</div>
+                        <h4 class="mt-0.5 text-[14px] font-semibold leading-snug"
+                            th:text="${schedule.name}">일정 제목</h4>
+                        <p class="mt-1 text-[13px] text-gray-600"
+                           th:text="|신청 기간: ${#temporals.format(schedule.applyStart, 'yyyy년 MM월 dd일')} ~ ${#temporals.format(schedule.applyEnd, 'yyyy년 MM월 dd일')}|">
+                            기간
+                        </p>
+                    </div>
+                </div>
+            </article>
+
+            <!-- 관심일정이 없을 때 -->
+            <p th:if="${#lists.isEmpty(nowLhApplySchedules)}"
+               class="text-center text-gray-500 py-4">
+                관심 등록된 일정이 없습니다.
+            </p>
+        </div>
+    </div>
+
+    <!-- 어제 날짜 -->
+    <div class="relative flex items-center my-6">
+        <div class="flex-1 h-px bg-gray-200"></div>
+        <div class="px-3 text-xs text-gray-500"
+             th:text="|어제 ${#temporals.format(T(java.time.LocalDateTime).now().minusDays(1), 'yy년 MM월 dd일 (E)', T(java.util.Locale).KOREAN)}|">
+        </div>
+        <div class="flex-1 h-px bg-gray-200"></div>
+    </div>
+
+    <!-- 알림 목록 -->
+    <div class="max-h-[460px] overflow-auto bg-[#f7f8fa] px-3 py-3">
+        <div class="space-y-4">
+
+            <!-- 관심일정 반복 -->
+            <article th:each="schedule : ${yesterdayLhApplySchedules}"
+                     class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-start gap-3 p-4">
+                    <div class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600">
+                        <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current">
+                            <path d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v4H3V5a1 1 0 0 1 1-1h3V2zm14 8v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9h18zM7 14h4v4H7v-4z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-[12px] text-gray-500">관심 일정</div>
+                        <h4 class="mt-0.5 text-[14px] font-semibold leading-snug"
+                            th:text="${schedule.name}">일정 제목</h4>
+                        <p class="mt-1 text-[13px] text-gray-600"
+                           th:text="|신청 기간: ${#temporals.format(schedule.applyStart, 'yyyy년 MM월 dd일')} ~ ${#temporals.format(schedule.applyEnd, 'yyyy년 MM월 dd일')}|">
+                            기간
+                        </p>
+                    </div>
+                </div>
+            </article>
+
+            <!-- 관심일정이 없을 때 -->
+            <p th:if="${#lists.isEmpty(yesterdayLhApplySchedules)}"
+               class="text-center text-gray-500 py-4">
+                관심 등록된 일정이 없습니다.
+            </p>
+        </div>
+    </div>
+
+    <!-- 지난 날짜 -->
+    <div class="relative flex items-center my-6">
+        <div class="flex-1 h-px bg-gray-200"></div>
+        <div class="px-3 text-xs text-gray-500"
+             th:text="|지난 일정 ${#temporals.format(T(java.time.LocalDateTime).now().minusDays(2), 'yy년 MM월', T(java.util.Locale).KOREAN)}|">
+        </div>
+        <div class="flex-1 h-px bg-gray-200"></div>
+    </div>
+
+    <!-- 알림 목록 -->
+    <div class="max-h-[460px] overflow-auto bg-[#f7f8fa] px-3 py-3">
+        <div class="space-y-4">
+
+            <!-- 관심일정 반복 -->
+            <article th:each="schedule : ${lastLhApplySchedules}"
+                     class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-start gap-3 p-4">
+                    <div class="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600">
+                        <svg width="18" height="18" viewBox="0 0 24 24" class="fill-current">
+                            <path d="M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v4H3V5a1 1 0 0 1 1-1h3V2zm14 8v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9h18zM7 14h4v4H7v-4z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <div class="text-[12px] text-gray-500">관심 일정</div>
+                        <h4 class="mt-0.5 text-[14px] font-semibold leading-snug"
+                            th:text="${schedule.name}">일정 제목</h4>
+                        <p class="mt-1 text-[13px] text-gray-600"
+                           th:text="|신청 기간: ${#temporals.format(schedule.applyStart, 'yyyy년 MM월 dd일')} ~ ${#temporals.format(schedule.applyEnd, 'yyyy년 MM월 dd일')}|">
+                            기간
+                        </p>
+                    </div>
+                </div>
+            </article>
+
+            <!-- 관심일정이 없을 때 -->
+            <p th:if="${#lists.isEmpty(lastLhApplySchedules)}"
+               class="text-center text-gray-500 py-4">
+                관심 등록된 일정이 없습니다.
+            </p>
+        </div>
+    </div>
+</main>
+
+<!-- 전용 스크립트: 탭 필터링, 더보기 토글 -->
+<script>
+    // 탭 버튼 활성화 스타일 토글
+    /*
+    const tabs = document.querySelectorAll('.tab-btn');
+    const cards = document.querySelectorAll('.notice-card');
+
+    tabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // 모든 탭 비활성화
+            tabs.forEach(b => {
+                b.classList.remove('bg-gray-900','text-white','font-semibold');
+                b.classList.add('bg-gray-100','text-gray-800');
+            });
+
+            // 선택 탭 활성화
+            btn.classList.remove('bg-gray-100','text-gray-800');
+            btn.classList.add('bg-gray-900','text-white','font-semibold');
+
+            // 필터 적용
+            const type = btn.dataset.filter;
+            cards.forEach(card => {
+                const show = (type === 'all') || (card.dataset.type === type);
+                card.style.display = show ? '' : 'none';
+            });
+        });
+    }); */
+
+    // 더보기 토글
+    document.querySelectorAll('.more-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const panel = btn.parentElement.querySelector('.more-panel');
+            const icon = btn.querySelector('svg path');
+            const hidden = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden');
+            if (icon) icon.setAttribute('d', hidden ? 'M7 14l5-5 5 5z' : 'M7 10l5 5 5-5z');
+        });
+    });
+</script>
+</body>
+</html>

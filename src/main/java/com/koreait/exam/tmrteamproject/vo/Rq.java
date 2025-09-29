@@ -1,42 +1,31 @@
 package com.koreait.exam.tmrteamproject.vo;
 
+import com.koreait.exam.tmrteamproject.security.MemberContext;
 import com.koreait.exam.tmrteamproject.util.Ut;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import lombok.Getter;
-import lombok.Setter;
+
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
 @Component
 @Scope(value = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
-@Getter
-@Setter
 public class Rq {
 
     private final HttpServletRequest req;
     private final HttpServletResponse resp;
     private final HttpSession session;
 
-    private boolean isLogined = false;
-    private int loginedMemberId = 0;
-    private Member loginedMember = null;
-
-
     public Rq(HttpServletRequest req, HttpServletResponse resp) {
         this.req = req;
         this.resp = resp;
         this.session = req.getSession();
-
-        if (session.getAttribute("loginedMemberId") != null) {
-            isLogined = true;
-            loginedMemberId = (int) session.getAttribute("loginedMemberId");
-            loginedMember = (Member) session.getAttribute("loginedMember");
-        }
 
         this.req.setAttribute("rq", this);
     }
@@ -61,18 +50,36 @@ public class Rq {
         resp.getWriter().append(str);
     }
 
-    public void logout() {
-        session.removeAttribute("loginedMemberId");
-        session.removeAttribute("loginedMember");
+    // 로그인 여부
+    public boolean isLogined() {
+        return getMemberContext() != null;
     }
 
-    public void login(int loginedMemberId, Member loginedMember) {
-        session.setAttribute("loginedMemberId", loginedMemberId);
-        session.setAttribute("loginedMember", loginedMember);
+    public boolean isLogout() {
+        return !isLogined();
     }
 
-    public void initBeforeActionInterceptor() {
-        System.err.println("initBeforeActionInterceptor 실행됨");
+    // 로그인된 회원 객체
+    public Member getLoginedMember() {
+        MemberContext mc = getMemberContext();
+        return mc != null ? mc.getMember() : null;
+    }
+
+    // 로그인된 회원 ID
+    public Long getLoginedMemberId() {
+        Member m = getLoginedMember();
+        return m != null ? m.getId() : null;
+    }
+
+    public MemberContext getMemberContext() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) return null;
+
+        if (auth.getPrincipal() instanceof MemberContext mc) {
+            return mc;
+        }
+
+        return null;
     }
 
     public String historyBackOnView(String msg) {

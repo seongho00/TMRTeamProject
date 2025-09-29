@@ -1,125 +1,307 @@
 <header th:fragment="header" xmlns:th="http://www.thymeleaf.org">
-    <meta charset="UTF-8">
 
-    <div class="w-full h-[380px] box-border"
-         style="background-image: url('/images/헤더 영역 이미지.png'); background-size: cover; background-position: center;">
-        <div id="header-wrapper"
-             class="w-full h-[100px] hover:bg-white flex items-start justify-between">
+    <div class="w-full h-[380px] align-top"
+         style="background-image: url('/images/header_img_bold.png'); background-size: cover; background-position: center;">
+        <div class="w-full h-[80px] box-border hover:bg-white group/hd border-b border-white/50 transition-all duration-300">
+            <div class="flex w-full h-full justify-between ml-0 mr-auto">
+                <div class="w-[240px] h-[80px] flex justify-start items-center">
+                    <a href="../home/main" class="flex items-center">
+                        <!-- 흰색 로고 (기본 표시) -->
+                        <img src="/images/logo_white.png"
+                             class="w-[160px] h-[60px] object-cover cursor-pointer block group-hover/hd:hidden transition-opacity"/>
+                        <!-- 파란색 로고 (hover 시 표시) -->
+                        <img src="/images/로고.png"
+                             class="w-[160px] h-[60px] object-cover cursor-pointer hidden group-hover/hd:block transition-opacity"/>
+                    </a>
+                </div>
 
-            <div class="w-[240px] h-[100px] flex justify-start items-start">
-                <a href="../home/main" class="h-full flex items-center">
-                    <img src="/images/로고.png"
-                         class="object-contain cursor-pointer"/>
+                <nav class="w-[60%] h-[80px] flex text-center text-white group-hover/hd:text-[#333]">
+                    <ul class="relative flex justify-center items-center w-full h-full">
+                        <!-- 상권 분석 -->
+                        <li class="relative flex mx-[90px] h-[80px] justify-center items-center group/menu
+                                   after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                                   after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                   hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                            <a class="relative inline-block w-auto flex-none subheading text-[16px] leading-none cursor-pointer">
+                                상권 분석
+                            </a>
+                            <div class="fixed left-0 top-[80px] w-screen h-[50px] border-t border-b border-[#ccc] bg-white
+                                        opacity-0 pointer-events-none transition-opacity duration-200
+                                        group-hover/menu:opacity-100 group-hover/menu:pointer-events-auto">
+                                <div class="max-w-[1600px] mx-auto h-full flex items-center justify-between">
+                                    <!-- 좌측 로고/패딩 영역 동일 정렬 유지 -->
+                                    <div class="w-[880px]"></div>
+
+                                    <!-- 2뎁스 링크 -->
+                                    <ul class="flex gap-4 w-[60%]">
+                                        <li>
+                                            <a href="../map/commercialZoneMap"
+                                               class="inline-block px-2 text-[14px] font-light text-[#555] transition-all duration-200 hover:font-medium hover:text-[#222]">
+                                                유동인구/매출
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="../map/riskMap"
+                                               class="inline-block px-2 text-[14px] font-light text-[#555] transition-all duration-200 hover:font-medium hover:text-[#222]">
+                                                위험도분석
+                                            </a>
+                                        </li>
+                                    </ul>
+
+                                    <!-- 우측 여백 -->
+                                    <div class="flex-1"></div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <!-- 등기부등본 -->
+                        <li class="relative flex justify-center items-center mx-[90px] h-[80px] group
+                                   after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                                   after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                   hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                            <a href="../property/upload"
+                               class="inline-block w-auto flex-none leading-none subheading text-[16px]">
+                                등기부등본
+                            </a>
+                        </li>
+
+                        <!-- 상가 청약 -->
+                        <li class="relative flex mx-[90px] h-[80px] justify-center items-center group/menu2
+                                   after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-0
+                                   after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                   hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                            <a class="relative inline-block w-auto flex-none subheading text-[16px] leading-none cursor-pointer">
+                                상가 청약
+                            </a>
+                            <div class="fixed left-0 top-[80px] w-screen h-[50px] border-t border-b border-[#ccc] bg-white
+                                        opacity-0 pointer-events-none transition-opacity duration-200
+                                        group-hover/menu2:opacity-100 group-hover/menu2:pointer-events-auto">
+                                <div class="max-w-[1600px] mx-auto h-full flex items-center justify-between">
+                                    <!-- 좌측 로고/패딩 영역 동일 정렬 유지 -->
+                                    <div class="w-[1870px]"></div>
+
+                                    <!-- 2뎁스 링크 -->
+                                    <ul class="flex gap-4 w-[30%]">
+                                        <li>
+                                            <a href="../home/notifications"
+                                               class="inline-block px-2 text-[14px] font-light text-[#555] transition-all duration-200 hover:font-medium hover:text-[#222]">
+                                                청약 알림
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="../lh/notice"
+                                               class="inline-block px-2 text-[14px] font-light text-[#555] transition-all duration-200 hover:font-medium hover:text-[#222]">
+                                                공고문
+                                            </a>
+                                        </li>
+                                    </ul>
+
+                                    <!-- 우측 여백 -->
+                                    <div class="flex-1"></div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <!-- 로그인 -->
+                        <li class="relative flex justify-center items-center mx-[90px] h-[80px] group"
+                            th:if="${rq != null and rq.isLogout()}">
+                            <a href="../member/joinAndLogin"
+                               class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer
+                                              after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-[-32px]
+                                              after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                              hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                                로그인
+                            </a>
+                        </li>
+
+                        <li class="relative flex justify-center items-center min-w-[150px] h-[80px] group"
+                            th:if="${rq != null and rq.isLogined()}">
+                            <a href="../member/conditionalLogout"
+                               class="relative inline-block w-auto flex-none leading-none subheading text-[16px] cursor-pointer
+                                              after:content-[''] after:absolute after:left-1/2 after:right-1/2 after:bottom-[-32px]
+                                              after:border-b-0 after:border-b-[#EB0E2A] after:transition-all after:duration-200
+                                              hover:after:left-0 hover:after:right-0 hover:after:border-b-2">
+                                로그아웃
+                            </a>
+                        </li>
+
+                        <!-- 알림 아이콘 + 팝업 -->
+                        <li id="notif-wrapper" class="relative flex group w-[70px] h-[80px]"
+                            th:if="${rq != null and rq.isLogined()}">
+                            <!-- 알림벨 버튼 -->
+                            <button id="notif-icon" type="button"
+                                    class="cursor-pointer select-none w-auto h-[80px] mx-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                                    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                       stroke-width="2">
+                                        <path stroke-dasharray="4" stroke-dashoffset="4" d="M12 3v2">
+                                            <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.2s"
+                                                     values="4;0"/>
+                                        </path>
+                                        <path fill="currentColor" fill-opacity="0" stroke-dasharray="28"
+                                              stroke-dashoffset="28"
+                                              d="M12 5c-3.31 0 -6 2.69 -6 6l0 6c-1 0 -2 1 -2 2h8M12 5c3.31 0 6 2.69 6 6l0 6c1 0 2 1 2 2h-8">
+                                            <animate fill="freeze" attributeName="fill-opacity" begin="0.9s" dur="0.5s"
+                                                     values="0;1"/>
+                                            <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.2s"
+                                                     dur="0.4s"
+                                                     values="28;0"/>
+                                        </path>
+                                        <path stroke-dasharray="8" stroke-dashoffset="8"
+                                              d="M10 20c0 1.1 0.9 2 2 2c1.1 0 2 -0.9 2 -2">
+                                            <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.6s"
+                                                     dur="0.2s"
+                                                     values="8;0"/>
+                                        </path>
+                                    </g>
+                                </svg>
+                            </button>
+
+                            <!-- 설정 아이콘 -->
+                            <button id="setting-icon" type="button"
+                                    class="cursor-pointer select-none w-auto h-[80px] mx-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 640 640">
+                                    <!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                                    <path fill="currentColor"
+                                          d="M256.5 72C322.8 72 376.5 125.7 376.5 192C376.5 258.3 322.8 312 256.5 312C190.2 312 136.5 258.3 136.5 192C136.5 125.7 190.2 72 256.5 72zM226.7 368L286.1 368L287.6 368C274.7 394.8 279.8 426.2 299.1 447.5C278.9 469.8 274.3 503.3 289.7 530.9L312.2 571.3C313.1 572.9 314.1 574.5 315.1 576L78.1 576C61.7 576 48.4 562.7 48.4 546.3C48.4 447.8 128.2 368 226.7 368zM432.6 311.6C432.6 298.3 443.3 287.6 456.6 287.6L504.6 287.6C517.9 287.6 528.6 298.3 528.6 311.6L528.6 317.7C528.6 336.6 552.7 350.5 569.1 341.1L574.1 338.2C585.7 331.5 600.6 335.6 607.1 347.3L629.5 387.5C635.7 398.7 632.1 412.7 621.3 419.5L616.6 422.4C600.4 432.5 600.4 462.3 616.6 472.5L621.2 475.4C632 482.2 635.7 496.2 629.5 507.4L607 547.8C600.5 559.5 585.6 563.7 574 556.9L569.1 554C552.7 544.5 528.6 558.5 528.6 577.4L528.6 583.5C528.6 596.8 517.9 607.5 504.6 607.5L456.6 607.5C443.3 607.5 432.6 596.8 432.6 583.5L432.6 577.6C432.6 558.6 408.4 544.6 391.9 554.1L387.1 556.9C375.5 563.6 360.7 559.5 354.1 547.8L331.5 507.4C325.3 496.2 328.9 482.1 339.8 475.3L344.2 472.6C360.5 462.5 360.5 432.5 344.2 422.4L339.7 419.6C328.8 412.8 325.2 398.7 331.4 387.5L353.9 347.2C360.4 335.5 375.3 331.4 386.8 338.1L391.6 340.9C408.1 350.4 432.3 336.4 432.3 317.4L432.3 311.5zM532.5 447.8C532.5 419.1 509.2 395.8 480.5 395.8C451.8 395.8 428.5 419.1 428.5 447.8C428.5 476.5 451.8 499.8 480.5 499.8C509.2 499.8 532.5 476.5 532.5 447.8z"/>
+                                </svg>
+                            </button>
+
+                            <!-- 팝업 알림함 불러오기 -->
+                            <div th:replace="common/subscription :: subscription"></div>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        <div class="w-full flex justify-center items-center gap-16 mt-[80px]">
+            <!-- 첫 번째 아이콘 -->
+            <div class="w-[90px] h-[90px] rounded-[5px] bg-white flex items-center justify-center">
+                <a href="../map/riskMap">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24">
+                        <path fill="#E94876" fill-rule="evenodd"
+                              d="M14 20.5V4.25c0-.728-.002-1.2-.048-1.546c-.044-.325-.115-.427-.172-.484s-.159-.128-.484-.172C12.949 2.002 12.478 2 11.75 2s-1.2.002-1.546.048c-.325.044-.427.115-.484.172s-.128.159-.172.484c-.046.347-.048.818-.048 1.546V20.5z"
+                              clip-rule="evenodd"/>
+                        <path fill="#E94876"
+                              d="M8 8.75A.75.75 0 0 0 7.25 8h-3a.75.75 0 0 0-.75.75V20.5H8zm12 5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75v6.75H20z"
+                              opacity="0.7"/>
+                        <path fill="#E94876" d="M1.75 20.5a.75.75 0 0 0 0 1.5h20a.75.75 0 0 0 0-1.5z" opacity="0.5"/>
+                    </svg>
+                    <p class="text-[10px] muted text-center">위험도 분석</p>
                 </a>
             </div>
 
-            <nav class="w-[60%] text-center">
-                <ul class="flex justify-center items-center relative">
-                    <li>
-                        <a href="../map/commercialZoneMap"
-                           class="flex justify-center items-center w-[240px] h-[100px] relative cursor-pointer">
-                            <p class="text-[22px] text-black">상권 분석</p>
-                        </a>
-                    </li>
-                    <li>
-                        <div class="flex justify-center items-center w-[240px] h-[100px] relative">
-                            <p class="text-[22px] text-black">부동산 매물</p>
-                        </div>
-                    </li>
-                    <li id="menu-bar">
-                        <div class="flex justify-center items-center w-[240px] h-[100px] relative cursor-point">
-                            <p class="text-[22px] text-black">상가 청약</p>
-                        </div>
-
-                        <!-- 하단 텍스트 메뉴 -->
-                        <div id="sub-menubar"
-                             class="absolute hidden flex-col items-center top-full left-1/2 transform -translate-x-1/2 opacity-0 transition-opacity duration-300 text-center bg-gray-300">
-                            <a href="#" class="hover:underline">청약 알림</a>
-                            <a href="#" class="hover:underline">공고문</a>
-                            <a href="../member/usr/member/conditionalLogout" class="hover:underline">로그아웃</a>
-                        </div>
-                    </li>
-                    <li>
-                        <a href="../member/joinAndLogin"
-                           class="flex justify-center items-center w-[240px] h-[100px] relative cursor-pointer">
-                            <p class="text-[22px] text-black">로그인</p>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-
-        <div class="w-full flex justify-center items-center gap-16 mt-[100px]">
-            <!-- 첫 번째 아이콘 -->
-            <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="68" height="68" viewBox="0 0 24 24">
-                    <path fill="#E94876" fill-rule="evenodd" d="M14 20.5V4.25c0-.728-.002-1.2-.048-1.546c-.044-.325-.115-.427-.172-.484s-.159-.128-.484-.172C12.949 2.002 12.478 2 11.75 2s-1.2.002-1.546.048c-.325.044-.427.115-.484.172s-.128.159-.172.484c-.046.347-.048.818-.048 1.546V20.5z" clip-rule="evenodd" />
-                    <path fill="#E94876" d="M8 8.75A.75.75 0 0 0 7.25 8h-3a.75.75 0 0 0-.75.75V20.5H8zm12 5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75v6.75H20z" opacity="0.7" />
-                    <path fill="#E94876" d="M1.75 20.5a.75.75 0 0 0 0 1.5h20a.75.75 0 0 0 0-1.5z" opacity="0.5" />
-                </svg>
-            </div>
-
             <!-- 두 번째 아이콘 -->
-            <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="68" height="68" viewBox="0 0 24 24">
-                    <g fill="#3D9ECC">
-                        <path d="M9.883 2.207a1.9 1.9 0 0 1 2.087 1.522l.025.167L12 4v7a1 1 0 0 0 .883.993L13 12h6.8a2 2 0 0 1 2 2a1 1 0 0 1-.026.226A10 10 0 1 1 9.504 2.293l.27-.067z"/>
-                        <path d="M14 3.5V9a1 1 0 0 0 1 1h5.5a1 1 0 0 0 .943-1.332a10 10 0 0 0-6.11-6.111A1 1 0 0 0 14 3.5"/>
-                    </g>
-                </svg>
+            <div class="w-[90px] h-[90px] rounded-[5px] bg-white flex items-center justify-center">
+                <a href="../map/commercialZoneMap">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24">
+                        <g fill="#3D9ECC">
+                            <path d="M9.883 2.207a1.9 1.9 0 0 1 2.087 1.522l.025.167L12 4v7a1 1 0 0 0 .883.993L13 12h6.8a2 2 0 0 1 2 2a1 1 0 0 1-.026.226A10 10 0 1 1 9.504 2.293l.27-.067z"/>
+                            <path d="M14 3.5V9a1 1 0 0 0 1 1h5.5a1 1 0 0 0 .943-1.332a10 10 0 0 0-6.11-6.111A1 1 0 0 0 14 3.5"/>
+                        </g>
+                    </svg>
+                    <p class="text-[10px] muted text-center">매출 분석</p>
+                </a>
             </div>
 
             <!-- 세 번째 아이콘 -->
-            <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
-                <!-- 아이콘 고민 -->
+            <div class="w-[90px] h-[90px] rounded-[5px] bg-white flex flex-col items-center justify-center">
+                <a href="../property/upload">
+                    <img src="/images/등기부등본.webp" width="70" height="70" style="margin-top:-3px;">
+                    <p class="text-[10px] muted text-center" style="margin-top:-7px;">등기부등본 분석</p>
+                </a>
+
             </div>
 
             <!-- 네 번째 아이콘 -->
-            <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
-                <!-- 아이콘 고민 -->
+            <div class=" w-[90px] h-[90px] rounded-[5px] bg-white flex items-center justify-center">
+                <a href="../lh/notice">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 640 640">
+                        <g fill="#63E6BE">
+                            <path d="M224 64C241.7 64 256 78.3 256 96L256 128L384 128L384 96C384 78.3 398.3 64 416 64C433.7 64 448 78.3 448 96L448 128L480 128C515.3 128 544 156.7 544 192L544 480C544 515.3 515.3 544 480 544L160 544C124.7 544 96 515.3 96 480L96 192C96 156.7 124.7 128 160 128L192 128L192 96C192 78.3 206.3 64 224 64zM160 304L160 336C160 344.8 167.2 352 176 352L208 352C216.8 352 224 344.8 224 336L224 304C224 295.2 216.8 288 208 288L176 288C167.2 288 160 295.2 160 304zM288 304L288 336C288 344.8 295.2 352 304 352L336 352C344.8 352 352 344.8 352 336L352 304C352 295.2 344.8 288 336 288L304 288C295.2 288 288 295.2 288 304zM432 288C423.2 288 416 295.2 416 304L416 336C416 344.8 423.2 352 432 352L464 352C472.8 352 480 344.8 480 336L480 304C480 295.2 472.8 288 464 288L432 288zM160 432L160 464C160 472.8 167.2 480 176 480L208 480C216.8 480 224 472.8 224 464L224 432C224 423.2 216.8 416 208 416L176 416C167.2 416 160 423.2 160 432zM304 416C295.2 416 288 423.2 288 432L288 464C288 472.8 295.2 480 304 480L336 480C344.8 480 352 472.8 352 464L352 432C352 423.2 344.8 416 336 416L304 416zM416 432L416 464C416 472.8 423.2 480 432 480L464 480C472.8 480 480 472.8 480 464L480 432C480 423.2 472.8 416 464 416L432 416C423.2 416 416 423.2 416 432z"/>
+                        </g>
+                    </svg>
+                    <p class="text-[10px] muted text-center">공고문</p>
+                </a>
             </div>
 
             <!-- 다섯 번째 아이콘 -->
-            <div class="w-[100px] h-[100px] rounded-[10px] bg-white flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="68" height="68" viewBox="0 0 24 24">
-                    <g fill="none" stroke="#C5D54A" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
-                        <path d="M12 3v2" />
-                        <path fill="#C5D54A" d="M12 5c-3.31 0 -6 2.69 -6 6l0 6c-1 0 -2 1 -2 2h8M12 5c3.31 0 6 2.69 6 6l0 6c1 0 2 1 2 2h-8" />
-                        <path d="M10 20c0 1.1 0.9 2 2 2c1.1 0 2 -0.9 2 -2" />
-                    </g>
-                </svg>
+            <div class="w-[90px] h-[90px] rounded-[5px] bg-white flex items-center justify-center">
+                <a href="#" class="cursor-pointer">
+                    <!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 640 640">
+                        <g>
+                            <path fill="#74C0FC"
+                                  d="M424 64C437.3 64 448 74.7 448 88L448 128L480 128C515.3 128 544 156.7 544 192L544 480C544 515.3 515.3 544 480 544L160 544C124.7 544 96 515.3 96 480L96 192C96 156.7 124.7 128 160 128L192 128L192 88C192 74.7 202.7 64 216 64C229.3 64 240 74.7 240 88L240 128L400 128L400 88C400 74.7 410.7 64 424 64zM160 176C151.2 176 144 183.2 144 192L144 480C144 488.8 151.2 496 160 496L480 496C488.8 496 496 488.8 496 480L496 192C496 183.2 488.8 176 480 176L160 176zM390.7 241.9C398.5 231.2 413.5 228.8 424.2 236.6C434.9 244.4 437.3 259.4 429.5 270.1L307.4 438.1C303.3 443.8 296.9 447.4 289.9 447.9C282.9 448.4 276 445.9 271.1 441L215.2 385.1C205.8 375.7 205.8 360.5 215.2 351.2C224.6 341.9 239.8 341.8 249.1 351.2L285.1 387.2L390.7 242z"/>
+                        </g>
+                    </svg>
+                    <p class="text-[10px] muted text-center">관심 일정</p>
+                </a>
             </div>
+
+            <!-- 네 번째 아이콘 -->
+            <div class=" w-[90px] h-[90px] rounded-[5px] bg-white flex items-center justify-center">
+                <a href="http://localhost:3000" class="flex flex-col items-center">
+                    <i class="fa-solid fa-diagram-project fa-2x pt-2 p-1 text-indigo-500"></i>
+                    <p class="text-[10px] text-gray-500 text-center mt-2">시뮬레이션</p>
+                </a>
+            </div>
+
+
         </div>
     </div>
 
     <script>
-        const header = document.getElementById('header-wrapper');
-        const menuBar = document.getElementById('menu-bar');
-        const subMenu = document.getElementById('sub-menubar');
+        // 알림 팝업 토글 + 외부 클릭 닫기
+        const notifIcon = document.getElementById('notif-icon');
+        const notifPopover = document.getElementById('notif-popover');
+        const notifClose = document.getElementById('notif-close');
+        const wrapper = document.getElementById('notif-wrapper');
 
-        let hoverTimeout;
+        // 더보기 토글(팝업 내부)
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.more-btn')) {
+                const btn = e.target.closest('.more-btn');
+                const panel = btn.parentElement.querySelector('.more-panel');
+                const icon = btn.querySelector('svg path');
+                const hidden = panel.classList.contains('hidden');
 
-        const expandHeader = () => {
-            clearTimeout(hoverTimeout);
-            header.classList.remove('h-[100px]');
-            header.classList.add('h-[250px]');
-            subMenu.classList.remove('opacity-0', 'hidden');
-            subMenu.classList.add('opacity-100', 'flex');
-        };
+                panel.classList.toggle('hidden');
 
-        const collapseHeader = () => {
-            hoverTimeout = setTimeout(() => {
-                header.classList.remove('h-[250px]');
-                header.classList.add('h-[100px]');
-                subMenu.classList.remove('flex', 'opacity-100');
-                subMenu.classList.add('hidden', 'opacity-0');
-            }, 100); // 짧은 시간 주는 건 사용자의 빠른 이동 방지용
-        };
+                if (icon) icon.setAttribute('d', hidden ? 'M7 14l5-5 5 5z' : 'M7 10l5 5 5-5z');
+            }
+        });
 
-        menuBar.addEventListener('mouseenter', expandHeader);
-        menuBar.addEventListener('mouseleave', collapseHeader);
-        subMenu.addEventListener('mouseenter', expandHeader);
-        subMenu.addEventListener('mouseleave', collapseHeader);
+        // 아이콘 클릭 → 팝업 열기/닫기
+        notifIcon.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            // 페이지 이동 방지
+            notifPopover.classList.toggle('hidden');
+        });
+
+        // 닫기 버튼
+        notifClose.addEventListener('click', () => notifPopover.classList.add('hidden'));
+
+        // 바깥 클릭 시 닫기
+        document.addEventListener('click', (e) => {
+            if (!wrapper.contains(e.target)) notifPopover.classList.add('hidden');
+        });
+
+        //마이페이지
+        document.addEventListener('DOMContentLoaded', () => {
+            const settingIcon = document.getElementById('setting-icon');
+            if (!settingIcon) return; // 아이콘이 없으면 중단
+
+            settingIcon.addEventListener('click', (e) => {
+                // 만약 버튼이 <a href="..."> 안에 있거나 기본 동작이 있으면 막아줌
+                e.preventDefault();
+                e.stopPropagation();
+
+                // 이동
+                window.location.href = '/usr/member/myPage';
+            });
+        });
     </script>
-
 </header>

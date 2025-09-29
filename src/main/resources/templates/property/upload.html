@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head::head"></head>
+
+<header th:replace="common/mapHeader::header"></header>
+<div class="flex flex-col justify-center items-center h-screen w-screen">
+    <h1 class="text-2xl font-bold mb-2">등기부등본 분석</h1>
+    <p class="text-sm text-gray-500 mb-4">원본 PDF 1개를 업로드하세요. (최대 20MB)</p>
+
+    <!-- Dropzone -->
+    <div id="drop"
+         class="flex flex-col justify-center items-center border-2 border-dashed border-gray-300 rounded-xl p-6 bg-white h-[300px] w-[90%]">
+        <p class="font-medium text-gray-700">여기에 PDF를 끌어다 놓거나</p>
+        <p class="text-gray-500">아래 버튼으로 선택하세요</p>
+
+        <!-- PDF만, 단일 파일 -->
+        <input id="file" type="file" name="file" accept="application/pdf" class="hidden"/>
+
+        <div class="flex justify-center gap-3 mt-4">
+            <button id="pick" type="button" class="px-4 py-2 rounded-lg bg-gray-800 text-white hover:bg-gray-700">PDF 선택
+            </button>
+
+        </div>
+
+        <p class="text-xs text-gray-400 mt-2">허용 형식: PDF (최대 20MB)</p>
+
+        <!-- 미리보기 -->
+        <div id="thumbs" class="flex justify-center gap-4 mt-6"></div>
+    </div>
+
+    <!-- 보증금, 월세 데이터 받기 -->
+    <div class="mt-4 flex justify-center gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">보증금 (만원)</label>
+            <input id="deposit" type="number"
+                   class="w-32 border border-gray-300 bg-white rounded-md px-2 py-1 no-spin
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500"/>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700">월세 (만원)</label>
+            <input id="monthlyRent" type="number"
+                   class="w-32 border border-gray-300 bg-white rounded-md px-2 py-1 no-spin
+                  focus:border-blue-500 focus:ring-1 focus:ring-blue-500"/>
+        </div>
+
+    </div>
+    <div class="flex justify-center mt-3">
+        <button id="upload" type="button" disabled
+                class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50">
+            분석하기
+        </button>
+    </div>
+
+</div>
+
+<!-- 분석결과 팝업창 -->
+<div id="result-modal"
+     class="hidden fixed inset-0 flex items-center justify-center bg-black/30 z-50">
+    <div class="bg-white rounded-lg p-6 w-[400px] shadow-lg">
+        <div class="flex  mb-3">
+            <h3 class="font-bold text-lg">분석 결과</h3>
+            <div class="flex-1"></div>
+            <button id="toggleDetail"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800  text-sm text-white font-medium
+         hover:bg-gray-700 active:bg-gray-900 shadow transition duration-200">
+                <i class="fa-solid fa-circle-info text-xs "></i>
+                상세보기
+            </button>
+        </div>
+        <!-- 위험도 bar + 기준 선택 버튼 -->
+        <div class="mb-3">
+            <div class="flex justify-between items-center mb-2">
+                <p class="text-sm text-gray-600 font-medium">위험도 기준 선택</p>
+                <div class="flex gap-2">
+                    <button id="btnStatic" class="px-2 py-1 bg-blue-600 text-white rounded text-xs">기준시가 기준</button>
+                    <button id="btnDeal" class="px-2 py-1 bg-gray-300 text-black rounded text-xs">실거래가 기준</button>
+                </div>
+            </div>
+
+            <!-- Static bar -->
+            <div id="riskBarStaticWrapper" class="w-full bg-gray-200 rounded-full h-4 mb-2 hidden">
+                <div id="riskBarStatic" class="h-4 rounded-full"></div>
+            </div>
+
+            <!-- Deal bar -->
+            <div id="riskBarDealWrapper" class="w-full bg-gray-200 rounded-full h-4 hidden">
+                <div id="riskBarDeal" class="h-4 rounded-full"></div>
+            </div>
+        </div>
+        <div class="mt-1 text-lg text-gray-700">
+            위험도 점수: <span id="totalScore"></span> (단계: <span id="totalLevel"></span>)
+        </div>
+
+
+        <div id="riskDetail" class="mt-2 hidden">
+            임대 리스크: <span id="rentRisk"></span><br>
+            (예상 평균 월세 : <span id="rentBase"></span>)<br>
+            보증금 리스크
+            <div class="relative inline-block">
+                <!-- ? 버튼 -->
+                <button class="help-btn w-4 h-4 rounded-full bg-black text-white text-sm flex items-center justify-center"
+                        data-tooltip="depositHelpTooltip">
+                    ?
+                </button>
+
+                <!-- 툴팁 (기본 hidden) -->
+                <div id="depositHelpTooltip"
+                     class="tooltip-box absolute left-1/2 top-full mt-2 w-64 bg-black text-white text-xs
+              rounded-lg px-3 py-2 shadow-lg opacity-0 pointer-events-none
+              transition transform -translate-x-1/2 z-10">
+                    보증금은 인근 유사 면적 평균값을 기준으로 산정됩니다.
+                </div>
+            </div>
+            : <span id="depositRisk"></span><br>
+            (예상 평균 보증금 : <span id="depositBase"></span>)<br>
+            채권보증금 리스크
+            <div class="relative inline-block">
+                <!-- ? 버튼 -->
+                <button class="help-btn w-4 h-4 rounded-full bg-black text-white text-sm flex items-center justify-center"
+                        data-tooltip="bondHelpTooltip">
+                    ?
+                </button>
+
+                <!-- 툴팁 (기본 hidden) -->
+                <div id="bondHelpTooltip"
+                     class="tooltip-box absolute left-1/2 top-full mt-2 w-64 bg-black text-white text-xs
+              rounded-lg px-3 py-2 shadow-lg opacity-0 pointer-events-none
+              transition transform -translate-x-1/2 z-10">
+                    세입자가 맡긴 보증금을 법적으로 보호하기 위해 환산한 금액<br>
+                    “내 보증금이 안전하게 회수될 수 있는지”를 따지는 기준
+                </div>
+            </div>
+            : <span id="bondRisk"></span><br>
+            근저당권 리스크
+            <div class="relative inline-block">
+                <!-- ? 버튼 -->
+                <button class="help-btn w-4 h-4 rounded-full bg-black text-white text-sm flex items-center justify-center"
+                        data-tooltip="debtHelpTooltip">
+                    ?
+                </button>
+
+                <!-- 툴팁 (기본 hidden) -->
+                <div id="debtHelpTooltip"
+                     class="tooltip-box absolute left-1/2 top-full mt-2 w-64 bg-black text-white text-xs
+              rounded-lg px-3 py-2 shadow-lg opacity-0 pointer-events-none
+              transition transform -translate-x-1/2 z-10">
+                    은행 등이 집을 담보로 돈을 빌려줄 때 설정하는 권리<br>
+                    채무자가 돈을 못 갚으면 집을 경매로 넘겨 먼저 돈을 받아갈 수 있음
+                </div>
+            </div>
+            : <span id="debtRisk"></span>
+        </div>
+        <div class="text-right mt-4">
+            <button onclick="closeModal()"
+                    class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">확인
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- 로딩 오버레이 -->
+<div id="overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="w-[420px] rounded-xl bg-white p-6 shadow-2xl">
+        <h2 class="mb-4 text-lg font-bold flex items-center">
+            📊 분석 진행중<span class="dot-animate ml-1"></span>
+        </h2>
+
+        <!-- Progress bar wrapper -->
+        <div class="w-full overflow-hidden rounded-full bg-gray-200 h-3">
+            <!-- 실제 진행 막대 -->
+            <div id="progress-bar"
+                 class="h-full w-0 bg-blue-500 transition-[width] duration-500 ease-out"></div>
+        </div>
+
+        <!-- 진행 단계 텍스트 -->
+        <p id="progress-text" class="mt-2 text-sm text-gray-600">시작 중...</p>
+    </div>
+</div>
+
+
+<!-- 챗봇 불러오기 -->
+<div th:replace="chatbot/chat::chat"></div>
+<style>
+    .no-spin::-webkit-inner-spin-button,
+    .no-spin::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .no-spin {
+        -moz-appearance: textfield;
+    }
+
+    .dot-animate::after {
+        content: '...';
+        animation: dots 1.5s steps(3, end) infinite;
+    }
+
+    @keyframes dots {
+        0%   { content: ''; }
+        33%  { content: '.'; }
+        66%  { content: '..'; }
+        100% { content: '...'; }
+    }
+</style>
+
+<script>
+    // 버튼 클릭 시 툴팁 토글
+    $(".help-btn").on("click", function (e) {
+        e.stopPropagation(); // 바깥 클릭 이벤트랑 겹치지 않게
+        const tooltipId = $(this).data("tooltip");
+        const $tooltip = $("#" + tooltipId);
+
+        $tooltip.toggleClass("opacity-0 pointer-events-none");
+    });
+
+    // 바깥 클릭 시 모든 툴팁 닫기
+    $(document).on("click", function (e) {
+        $(".tooltip-box").each(function () {
+            const $tooltip = $(this);
+            const $btn = $(`[data-tooltip='${$tooltip.attr("id")}']`);
+
+            if (!$tooltip.is(e.target) && $tooltip.has(e.target).length === 0 &&
+                !$btn.is(e.target) && $btn.has(e.target).length === 0) {
+                $tooltip.addClass("opacity-0 pointer-events-none");
+            }
+        });
+    });
+</script>
+
+<script>
+    const state = {
+        totalScoreStatic: 0,
+        totalLevelStatic: "",
+        totalScoreDeal: 0,
+        totalLevelDeal: "",
+        resultJson: null
+    };
+
+
+    const depositInput = document.getElementById("deposit");
+    const monthlyRentInput = document.getElementById("monthlyRent");
+    const uploadBtn = document.getElementById("upload");
+
+    // 입력값 검사 함수
+    function checkInputs() {
+        const deposit = depositInput.value.trim();
+        const monthlyRent = monthlyRentInput.value.trim();
+
+        if (selectedFile && deposit !== "" && monthlyRent !== "") {
+            uploadBtn.disabled = false;
+        } else {
+            uploadBtn.disabled = true;
+        }
+    }
+
+    // 인풋 이벤트 등록
+    depositInput.addEventListener("input", checkInputs);
+    monthlyRentInput.addEventListener("input", checkInputs);
+
+    let selectedFile = null;
+    const MAX_MB = 20;
+
+    const isPdf = (f) => f && (f.type === "application/pdf" || (f.name || "").toLowerCase().endsWith(".pdf"));
+
+    function showPreview() {
+        const thumbs = document.getElementById("thumbs");
+        thumbs.innerHTML = "";
+        if (!selectedFile) {
+            uploadBtn.disabled = true;
+            return;
+        }
+        const sizeMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+        const card = document.createElement("div");
+        card.className = "border rounded-lg p-2 bg-white shadow";
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <img src="/images/pdf-icon.png" alt="PDF" class="w-10 h-10">
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-700 truncate">${selectedFile.name}</p>
+              <p class="text-xs text-gray-500">${sizeMB} MB</p>
+            </div>
+          </div>
+        `;
+        thumbs.appendChild(card);
+        checkInputs();
+    }
+
+    function setPdf(file) {
+        if (!file) {
+            selectedFile = null;
+            showPreview();
+            return;
+        }
+        if (!isPdf(file)) {
+            alert("PDF만 업로드할 수 있습니다.");
+            selectedFile = null;
+            showPreview();
+            return;
+        }
+        if (file.size > 20 * 1024 * 1024) {
+            alert("파일이 20MB를 초과합니다.");
+            selectedFile = null;
+            showPreview();
+            return;
+        }
+        selectedFile = file;
+        showPreview();
+    }
+
+    document.getElementById("pick").addEventListener("click", () => document.getElementById("file").click());
+    document.getElementById("file").addEventListener("change", function () {
+        setPdf(this.files?.[0]);
+    });
+
+    const drop = document.getElementById("drop");
+    drop.addEventListener("dragenter", e => {
+        e.preventDefault();
+        drop.classList.add("border-blue-500");
+    });
+    drop.addEventListener("dragover", e => {
+        e.preventDefault();
+    });
+    drop.addEventListener("dragleave", e => {
+        e.preventDefault();
+        drop.classList.remove("border-blue-500");
+    });
+
+    drop.addEventListener("drop", e => {
+        e.preventDefault();
+        drop.classList.remove("border-blue-500");
+        const file = e.dataTransfer.files?.[0];
+        setPdf(file);
+    });
+
+    function getRiskClass(level) {
+        switch (level) {
+            case "정상":
+                return "text-green-600 font-bold";
+            case "주의":
+                return "text-yellow-600 font-bold";
+            case "위험":
+                return "text-orange-600 font-bold";
+            case "고위험":
+                return "text-red-600 font-bold";
+            default:
+                return "text-gray-600";
+        }
+    }
+
+    // ===================== Progress Animator =====================
+    let visualPercent = 0;      // 화면에 보이는 퍼센트
+    let targetPercent = 0;      // 단계별 목표 퍼센트
+    let progressTimer = null;
+    let currentStatusText = "";
+    let currentJobId = null;
+
+    const TICK_MS = 80;         // 틱 간격(ms) → 숫자 키우면 더 느려짐
+    const SPEED_PER_TICK = 0.4; // 틱당 증가량(%) → 숫자 줄이면 더 느려짐
+
+    const overlay = document.getElementById("overlay");
+
+    function renderProgressBar() {
+        const bar = document.getElementById("progress-bar");
+        const label = document.getElementById("progress-text");
+        if (bar) bar.style.width = `${visualPercent}%`;
+        if (label) label.textContent = currentStatusText || "";
+    }
+
+    function setStatusText(text) {
+        currentStatusText = text || "";
+        renderProgressBar();
+    }
+
+    function stopProgress() {
+        if (progressTimer) {
+            clearInterval(progressTimer);
+            progressTimer = null;
+        }
+    }
+
+    function resetProgress() {
+        stopProgress();
+        visualPercent = 0;
+        targetPercent = 0;
+        setStatusText("시작 중...");
+        const bar = document.getElementById("progress-bar");
+        if (bar) bar.style.width = "0%";
+    }
+
+    // 타겟 퍼센트를 갱신 (뒤로 가지 않도록 보장)
+    function setTargetProgress(p) {
+        const clamped = Math.max(0, Math.min(100, p));
+        targetPercent = Math.max(targetPercent, clamped); // 역주행 방지
+
+        if (!progressTimer) {
+            progressTimer = setInterval(() => {
+                if (visualPercent < targetPercent) {
+                    visualPercent = Math.min(targetPercent, visualPercent + SPEED_PER_TICK);
+                    renderProgressBar();
+                }
+                // 같거나 크면 대기 (감소는 허용 안 함)
+            }, TICK_MS);
+        }
+    }
+
+    // 단계 → 텍스트
+    function statusToText(status) {
+        return {
+            init: "시작 중...",
+            pdf: "📑 PDF 분석 중...",
+            crawl: "🏠 실거래가 조회 중...",
+            area: "공동매물 지역 검색 중...",
+            rent: "평균 월세·보증금 조회 중...",
+            calc: "📊 위험도 계산 중...",
+            collateralValue: "담보가치 계산 중...",
+            done: "✅ 완료",
+            error: "❌ 오류"
+        }[status] || "대기 중...";
+    }
+
+    // 단계 → 목표 퍼센트(그 단계의 상한선)
+    function statusToPercent(status) {
+        return {
+            init: 5,
+            pdf: 30,
+            crawl: 55,
+            area: 65,
+            rent: 75,
+            calc: 90,
+            collateralValue: 95,
+            done: 100,
+            error: 100
+        }[status] ?? 0;
+    }
+
+    // 진행률/문구 갱신(게이지는 setInterval로 서서히 타겟까지 이동)
+    function updateProgressByStatus(status, percentFromServer) {
+        const target = (typeof percentFromServer === "number")
+            ? percentFromServer
+            : statusToPercent(status);
+        setTargetProgress(target);
+        setStatusText(statusToText(status));
+    }
+
+    // ===================== 업로드 버튼 핸들러 =====================
+    document.getElementById("upload").addEventListener("click", async () => {
+        const form = new FormData();
+        form.append("file", selectedFile);
+
+        const deposit = document.getElementById("deposit").value || 0;
+        const monthlyRent = document.getElementById("monthlyRent").value || 0;
+        form.append("deposit", deposit);
+        form.append("monthlyRent", monthlyRent);
+
+        // Progress 초기화 + 오버레이 표시
+        resetProgress();
+        overlay.classList.remove("hidden");
+        setTargetProgress(5);
+        setStatusText("시작 중...");
+
+        try {
+            const res = await fetch("/usr/property/upload", { method: "POST", body: form });
+            const json = await res.json();
+
+            if (!json || !json.ok || !json.jobId) {
+                setTargetProgress(100);
+                setStatusText("❌ 업로드 응답 오류");
+                setTimeout(() => { overlay.classList.add("hidden"); stopProgress(); }, 800);
+                return;
+            }
+
+            currentJobId = json.jobId; // 중복 클릭/이전 job 가드용
+            pollStatus(json.jobId);
+
+        } catch (err) {
+            console.error(err);
+            setTargetProgress(100);
+            setStatusText("❌ 네트워크 오류");
+            setTimeout(() => { overlay.classList.add("hidden"); stopProgress(); }, 800);
+        }
+    });
+
+    // ===================== 상태 폴링 =====================
+    async function pollStatus(jobId) {
+        // 최신 job만 유효
+        if (jobId !== currentJobId) return;
+
+        try {
+            const res = await fetch(`/usr/property/status/${jobId}`);
+            const { status, percent } = await res.json();
+
+            updateProgressByStatus(status, percent);
+
+            if (status === "done") {
+                const result = await fetch(`/usr/property/result/${jobId}`).then(r => r.json());
+                setStatusText(statusToText("done"));
+                setTargetProgress(100);
+                setTimeout(() => {
+                    overlay.classList.add("hidden");
+                    stopProgress();
+                    renderResult(result); // ← 아래 함수 그대로 사용
+                }, 400);
+                return;
+            }
+
+            if (status === "error") {
+                setTargetProgress(100);
+                setStatusText(statusToText("error"));
+                setTimeout(() => { overlay.classList.add("hidden"); stopProgress(); }, 800);
+                return;
+            }
+
+            setTimeout(() => pollStatus(jobId), 1000); // 1초 간격
+
+        } catch (e) {
+            console.error(e);
+            setTargetProgress(100);
+            setStatusText("❌ 상태 조회 실패");
+            setTimeout(() => { overlay.classList.add("hidden"); stopProgress(); }, 800);
+        }
+    }
+
+    // ===================== 결과 렌더링 (기존 로직 유지) =====================
+    function renderResult(result) {
+        resultJson = result;
+
+        // 팝업 열기
+        $("#result-modal").removeClass("hidden");
+
+        function getRiskClass(level) {
+            switch (level) {
+                case "정상": return "text-green-600 font-bold";
+                case "주의": return "text-yellow-600 font-bold";
+                case "위험": return "text-orange-600 font-bold";
+                case "고위험": return "text-red-600 font-bold";
+                default: return "text-gray-600";
+            }
+        }
+        function riskToScore(level) {
+            switch (level) {
+                case "정상": return 25;
+                case "주의": return 50;
+                case "위험": return 75;
+                case "고위험": return 100;
+                default: return 0;
+            }
+        }
+        function scoreToLevel(score) {
+            if (score < 40) return "정상";
+            else if (score < 60) return "주의";
+            else if (score < 80) return "위험";
+            else return "고위험";
+        }
+        function formatMoney(valueInManwon) {
+            valueInManwon = parseInt(valueInManwon, 10);
+            if (isNaN(valueInManwon)) return "-";
+            if (valueInManwon >= 10000) {
+                const eok = Math.floor(valueInManwon / 10000);
+                const man = valueInManwon % 10000;
+                return man === 0 ? `${eok}억` : `${eok}억 ${man}만`;
+            } else {
+                return `${valueInManwon}만`;
+            }
+        }
+
+        const rentRiskClass = getRiskClass(result.rentRisk);
+        const depositRiskClass = getRiskClass(result.depositRisk);
+        const bondDepositRiskClass = getRiskClass(result.bondDepositRiskStatic);
+        const debtRiskLevelClass = getRiskClass(result.debtRiskLevel);
+
+        const rent = riskToScore(result.rentRisk);
+        const deposit = riskToScore(result.depositRisk);
+        const bondStatic = riskToScore(result.bondDepositRiskStatic);
+        const bondDeal = riskToScore(result.bondDepositRiskDeal);
+        const debt = riskToScore(result.debtRiskLevel);
+
+        const totalScoreStatic = (rent + deposit + bondStatic + debt) / 4.0;
+        const totalLevelStatic = scoreToLevel(totalScoreStatic);
+        const totalScoreDeal = (rent + deposit + bondDeal + debt) / 4.0;
+        const totalLevelDeal = scoreToLevel(totalScoreDeal);
+
+        state.totalScoreStatic = totalScoreStatic;
+        state.totalLevelStatic = totalLevelStatic;
+        state.totalScoreDeal = totalScoreDeal;
+        state.totalLevelDeal = totalLevelDeal;
+        state.resultJson = result;
+
+        $("#rentRisk").html(`<span class="${rentRiskClass}">${result.rentRisk}</span>`);
+        $("#rentBase").html(`<span>${formatMoney(result.avgMonthlyDisplay)}</span>`);
+        $("#depositRisk").html(`<span class="${depositRiskClass}">${result.depositRisk}</span>`);
+        $("#depositBase").html(`<span>${formatMoney(result.avgDepositDisplay)}</span>`);
+        $("#bondRisk").html(`<span class="${bondDepositRiskClass}">${result.bondDepositRisk}</span>`);
+        $("#debtRisk").html(`<span class="${debtRiskLevelClass}">${result.debtRiskLevel}</span>`);
+
+        showView("static");
+    }
+
+
+    // ---- 공통 함수들 (upload 핸들러 바깥) ----
+    function animateBar(selector, score) {
+        const $el = $(selector);
+        $el.stop(true, true).css("width", "0"); // 이전 애니메이션 정리 + 초기화
+        $({val: 0}).animate({val: score}, {
+            duration: 1500,
+            step(now) {
+                let color = "#22c55e";
+                if (now >= 100) color = "#dc2626";
+                else if (now >= 70) color = "#ef4444";
+                else if (now >= 50) color = "#eab308";
+                $el.css({width: now + "%", backgroundColor: color});
+            }
+        });
+    }
+
+    function updateScoreAndLevel(score, level) {
+        $("#totalScore").text(score.toFixed(1));
+        $("#totalLevel").html(`<span class="${getRiskClass(level)}">${level}</span>`);
+    }
+
+    function updateBondRisk(type, json) {
+        if (type === "static") {
+            $("#bondRisk").html(
+                `<span class="${getRiskClass(json.bondDepositRiskStatic)}">${json.bondDepositRiskStatic}</span>`
+            );
+        } else {
+            $("#bondRisk").html(
+                `<span class="${getRiskClass(json.bondDepositRiskDeal)}">${json.bondDepositRiskDeal}</span>`
+            );
+        }
+    }
+
+    function showView(kind) {
+        if (kind === "static") {
+            $("#riskBarDealWrapper").addClass("hidden");
+            $("#riskBarStaticWrapper").removeClass("hidden");
+            animateBar("#riskBarStatic", Math.round(state.totalScoreStatic));
+            updateScoreAndLevel(state.totalScoreStatic, state.totalLevelStatic);
+            updateBondRisk("static", state.resultJson);
+            // 버튼 스타일
+            $("#btnStatic").removeClass("bg-gray-300 text-black").addClass("bg-blue-600 text-white");
+            $("#btnDeal").removeClass("bg-blue-600 text-white").addClass("bg-gray-300 text-black");
+        } else {
+            $("#riskBarStaticWrapper").addClass("hidden");
+            $("#riskBarDealWrapper").removeClass("hidden");
+            animateBar("#riskBarDeal", Math.round(state.totalScoreDeal));
+            updateScoreAndLevel(state.totalScoreDeal, state.totalLevelDeal);
+            updateBondRisk("deal", state.resultJson);
+            // 버튼 스타일
+            $("#btnDeal").removeClass("bg-gray-300 text-black").addClass("bg-blue-600 text-white");
+            $("#btnStatic").removeClass("bg-blue-600 text-white").addClass("bg-gray-300 text-black");
+        }
+    }
+
+    // 버튼 리스너는 단 한 번만 바깥에!
+    $("#btnStatic").on("click", () => showView("static"));
+    $("#btnDeal").on("click", () => showView("deal"));
+
+
+    function closeModal() {
+        document.getElementById("result-modal").classList.add("hidden");
+    }
+
+    $("#toggleDetail").on("click", function () {
+        $("#riskDetail").toggleClass("hidden");
+
+        // 버튼 텍스트 토글
+        if ($("#riskDetail").hasClass("hidden")) {
+            $(this).html('<i class="fa-solid fa-circle-info text-xs"></i> 상세보기');
+        } else {
+            $(this).html('<i class="fa-solid fa-chevron-up text-xs"></i> 접기');
+        }
+    });
+
+
+</script>
+</html>

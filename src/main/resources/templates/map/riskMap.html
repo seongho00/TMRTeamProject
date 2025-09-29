@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="common/head::head">
+    <meta charset="UTF-8">
+    <title>지도기반 유동인구에 따른 매출액과 상관관계 위험도 분석</title>
+</head>
+<body>
+<header th:replace="common/mapHeader::header"></header>
+
+<!-- 카카오맵 SDK: autoload=false 이므로 kakao.maps.load(...) 필수 -->
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=69544617df3febfc879cd18eed451ba3&libraries=services&autoload=false"></script>
+
+<!-- 지도 영역 -->
+<div id="map" class="w-full h-[1080px]"></div>
+
+<!-- 좌측 패널 -->
+<aside class="absolute top-[160px] left-[40px] z-20 w-[420px] bg-white/95 backdrop-blur rounded-2xl border border-gray-200 shadow-xl overflow-hidden">
+    <header class="sticky top-0 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white px-6 py-5">
+        <!-- 제목 -->
+        <h2 class="text-xl font-extrabold tracking-tight">상권 위험도 분석 정보</h2>
+        <!-- 부제(선택된 행정동 라벨) -->
+        <p id="emdName" class="mt-1 text-sm/6 text-indigo-100">행정동을 선택해 주세요</p>
+    </header>
+
+    <div class="p-6 space-y-6">
+        <!-- 업종 검색 -->
+        <section>
+            <label class="block text-sm text-gray-600 mb-2">업종 검색</label>
+            <div class="relative">
+                <input id="upjongSearch"
+                       class="upjongInput w-full rounded-lg border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm pr-10"
+                       placeholder="예: 한식, 커피-음료" autocomplete="off"/>
+                <!-- 검색 아이콘 -->
+                <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" width="18" height="18" viewBox="0 0 22 22" fill="none">
+                    <circle cx="9" cy="9" r="8.5" stroke="currentColor"/>
+                    <path d="M15 15.5L21 21.5" stroke="currentColor" stroke-linecap="round"/>
+                </svg>
+                <!-- 자동완성 드롭다운 -->
+                <div id="upjongSearchDrop"
+                     class="absolute left-0 right-0 top-[110%] bg-white border rounded-lg shadow hidden max-h-60 overflow-auto z-20 text-sm"></div>
+            </div>
+        </section>
+
+        <!-- 업종 리스트 -->
+        <section>
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-gray-600">업종 목록</span>
+            </div>
+            <div id="upjongList" class="grid grid-cols-2 gap-2 max-h-56 overflow-auto border rounded-lg p-2 bg-gray-50">
+                <div th:if="${upjongNames.isEmpty()}" class="col-span-2 text-center text-gray-400 py-6 text-sm">
+                    업종 결과가 없어
+                </div>
+                <button th:each="nm : ${upjongNames}"
+                        type="button"
+                        class="upjong-btn w-full text-left px-3 py-2 rounded-lg border hover:bg-indigo-50 text-sm"
+                        th:text="${nm}" th:attr="data-nm=${nm}">
+                </button>
+            </div>
+            <input class="upjongInput hidden">
+        </section>
+
+        <!-- 확인 버튼 -->
+        <button type="button" onclick="searchInfoByRegionAndUpjong();"
+                class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow">
+            분석하기
+        </button>
+
+        <!-- 결과 -->
+        <section>
+            <h3 class="text-sm font-medium text-gray-700 mb-2">결과</h3>
+            <div id="riskResult" class="min-h-[120px] rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-800">
+                결과 없음
+            </div>
+        </section>
+    </div>
+</aside>
+
+<!-- 상단 중앙 지역 선택 -->
+<ul class="flex justify-between items-center w-[450px] h-[50px] px-4 py-2 rounded-lg bg-white border border-gray-200 shadow absolute left-1/2 -translate-x-1/2 top-[110px] z-20">
+    <li>
+        <select id="sidoSelect" class="text-sm border-gray-300 rounded focus:ring-indigo-500">
+            <option>서울특별시</option>
+        </select>
+    </li>
+    <li>
+        <select id="sggSelect" class="text-sm border-gray-300 rounded focus:ring-indigo-500">
+            <option value="">시/군/구</option>
+            <th:block th:each="adminDong : ${adminDongsGroupBySggCd}">
+                <option th:value="${adminDong.sggNm}" th:text="${adminDong.sggNm}"></option>
+            </th:block>
+        </select>
+    </li>
+    <li>
+        <select id="emdSelect" class="text-sm border-gray-300 rounded focus:ring-indigo-500">
+            <option value="">행정동</option>
+        </select>
+    </li>
+</ul>
+
+<!-- 지도/업종 스크립트 -->
+<script type="text/javascript" th:src="@{/js/riskMap.js}"></script>
+
+<!-- 챗봇 불러오기 -->
+<div th:replace="chatbot/chat::chat"></div>
+
+<footer th:replace="common/footer :: footer"></footer>
+</body>
+</html>

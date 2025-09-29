@@ -51,4 +51,62 @@ public class MemberService {
 
         return loginedMember;
     }
+
+    /* 회원정보 수정 (비밀번호 제외) */
+    @Transactional
+    public ResultData modifyWithoutPw(Long loginedMemberId, String name, String phoneNum) {
+        Member member = memberRepository.findById(loginedMemberId)
+                .orElseThrow(() -> new RuntimeException("회원이 존재하지 않습니다."));
+
+        if (name != null) member.setName(name);
+        if (phoneNum != null) member.setPhoneNum(phoneNum);
+
+        // 주석: save() 호출 → 팀 차원에서 '명시적 업데이트' 의도 드러냄
+        memberRepository.save(member);
+
+        return ResultData.from("S-1", "회원정보가 수정되었습니다.", "member", member);
+    }
+
+    public Member getMemberById(Long loginedMemberId) {
+        return memberRepository.findById(loginedMemberId).orElseThrow(() -> new RuntimeException("회원이 존재하지 않습니다. id=" + loginedMemberId));
+    }
+
+    // 비밀번호 변경
+    @Transactional
+    public ResultData changePassword(Long loginedMemberId, String oldPw, String newPw) {
+
+        // 주석: 회원 조회
+        Member member = memberRepository.findById(loginedMemberId)
+                .orElseThrow(() -> new RuntimeException("회원이 존재하지 않습니다."));
+
+        // 주석: 기존 비밀번호 검증 (저장된 비밀번호가 해시인 경우 matches 사용)
+        if (!passwordEncoder.matches(oldPw, member.getLoginPw())) {
+            return ResultData.from("F-1", "현재 비밀번호가 일치하지 않아");
+        }
+
+        // 주석: 동일 비밀번호 방지(선택) - 필요 없으면 제거
+        if (passwordEncoder.matches(newPw, member.getLoginPw())) {
+            return ResultData.from("F-2", "이전과 동일한 비밀번호는 사용할 수 없어");
+        }
+
+        // 주석: 새 비밀번호 저장
+        member.setLoginPw(passwordEncoder.encode(newPw));
+        memberRepository.save(member);
+
+        return ResultData.from("S-1", "비밀번호 변경 완료", "memberId", member.getId());
+    }
+
+    @Transactional
+    public void withdrawMemberWithPasswordCheck(Long memberId, String rawPw, PasswordEncoder encoder) {
+        Member member = getMemberById(memberId);
+
+        // 저장된 비밀번호가 null 이거나 매칭 실패 시 예외
+        String savedPw = member.getLoginPw();
+        if (savedPw == null || !encoder.matches(rawPw, savedPw)) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+
+        // 외래키 제약으로 삭제 실패 가능 시, 선행 정리 필요
+        memberRepository.delete(member);
+    }
 }

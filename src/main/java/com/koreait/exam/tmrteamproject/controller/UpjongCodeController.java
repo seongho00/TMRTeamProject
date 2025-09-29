@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.List;
 
 @Controller
-@RequestMapping("usr/upjong")
+@RequestMapping("/usr/upjong")
 @Slf4j
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:3000")

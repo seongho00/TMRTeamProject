@@ -1,10 +1,8 @@
 package com.koreait.exam.tmrteamproject.controller;
 
 import com.koreait.exam.tmrteamproject.service.AdminDongService;
-import com.koreait.exam.tmrteamproject.service.MapService;
 import com.koreait.exam.tmrteamproject.service.UpjongCodeService;
 import com.koreait.exam.tmrteamproject.vo.AdminDong;
-import com.koreait.exam.tmrteamproject.vo.UpjongCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,100 +15,53 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.List;
 
 @Controller
-@RequestMapping("usr/map")
+@RequestMapping("/usr/map")
 @Slf4j
 @RequiredArgsConstructor
 public class MapController {
 
     @Autowired
-    private MapService mapService;
-    @Autowired
     private AdminDongService adminDongService;
+
     @Autowired
     private UpjongCodeService upjongCodeService;
-
-    @GetMapping("/commercialZoneMap")
-    public String commercialZoneMap(Model model) {
-
-        List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
-
-        model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
-
-        return "map/commercialZoneMap";
-    }
 
     @GetMapping("/getEmdsBySggNm")
     @ResponseBody
     public List<AdminDong> getEmdsBySggNm(String sgg) {
 
-        List<AdminDong> adminDong = adminDongService.getAdminDongsBySggNm(sgg);
-
-        return adminDong;
+        return adminDongService.getAdminDongsBySggNm(sgg);
     }
 
     @GetMapping("/getSggByEmd")
     @ResponseBody
     public List<AdminDong> getSggByEmd(String sgg) {
 
-        List<AdminDong> adminDong = adminDongService.getAdminDongsBySggNm(sgg);
-
-        return adminDong;
+        return adminDongService.getAdminDongsBySggNm(sgg);
     }
 
-    @GetMapping("/getMiddleCategories")
-    @ResponseBody
-    public List<UpjongCode> getMiddleCategories(String majorCd) {
+    // 유동인구 및 매출액 맵
+    @GetMapping("/commercialZoneMap")
+    public String commercialZoneMap(Model model) {
 
-        List<UpjongCode> upjongCode = upjongCodeService.getGroupedUpjongCodesByMajorCd(majorCd);
+        // 공통 데이터
+        List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
 
-        return upjongCode;
+        model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
+        model.addAttribute("upjongNames", upjongCodeService.getAllNames());
+
+        return "map/commercialZoneMap";
     }
 
-    @GetMapping("/getMinorCategories")
-    @ResponseBody
-    public List<UpjongCode> getMinorCategories(String middleCd) {
+    // 위험도 페이지
+    @GetMapping("/riskMap")
+    public String correlationMap(Model model) {
 
-        List<UpjongCode> upjongCode = upjongCodeService.getUpjongCodesByMiddleCd(middleCd);
+        List<AdminDong> adminDongsGroupBySggCd = adminDongService.getAdminDongsGroupBySgg();
 
-        return upjongCode;
-    }
+        model.addAttribute("adminDongsGroupBySggCd", adminDongsGroupBySggCd);
+        model.addAttribute("upjongNames", upjongCodeService.getAllNames());
 
-    @GetMapping("/getUpjongCodeByMinorCd")
-    @ResponseBody
-    public UpjongCode getUpjongCodeByMinorCd(String minorCd) {
-
-        UpjongCode upjongCode = upjongCodeService.getUpjongCodeByMinorCd(minorCd);
-        return upjongCode;
-    }
-
-    @GetMapping("/searchUpjong")
-    @ResponseBody
-    public List<UpjongCode> searchUpjong(String keyword) {
-        System.out.println(keyword);
-        List<UpjongCode> upjongCode = upjongCodeService.getUpjongCodeByKeyword(keyword);
-        System.out.println(upjongCode);
-        return upjongCode;
-    }
-
-    @GetMapping("/searchInfoByRegionAndUpjong")
-    @ResponseBody
-    public String searchInfoByRegionAndUpjong(String sgg, String emd, String upjong) {
-
-        System.out.println(sgg);
-        System.out.println(emd);
-        System.out.println(upjong);
-
-        return "";
-    }
-
-    // 상관분석 페이지
-    @GetMapping("/correlationMap")
-    public String correlationMap() {
-        return "map/correlationMap";
-    }
-
-    @GetMapping("/diskmap")
-    public String diskmap() {
-        return "map/dis";
+        return "map/riskMap";
     }
 }

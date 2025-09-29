@@ -6,6 +6,9 @@ import BusinessSelectPage from "./sub/BusinessSelectPage";
 import CostSettingPage from "./sub/CostSettingPage";
 import LocationSelectPage from "./sub/LocationSelectPage";
 import WeeklySimulationPage from "./sub/WeeklySimulationPage";
+import ResultPage from "./sub/ResultPage";
+
+
 import './globals.css';  // 파일 경로에 맞게 수정
 
 const Page = () => {
@@ -13,7 +16,7 @@ const Page = () => {
     const [business, setBusiness] = useState(null);
     const [costs, setCosts] = useState(null);
     const [location, setLocation] = useState(null);
-
+    const [isResult, setIsResult] = useState(false);
 
     const goBack = () => {
         if (costs) {
@@ -38,6 +41,7 @@ const Page = () => {
 
     if (!location) return <LocationSelectPage onSelect={setLocation} onBack={goBack}/>;
 
+
     if (!costs)
         return (
             <CostSettingPage
@@ -45,8 +49,15 @@ const Page = () => {
                 business={business}
                 onSubmit={setCosts}
                 onBack={goBack}
+                location={location}
+
             />
         );
+
+    // 시뮬레이션 결과 페이지
+    if (isResult) {
+        return <ResultPage history={history} onBack={() => window.location.reload()}/>;
+    }
 
 
     return (
@@ -55,8 +66,12 @@ const Page = () => {
             business={business}
             location={location}
             initialCost={costs.initialCost}
+            goLoan={costs.loanAmount}
+            rent={costs.rent}
+            onFinish={setIsResult}
         />
     );
+
 };
 
 export default Page;

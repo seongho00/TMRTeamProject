@@ -63,25 +63,55 @@ from transformers import (
 
 # intent: 2 - 위험도
 위험도 = [
-    "폐업 위험도 높은 지역은?",
+    "상권 위험도 점수 보여줘",
     "위험한 상권 알려줘",
     "어디가 위험한 상권이야?",
-    "상권 분석 결과 보여줘",
-    "위험 지역 분석해줘"
+    "위험 지역 분석해줘",
+    "상권 위험도 알려줄래?",
+    "이 지역 위험 점수 확인해줘",
+    "여기 위험한 곳이야?",
+    "위험도 지수가 높은 지역 알려줘",
+    "상권별 위험도 비교해줘",
+    "위험 지역 데이터 보여줘",
+    "상권 리스크 점수 확인해줘",
+    "위험도 분석 결과 알려줘",
+    "위험이 높은 지역은 어디야?",
+    "상권 위험 현황 보여줘",
+    "상권 위험도 통계 알려줘",
+    "위험도가 제일 높은 동네는 어디야?",
+    "상권 위험 평가 결과 알려줘",
+    "이 상권 안전할까 위험할까?",
+    "위험 지역 리스트 보여줘",
+    "상권별 위험 순위 알려줘"
 ]
 
 # intent: 3 - 청약_정보
 청약_정보 = [
-    "폐업 위험도 높은 지역은?",
-    "위험한 상권 알려줘",
-    "어디가 위험한 상권이야?",
-    "상권 분석 결과 보여줘",
-    "위험 지역 분석해줘"
+    "청약 정보 알려줘",
+    "청약 일정 확인해줘",
+    "지금 청약할 수 있는 아파트 있어?",
+    "청약 공고 어디서 볼 수 있어?",
+    "분양 청약 소식 알려줘",
+    "이번 달 청약 일정 알려줘",
+    "청약 경쟁률 정보 줘",
+    "아파트 청약 공고 확인해줘",
+    "지금 신청 가능한 청약 정보 보여줘",
+    "청약 일정 알려줘",
+    "청약 일정 어디서 확인해?",
+    "청약 정보 좀 알려줘봐",
+    "청약 정보 올라온 거 있어?",
+    "다음 주 청약 일정 알려줘",
+    "청약 신청 언제부터야?",
+    "청약 결과 발표일 알려줘",
+    "청약 자격 조건 확인해줘",
+    "이번에 청약 가능한 단지 뭐 있어?",
+    "청약 일정표 보여줘",
+    "새로 나온 청약 공고 있니?"
 ]
 
 # ✅ 2. 텍스트 전처리
 train_sentences = 매출_조회 + 유동인구_조회 + 위험도 + 청약_정보
-train_labels = [0]*len(매출_조회) + [1]*len(유동인구_조회) + [2]*len(위험도) + [3]*len(청약_정보)
+train_labels = [0] * len(매출_조회) + [1] * len(유동인구_조회) + [2] * len(위험도) + [3] * len(청약_정보)
 
 # ✅ 2. 라벨 인코딩
 le = LabelEncoder()
@@ -92,18 +122,18 @@ texts = train_sentences
 model_name = "klue/bert-base"
 tokenizer = BertTokenizer.from_pretrained(model_name)
 
-
 # ✅ 4. HuggingFace Dataset 생성
 data = Dataset.from_dict({"text": texts, "label": encoded_labels})
 
+
 def tokenize(batch):
     return tokenizer(batch["text"], truncation=True, padding="max_length", max_length=32)
+
 
 tokenized_data = data.map(tokenize, batched=True)
 
 # ✅ 5. 모델 정의
 model = BertForSequenceClassification.from_pretrained(model_name, num_labels=len(le.classes_))
-
 
 # ✅ 6. Trainer 학습 설정
 training_args = TrainingArguments(

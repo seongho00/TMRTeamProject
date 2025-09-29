@@ -17,6 +17,7 @@ import javax.persistence.Id;
 @SuperBuilder
 @ToString(callSuper = true)
 public class AdminDong {
+
     @Id
     @Column(name = "admi_nm")
     private String admiNm;
@@ -24,8 +25,6 @@ public class AdminDong {
     private String sidoCd;
     @Column(name = "sido_nm")
     private String sidoNm;
-    @Column(name = "sido_cd")
-    private String sidoCd;
     @Column(name = "sgg_cd")
     private String sggCd;
     @Column(name = "sgg_nm")

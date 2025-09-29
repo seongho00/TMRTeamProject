@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head th:replace="common/head :: head">
+    <meta charset="UTF-8">
+    <title>비밀번호 변경</title>
+</head>
+<body>
+<header th:replace="common/mapHeader :: header"></header>
+
+<div class="relative flex max-w-[1440px] mx-auto pb-5">
+    <!-- 사이드 바 -->
+    <div class="box-border">
+        <aside class="relative w-[330px] overflow-y-auto">
+            <div class="w-full h-full overflow-auto">
+
+                <!-- 사이드바 타이틀 -->
+                <div class="box-border pt-[100px]">
+                    <h2 class="relative overflow-hidden w-[280px] min-h-[180px] text-center pt-[40px]
+                               bg-gradient-to-r from-indigo-600 to-indigo-500
+                               font-black text-[30px] rounded-lg text-white">
+                        마이페이지
+                    </h2>
+                </div>
+                <!-- 사이드바 메뉴 -->
+                <ul class="relative w-[250px] ml-[15px] rounded-[10px] bg-white -mt-[72px] z-[90] subheading">
+                    <!-- 회원정보관리 -->
+                    <li class="px-[20px] first:rounded-t-[10px] first:pt-[27px]">
+                        <a class="relative block text-[16px] px-[10px] py-[16px] active:text-[#5c56d2]
+                                  after:content-[''] after:absolute after:bottom-0 after:left-0
+                                  after:w-full after:h-[2px] after:bg-[#5c56d2]">
+                            회원정보관리
+                        </a>
+
+                        <!-- 2차 메뉴 -->
+                        <ul class="block bg-[#f5f6f9] my-[10px] py-[10px]">
+                            <li class="relative px-[15px]">
+                                <a href="../member/myPage" class="relative block px-3 py-2 text-[14px]
+                                                   before:content-[''] before:inline-block
+                                                   before:absolute before:left-0 before:top-[16px]
+                                                   before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
+                                                   before:rounded-full">
+                                    기본정보
+                                </a>
+                            </li>
+                            <li class="relative px-[15px]">
+                                <a href="../member/changePw" target="_self"
+                                   class="relative block px-3 py-2 text-[14px]
+                                          before:content-[''] before:inline-block
+                                          before:absolute before:left-0 before:top-[16px]
+                                          before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
+                                          before:rounded-full">
+                                    비밀번호변경
+                                </a>
+                            </li>
+                            <li class="relative px-[15px]">
+                                <a href="../member/withdraw" target="_self"
+                                   class="relative block px-3 py-2 text-[14px]
+                                          before:content-[''] before:inline-block
+                                          before:absolute before:left-0 before:top-[16px]
+                                          before:w-[4px] before:h-[4px] before:bg-[#b5b2b4]
+                                          before:rounded-full">
+                                    회원탈퇴
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- 관심정보 -->
+                    <li class="px-[20px]">
+                        <a href="#" class="relative block text-[16px] px-[10px] py-[16px]">
+                            관심정보
+                        </a>
+                        <ul class="mt-2 space-y-1 pl-3">
+                            <li>
+                                <a href="../home/notifications" class="block rounded-md px-3 py-2 text-sm hover:bg-gray-100">
+                                    관심일정
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+
+    <!-- 마이페이지 메인 -->
+    <div class="w-full max-w-[1090px] box-border">
+        <main class="relative min-h-[120px] block">
+            <div class="p-[20px] box-border text-[16px] min-h-[calc(100vh-130px)]">
+
+                <!-- 타이틀 -->
+                <div class="relative w-full pt-[55px] pb-[20px] mb-[40px] border-b border-gray-300">
+                    <h2 class="relative pb-[10px] text-black font-black text-[30px]">비밀번호 변경</h2>
+                </div>
+
+                <!-- 수정 폼 -->
+                <form th:action="@{/usr/member/doChangePw}" method="post" class="relative pt-[30px] overflow-hidden">
+                    <table class="relative w-full mb-[10px] text-[14px] border-t-2 border-[#091a4d]">
+                        <tbody class="relative w-full">
+
+                        <!-- 현재 비밀번호 -->
+                        <tr class="p-[10px] border-b border-[#dbdbdb]">
+                            <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-bold text-[#091a4d]">
+                                현재 비밀번호
+                            </th>
+                            <td class="w-[calc(100% - 140px)] p-[10px]">
+                                <input type="password" name="oldPw" placeholder="현재 비밀번호를 입력해주세요."
+                                       class="w-full rounded border px-3 py-2 outline-none focus:ring"
+                                       maxlength="100" required />
+                            </td>
+                        </tr>
+
+                        <!-- 새 비밀번호 -->
+                        <tr class="p-[10px] border-b border-[#dbdbdb]">
+                            <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-bold text-[#091a4d]">
+                                새 비밀번호
+                            </th>
+                            <td class="w-[calc(100% - 140px)] p-[10px]">
+                                <input type="password" name="newPw" placeholder="새 비밀번호를 입력해주세요."
+                                       class="w-full rounded border px-3 py-2 outline-none focus:ring"
+                                       maxlength="100" required />
+                            </td>
+                        </tr>
+
+                        <!-- 새 비밀번호 확인 -->
+                        <tr class="p-[10px] border-b border-[#dbdbdb]">
+                            <th class="w-[140px] bg-gray-100 border-r border-[#dbdbdb] p-[10px] text-left font-bold text-[#091a4d]">
+                                새 비밀번호 확인
+                            </th>
+                            <td class="w-[calc(100% - 140px)] p-[10px]">
+                                <input type="password" name="newPwConfirm" placeholder="새 비밀번호를 다시 입력해주세요."
+                                       class="w-full rounded border px-3 py-2 outline-none focus:ring"
+                                       maxlength="100" required />
+                            </td>
+                        </tr>
+
+                        </tbody>
+                    </table>
+
+                    <!-- 버튼 영역 -->
+                    <div class="relative w-full flex justify-end">
+                        <button type="submit"
+                                class="px-[10px] text-white bg-[#091a4d] min-w-[100px] h-[48px] text-[15px] border border-[#091a4d] rounded-[5px] ml-[10px] subheading">
+                            저장
+                        </button>
+                        <a href="javascript:history.back();"
+                           class="px-[10px] text-[#444] bg-white min-w-[100px] h-[48px] text-[15px] border border-[#b0b0b1] rounded-[5px] ml-[10px] subheading inline-flex items-center justify-center">
+                            취소
+                        </a>
+                    </div>
+                </form>
+
+            </div>
+        </main>
+    </div>
+</div>
+
+<footer th:replace="common/footer::footer"></footer>
+
+</body>
+</html>

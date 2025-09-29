@@ -55,6 +55,22 @@ CREATE TABLE upjong_code (
                              minor_nm VARCHAR(100)
 );
 
+CREATE TABLE risk_score (
+                            emd_cd         VARCHAR(20)  NOT NULL,
+                            upjong_cd      VARCHAR(20)  NOT NULL,
+                            reg_date       DATETIME     NOT NULL,
+                            update_date    DATETIME     NOT NULL,
+                            risk_raw       DECIMAL(6,4) NOT NULL,   -- 소수 정밀도 확보(예: -0.4000 ~ 0.2000)
+                            risk_label     INT          NULL,
+                            risk7_label    VARCHAR(10)  NULL,
+                            risk_pred      INT          NULL,
+                            risk100_all    DECIMAL(5,1) NULL,
+                            risk100_by_biz DECIMAL(5,1) NULL,
+                            PRIMARY KEY (emd_cd, upjong_cd),
+                            KEY idx_risk_score_upjong (upjong_cd)
+)
+SELECT * FROM upjong_code;
+
 /* LH청약플러스 상가 공고 정보 */
 CREATE TABLE `lh_apply_info` (
                                  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -109,3 +125,34 @@ CREATE TABLE `lh_shop_detail` (
                                   CONSTRAINT `fk_detail_to_info` FOREIGN KEY (`lh_apply_info_id`)
                                       REFERENCES `lh_apply_info` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT = 'LH 상가 공고별 상세 정보';
+
+CREATE TABLE lh_supply_schedule (
+                                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                    apply_start DATETIME NULL,             -- 신청 시작
+                                    apply_end DATETIME NULL,               -- 신청 종료
+                                    result_time DATETIME NULL,             -- 결과 발표 일시
+                                    contract_start DATE NULL,              -- 계약 시작 (시간 없으면 DATE만)
+                                    contract_end DATE NULL,                -- 계약 종료
+                                    scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+)
+
+CREATE TABLE schedule_interest (
+                                   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                   reg_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                   update_date DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                   member_id BIGINT NOT NULL,
+                                   schedule_id BIGINT NOT NULL,
+                                   is_active TINYINT(1) NOT NULL DEFAULT 1
+
+)
+
+CREATE TABLE property_file (
+                               id BIGINT AUTO_INCREMENT PRIMARY KEY,   -- BaseEntity PK
+                               reg_date DATETIME NOT NULL,         -- 생성일 (BaseEntity)
+                               update_date DATETIME NOT NULL,        -- 수정일 (BaseEntity)
+
+                               file_name VARCHAR(255) NOT NULL,        -- 업로드된 파일 이름
+                               file_type VARCHAR(100) NOT NULL,        -- MIME 타입 (예: image/png)
+                               data LONGTEXT                           -- Base64 인코딩된 파일 데이터
+)

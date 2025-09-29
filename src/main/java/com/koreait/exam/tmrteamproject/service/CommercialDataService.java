@@ -2,6 +2,7 @@ package com.koreait.exam.tmrteamproject.service;
 
 import com.koreait.exam.tmrteamproject.vo.CommercialData;
 import com.opencsv.bean.CsvToBeanBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.FileInputStream;
@@ -9,6 +10,7 @@ import java.io.InputStreamReader;
 import java.util.List;
 
 @Service
+@Slf4j
 public class CommercialDataService {
     private List<CommercialData> csvData;
 
@@ -22,7 +24,7 @@ public class CommercialDataService {
                     .build()
                     .parse();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("csv 읽기 실패 -> 건너뛰기");
         }
     }
 
