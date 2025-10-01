@@ -1455,7 +1455,7 @@ def _launch_ctx(p):
     ctx = p.chromium.launch_persistent_context(
         user_data_dir=USER_DATA_DIR,
         channel="chrome",
-        headless=HEADLESS,
+        headless=True,
         locale="ko-KR",
         viewport={"width": 1280, "height": 860},
         proxy=proxy_cfg,
@@ -1465,6 +1465,11 @@ def _launch_ctx(p):
             "--no-first-run", "--no-default-browser-check",
             "--disable-dev-shm-use", "--no-sandbox",
             "--disable-gpu", "--window-size=1280,860",
+            # UA 위장
+            "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Safari/537.36"
+
         ],
     )
     # 약식 스텔스
@@ -1840,7 +1845,7 @@ def get_base_price():
         browser = p.chromium.launch_persistent_context(
             user_data_dir=USER_DATA_DIR,
             channel="chrome",
-            headless=False,  # 서버에서는 True 권장
+            headless=True,  # 서버에서는 True 권장
             locale="ko-KR",
             viewport={"width": 1280, "height": 860},
             ignore_https_errors=True,

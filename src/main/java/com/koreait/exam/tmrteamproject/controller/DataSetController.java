@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 @Controller
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("usr/dataset")
+@RequestMapping("/usr/dataset")
 @CrossOrigin(origins = "http://localhost:3000")
 public class DataSetController {
 

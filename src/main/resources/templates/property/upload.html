@@ -162,7 +162,9 @@
 <!-- 로딩 오버레이 -->
 <div id="overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
     <div class="w-[420px] rounded-xl bg-white p-6 shadow-2xl">
-        <h2 class="mb-4 text-lg font-bold">📊 분석 진행중...</h2>
+        <h2 class="mb-4 text-lg font-bold flex items-center">
+            📊 분석 진행중<span class="dot-animate ml-1"></span>
+        </h2>
 
         <!-- Progress bar wrapper -->
         <div class="w-full overflow-hidden rounded-full bg-gray-200 h-3">
@@ -188,6 +190,18 @@
 
     .no-spin {
         -moz-appearance: textfield;
+    }
+
+    .dot-animate::after {
+        content: '...';
+        animation: dots 1.5s steps(3, end) infinite;
+    }
+
+    @keyframes dots {
+        0%   { content: ''; }
+        33%  { content: '.'; }
+        66%  { content: '..'; }
+        100% { content: '...'; }
     }
 </style>
 
