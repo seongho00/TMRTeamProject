@@ -9,8 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -65,6 +63,4 @@ public class ChatBotService {
             return ResultData.from("F-1", "❌ Flask 서버 연결 실패");
         }
     }
-
-
 }
